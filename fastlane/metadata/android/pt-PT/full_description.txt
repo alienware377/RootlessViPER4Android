@@ -1,0 +1,46 @@
+Utilize o JamesDSP como um motor de processamento de áudio sem necessitar de acesso Root.
+
+Esta aplicação tem várias limitações que podem ser críticas para algumas pessoas; por favor leia este documento antes de utilizar a aplicação. Shizuku (Android 11 e superior) ou acesso ADB com computador serão necessários para a configuração inicial.
+
+JamesDSP suporta os seguintes efeitos de áudio:
+* Controle de limitador
+* Controle de ganho de saída
+Compactador de alcance dinâmico automático
+* Aumento de graves dinâmico
+* Interpolação do Equalizador de FIR
+* Equalizador de resposta arbitrária
+* ViPER-DDC
+* Convolver
+* DSP programável ao vivo (mecanismo de definição de efeitos de áudio)
+* modelagem analógica
+* Expansão do som de palco
+* Alimentação cruzada
+* Efeito de sala virtual)
+
+Além disso, esta aplicação integra se diretamente com o AutoEQ. Usando a integração AutoEQ, pode procurar e importar respostas de frequência que tornam seu fone de ouvido com resposta de frequência neutra. Vá para 'Equalizador de resposta arbitrária > Resposta Magnitude > Perfis de AutoEQ' para começar.
+
+--- Limitações
+* Aplicações que bloqueiam a captura de áudio interna não serão processadas (por exemplo, Spotify, Google Chrome)
+* Aplicações que usam alguns tipos de reprodução acelerada por hardware podem causar problemas e precisar serem excluídas manualmente (por exemplo, alguns jogos Unity)
+* Não é possível coexistir com (alguns) outros aplicativos de efeito de áudio (por exemplo, Wavelet e outros aplicativos que utilizam a API do Android `Processamento dinâmico`)
+
+
+- Aplicações confirmadas funcionando:
+* YouTube
+* YouTube Music
+* Amazon Music
+* Deezer
+* Poweramp
+* Substreamer
+* Twitch
+* ...
+
+- Aplicações não suportadas incluem:
+* Spotify (Nota: patch do Spotify ReVanced é necessário para suportar o Spotify)
+Google Chrome
+SoundCloud
+* ...
+
+--- Tradução
+Ajude-nos a traduzir esta aplicação aqui: https://crowdin.com/projec/rootlessjamesdsp
+Para solicitar um novo idioma que ainda não está habilitado no Crowdin, abra um problema aqui no GitHub e vou ativá-lo.

@@ -1,0 +1,46 @@
+JamesDSPをrootアクセスなしで、システム全体のオーディオ処理エンジンとして使用できます。
+
+このアプリにはいくつかの制限があります。初期設定には、Shizuku(Android 11+)またはパソコンからのADBアクセスが必要です。
+
+JamesDSPが対応するオーディオエフェクト:
+* リミッターコントロール
+*出力ゲインコントロール
+* 自動ダイナミックレンジコンプレッサー
+* 動的な低音ブースト
+* 補間型FIRイコライザー
+* 任意応答イコライザー(グラフィック EQ)
+* ViPER-DDC
+* Convolver
+* Live-programmable DSP (scripting engine for audio effects)
+* アナログモデリング
+* サウンドステージの広さ
+* クロスフィード
+* 仮想ルーム効果 (リバーブ)
+
+さらに、このアプリはAutoEQと直接統合しています。 AutoEQの統合を使用すると、ヘッドホンをニュートラルな音に補正することを目的とした周波数応答を検索してインポートすることができます。 使用するには、｢Arbitrary response equalizer > Magnitude response > AutoEQ profiles' ｣に移動してください。
+
+制限事項
+* 内部音声録音をブロックしているアプリは処理されません。 (Spotify、Google Chromeなど)
+* 一部のHWアクセラレーションによる再生を使用するアプリは問題を引き起こす可能性があり、手動で除外する必要があります。(例：一部のUnityゲーム)
+* (一部の) 他のオーディオエフェクトアプリとの共用はできません。(例: Wavelet や `DynamicsProcessing` Android API を使用したアプリ)
+
+
+- 正常な動作が確認されたアプリ:
+* YouTube
+* YouTube Music
+* Amazon Music
+* Deezer
+* Poweramp
+* Substreamer
+* Twitch
+* ...
+
+- サポートされていないアプリ:
+* Spotify (注意：ReVancedパッチの適用が必要です)
+* Google Chrome
+* SoundCloud
+* ...
+
+翻訳
+このアプリの翻訳にご協力ください!: https://crowdin.com/project/rootlessjamesdsp
+Crowdinでまだ有効になっていない新しい言語をリクエストするには、GitHubで課題を開いてください。

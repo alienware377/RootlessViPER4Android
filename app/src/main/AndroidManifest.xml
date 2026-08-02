@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:targetApi="upside_down_cake" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" tools:targetApi="upside_down_cake" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <uses-permission android:name="android.permission.DUMP" tools:ignore="ProtectedPermissions" />
+
+    <uses-feature android:name="android.hardware.audio.output" />
+
+    <queries>
+        <package android:name="moe.shizuku.privileged.api" />
+    </queries>
+
+    <application
+        android:name=".MainApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:hasFragileUserData="true"
+        android:icon="@mipmap/ic_dsp_launcher"
+        android:label="${label}"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RootlessJamesDSP"
+        android:appCategory="audio"
+        tools:targetApi="s">
+
+        <profileable android:shell="true"/>
+
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${crashlyticsCollectionEnabled}" />
+
+        <!-- Activities -->
+        <activity
+            android:name=".activity.MainActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_dsp_launcher"
+            android:label="${label}"
+            android:theme="@style/Theme.RootlessJamesDSP"
+            android:windowSoftInputMode="adjustPan">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.media.action.DISPLAY_AUDIO_EFFECT_CONTROL_PANEL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.CATEGORY_CONTENT_MUSIC" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="content" />
+                <data android:mimeType="*/*" />
+
+                <!--
+                    Work around Android's ugly primitive PatternMatcher
+                    implementation that can't cope with finding a . early in
+                    the path unless it's explicitly matched.
+                -->
+                <data android:host="*" />
+                <data android:pathPattern=".*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.vdc" />
+                <data android:pathPattern=".*\\.irs" />
+                <data android:pathPattern=".*\\..*\\.irs" />
+                <data android:pathPattern=".*\\..*\\..*\\.irs" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.irs" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.irs" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.irs" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.irs" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.irs" />
+                <data android:pathPattern=".*\\.wav" />
+                <data android:pathPattern=".*\\..*\\.wav" />
+                <data android:pathPattern=".*\\..*\\..*\\.wav" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.wav" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.wav" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.wav" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.wav" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.wav" />
+                <data android:pathPattern=".*\\.eel" />
+                <data android:pathPattern=".*\\..*\\.eel" />
+                <data android:pathPattern=".*\\..*\\..*\\.eel" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.eel" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.eel" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.eel" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.eel" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.eel" />
+                <data android:pathPattern=".*\\.tar" />
+                <data android:pathPattern=".*\\..*\\.tar" />
+                <data android:pathPattern=".*\\..*\\..*\\.tar" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.tar" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.tar" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.tar" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.tar" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.tar" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".activity.SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/Theme.RootlessJamesDSP">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.BlocklistActivity"
+            android:exported="false"
+            android:label="@string/title_activity_blocklist"
+            android:theme="@style/Theme.RootlessJamesDSP">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.LiveprogParamsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_liveprog_params"
+            android:theme="@style/Theme.RootlessJamesDSP">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.LiveprogEditorActivity"
+            android:exported="false"
+            android:label="@string/title_activity_liveprog_editor"
+            android:theme="@style/Theme.RootlessJamesDSP"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.ParametricEqualizerActivity"
+            android:exported="false"
+            android:label="@string/title_activity_peq"
+            android:theme="@style/Theme.RootlessJamesDSP">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.GraphicEqualizerActivity"
+            android:exported="false"
+            android:label="@string/title_activity_geq"
+            android:theme="@style/Theme.RootlessJamesDSP">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.AeqSelectorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RootlessJamesDSP"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.GraphicEqualizerActivity" />
+        </activity>
+
+        <activity
+            android:name=".activity.AppCompatibilityActivity"
+            android:exported="false"
+            android:label="@string/title_activity_app_compat"
+            android:theme="@style/Theme.RootlessJamesDSP" />
+
+        <activity
+            android:name=".activity.OnboardingActivity"
+            android:exported="false"
+            android:label="@string/title_activity_onboarding"
+            android:theme="@style/Theme.RootlessJamesDSP" />
+
+        <activity
+            android:name=".activity.EngineLauncherActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:label=""
+            android:theme="@style/Theme.Transparent" />
+
+        <!-- Services -->
+        <service
+            android:name=".service.RootlessAudioProcessorService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <!-- Root only: FGS service permission is granted in root/AndroidManifest.xml -->
+        <service
+            android:name=".service.RootAudioProcessorService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            tools:ignore="ForegroundServicePermission" />
+
+        <service
+            android:name=".service.NotificationListenerService"
+            android:exported="true"
+            android:label="NotificationListener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.service.notification.default_filter_types"
+                android:value="conversations|alerting" />
+            <meta-data
+                android:name="android.service.notification.disabled_filter_types"
+                android:value="ongoing|silent" />
+        </service>
+
+        <service
+            android:name=".service.QuickTileService"
+            android:label="@string/jamesdsp"
+            android:icon="@drawable/ic_tune_vertical_variant_24dp"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".backup.BackupRestoreService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+        <!-- Receivers -->
+        <receiver
+            android:name=".receiver.SessionReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.action.OPEN_AUDIO_EFFECT_CONTROL_SESSION" />
+                <action android:name="android.media.action.CLOSE_AUDIO_EFFECT_CONTROL_SESSION" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.BootCompletedReceiver"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.PowerStateReceiver"
+            android:enabled="true"
+            android:exported="true"
+            tools:ignore="ExportedReceiver">
+            <intent-filter>
+                <action android:name="me.timschneeberger.rootlessjamesdsp.SET_POWER_STATE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Providers -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+        <provider
+            android:name="me.timschneeberger.rootlessjamesdsp.session.dump.DebugDumpFileProvider"
+            android:authorities="${applicationId}.dump_provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_dump_paths" />
+        </provider>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.file_library_provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_filelibrary_paths" />
+        </provider>
+
+        <provider
+            android:name="me.timschneeberger.rootlessjamesdsp.utils.storage.Cache$Provider"
+            android:authorities="${applicationId}.provider.cache"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
+    </application>
+</manifest>

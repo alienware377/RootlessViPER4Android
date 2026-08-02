@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="nodes">
+        <item quantity="one">%d nó</item>
+        <item quantity="other">%d nós</item>
+    </plurals>
+    <plurals name="unsupported_apps">
+        <item quantity="one">%d apps não suportados foram automaticamente exclusos. Clique para ver os detalhes.</item>
+        <item quantity="other">%d apps não suportados foram automaticamente exclusos. Clique para ver os detalhes.</item>
+    </plurals>
+</resources>

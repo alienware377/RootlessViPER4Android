@@ -1,0 +1,15 @@
+commit_message: 'l10n: updated %original_file_name% translation (%language%)'
+append_commit_message: 
+pull_request_title: 'l10n: New Crowdin updates'
+pull_request_labels:
+  - crowdin
+  - l10n
+files:
+  - source: /app/src/main/res/values/strings.xml
+    translation: /app/src/main/res/values-%android_code%/%original_file_name%
+    translate_attributes: 0
+  - source: /fastlane/metadata/android/en-US/*.txt
+    translation: /fastlane/metadata/android/%locale%/%original_file_name%
+  - source: /app/src/main/res/values/plurals.xml
+    translation: /app/src/main/res/values-%android_code%/plurals.xml
+    translate_attributes: 0

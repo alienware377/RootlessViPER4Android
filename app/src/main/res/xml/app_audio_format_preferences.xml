@@ -1,0 +1,76 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory app:title="@string/audio_format_section_header"
+        app:iconSpaceReserved="false">
+        <ListPreference
+            app:key="@string/key_audioformat_encoding"
+            app:title="@string/audio_format_encoding"
+            app:entries="@array/audio_format_encodings"
+            app:entryValues="@array/audio_format_encodings_values"
+            app:useSimpleSummaryProvider="true"
+            app:defaultValue="@string/default_audioformat_encoding"
+            app:iconSpaceReserved="false" />
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_audioformat_buffersize"
+            android:title="@string/audio_format_buffer_size"
+            app:seekBarIncrement="128"
+            app:precision="0"
+            app:unit="@string/audio_format_buffer_size_unit"
+            app:labelMinWidth="120dp"
+            app:minValue="128"
+            app:maxValue="16384"
+            app:defaultValue="@integer/default_audioformat_buffersize"
+            app:allowDividerAbove="false"
+            app:updatesContinuously="false"
+            app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/audio_format_processing_header"
+        app:iconSpaceReserved="false">
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_audioformat_processing"
+            android:defaultValue="@bool/default_audioformat_processing"
+            android:title="@string/audio_format_processing_legacy"
+            android:summaryOff="@string/audio_format_processing_legacy_off"
+            android:summaryOn="@string/audio_format_processing_legacy_on"
+            android:disableDependentsState="true"
+            app:iconSpaceReserved="false" />
+
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_audioformat_enhanced_processing"
+            android:defaultValue="@bool/default_audioformat_enhanced_processing"
+            android:title="@string/audio_format_enhanced_processing"
+            android:summaryOff="@string/audio_format_enhanced_processing_off"
+            android:summaryOn="@string/audio_format_enhanced_processing_on"
+            android:dependency="@string/key_audioformat_processing"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="@string/key_audioformat_enhanced_processing_info"
+            android:title="@string/audio_format_enhanced_processing_info_title"
+            android:summary="@string/audio_format_enhanced_processing_info"
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/audio_format_optimization_header"
+        app:iconSpaceReserved="false">
+
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_audioformat_optimization_benchmark"
+            android:defaultValue="@bool/default_audioformat_optimization_benchmark"
+            android:title="@string/audio_format_optimization_benchmark"
+            android:summary="@string/audio_format_optimization_benchmark_summary"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="@string/key_audioformat_optimization_refresh"
+            android:title="@string/audio_format_optimization_refresh"
+            android:dependency="@string/key_audioformat_optimization_benchmark"
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+</PreferenceScreen>
