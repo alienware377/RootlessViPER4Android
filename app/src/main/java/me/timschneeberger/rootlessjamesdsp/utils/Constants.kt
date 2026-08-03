@@ -21,6 +21,7 @@ object Constants {
     const val PREF_REVERB = "dsp_reverb"
     const val PREF_STEREOWIDE = "dsp_stereowide"
     const val PREF_TUBE = "dsp_tube"
+    const val PREF_BASSEX = "dsp_bassex"
 
     // Default string values
     const val DEFAULT_CONVOLVER_ADVIMP = "-80;-100;0;0;0;0"

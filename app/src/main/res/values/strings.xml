@@ -218,8 +218,30 @@
     <string name="output_control_header">Output control</string>
     <string name="output_limiter_threshold">Limiter threshold</string>
     <string name="output_limiter_release">Limiter release</string>
-    <string name="output_limiter_bypass">Disable limiter</string>
-    <string name="output_limiter_bypass_summary">Bypass the output limiter entirely. Post gain stays active. Warning: audio may clip!</string>
+    <string name="output_limiter_mode">Limiter mode</string>
+    <string name="limiter_mode_normal">Peak limiter (default, safest)</string>
+    <string name="limiter_mode_soft">Soft saturation (loudness maximizer)</string>
+    <string name="limiter_mode_off">Off (may clip!)</string>
+    <string name="bassex_enable">Bass exciter (psychoacoustic bass)</string>
+    <string name="bassex_info_title">ℹ️ What is this?</string>
+    <string name="bassex_info">Makes bass sound louder and chunkier without using extra volume headroom. It listens to your sub-bass and generates matching overtones your ears interpret as more bass — great with small speakers and for staying loud without clipping.</string>
+    <string name="bassex_cutoff">Bass range</string>
+    <string name="bassex_cutoff_summary">Sounds below this frequency get enhanced</string>
+    <string name="bassex_intensity">Intensity</string>
+    <string name="bassex_intensity_summary">How strong the generated bass character is</string>
+    <string name="bassex_mix">Amount</string>
+    <string name="bassex_mix_summary">How much of the effect is blended into the music</string>
+    <string name="compander_enable_v2">Auto-loudness (multiband compressor)</string>
+    <string name="compander_info_title">ℹ️ What is this?</string>
+    <string name="compander_info">This is a multiband compressor/expander: it splits the sound into frequency bands and evens out volume differences — quiet parts come up, loud peaks get tamed. Push the graph up to make a frequency range consistently louder and fuller.
+
+• Reaction speed: how fast it responds to volume changes. Faster = punchier but can distort deep bass.
+• Detail level: how finely it analyzes frequencies. Higher = more precise, uses more battery.
+• Analysis engine: the math used to split frequencies. The default is fine — Wavelets treat bass in a more natural, ear-like way.
+• Graph: drag bands up (+) to boost leveling loudness in that range, down (−) to reduce.</string>
+    <string name="compander_timeconstant_v2">Reaction speed</string>
+    <string name="compander_granularity_v2">Detail level</string>
+    <string name="compander_tftransforms_v2">Analysis engine (advanced)</string>
     <string name="output_control_postgain">Post gain</string>
 
     <string name="stereowide_enable">Soundstage wideness</string>

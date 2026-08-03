@@ -136,6 +136,10 @@
 
     <string name="key_limiter_threshold" translatable="false">limiter_threshold</string>
     <string name="key_limiter_release" translatable="false">limiter_release</string>
-    <string name="key_limiter_bypass" translatable="false">limiter_bypass</string>
+    <string name="key_limiter_mode" translatable="false">limiter_mode</string>
+    <string name="key_bassex_enable" translatable="false">bassex_enable</string>
+    <string name="key_bassex_cutoff" translatable="false">bassex_cutoff</string>
+    <string name="key_bassex_intensity" translatable="false">bassex_intensity</string>
+    <string name="key_bassex_mix" translatable="false">bassex_mix</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
 </resources>

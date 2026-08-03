@@ -87,10 +87,14 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     }
 
     // Effect config
-    override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterBypass: Boolean): Boolean {
+    override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {
         return JamesDspWrapper.setLimiter(handle, threshold, release) and
-                JamesDspWrapper.setLimiterBypass(handle, limiterBypass) and
+                JamesDspWrapper.setLimiterMode(handle, limiterMode) and
                 JamesDspWrapper.setPostGain(handle, postGain)
+    }
+
+    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean {
+        return JamesDspWrapper.setBassExciter(handle, enable, cutoff, intensity, mix)
     }
 
     override fun setReverb(enable: Boolean, preset: Int): Boolean

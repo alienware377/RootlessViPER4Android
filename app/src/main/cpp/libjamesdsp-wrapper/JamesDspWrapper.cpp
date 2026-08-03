@@ -331,10 +331,22 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLimiter(JNIE
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLimiterBypass(JNIEnv *env, jobject obj, jlong self, jboolean bypass)
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLimiterMode(JNIEnv *env, jobject obj, jlong self, jint mode)
 {
     DECLARE_DSP_B
-    JLimiterSetBypass(dsp, bypass ? 1 : 0);
+    JLimiterSetMode(dsp, mode);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBassExciter(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat cutoff, jfloat intensity, jfloat mix)
+{
+    DECLARE_DSP_B
+    BassExciterSetParam(dsp, cutoff, intensity, mix);
+    if (enable)
+        BassExciterEnable(dsp);
+    else
+        BassExciterDisable(dsp);
     return true;
 }
 

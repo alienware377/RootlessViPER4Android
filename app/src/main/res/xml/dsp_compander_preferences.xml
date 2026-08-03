@@ -4,12 +4,19 @@
     <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
         android:key="@string/key_compander_enable"
         android:disableDependentsState="false"
-        android:title="@string/compander_enable"
+        android:title="@string/compander_enable_v2"
         android:icon="@drawable/ic_baseline_arrow_collapse_24dp"
         app:iconSpaceReserved="false">
+        <Preference
+            android:title="@string/compander_info_title"
+            android:summary="@string/compander_info"
+            android:selectable="false"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
             android:key="@string/key_compander_timeconstant"
-            android:title="@string/compander_timeconstant"
+            android:title="@string/compander_timeconstant_v2"
             android:defaultValue="0.22"
             app:minValue="0.06"
             app:maxValue="0.3"
@@ -20,7 +27,7 @@
             app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
             android:key="@string/key_compander_granularity"
-            android:title="@string/compander_granularity"
+            android:title="@string/compander_granularity_v2"
             android:defaultValue="0"
             app:maxValue="4"
             app:allowDividerAbove="false"
@@ -31,7 +38,7 @@
             app:iconSpaceReserved="false"/>
         <ListPreference
             android:key="@string/key_compander_tftransforms"
-            android:title="@string/compander_tftransforms"
+            android:title="@string/compander_tftransforms_v2"
             android:defaultValue="0"
             android:entries="@array/compander_tf_transforms"
             android:entryValues="@array/compander_tf_transforms_values"

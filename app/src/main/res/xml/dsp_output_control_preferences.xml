@@ -30,12 +30,13 @@
       app:updatesContinuously="true"
       app:showSeekBarValue="true"
       app:iconSpaceReserved="false" />
-  <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
-      android:key="@string/key_limiter_bypass"
-      android:title="@string/output_limiter_bypass"
-      android:summary="@string/output_limiter_bypass_summary"
-      android:defaultValue="false"
-      app:allowDividerAbove="false"
+  <ListPreference
+      android:key="@string/key_limiter_mode"
+      android:title="@string/output_limiter_mode"
+      android:defaultValue="0"
+      android:entries="@array/limiter_modes"
+      android:entryValues="@array/limiter_modes_values"
+      app:useSimpleSummaryProvider="true"
       app:iconSpaceReserved="false" />
   <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
       android:key="@string/key_output_postgain"

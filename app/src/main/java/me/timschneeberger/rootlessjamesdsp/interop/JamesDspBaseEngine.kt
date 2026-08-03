@@ -64,7 +64,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val outputPostGain = cache.get(R.string.key_output_postgain, 0f)
             val limiterThreshold = cache.get(R.string.key_limiter_threshold, -0.1f)
             val limiterRelease = cache.get(R.string.key_limiter_release, 60f)
-            val limiterBypass = cache.get(R.string.key_limiter_bypass, false)
+            val limiterMode = cache.get(R.string.key_limiter_mode, "0").toInt()
 
             cache.select(Constants.PREF_COMPANDER)
             val compEnabled = cache.get(R.string.key_compander_enable, false)
@@ -76,6 +76,12 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             cache.select(Constants.PREF_BASS)
             val bassEnabled = cache.get(R.string.key_bass_enable, false)
             val bassMaxGain = cache.get(R.string.key_bass_max_gain, 5f)
+
+            cache.select(Constants.PREF_BASSEX)
+            val bassExEnabled = cache.get(R.string.key_bassex_enable, false)
+            val bassExCutoff = cache.get(R.string.key_bassex_cutoff, 100f)
+            val bassExIntensity = cache.get(R.string.key_bassex_intensity, 40f)
+            val bassExMix = cache.get(R.string.key_bassex_mix, 50f)
 
             cache.select(Constants.PREF_EQ)
             val eqEnabled = cache.get(R.string.key_eq_enable, false)
@@ -128,9 +134,10 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                 Timber.i("Committing new changes in namespace '$it'")
 
                 val result = when (it) {
-                    Constants.PREF_OUTPUT -> setOutputControl(limiterThreshold, limiterRelease, outputPostGain, limiterBypass)
+                    Constants.PREF_OUTPUT -> setOutputControl(limiterThreshold, limiterRelease, outputPostGain, limiterMode)
                     Constants.PREF_COMPANDER -> setCompander(compEnabled, compTimeConst, compGranularity, compTfTransforms, compResponse)
                     Constants.PREF_BASS -> setBassBoost(bassEnabled, bassMaxGain)
+                    Constants.PREF_BASSEX -> setBassExciter(bassExEnabled, bassExCutoff, bassExIntensity, bassExMix)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
                     Constants.PREF_PEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -401,7 +408,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         }
 
     // Effect config
-    abstract fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterBypass: Boolean = false): Boolean
+    abstract fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int = 0): Boolean
+    abstract fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean
     abstract fun setCrossfeed(enable: Boolean, mode: Int): Boolean
     abstract fun setCrossfeedCustom(enable: Boolean, fcut: Int, feed: Int): Boolean

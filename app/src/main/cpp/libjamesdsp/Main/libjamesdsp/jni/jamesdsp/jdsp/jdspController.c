@@ -318,6 +318,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// IIR bass boost
 	if (jdsp->bassBoostEnabled)
 		BassBoostProcess(jdsp, n);
+	// Psychoacoustic bass exciter
+	if (jdsp->bassExEnabled)
+		BassExciterProcess(jdsp, n);
 	// Equalizer
 	if (jdsp->equalizerEnabled)
 		MultimodalEqualizerProcess(jdsp, n);
@@ -350,20 +353,34 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	{
 		float xL = jdsp->tmpBuffer[0][i] * jdsp->postGain;
 		float xR = jdsp->tmpBuffer[1][i] * jdsp->postGain;
-		float rect1 = fabsf(xL);
-		float rect2 = fabsf(xR);
-		float maxLR = max(rect1, rect2);
-		if (maxLR < jdsp->limiter.threshold)
-			maxLR = jdsp->limiter.threshold;
-		if (maxLR > jdsp->limiter.envOverThreshold)
-			jdsp->limiter.envOverThreshold = maxLR;
+		if (jdsp->limiter.mode == 2)
+		{
+			// Limiter off
+			jdsp->tmpBuffer[0][i] = xL;
+			jdsp->tmpBuffer[1][i] = xR;
+		}
+		else if (jdsp->limiter.mode == 1)
+		{
+			// Soft saturation (loudness maximizer style)
+			float th = jdsp->limiter.threshold;
+			jdsp->tmpBuffer[0][i] = th * tanhf(xL / th);
+			jdsp->tmpBuffer[1][i] = th * tanhf(xR / th);
+		}
 		else
-			jdsp->limiter.envOverThreshold = maxLR + jdsp->limiter.relCoef * (jdsp->limiter.envOverThreshold - maxLR);
-		float gR = jdsp->limiter.bypass ? 1.0f : (jdsp->limiter.threshold / jdsp->limiter.envOverThreshold);
-		rect1 = xL * gR;
-		rect2 = xR * gR;
-		jdsp->tmpBuffer[0][i] = rect1;
-		jdsp->tmpBuffer[1][i] = rect2;
+		{
+			float rect1 = fabsf(xL);
+			float rect2 = fabsf(xR);
+			float maxLR = max(rect1, rect2);
+			if (maxLR < jdsp->limiter.threshold)
+				maxLR = jdsp->limiter.threshold;
+			if (maxLR > jdsp->limiter.envOverThreshold)
+				jdsp->limiter.envOverThreshold = maxLR;
+			else
+				jdsp->limiter.envOverThreshold = maxLR + jdsp->limiter.relCoef * (jdsp->limiter.envOverThreshold - maxLR);
+			float gR = jdsp->limiter.threshold / jdsp->limiter.envOverThreshold;
+			jdsp->tmpBuffer[0][i] = xL * gR;
+			jdsp->tmpBuffer[1][i] = xR * gR;
+		}
 	}
 }
 void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
@@ -377,6 +394,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// IIR bass boost
 	if (jdsp->bassBoostEnabled)
 		BassBoostProcess(jdsp, n);
+	// Psychoacoustic bass exciter
+	if (jdsp->bassExEnabled)
+		BassExciterProcess(jdsp, n);
 	// Equalizer
 	if (jdsp->equalizerEnabled)
 		MultimodalEqualizerProcess(jdsp, n);
@@ -409,20 +429,34 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	{
 		float xL = jdsp->tmpBuffer[0][i] * jdsp->postGain;
 		float xR = jdsp->tmpBuffer[1][i] * jdsp->postGain;
-		float rect1 = fabsf(xL);
-		float rect2 = fabsf(xR);
-		float maxLR = max(rect1, rect2);
-		if (maxLR < jdsp->limiter.threshold)
-			maxLR = jdsp->limiter.threshold;
-		if (maxLR > jdsp->limiter.envOverThreshold)
-			jdsp->limiter.envOverThreshold = maxLR;
+		if (jdsp->limiter.mode == 2)
+		{
+			// Limiter off
+			jdsp->tmpBuffer[0][i] = xL;
+			jdsp->tmpBuffer[1][i] = xR;
+		}
+		else if (jdsp->limiter.mode == 1)
+		{
+			// Soft saturation (loudness maximizer style)
+			float th = jdsp->limiter.threshold;
+			jdsp->tmpBuffer[0][i] = th * tanhf(xL / th);
+			jdsp->tmpBuffer[1][i] = th * tanhf(xR / th);
+		}
 		else
-			jdsp->limiter.envOverThreshold = maxLR + jdsp->limiter.relCoef * (jdsp->limiter.envOverThreshold - maxLR);
-		float gR = jdsp->limiter.bypass ? 1.0f : (jdsp->limiter.threshold / jdsp->limiter.envOverThreshold);
-		rect1 = xL * gR;
-		rect2 = xR * gR;
-		jdsp->tmpBuffer[0][i] = rect1;
-		jdsp->tmpBuffer[1][i] = rect2;
+		{
+			float rect1 = fabsf(xL);
+			float rect2 = fabsf(xR);
+			float maxLR = max(rect1, rect2);
+			if (maxLR < jdsp->limiter.threshold)
+				maxLR = jdsp->limiter.threshold;
+			if (maxLR > jdsp->limiter.envOverThreshold)
+				jdsp->limiter.envOverThreshold = maxLR;
+			else
+				jdsp->limiter.envOverThreshold = maxLR + jdsp->limiter.relCoef * (jdsp->limiter.envOverThreshold - maxLR);
+			float gR = jdsp->limiter.threshold / jdsp->limiter.envOverThreshold;
+			jdsp->tmpBuffer[0][i] = xL * gR;
+			jdsp->tmpBuffer[1][i] = xR * gR;
+		}
 	}
 	if (benchmarkCompletionFlag == 1)
 	{
@@ -1104,6 +1138,8 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	}
 	// Init IO control
 	JLimiterInit(jdsp);
+	jdsp->bassExEnabled = 0;
+	BassExciterSetParam(jdsp, 100.0f, 40.0f, 50.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect

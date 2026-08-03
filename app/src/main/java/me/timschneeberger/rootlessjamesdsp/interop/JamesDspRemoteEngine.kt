@@ -124,8 +124,13 @@ class JamesDspRemoteEngine(
         super.close()
     }
 
-    override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterBypass: Boolean): Boolean {
-        // Limiter bypass is unsupported in root/plugin mode (remote engine)
+    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean {
+        // Bass exciter is unsupported in root/plugin mode (remote engine)
+        return true
+    }
+
+    override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {
+        // Limiter mode is unsupported in root/plugin mode (remote engine)
         return effect.setParameterFloatArray(
             1500,
             floatArrayOf(threshold, release, postGain)

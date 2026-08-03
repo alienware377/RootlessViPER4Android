@@ -35,8 +35,18 @@ typedef struct
 	float threshold;
 	float relCoef;
 	float envOverThreshold;
-	int bypass;
+	int mode; // 0 = peak limiter, 1 = soft saturator, 2 = off
 } JLimiter;
+typedef struct
+{
+	float lp[5];
+	float bp[5];
+	float lpz[2][4];
+	float bpz[2][4];
+	float dcState[2];
+	float drive;
+	float mix;
+} BassExciter;
 #define FFTSIZE_DRS (8192)
 #define ANALYSIS_OVERLAP_DRS_MAX (8)
 #define HALFWNDLEN_DRS ((FFTSIZE_DRS >> 1) + 1)
@@ -524,6 +534,8 @@ typedef struct dspsys
 	// Vacuum tube
 	int tubeEnabled;
 	VacuumTube tube;
+	int bassExEnabled;
+	BassExciter bassEx;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -592,7 +604,12 @@ extern int selectConvPartitions(JamesDSPLib *jdsp, unsigned int impulseLengthAct
 // Limiter
 extern void JLimiterSetCoefficients(JamesDSPLib *jdsp, double thresholddB, double msRelease);
 extern void JLimiterInit(JamesDSPLib *jdsp);
-extern void JLimiterSetBypass(JamesDSPLib *jdsp, int bypass);
+extern void JLimiterSetMode(JamesDSPLib *jdsp, int mode);
+// Psychoacoustic bass exciter
+extern void BassExciterSetParam(JamesDSPLib *jdsp, float cutoff, float intensity, float mixPct);
+extern void BassExciterProcess(JamesDSPLib *jdsp, size_t n);
+extern void BassExciterEnable(JamesDSPLib *jdsp);
+extern void BassExciterDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

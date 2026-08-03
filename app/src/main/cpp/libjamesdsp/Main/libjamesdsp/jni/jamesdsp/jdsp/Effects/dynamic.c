@@ -16,11 +16,11 @@ void JLimiterSetCoefficients(JamesDSPLib *jdsp, double thresholddB, double msRel
 void JLimiterInit(JamesDSPLib *jdsp)
 {
 	jdsp->limiter.envOverThreshold = 0.0f;
-	jdsp->limiter.bypass = 0;
+	jdsp->limiter.mode = 0;
 }
-void JLimiterSetBypass(JamesDSPLib *jdsp, int bypass)
+void JLimiterSetMode(JamesDSPLib *jdsp, int mode)
 {
-	jdsp->limiter.bypass = bypass;
+	jdsp->limiter.mode = mode;
 }
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
