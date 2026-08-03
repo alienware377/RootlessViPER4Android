@@ -83,8 +83,12 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         }
         else {
             JamesDspWrapper.processFloat(handle, input, output, offset, length)
+            if (++processCounter % 2000L == 0L)
+                CrashBreadcrumb.mark(context, "audio alive")
         }
     }
+
+    private var processCounter = 0L
 
     // Effect config
     override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {

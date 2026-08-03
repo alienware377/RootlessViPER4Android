@@ -137,6 +137,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val targets = cache.changedNamespaces.toTypedArray() + (forceUpdateNamespaces ?: arrayOf())
             targets.forEach {
                 Timber.i("Committing new changes in namespace '$it'")
+                CrashBreadcrumb.mark(context, "apply start: " + it)
 
                 val result = try { when (it) {
                     Constants.PREF_OUTPUT -> setOutputControl(limiterThreshold, limiterRelease, outputPostGain, limiterMode)
@@ -175,6 +176,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     } catch (_: Exception) {}
                     false
                 }
+
+                CrashBreadcrumb.mark(context, "apply done: " + it)
 
                 if(!result) {
                     Timber.e("Failed to apply $it")

@@ -131,6 +131,17 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
             Timber.e(ex)
         }
 
+        run {
+            val prev = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { t, e ->
+                try {
+                    java.io.File(filesDir, "last_crash.txt")
+                        .writeText("thread=" + t.name + "\n" + android.util.Log.getStackTraceString(e))
+                } catch (_: Exception) {}
+                prev?.uncaughtException(t, e)
+            }
+        }
+
         Timber.i("====> Application starting up")
 
         val dumpFile = File(filesDir, "dump.txt")
