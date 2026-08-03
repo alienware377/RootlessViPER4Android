@@ -242,6 +242,23 @@
     <string name="compander_timeconstant_v2">Reaction speed</string>
     <string name="compander_granularity_v2">Detail level</string>
     <string name="compander_tftransforms_v2">Analysis engine (advanced)</string>
+    <string name="spectrumext_enable">Spectrum extension (treble exciter)</string>
+    <string name="spectrumext_info_title">ℹ️ What is this?</string>
+    <string name="spectrumext_info">Restores sparkle and \"air\" to dull or compressed music. It listens to the upper mids and synthesizes new matching treble overtones above the chosen frequency — like ViPER4Android\'s Spectrum Extension.</string>
+    <string name="spectrumext_bark">Start frequency</string>
+    <string name="spectrumext_bark_summary">New treble gets generated above this point</string>
+    <string name="spectrumext_strength">Strength</string>
+    <string name="spectrumext_strength_summary">How much synthesized treble is mixed in — subtle is best</string>
+    <string name="bass_info">Boosts low frequencies with a smart filter that adapts to how much bass the music already has, keeping it clean instead of muddy.</string>
+    <string name="tube_info">Simulates the warm, slightly saturated sound of vintage tube amplifiers. Adds gentle harmonic color.</string>
+    <string name="stereowide_info">Makes the stereo image feel wider (or narrower) by adjusting the difference between the left and right channels.</string>
+    <string name="crossfeed_info">Blends a little of each ear\'s audio into the other, like listening to speakers in a room. Reduces headphone fatigue and makes old hard-panned mixes comfier.</string>
+    <string name="reverb_info">Adds simulated room echo/space to the sound, from small room to concert hall.</string>
+    <string name="output_info">Final volume stage. Post gain makes everything louder/quieter; the limiter decides what happens when audio would get too loud and distort. Soft saturation mode lets you push much louder while staying smooth.</string>
+    <string name="ddc_info">Loads ViPER DDC (.vdc) correction files that reshape the sound for specific headphone models.</string>
+    <string name="convolver_info">Applies an impulse response (IRS/WAV) file — a sound \"fingerprint\" that can simulate speakers, rooms, or custom EQ curves with studio-grade accuracy.</string>
+    <string name="liveprog_info">Runs custom EEL2 audio scripts for effects the app doesn\'t have built in. For tinkerers!</string>
+    <string name="section_info_title">ℹ️ What is this?</string>
     <string name="output_control_postgain">Post gain</string>
 
     <string name="stereowide_enable">Soundstage wideness</string>

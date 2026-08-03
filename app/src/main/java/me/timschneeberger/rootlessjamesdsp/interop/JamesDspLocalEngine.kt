@@ -97,6 +97,10 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setBassExciter(handle, enable, cutoff, intensity, mix)
     }
 
+    override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
+        return JamesDspWrapper.setSpectrumExtension(handle, enable, barkFreq, strength)
+    }
+
     override fun setReverb(enable: Boolean, preset: Int): Boolean
     {
         return JamesDspWrapper.setReverb(handle, enable, preset)

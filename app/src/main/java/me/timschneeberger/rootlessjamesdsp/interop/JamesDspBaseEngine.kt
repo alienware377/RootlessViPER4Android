@@ -83,6 +83,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val bassExIntensity = cache.get(R.string.key_bassex_intensity, 40f)
             val bassExMix = cache.get(R.string.key_bassex_mix, 50f)
 
+            cache.select(Constants.PREF_SPECTRUMEXT)
+            val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
+            val spxBark = cache.get(R.string.key_spectrumext_bark, 7600f)
+            val spxStrength = cache.get(R.string.key_spectrumext_strength, 15f)
+
             cache.select(Constants.PREF_EQ)
             val eqEnabled = cache.get(R.string.key_eq_enable, false)
             val eqFilterType = cache.get(R.string.key_eq_filter_type, "0").toInt()
@@ -138,6 +143,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_COMPANDER -> setCompander(compEnabled, compTimeConst, compGranularity, compTfTransforms, compResponse)
                     Constants.PREF_BASS -> setBassBoost(bassEnabled, bassMaxGain)
                     Constants.PREF_BASSEX -> setBassExciter(bassExEnabled, bassExCutoff, bassExIntensity, bassExMix)
+                    Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
                     Constants.PREF_PEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -419,6 +425,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     // Effect config
     abstract fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int = 0): Boolean
     abstract fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean
+    abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean
     abstract fun setCrossfeed(enable: Boolean, mode: Int): Boolean
     abstract fun setCrossfeedCustom(enable: Boolean, fcut: Int, feed: Int): Boolean

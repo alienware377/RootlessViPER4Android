@@ -8,6 +8,13 @@
       android:icon="@drawable/ic_twotone_volume_up_24dp"
       android:selectable="false"
       android:persistent="false" />
+  <Preference
+      android:title="@string/section_info_title"
+      android:summary="@string/output_info"
+      android:selectable="false"
+      android:persistent="false"
+      app:allowDividerAbove="false"
+      app:iconSpaceReserved="false"/>
   <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
       android:key="@string/key_limiter_threshold"
       android:title="@string/output_limiter_threshold"

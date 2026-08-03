@@ -345,6 +345,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Stereo widening
 	if (jdsp->sterEnhEnabled)
 		StereoEnhancementProcess(jdsp, n);
+	// Spectrum extension
+	if (jdsp->spectrumExtEnabled)
+		SpectrumExtensionProcess(jdsp, n);
 	// Reverb
 	if (jdsp->reverbEnabled)
 		ReverbProcess(jdsp, n);
@@ -421,6 +424,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Stereo widening
 	if (jdsp->sterEnhEnabled)
 		StereoEnhancementProcess(jdsp, n);
+	// Spectrum extension
+	if (jdsp->spectrumExtEnabled)
+		SpectrumExtensionProcess(jdsp, n);
 	// Reverb
 	if (jdsp->reverbEnabled)
 		ReverbProcess(jdsp, n);
@@ -1140,6 +1146,8 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	JLimiterInit(jdsp);
 	jdsp->bassExEnabled = 0;
 	BassExciterSetParam(jdsp, 100.0f, 40.0f, 50.0f);
+	jdsp->spectrumExtEnabled = 0;
+	SpectrumExtensionSetParam(jdsp, 7600.0f, 15.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect
