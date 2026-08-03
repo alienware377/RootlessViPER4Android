@@ -351,6 +351,18 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBassExciter(
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectrumExtension(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat barkFreq, jfloat strength)
+{
+    DECLARE_DSP_B
+    SpectrumExtensionSetParam(dsp, barkFreq, strength);
+    if (enable)
+        SpectrumExtensionEnable(dsp);
+    else
+        SpectrumExtensionDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setPostGain(JNIEnv *env, jobject obj, jlong self, jfloat gain)
 {
     DECLARE_DSP_B

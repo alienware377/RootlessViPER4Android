@@ -47,6 +47,15 @@ typedef struct
 	float drive;
 	float mix;
 } BassExciter;
+typedef struct
+{
+	float pre[5];
+	float post[5];
+	float prez[2][4];
+	float postz[2][4];
+	float dcState[2];
+	float strength;
+} SpectrumExtension;
 #define FFTSIZE_DRS (8192)
 #define ANALYSIS_OVERLAP_DRS_MAX (8)
 #define HALFWNDLEN_DRS ((FFTSIZE_DRS >> 1) + 1)
@@ -536,6 +545,8 @@ typedef struct dspsys
 	VacuumTube tube;
 	int bassExEnabled;
 	BassExciter bassEx;
+	int spectrumExtEnabled;
+	SpectrumExtension spectrumExt;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -610,6 +621,11 @@ extern void BassExciterSetParam(JamesDSPLib *jdsp, float cutoff, float intensity
 extern void BassExciterProcess(JamesDSPLib *jdsp, size_t n);
 extern void BassExciterEnable(JamesDSPLib *jdsp);
 extern void BassExciterDisable(JamesDSPLib *jdsp);
+// Spectrum extension (treble exciter)
+extern void SpectrumExtensionSetParam(JamesDSPLib *jdsp, float barkFreq, float strengthPct);
+extern void SpectrumExtensionProcess(JamesDSPLib *jdsp, size_t n);
+extern void SpectrumExtensionEnable(JamesDSPLib *jdsp);
+extern void SpectrumExtensionDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

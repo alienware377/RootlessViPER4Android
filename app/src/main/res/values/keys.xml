@@ -141,5 +141,8 @@
     <string name="key_bassex_cutoff" translatable="false">bassex_cutoff</string>
     <string name="key_bassex_intensity" translatable="false">bassex_intensity</string>
     <string name="key_bassex_mix" translatable="false">bassex_mix</string>
+    <string name="key_spectrumext_enable" translatable="false">spectrumext_enable</string>
+    <string name="key_spectrumext_bark" translatable="false">spectrumext_bark</string>
+    <string name="key_spectrumext_strength" translatable="false">spectrumext_strength</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
 </resources>

@@ -7,6 +7,13 @@
         android:title="@string/liveprog_enable"
         android:icon="@drawable/ic_baseline_code_tags_24dp"
         app:iconSpaceReserved="false">
+        <Preference
+            android:title="@string/section_info_title"
+            android:summary="@string/liveprog_info"
+            android:selectable="false"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
             android:title="@string/liveprog_file"
             android:key="@string/key_liveprog_file"

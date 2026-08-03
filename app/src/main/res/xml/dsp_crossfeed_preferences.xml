@@ -7,6 +7,13 @@
         android:title="@string/crossfeed_enable"
         android:icon="@drawable/ic_baseline_image_filter_tilt_shift_24dp"
         app:iconSpaceReserved="false">
+        <Preference
+            android:title="@string/section_info_title"
+            android:summary="@string/crossfeed_info"
+            android:selectable="false"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
         <ListPreference
             android:title="@string/crossfeed_preset"
             android:key="@string/key_crossfeed_mode"

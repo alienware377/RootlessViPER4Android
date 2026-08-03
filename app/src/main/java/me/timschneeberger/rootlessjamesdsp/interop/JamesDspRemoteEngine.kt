@@ -129,6 +129,11 @@ class JamesDspRemoteEngine(
         return true
     }
 
+    override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
+        // Spectrum extension is unsupported in root/plugin mode (remote engine)
+        return true
+    }
+
     override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {
         // Limiter mode is unsupported in root/plugin mode (remote engine)
         return effect.setParameterFloatArray(

@@ -7,6 +7,13 @@
         android:title="@string/stereowide_enable"
         android:icon="@drawable/ic_baseline_cone_24dp"
         app:iconSpaceReserved="false">
+        <Preference
+            android:title="@string/section_info_title"
+            android:summary="@string/stereowide_info"
+            android:selectable="false"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
             android:title="@string/stereowide_level"
             android:key="@string/key_stereowide_mode"

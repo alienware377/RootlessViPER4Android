@@ -30,6 +30,7 @@ object JamesDspWrapper {
     external fun setLimiter(self: JamesDspHandle, threshold: Float, release: Float): Boolean
     external fun setLimiterMode(self: JamesDspHandle, mode: Int): Boolean
     external fun setBassExciter(self: JamesDspHandle, enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean
+    external fun setSpectrumExtension(self: JamesDspHandle, enable: Boolean, barkFreq: Float, strength: Float): Boolean
     external fun setPostGain(self: JamesDspHandle, postGain: Float): Boolean
     external fun setMultiEqualizer(self: JamesDspHandle, enable: Boolean, filterType: Int, interpolationMode: Int, bands: DoubleArray): Boolean
     external fun setVdc(self: JamesDspHandle, enable: Boolean, vdcContents: String): Boolean

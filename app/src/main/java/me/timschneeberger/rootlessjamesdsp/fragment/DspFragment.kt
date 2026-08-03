@@ -117,6 +117,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_tube_preferences
                 ))
             .replace(
+                R.id.card_spectrumext, PreferenceGroupFragment.newInstance(Constants.PREF_SPECTRUMEXT,
+                    R.xml.dsp_spectrumext_preferences
+                ))
+            .replace(
                 R.id.card_stereowide, PreferenceGroupFragment.newInstance(Constants.PREF_STEREOWIDE,
                     R.xml.dsp_stereowide_preferences
                 ))
