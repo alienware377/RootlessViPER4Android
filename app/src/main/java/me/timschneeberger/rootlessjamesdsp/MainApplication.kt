@@ -142,6 +142,12 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
             }
         }
 
+        try {
+            me.timschneeberger.rootlessjamesdsp.interop.JamesDspWrapper.initCrashGuard(filesDir.absolutePath)
+        } catch (t: Throwable) {
+            Timber.e(t)
+        }
+
         Timber.i("====> Application starting up")
 
         val dumpFile = File(filesDir, "dump.txt")

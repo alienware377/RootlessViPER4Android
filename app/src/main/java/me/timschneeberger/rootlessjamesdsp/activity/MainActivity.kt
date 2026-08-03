@@ -145,10 +145,14 @@ class MainActivity : BaseActivity() {
 
         run {
             val crash = java.io.File(filesDir, "last_crash.txt")
+            val nat = java.io.File(filesDir, "native_crash.txt")
             val crumb = java.io.File(filesDir, "breadcrumb.txt")
-            if (crash.exists()) {
+            if (crash.exists() || nat.exists()) {
                 val txt = StringBuilder()
-                txt.append("=== LAST CRASH ===\n").append(crash.readText().take(6000))
+                if (crash.exists())
+                    txt.append("=== LAST CRASH ===\n").append(crash.readText().take(6000))
+                if (nat.exists())
+                    txt.append("=== NATIVE CRASH ===\n").append(nat.readText().take(6000))
                 if (crumb.exists())
                     txt.append("\n=== BREADCRUMBS ===\n")
                         .append(crumb.readLines().takeLast(30).joinToString("\n"))
@@ -159,7 +163,7 @@ class MainActivity : BaseActivity() {
                 androidx.appcompat.app.AlertDialog.Builder(this)
                     .setTitle("Crash log (copied to clipboard)")
                     .setMessage(txt.toString().take(3500))
-                    .setPositiveButton(android.R.string.ok) { _, _ -> crash.delete() }
+                    .setPositiveButton(android.R.string.ok) { _, _ -> crash.delete(); nat.delete() }
                     .setCancelable(true)
                     .show()
             }
