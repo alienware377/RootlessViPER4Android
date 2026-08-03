@@ -133,7 +133,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             targets.forEach {
                 Timber.i("Committing new changes in namespace '$it'")
 
-                val result = when (it) {
+                val result = try { when (it) {
                     Constants.PREF_OUTPUT -> setOutputControl(limiterThreshold, limiterRelease, outputPostGain, limiterMode)
                     Constants.PREF_COMPANDER -> setCompander(compEnabled, compTimeConst, compGranularity, compTfTransforms, compResponse)
                     Constants.PREF_BASS -> setBassBoost(bassEnabled, bassMaxGain)
@@ -159,6 +159,15 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         setConvolver(convolverEnabled, selectedFile, convolverMode, convolverAdvImp)
                     }
                     else -> true
+                } }
+                catch (e: Throwable) {
+                    Timber.e(e, "Exception while applying namespace ")
+                    try {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            android.widget.Toast.makeText(context, "DSP section '" + it + "' failed: " + e, android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    } catch (_: Exception) {}
+                    false
                 }
 
                 if(!result) {

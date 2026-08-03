@@ -54,6 +54,8 @@ void BassExciterProcess(JamesDSPLib *jdsp, size_t n)
 {
 	BassExciter *b = &jdsp->bassEx;
 	size_t i;
+	if (!jdsp->tmpBuffer[0] || !jdsp->tmpBuffer[1])
+		return;
 	int c;
 	for (i = 0; i < n; i++)
 	{
