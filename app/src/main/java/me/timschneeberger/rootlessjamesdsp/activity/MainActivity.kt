@@ -143,6 +143,28 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        run {
+            val crash = java.io.File(filesDir, "last_crash.txt")
+            val crumb = java.io.File(filesDir, "breadcrumb.txt")
+            if (crash.exists()) {
+                val txt = StringBuilder()
+                txt.append("=== LAST CRASH ===\n").append(crash.readText().take(6000))
+                if (crumb.exists())
+                    txt.append("\n=== BREADCRUMBS ===\n")
+                        .append(crumb.readLines().takeLast(30).joinToString("\n"))
+                try {
+                    val cm = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("crashlog", txt.toString()))
+                } catch (_: Exception) {}
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Crash log (copied to clipboard)")
+                    .setMessage(txt.toString().take(3500))
+                    .setPositiveButton(android.R.string.ok) { _, _ -> crash.delete() }
+                    .setCancelable(true)
+                    .show()
+            }
+        }
+
         savedInstanceState?.let {
             hasLoadFailed = it.getBoolean(STATE_LOAD_FAILED)
         }
