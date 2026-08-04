@@ -94,10 +94,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         preferenceManager.sharedPreferencesMode = Context.MODE_MULTI_PROCESS
         addPreferencesFromResource(args.getInt(BUNDLE_XML_RES))
 
-        // Collapsible "What is this?" info cards
+        // Collapsible "What is this?" info rows (single line when collapsed)
         findPreference<Preference>("section_info")?.let { p ->
             val full = p.summary
             var expanded = false
+            p.title = null
             p.summary = getString(R.string.section_info_tap_hint)
             p.isSelectable = true
             p.setOnPreferenceClickListener {
@@ -118,16 +119,30 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     R.string.key_vdynbass_x1, R.string.key_vdynbass_x2,
                     R.string.key_vdynbass_y1, R.string.key_vdynbass_y2,
                     R.string.key_vdynbass_sgx, R.string.key_vdynbass_sgy)
+                    .map { getString(it) }.toSet()
+                val group = findPreference<SwitchPreferenceGroup>(getString(R.string.key_vdynbass_enable))
                 val modePref = findPreference<androidx.preference.ListPreference>(getString(R.string.key_vdynbass_mode))
-                fun applyCustomVisibility(v: String?) {
-                    val custom = v == "19"
-                    customKeys.forEach { k ->
-                        findPreference<Preference>(getString(k))?.isVisible = custom
-                    }
-                }
-                applyCustomVisibility(modePref?.value)
+                var isCustom = modePref?.value == "19"
+                group?.childVisibilityFilter = { p -> p.key !in customKeys || isCustom }
+                group?.refreshChildrenVisibility()
                 modePref?.setOnPreferenceChangeListener { _, newValue ->
-                    applyCustomVisibility(newValue as? String)
+                    isCustom = newValue == "19"
+                    group?.refreshChildrenVisibility()
+                    true
+                }
+            }
+            R.xml.dsp_bassex_preferences -> {
+                val band2Keys = arrayOf(
+                    R.string.key_bassex_cutoff2, R.string.key_bassex_intensity2, R.string.key_bassex_mix2)
+                    .map { getString(it) }.toSet()
+                val group = findPreference<SwitchPreferenceGroup>(getString(R.string.key_bassex_enable))
+                val band2Pref = findPreference<androidx.preference.TwoStatePreference>(getString(R.string.key_bassex_band2_enable))
+                var band2On = band2Pref?.isChecked == true
+                group?.childVisibilityFilter = { p -> p.key !in band2Keys || band2On }
+                group?.refreshChildrenVisibility()
+                band2Pref?.setOnPreferenceChangeListener { _, newValue ->
+                    band2On = newValue == true
+                    group?.refreshChildrenVisibility()
                     true
                 }
             }

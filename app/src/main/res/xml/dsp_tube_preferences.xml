@@ -19,7 +19,7 @@
             android:title="@string/tube_drive"
             android:defaultValue="2"
             app:minValue="-3"
-            app:maxValue="12"
+            app:maxValue="24"
             app:unit="dB"
             app:allowDividerAbove="false"
             app:updatesContinuously="true"

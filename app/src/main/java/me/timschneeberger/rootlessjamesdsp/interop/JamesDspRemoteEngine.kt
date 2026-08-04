@@ -145,6 +145,8 @@ class JamesDspRemoteEngine(
 
     override fun setAgc(enable: Boolean, target: Float, maxBoost: Float): Boolean = true
 
+    override fun setHpSurround(enable: Boolean, strength: Float, room: Float): Boolean = true
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         // Spectrum extension is unsupported in root/plugin mode (remote engine)
         return true

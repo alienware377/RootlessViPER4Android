@@ -403,6 +403,15 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setAgc(JNIEnv *
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setHpSurround(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat strength, jfloat room)
+{
+    DECLARE_DSP_B
+    HpSurroundSetParam(dsp, strength, room);
+    if (enable) HpSurroundEnable(dsp); else HpSurroundDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectrumExtension(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat barkFreq, jfloat strength)
 {
     DECLARE_DSP_B
@@ -669,7 +678,7 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVacuumTube(J
     DECLARE_DSP_B
     if(enable)
     {
-        VacuumTubeSetGain(dsp, level / 100.0f);
+        VacuumTubeSetGain(dsp, level);
         VacuumTubeEnable(dsp);
     }
     else

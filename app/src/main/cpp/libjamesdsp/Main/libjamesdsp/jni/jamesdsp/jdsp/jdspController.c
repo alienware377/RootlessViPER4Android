@@ -354,6 +354,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Field surround
 	if (jdsp->fieldSurroundEnabled)
 		FieldSurroundProcess(jdsp, n);
+	// Headphone surround+ (lite)
+	if (jdsp->hpSurroundEnabled)
+		HpSurroundProcess(jdsp, n);
 	// Spectrum extension
 	if (jdsp->spectrumExtEnabled)
 		SpectrumExtensionProcess(jdsp, n);
@@ -448,6 +451,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Field surround
 	if (jdsp->fieldSurroundEnabled)
 		FieldSurroundProcess(jdsp, n);
+	// Headphone surround+ (lite)
+	if (jdsp->hpSurroundEnabled)
+		HpSurroundProcess(jdsp, n);
 	// Spectrum extension
 	if (jdsp->spectrumExtEnabled)
 		SpectrumExtensionProcess(jdsp, n);
@@ -1189,6 +1195,8 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	FieldSurroundSetParam(jdsp, 30.0f, 50.0f);
 	jdsp->agcEnabled = 0;
 	AgcSetParam(jdsp, 30.0f, 12.0f);
+	jdsp->hpSurroundEnabled = 0;
+	HpSurroundSetParam(jdsp, 40.0f, 30.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect

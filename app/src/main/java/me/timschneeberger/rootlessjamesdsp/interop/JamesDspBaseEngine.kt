@@ -119,6 +119,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val agcTarget = cache.get(R.string.key_agc_target, 30f)
             val agcMaxBoost = cache.get(R.string.key_agc_maxboost, 12f)
 
+            cache.select(Constants.PREF_HPSURROUND)
+            val hpsEnabled = cache.get(R.string.key_hpsurround_enable, false)
+            val hpsStrength = cache.get(R.string.key_hpsurround_strength, 40f)
+            val hpsRoom = cache.get(R.string.key_hpsurround_room, 30f)
+
             cache.select(Constants.PREF_SPECTRUMEXT)
             val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
             val spxBark = cache.get(R.string.key_spectrumext_bark, 7600f)
@@ -189,6 +194,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_CLARITY -> setViperClarity(clEnabled, clMode, clGain)
                     Constants.PREF_FIELDSURROUND -> setFieldSurround(fsEnabled, fsStrength, fsMid)
                     Constants.PREF_AGC -> setAgc(agcEnabled, agcTarget, agcMaxBoost)
+                    Constants.PREF_HPSURROUND -> setHpSurround(hpsEnabled, hpsStrength, hpsRoom)
                     Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -478,6 +484,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setViperClarity(enable: Boolean, mode: Int, gain: Float): Boolean
     abstract fun setFieldSurround(enable: Boolean, strength: Float, midImage: Float): Boolean
     abstract fun setAgc(enable: Boolean, target: Float, maxBoost: Float): Boolean
+    abstract fun setHpSurround(enable: Boolean, strength: Float, room: Float): Boolean
 
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean

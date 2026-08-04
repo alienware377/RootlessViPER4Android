@@ -105,6 +105,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_fieldsurround_preferences
                 ))
             .replace(
+                R.id.card_hpsurround, PreferenceGroupFragment.newInstance(Constants.PREF_HPSURROUND,
+                    R.xml.dsp_hpsurround_preferences
+                ))
+            .replace(
                 R.id.card_agc, PreferenceGroupFragment.newInstance(Constants.PREF_AGC,
                     R.xml.dsp_agc_preferences
                 ))

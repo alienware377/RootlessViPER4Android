@@ -114,8 +114,8 @@ void VacuumTubeDisable(JamesDSPLib *jdsp)
 }
 void VacuumTubeSetGain(JamesDSPLib *jdsp, double dbGain)
 {
-	if (dbGain > 12.0)
-		dbGain = 12.0;
+	if (dbGain > 24.0)
+		dbGain = 24.0;
 	if (dbGain < -3.0)
 		dbGain = -3.0;
 	jdsp->tube.pregain = db2magf(dbGain);

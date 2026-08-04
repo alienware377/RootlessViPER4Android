@@ -110,8 +110,16 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
             bgAnimation?.reverse()
     }
 
+    var childVisibilityFilter: ((Preference) -> Boolean)? = null
+
+    fun refreshChildrenVisibility() {
+        setChildrenVisibility(state)
+    }
+
     private fun setChildrenVisibility(visible: Boolean) {
-        children.forEach { it.isVisible = visible }
+        children.forEach {
+            it.isVisible = visible && (childVisibilityFilter?.invoke(it) != false)
+        }
     }
 
     companion object {
