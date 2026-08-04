@@ -259,6 +259,26 @@
     <string name="convolver_info">Applies an impulse response (IRS/WAV) file — a sound \"fingerprint\" that can simulate speakers, rooms, or custom EQ curves with studio-grade accuracy.</string>
     <string name="liveprog_info">Runs custom EEL2 audio scripts for effects the app doesn\'t have built in. For tinkerers!</string>
     <string name="section_info_title">ℹ️ What is this?</string>
+    <string name="bassex_band2">Second band</string>
+    <string name="bassex_band2_summary">Adds a second, independent bass harmonic generator — set it lower (sub warmth) while band 1 handles punch</string>
+    <string name="bassex_cutoff2">Band 2 bass range</string>
+    <string name="bassex_intensity2">Band 2 intensity</string>
+    <string name="bassex_mix2">Band 2 amount</string>
+    <string name="vdynbass_enable">ViPER dynamic bass</string>
+    <string name="vdynbass_info">The classic ViperFX dynamic bass algorithm, ported natively. Pick a headphone preset, or choose \"Custom\" in Mode to unlock the manual sliders below.</string>
+    <string name="vdynbass_mode">Mode</string>
+    <string name="vdynbass_gain">Bass strength</string>
+    <string name="vdynbass_x1">Custom: crossover low (X1)</string>
+    <string name="vdynbass_x2">Custom: crossover high (X2)</string>
+    <string name="vdynbass_y1">Custom: bass band low (Y1)</string>
+    <string name="vdynbass_y2">Custom: bass band high (Y2)</string>
+    <string name="vdynbass_sgx">Custom: side gain X</string>
+    <string name="vdynbass_sgy">Custom: side gain Y</string>
+    <string name="vdynbass_custom_note">Custom sliders only apply when Mode is set to Custom</string>
+    <string name="diffsurround_enable">Differential surround</string>
+    <string name="diffsurround_info">Delays one ear by a few milliseconds (the Haas effect) — your brain reads the tiny timing difference as width and space, like ViPER\'s Differential Surround. Keep one side at 0 and raise the other slightly.</string>
+    <string name="diffsurround_delay_l">Left delay</string>
+    <string name="diffsurround_delay_r">Right delay</string>
     <string name="output_control_postgain">Post gain</string>
 
     <string name="stereowide_enable">Soundstage wideness</string>

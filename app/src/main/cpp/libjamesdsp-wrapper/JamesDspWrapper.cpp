@@ -339,14 +339,39 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLimiterMode(
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBassExciter(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat cutoff, jfloat intensity, jfloat mix)
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBassExciter(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat cutoff, jfloat intensity, jfloat mix, jboolean band2, jfloat cutoff2, jfloat intensity2, jfloat mix2)
 {
     DECLARE_DSP_B
     BassExciterSetParam(dsp, cutoff, intensity, mix);
+    BassExciterSetParam2(dsp, band2 ? 1 : 0, cutoff2, intensity2, mix2);
     if (enable)
         BassExciterEnable(dsp);
     else
         BassExciterDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVDynBass(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat gain, jfloat x1, jfloat x2, jfloat y1, jfloat y2, jfloat sgx, jfloat sgy)
+{
+    DECLARE_DSP_B
+    VDynBassSetParam(dsp, gain, x1, x2, y1, y2, sgx, sgy);
+    if (enable)
+        VDynBassEnable(dsp);
+    else
+        VDynBassDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setDiffSurround(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat delayLms, jfloat delayRms)
+{
+    DECLARE_DSP_B
+    DiffSurroundSetParam(dsp, delayLms, delayRms);
+    if (enable)
+        DiffSurroundEnable(dsp);
+    else
+        DiffSurroundDisable(dsp);
     return true;
 }
 

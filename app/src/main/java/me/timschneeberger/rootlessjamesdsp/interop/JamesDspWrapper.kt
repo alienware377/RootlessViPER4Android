@@ -29,7 +29,9 @@ object JamesDspWrapper {
     // Effect config
     external fun setLimiter(self: JamesDspHandle, threshold: Float, release: Float): Boolean
     external fun setLimiterMode(self: JamesDspHandle, mode: Int): Boolean
-    external fun setBassExciter(self: JamesDspHandle, enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean
+    external fun setBassExciter(self: JamesDspHandle, enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean
+    external fun setVDynBass(self: JamesDspHandle, enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean
+    external fun setDiffSurround(self: JamesDspHandle, enable: Boolean, delayLms: Float, delayRms: Float): Boolean
     external fun setSpectrumExtension(self: JamesDspHandle, enable: Boolean, barkFreq: Float, strength: Float): Boolean
     external fun initCrashGuard(path: String)
     external fun setPostGain(self: JamesDspHandle, postGain: Float): Boolean

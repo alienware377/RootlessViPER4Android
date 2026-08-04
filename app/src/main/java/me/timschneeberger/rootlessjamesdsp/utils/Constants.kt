@@ -23,6 +23,8 @@ object Constants {
     const val PREF_TUBE = "dsp_tube"
     const val PREF_BASSEX = "dsp_bassex"
     const val PREF_SPECTRUMEXT = "dsp_spectrumext"
+    const val PREF_VDYNBASS = "dsp_vdynbass"
+    const val PREF_DIFFSURROUND = "dsp_diffsurround"
 
     // Default string values
     const val DEFAULT_CONVOLVER_ADVIMP = "-80;-100;0;0;0;0"

@@ -83,6 +83,27 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val bassExIntensity = cache.get(R.string.key_bassex_intensity, 40f)
             val bassExMix = cache.get(R.string.key_bassex_mix, 50f)
 
+            val bassExBand2 = cache.get(R.string.key_bassex_band2_enable, false)
+            val bassExCutoff2 = cache.get(R.string.key_bassex_cutoff2, 60f)
+            val bassExIntensity2 = cache.get(R.string.key_bassex_intensity2, 40f)
+            val bassExMix2 = cache.get(R.string.key_bassex_mix2, 40f)
+
+            cache.select(Constants.PREF_VDYNBASS)
+            val vdbEnabled = cache.get(R.string.key_vdynbass_enable, false)
+            val vdbMode = cache.get(R.string.key_vdynbass_mode, "10").toInt()
+            val vdbGain = cache.get(R.string.key_vdynbass_gain, 33f)
+            val vdbX1 = cache.get(R.string.key_vdynbass_x1, 1000f)
+            val vdbX2 = cache.get(R.string.key_vdynbass_x2, 6200f)
+            val vdbY1 = cache.get(R.string.key_vdynbass_y1, 50f)
+            val vdbY2 = cache.get(R.string.key_vdynbass_y2, 90f)
+            val vdbSgx = cache.get(R.string.key_vdynbass_sgx, 30f)
+            val vdbSgy = cache.get(R.string.key_vdynbass_sgy, 10f)
+
+            cache.select(Constants.PREF_DIFFSURROUND)
+            val dsEnabled = cache.get(R.string.key_diffsurround_enable, false)
+            val dsDelayL = cache.get(R.string.key_diffsurround_delay_l, 0f)
+            val dsDelayR = cache.get(R.string.key_diffsurround_delay_r, 10f)
+
             cache.select(Constants.PREF_SPECTRUMEXT)
             val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
             val spxBark = cache.get(R.string.key_spectrumext_bark, 7600f)
@@ -143,7 +164,13 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_OUTPUT -> setOutputControl(limiterThreshold, limiterRelease, outputPostGain, limiterMode)
                     Constants.PREF_COMPANDER -> setCompander(compEnabled, compTimeConst, compGranularity, compTfTransforms, compResponse)
                     Constants.PREF_BASS -> setBassBoost(bassEnabled, bassMaxGain)
-                    Constants.PREF_BASSEX -> setBassExciter(bassExEnabled, bassExCutoff, bassExIntensity, bassExMix)
+                    Constants.PREF_BASSEX -> setBassExciter(bassExEnabled, bassExCutoff, bassExIntensity, bassExMix, bassExBand2, bassExCutoff2, bassExIntensity2, bassExMix2)
+                    Constants.PREF_VDYNBASS -> {
+                        val p = if (vdbMode in vdynBassPresets.indices) vdynBassPresets[vdbMode]
+                                else floatArrayOf(vdbX1, vdbX2, vdbY1, vdbY2, vdbSgx, vdbSgy)
+                        setVDynBass(vdbEnabled, vdbGain, p[0], p[1], p[2], p[3], p[4], p[5])
+                    }
+                    Constants.PREF_DIFFSURROUND -> setDiffSurround(dsEnabled, dsDelayL, dsDelayR)
                     Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -427,7 +454,34 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
     // Effect config
     abstract fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int = 0): Boolean
-    abstract fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean
+    abstract fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean
+    abstract fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean
+    abstract fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean
+
+    companion object {
+        // x1, x2, y1, y2, sideGainX, sideGainY — from the ViperFX DynamicBass presets
+        val vdynBassPresets = arrayOf(
+            floatArrayOf(140f,6200f,40f,60f,10f,80f),
+            floatArrayOf(180f,5800f,55f,80f,10f,70f),
+            floatArrayOf(300f,5600f,60f,105f,10f,50f),
+            floatArrayOf(600f,5400f,60f,105f,10f,20f),
+            floatArrayOf(100f,5600f,40f,80f,50f,50f),
+            floatArrayOf(1200f,6200f,40f,80f,0f,20f),
+            floatArrayOf(1000f,6200f,40f,80f,0f,10f),
+            floatArrayOf(800f,6200f,40f,80f,10f,0f),
+            floatArrayOf(400f,6200f,40f,80f,10f,0f),
+            floatArrayOf(1200f,6200f,50f,90f,15f,10f),
+            floatArrayOf(1000f,6200f,50f,90f,30f,10f),
+            floatArrayOf(1100f,6200f,60f,100f,20f,0f),
+            floatArrayOf(1200f,6200f,50f,100f,10f,50f),
+            floatArrayOf(1200f,6200f,60f,100f,0f,30f),
+            floatArrayOf(1200f,6200f,40f,80f,0f,30f),
+            floatArrayOf(1000f,6200f,60f,100f,0f,0f),
+            floatArrayOf(1000f,6200f,60f,120f,0f,0f),
+            floatArrayOf(1000f,6200f,80f,140f,0f,0f),
+            floatArrayOf(800f,6200f,80f,140f,0f,0f)
+        )
+    }
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean
     abstract fun setCrossfeed(enable: Boolean, mode: Int): Boolean

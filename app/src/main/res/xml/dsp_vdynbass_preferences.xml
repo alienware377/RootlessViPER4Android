@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_vdynbass_enable"
+        android:disableDependentsState="false"
+        android:title="@string/vdynbass_enable"
+        android:icon="@drawable/ic_twotone_volume_up_24dp"
+        app:iconSpaceReserved="false">
+        <Preference
+            android:title="@string/section_info_title"
+            android:summary="@string/vdynbass_info"
+            android:selectable="false"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
+        <ListPreference
+            android:key="@string/key_vdynbass_mode"
+            android:title="@string/vdynbass_mode"
+            android:defaultValue="10"
+            android:entries="@array/vdynbass_modes"
+            android:entryValues="@array/vdynbass_modes_values"
+            app:useSimpleSummaryProvider="true"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_gain"
+            android:title="@string/vdynbass_gain"
+            android:defaultValue="33"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <Preference
+            android:summary="@string/vdynbass_custom_note"
+            android:selectable="false"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_x1"
+            android:title="@string/vdynbass_x1"
+            android:defaultValue="1000"
+            app:minValue="50" app:maxValue="2000" app:unit="Hz" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_x2"
+            android:title="@string/vdynbass_x2"
+            android:defaultValue="6200"
+            app:minValue="2000" app:maxValue="8000" app:unit="Hz" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_y1"
+            android:title="@string/vdynbass_y1"
+            android:defaultValue="50"
+            app:minValue="20" app:maxValue="200" app:unit="Hz" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_y2"
+            android:title="@string/vdynbass_y2"
+            android:defaultValue="90"
+            app:minValue="40" app:maxValue="400" app:unit="Hz" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_sgx"
+            android:title="@string/vdynbass_sgx"
+            android:defaultValue="30"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_vdynbass_sgy"
+            android:title="@string/vdynbass_sgy"
+            android:defaultValue="10"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

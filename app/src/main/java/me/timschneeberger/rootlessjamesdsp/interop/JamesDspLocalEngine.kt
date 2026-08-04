@@ -97,8 +97,16 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
                 JamesDspWrapper.setPostGain(handle, postGain)
     }
 
-    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean {
-        return JamesDspWrapper.setBassExciter(handle, enable, cutoff, intensity, mix)
+    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean {
+        return JamesDspWrapper.setBassExciter(handle, enable, cutoff, intensity, mix, band2, cutoff2, intensity2, mix2)
+    }
+
+    override fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean {
+        return JamesDspWrapper.setVDynBass(handle, enable, gain, x1, x2, y1, y2, sgx, sgy)
+    }
+
+    override fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean {
+        return JamesDspWrapper.setDiffSurround(handle, enable, delayLms, delayRms)
     }
 
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
