@@ -315,6 +315,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Input / Compressor
 	if (jdsp->compEnabled)
 		CompressorProcess(jdsp, n);
+	// FET compressor
+	if (jdsp->fetCompEnabled)
+		FetCompProcess(jdsp, n);
 	// Differential surround (channel delay)
 	if (jdsp->diffSurroundEnabled)
 		DiffSurroundProcess(jdsp, n);
@@ -324,6 +327,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// ViPER dynamic bass
 	if (jdsp->vdynBassEnabled)
 		VDynBassProcess(jdsp, n);
+	// ViPER bass
+	if (jdsp->viperBassEnabled)
+		ViperBassProcess(jdsp, n);
 	// Psychoacoustic bass exciter
 	if (jdsp->bassExEnabled)
 		BassExciterProcess(jdsp, n);
@@ -348,6 +354,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// BS2B
 	if (jdsp->crossfeedEnabled)
 		CrossfeedProcess(jdsp, n);
+	// Cure+ auditory protection
+	if (jdsp->cureEnabled)
+		CureProcess(jdsp, n);
 	// Stereo widening
 	if (jdsp->sterEnhEnabled)
 		StereoEnhancementProcess(jdsp, n);
@@ -366,9 +375,15 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Auto gain control
 	if (jdsp->agcEnabled)
 		AgcProcess(jdsp, n);
+	// Speaker optimization
+	if (jdsp->speakerOptEnabled)
+		SpeakerOptProcess(jdsp, n);
 	// Reverb
 	if (jdsp->reverbEnabled)
 		ReverbProcess(jdsp, n);
+	// ViPER reverberation
+	if (jdsp->vreverbEnabled)
+		VReverbProcess(jdsp, n);
 	// Output
 	for (size_t i = 0; i < n; i++)
 	{
@@ -412,6 +427,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Input / Compressor
 	if (jdsp->compEnabled)
 		CompressorProcess(jdsp, n);
+	// FET compressor
+	if (jdsp->fetCompEnabled)
+		FetCompProcess(jdsp, n);
 	// Differential surround (channel delay)
 	if (jdsp->diffSurroundEnabled)
 		DiffSurroundProcess(jdsp, n);
@@ -421,6 +439,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// ViPER dynamic bass
 	if (jdsp->vdynBassEnabled)
 		VDynBassProcess(jdsp, n);
+	// ViPER bass
+	if (jdsp->viperBassEnabled)
+		ViperBassProcess(jdsp, n);
 	// Psychoacoustic bass exciter
 	if (jdsp->bassExEnabled)
 		BassExciterProcess(jdsp, n);
@@ -445,6 +466,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// BS2B
 	if (jdsp->crossfeedEnabled)
 		CrossfeedProcess(jdsp, n);
+	// Cure+ auditory protection
+	if (jdsp->cureEnabled)
+		CureProcess(jdsp, n);
 	// Stereo widening
 	if (jdsp->sterEnhEnabled)
 		StereoEnhancementProcess(jdsp, n);
@@ -463,9 +487,15 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Auto gain control
 	if (jdsp->agcEnabled)
 		AgcProcess(jdsp, n);
+	// Speaker optimization
+	if (jdsp->speakerOptEnabled)
+		SpeakerOptProcess(jdsp, n);
 	// Reverb
 	if (jdsp->reverbEnabled)
 		ReverbProcess(jdsp, n);
+	// ViPER reverberation
+	if (jdsp->vreverbEnabled)
+		VReverbProcess(jdsp, n);
 	// Output
 	for (size_t i = 0; i < n; i++)
 	{
@@ -1197,6 +1227,16 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	AgcSetParam(jdsp, 30.0f, 12.0f);
 	jdsp->hpSurroundEnabled = 0;
 	HpSurroundSetParam(jdsp, 40.0f, 30.0f);
+	jdsp->fetCompEnabled = 0;
+	FetCompSetParam(jdsp, -18.0f, 4.0f, 5.0f, 120.0f, 0.0f);
+	jdsp->cureEnabled = 0;
+	CureSetParam(jdsp, 0);
+	jdsp->viperBassEnabled = 0;
+	ViperBassSetParam(jdsp, 0, 76.0f, 6.0f);
+	jdsp->vreverbEnabled = 0;
+	VReverbSetParam(jdsp, 50.0f, 50.0f, 100.0f, 30.0f, 100.0f);
+	jdsp->speakerOptEnabled = 0;
+	SpeakerOptSetParam(jdsp, 60.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect

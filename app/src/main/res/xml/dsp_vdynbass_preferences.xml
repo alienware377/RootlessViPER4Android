@@ -4,7 +4,7 @@
     <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
         android:key="@string/key_vdynbass_enable"
         android:disableDependentsState="false"
-        android:title="@string/vdynbass_enable"
+        android:title="@string/v4a_vdynbass_title"
         android:icon="@drawable/ic_twotone_speaker_group_24dp"
         app:iconSpaceReserved="false">
         <Preference

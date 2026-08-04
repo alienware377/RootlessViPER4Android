@@ -481,4 +481,20 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="cure_levels">
+        <item>@string/cure_slight</item>
+        <item>@string/cure_moderate</item>
+        <item>@string/cure_heavy</item>
+    </string-array>
+    <string-array name="cure_levels_values" translatable="false">
+        <item>0</item><item>1</item><item>2</item>
+    </string-array>
+    <string-array name="viperbass_modes">
+        <item>@string/viperbass_natural</item>
+        <item>@string/viperbass_pure</item>
+        <item>@string/viperbass_sub</item>
+    </string-array>
+    <string-array name="viperbass_modes_values" translatable="false">
+        <item>0</item><item>1</item><item>2</item>
+    </string-array>
 </resources>

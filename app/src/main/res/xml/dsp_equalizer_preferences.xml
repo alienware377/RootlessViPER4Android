@@ -4,7 +4,7 @@
     <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
         android:disableDependentsState="false"
         android:key="@string/key_eq_enable"
-        android:title="@string/eq_enable"
+        android:title="@string/v4a_eq_title"
         android:icon="@drawable/ic_baseline_equalizer_24dp"
         app:iconSpaceReserved="false">
         <ListPreference

@@ -124,6 +124,36 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val hpsStrength = cache.get(R.string.key_hpsurround_strength, 40f)
             val hpsRoom = cache.get(R.string.key_hpsurround_room, 30f)
 
+            cache.select(Constants.PREF_FETCOMP)
+            val fetEnabled = cache.get(R.string.key_fetcomp_enable, false)
+            val fetThr = cache.get(R.string.key_fetcomp_threshold, -18f)
+            val fetRatio = cache.get(R.string.key_fetcomp_ratio, 4f)
+            val fetAtt = cache.get(R.string.key_fetcomp_attack, 5f)
+            val fetRel = cache.get(R.string.key_fetcomp_release, 120f)
+            val fetMakeup = cache.get(R.string.key_fetcomp_makeup, 0f)
+
+            cache.select(Constants.PREF_CURE)
+            val cureEnabled = cache.get(R.string.key_cure_enable, false)
+            val cureLevel = cache.get(R.string.key_cure_level, "0").toInt()
+
+            cache.select(Constants.PREF_VIPERBASS)
+            val vbEnabled = cache.get(R.string.key_viperbass_enable, false)
+            val vbMode = cache.get(R.string.key_viperbass_mode, "0").toInt()
+            val vbFreq = cache.get(R.string.key_viperbass_freq, 76f)
+            val vbGain = cache.get(R.string.key_viperbass_gain, 6f)
+
+            cache.select(Constants.PREF_VREVERB)
+            val vrEnabled = cache.get(R.string.key_vreverb_enable, false)
+            val vrRoom = cache.get(R.string.key_vreverb_room, 50f)
+            val vrDamp = cache.get(R.string.key_vreverb_damp, 50f)
+            val vrWidth = cache.get(R.string.key_vreverb_width, 100f)
+            val vrWet = cache.get(R.string.key_vreverb_wet, 30f)
+            val vrDry = cache.get(R.string.key_vreverb_dry, 100f)
+
+            cache.select(Constants.PREF_SPEAKEROPT)
+            val soEnabled = cache.get(R.string.key_speakeropt_enable, false)
+            val soStrength = cache.get(R.string.key_speakeropt_strength, 60f)
+
             cache.select(Constants.PREF_SPECTRUMEXT)
             val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
             val spxBark = cache.get(R.string.key_spectrumext_bark, 7600f)
@@ -195,6 +225,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_FIELDSURROUND -> setFieldSurround(fsEnabled, fsStrength, fsMid)
                     Constants.PREF_AGC -> setAgc(agcEnabled, agcTarget, agcMaxBoost)
                     Constants.PREF_HPSURROUND -> setHpSurround(hpsEnabled, hpsStrength, hpsRoom)
+                    Constants.PREF_FETCOMP -> setFetComp(fetEnabled, fetThr, fetRatio, fetAtt, fetRel, fetMakeup)
+                    Constants.PREF_CURE -> setCure(cureEnabled, cureLevel)
+                    Constants.PREF_VIPERBASS -> setViperBass(vbEnabled, vbMode, vbFreq, vbGain)
+                    Constants.PREF_VREVERB -> setVReverb(vrEnabled, vrRoom, vrDamp, vrWidth, vrWet, vrDry)
+                    Constants.PREF_SPEAKEROPT -> setSpeakerOpt(soEnabled, soStrength)
                     Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -485,6 +520,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setFieldSurround(enable: Boolean, strength: Float, midImage: Float): Boolean
     abstract fun setAgc(enable: Boolean, target: Float, maxBoost: Float): Boolean
     abstract fun setHpSurround(enable: Boolean, strength: Float, room: Float): Boolean
+    abstract fun setFetComp(enable: Boolean, threshold: Float, ratio: Float, attack: Float, release: Float, makeup: Float): Boolean
+    abstract fun setCure(enable: Boolean, level: Int): Boolean
+    abstract fun setViperBass(enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean
+    abstract fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean
+    abstract fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean
 
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean

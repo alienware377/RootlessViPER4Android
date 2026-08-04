@@ -109,16 +109,32 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_hpsurround_preferences
                 ))
             .replace(
+                R.id.card_fetcomp, PreferenceGroupFragment.newInstance(Constants.PREF_FETCOMP,
+                    R.xml.dsp_fetcomp_preferences
+                ))
+            .replace(
+                R.id.card_cure, PreferenceGroupFragment.newInstance(Constants.PREF_CURE,
+                    R.xml.dsp_cure_preferences
+                ))
+            .replace(
+                R.id.card_viperbass, PreferenceGroupFragment.newInstance(Constants.PREF_VIPERBASS,
+                    R.xml.dsp_viperbass_preferences
+                ))
+            .replace(
+                R.id.card_vreverb, PreferenceGroupFragment.newInstance(Constants.PREF_VREVERB,
+                    R.xml.dsp_vreverb_preferences
+                ))
+            .replace(
+                R.id.card_speakeropt, PreferenceGroupFragment.newInstance(Constants.PREF_SPEAKEROPT,
+                    R.xml.dsp_speakeropt_preferences
+                ))
+            .replace(
                 R.id.card_agc, PreferenceGroupFragment.newInstance(Constants.PREF_AGC,
                     R.xml.dsp_agc_preferences
                 ))
             .replace(
                 R.id.card_eq, PreferenceGroupFragment.newInstance(Constants.PREF_EQ,
                     R.xml.dsp_equalizer_preferences
-                ))
-            .replace(
-                R.id.card_peq, PreferenceGroupFragment.newInstance(Constants.PREF_PEQ,
-                    R.xml.dsp_parametriceq_preferences
                 ))
             .replace(
                 R.id.card_geq, PreferenceGroupFragment.newInstance(Constants.PREF_GEQ,

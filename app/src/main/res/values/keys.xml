@@ -172,5 +172,25 @@
     <string name="key_hpsurround_enable" translatable="false">hpsurround_enable</string>
     <string name="key_hpsurround_strength" translatable="false">hpsurround_strength</string>
     <string name="key_hpsurround_room" translatable="false">hpsurround_room</string>
+    <string name="key_fetcomp_enable" translatable="false">fetcomp_enable</string>
+    <string name="key_fetcomp_threshold" translatable="false">fetcomp_threshold</string>
+    <string name="key_fetcomp_ratio" translatable="false">fetcomp_ratio</string>
+    <string name="key_fetcomp_attack" translatable="false">fetcomp_attack</string>
+    <string name="key_fetcomp_release" translatable="false">fetcomp_release</string>
+    <string name="key_fetcomp_makeup" translatable="false">fetcomp_makeup</string>
+    <string name="key_cure_enable" translatable="false">cure_enable</string>
+    <string name="key_cure_level" translatable="false">cure_level</string>
+    <string name="key_viperbass_enable" translatable="false">viperbass_enable</string>
+    <string name="key_viperbass_mode" translatable="false">viperbass_mode</string>
+    <string name="key_viperbass_freq" translatable="false">viperbass_freq</string>
+    <string name="key_viperbass_gain" translatable="false">viperbass_gain</string>
+    <string name="key_vreverb_enable" translatable="false">vreverb_enable</string>
+    <string name="key_vreverb_room" translatable="false">vreverb_room</string>
+    <string name="key_vreverb_damp" translatable="false">vreverb_damp</string>
+    <string name="key_vreverb_width" translatable="false">vreverb_width</string>
+    <string name="key_vreverb_wet" translatable="false">vreverb_wet</string>
+    <string name="key_vreverb_dry" translatable="false">vreverb_dry</string>
+    <string name="key_speakeropt_enable" translatable="false">speakeropt_enable</string>
+    <string name="key_speakeropt_strength" translatable="false">speakeropt_strength</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
 </resources>

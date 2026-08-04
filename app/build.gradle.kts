@@ -22,7 +22,7 @@ android {
         versionCode = AndroidConfig.versionCode
         versionName = AndroidConfig.versionName
 
-        manifestPlaceholders["label"] = "RootlessJamesDSP"
+        manifestPlaceholders["label"] = "RootlessViPER4Android"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -97,7 +97,7 @@ android {
         create("rootless") {
             dimension = "version"
 
-            manifestPlaceholders["label"] = "RootlessJamesDSP"
+            manifestPlaceholders["label"] = "RootlessViPER4Android"
             applicationId = "me.timschneeberger.rootlessjamesdsp"
             AndroidConfig.minSdk = 29
             minSdk = AndroidConfig.minSdk
