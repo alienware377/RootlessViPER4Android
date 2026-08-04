@@ -124,8 +124,18 @@ class JamesDspRemoteEngine(
         super.close()
     }
 
-    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float): Boolean {
+    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean {
         // Bass exciter is unsupported in root/plugin mode (remote engine)
+        return true
+    }
+
+    override fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean {
+        // ViPER dynamic bass is unsupported in root/plugin mode (remote engine)
+        return true
+    }
+
+    override fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean {
+        // Differential surround is unsupported in root/plugin mode (remote engine)
         return true
     }
 

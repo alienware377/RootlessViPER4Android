@@ -315,9 +315,15 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Input / Compressor
 	if (jdsp->compEnabled)
 		CompressorProcess(jdsp, n);
+	// Differential surround (channel delay)
+	if (jdsp->diffSurroundEnabled)
+		DiffSurroundProcess(jdsp, n);
 	// IIR bass boost
 	if (jdsp->bassBoostEnabled)
 		BassBoostProcess(jdsp, n);
+	// ViPER dynamic bass
+	if (jdsp->vdynBassEnabled)
+		VDynBassProcess(jdsp, n);
 	// Psychoacoustic bass exciter
 	if (jdsp->bassExEnabled)
 		BassExciterProcess(jdsp, n);
@@ -394,9 +400,15 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Input / Compressor
 	if (jdsp->compEnabled)
 		CompressorProcess(jdsp, n);
+	// Differential surround (channel delay)
+	if (jdsp->diffSurroundEnabled)
+		DiffSurroundProcess(jdsp, n);
 	// IIR bass boost
 	if (jdsp->bassBoostEnabled)
 		BassBoostProcess(jdsp, n);
+	// ViPER dynamic bass
+	if (jdsp->vdynBassEnabled)
+		VDynBassProcess(jdsp, n);
 	// Psychoacoustic bass exciter
 	if (jdsp->bassExEnabled)
 		BassExciterProcess(jdsp, n);
@@ -1148,6 +1160,11 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	BassExciterSetParam(jdsp, 100.0f, 40.0f, 50.0f);
 	jdsp->spectrumExtEnabled = 0;
 	SpectrumExtensionSetParam(jdsp, 7600.0f, 15.0f);
+	BassExciterSetParam2(jdsp, 0, 60.0f, 40.0f, 40.0f);
+	jdsp->vdynBassEnabled = 0;
+	VDynBassSetParam(jdsp, 33.0f, 1000.0f, 6200.0f, 50.0f, 90.0f, 30.0f, 10.0f);
+	jdsp->diffSurroundEnabled = 0;
+	DiffSurroundSetParam(jdsp, 0.0f, 10.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect

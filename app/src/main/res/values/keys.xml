@@ -144,5 +144,21 @@
     <string name="key_spectrumext_enable" translatable="false">spectrumext_enable</string>
     <string name="key_spectrumext_bark" translatable="false">spectrumext_bark</string>
     <string name="key_spectrumext_strength" translatable="false">spectrumext_strength</string>
+    <string name="key_bassex_band2_enable" translatable="false">bassex_band2_enable</string>
+    <string name="key_bassex_cutoff2" translatable="false">bassex_cutoff2</string>
+    <string name="key_bassex_intensity2" translatable="false">bassex_intensity2</string>
+    <string name="key_bassex_mix2" translatable="false">bassex_mix2</string>
+    <string name="key_vdynbass_enable" translatable="false">vdynbass_enable</string>
+    <string name="key_vdynbass_mode" translatable="false">vdynbass_mode</string>
+    <string name="key_vdynbass_gain" translatable="false">vdynbass_gain</string>
+    <string name="key_vdynbass_x1" translatable="false">vdynbass_x1</string>
+    <string name="key_vdynbass_x2" translatable="false">vdynbass_x2</string>
+    <string name="key_vdynbass_y1" translatable="false">vdynbass_y1</string>
+    <string name="key_vdynbass_y2" translatable="false">vdynbass_y2</string>
+    <string name="key_vdynbass_sgx" translatable="false">vdynbass_sgx</string>
+    <string name="key_vdynbass_sgy" translatable="false">vdynbass_sgy</string>
+    <string name="key_diffsurround_enable" translatable="false">diffsurround_enable</string>
+    <string name="key_diffsurround_delay_l" translatable="false">diffsurround_delay_l</string>
+    <string name="key_diffsurround_delay_r" translatable="false">diffsurround_delay_r</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
 </resources>

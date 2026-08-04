@@ -89,6 +89,14 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_bassex_preferences
                 ))
             .replace(
+                R.id.card_vdynbass, PreferenceGroupFragment.newInstance(Constants.PREF_VDYNBASS,
+                    R.xml.dsp_vdynbass_preferences
+                ))
+            .replace(
+                R.id.card_diffsurround, PreferenceGroupFragment.newInstance(Constants.PREF_DIFFSURROUND,
+                    R.xml.dsp_diffsurround_preferences
+                ))
+            .replace(
                 R.id.card_eq, PreferenceGroupFragment.newInstance(Constants.PREF_EQ,
                     R.xml.dsp_equalizer_preferences
                 ))

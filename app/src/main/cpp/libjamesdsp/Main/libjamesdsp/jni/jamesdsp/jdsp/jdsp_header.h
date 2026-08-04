@@ -46,6 +46,14 @@ typedef struct
 	float dcState[2];
 	float drive;
 	float mix;
+	float lp2[5];
+	float bp2[5];
+	float lp2z[2][4];
+	float bp2z[2][4];
+	float dc2State[2];
+	float drive2;
+	float mix2;
+	int band2;
 } BassExciter;
 typedef struct
 {
@@ -56,6 +64,27 @@ typedef struct
 	float dcState[2];
 	float strength;
 } SpectrumExtension;
+typedef struct
+{
+	float lowerAngle, upperAngle;
+	float in0, in1, in2;
+	float x0, x1, x2, x3;
+	float y0, y1, y2, y3;
+	float out0, out1, out2;
+} VPolesFilter;
+typedef struct
+{
+	VPolesFilter fXL, fXR, fYL, fYR;
+	float lpB0, lpB1, lpB2, lpA1, lpA2;
+	float lpX1, lpX2, lpY1, lpY2;
+	float bassGain, qPeak, sideGainX, sideGainY, lowFreqX;
+} VDynamicBass;
+typedef struct
+{
+	float bufL[8192], bufR[8192];
+	int widx;
+	float delayL, delayR;
+} DiffSurround;
 #define FFTSIZE_DRS (8192)
 #define ANALYSIS_OVERLAP_DRS_MAX (8)
 #define HALFWNDLEN_DRS ((FFTSIZE_DRS >> 1) + 1)
@@ -547,6 +576,10 @@ typedef struct dspsys
 	BassExciter bassEx;
 	int spectrumExtEnabled;
 	SpectrumExtension spectrumExt;
+	int vdynBassEnabled;
+	VDynamicBass vdynBass;
+	int diffSurroundEnabled;
+	DiffSurround diffSurround;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -626,6 +659,17 @@ extern void SpectrumExtensionSetParam(JamesDSPLib *jdsp, float barkFreq, float s
 extern void SpectrumExtensionProcess(JamesDSPLib *jdsp, size_t n);
 extern void SpectrumExtensionEnable(JamesDSPLib *jdsp);
 extern void SpectrumExtensionDisable(JamesDSPLib *jdsp);
+extern void BassExciterSetParam2(JamesDSPLib *jdsp, int band2On, float cutoff2, float intensity2, float mixPct2);
+// ViPER dynamic bass
+extern void VDynBassSetParam(JamesDSPLib *jdsp, float gainPct, float x1, float x2, float y1, float y2, float sgxPct, float sgyPct);
+extern void VDynBassProcess(JamesDSPLib *jdsp, size_t n);
+extern void VDynBassEnable(JamesDSPLib *jdsp);
+extern void VDynBassDisable(JamesDSPLib *jdsp);
+// Differential surround
+extern void DiffSurroundSetParam(JamesDSPLib *jdsp, float delayLms, float delayRms);
+extern void DiffSurroundProcess(JamesDSPLib *jdsp, size_t n);
+extern void DiffSurroundEnable(JamesDSPLib *jdsp);
+extern void DiffSurroundDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

@@ -427,4 +427,48 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="vdynbass_modes">
+        <item>Extreme Headphone (v2)</item>
+        <item>High-end Headphone (v2)</item>
+        <item>Common Headphone (v2)</item>
+        <item>Low-end Headphone (v2)</item>
+        <item>Common Earphone (v2)</item>
+        <item>Extreme Headphone (v1)</item>
+        <item>High-end Headphone (v1)</item>
+        <item>Common Headphone (v1)</item>
+        <item>Common Earphone (v1)</item>
+        <item>Apple Earphone</item>
+        <item>Monster Earphone</item>
+        <item>Moto Earphone</item>
+        <item>Philips Earphone</item>
+        <item>SHP2000</item>
+        <item>SHP9000</item>
+        <item>Unknown Type I</item>
+        <item>Unknown Type II</item>
+        <item>Unknown Type III</item>
+        <item>Unknown Type IV</item>
+        <item>Custom (use manual sliders)</item>
+    </string-array>
+    <string-array name="vdynbass_modes_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+        <item>17</item>
+        <item>18</item>
+        <item>19</item>
+    </string-array>
 </resources>
