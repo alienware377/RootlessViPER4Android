@@ -43,7 +43,7 @@
     <!-- Appearance -->
     <string name="default_appearance_theme_mode" translatable="false">0</string>
     <bool name="default_appearance_pure_black" translatable="false">false</bool>
-    <string name="default_appearance_app_theme" translatable="false">DEFAULT</string>
+    <string name="default_appearance_app_theme" translatable="false">VIPER</string>
     <bool name="default_appearance_nav_hide" translatable="false">false</bool>
     <bool name="default_appearance_show_icons" translatable="false">true</bool>
 

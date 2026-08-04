@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- ViPER Purple theme: V4A-inspired dark gray + vibrant purple -->
+<resources>
+    <color name="viper_primary">#C084FC</color>
+    <color name="viper_onPrimary">#30096B</color>
+    <color name="viper_primaryContainer">#5B21B6</color>
+    <color name="viper_onPrimaryContainer">#EDDCFF</color>
+    <color name="viper_secondary">#B26CFF</color>
+    <color name="viper_onSecondary">#2A0A5E</color>
+    <color name="viper_secondaryContainer">#4C1D95</color>
+    <color name="viper_onSecondaryContainer">#EAD9FF</color>
+    <color name="viper_tertiary">#E0AAFF</color>
+    <color name="viper_onTertiary">#3C0A63</color>
+    <color name="viper_tertiaryContainer">#6D28D9</color>
+    <color name="viper_onTertiaryContainer">#F8EDFF</color>
+    <color name="viper_background">#141118</color>
+    <color name="viper_onBackground">#E8E0F0</color>
+    <color name="viper_surface">#141118</color>
+    <color name="viper_onSurface">#E8E0F0</color>
+    <color name="viper_surfaceVariant">#262130</color>
+    <color name="viper_onSurfaceVariant">#CDC3DC</color>
+    <color name="viper_outline">#968DA3</color>
+    <color name="viper_inverseOnSurface">#1D1728</color>
+    <color name="viper_inverseSurface">#E8E0F0</color>
+    <color name="viper_primaryInverse">#7C3AED</color>
+</resources>

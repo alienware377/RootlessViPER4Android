@@ -15,6 +15,7 @@ interface ThemingDelegate {
             val resIds = mutableListOf<Int>()
             resIds += when (appTheme) {
                 AppTheme.MONET -> R.style.Theme_RootlessJamesDSP_Monet
+                AppTheme.VIPER -> R.style.Theme_RootlessJamesDSP_Viper
                 AppTheme.GREEN_APPLE -> R.style.Theme_RootlessJamesDSP_GreenApple
                 AppTheme.STRAWBERRY_DAIQUIRI -> R.style.Theme_RootlessJamesDSP_StrawberryDaiquiri
                 AppTheme.HONEY -> R.style.Theme_RootlessJamesDSP_Honey
