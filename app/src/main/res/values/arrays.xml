@@ -471,4 +471,14 @@
         <item>18</item>
         <item>19</item>
     </string-array>
+    <string-array name="clarity_modes">
+        <item>@string/clarity_mode_natural</item>
+        <item>@string/clarity_mode_ozone</item>
+        <item>@string/clarity_mode_xhifi</item>
+    </string-array>
+    <string-array name="clarity_modes_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 </resources>

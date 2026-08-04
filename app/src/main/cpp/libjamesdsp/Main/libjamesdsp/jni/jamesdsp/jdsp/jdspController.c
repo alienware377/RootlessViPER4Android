@@ -351,9 +351,18 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Stereo widening
 	if (jdsp->sterEnhEnabled)
 		StereoEnhancementProcess(jdsp, n);
+	// Field surround
+	if (jdsp->fieldSurroundEnabled)
+		FieldSurroundProcess(jdsp, n);
 	// Spectrum extension
 	if (jdsp->spectrumExtEnabled)
 		SpectrumExtensionProcess(jdsp, n);
+	// ViPER clarity
+	if (jdsp->viperClarityEnabled)
+		ViperClarityProcess(jdsp, n);
+	// Auto gain control
+	if (jdsp->agcEnabled)
+		AgcProcess(jdsp, n);
 	// Reverb
 	if (jdsp->reverbEnabled)
 		ReverbProcess(jdsp, n);
@@ -436,9 +445,18 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Stereo widening
 	if (jdsp->sterEnhEnabled)
 		StereoEnhancementProcess(jdsp, n);
+	// Field surround
+	if (jdsp->fieldSurroundEnabled)
+		FieldSurroundProcess(jdsp, n);
 	// Spectrum extension
 	if (jdsp->spectrumExtEnabled)
 		SpectrumExtensionProcess(jdsp, n);
+	// ViPER clarity
+	if (jdsp->viperClarityEnabled)
+		ViperClarityProcess(jdsp, n);
+	// Auto gain control
+	if (jdsp->agcEnabled)
+		AgcProcess(jdsp, n);
 	// Reverb
 	if (jdsp->reverbEnabled)
 		ReverbProcess(jdsp, n);
@@ -1165,6 +1183,12 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	VDynBassSetParam(jdsp, 33.0f, 1000.0f, 6200.0f, 50.0f, 90.0f, 30.0f, 10.0f);
 	jdsp->diffSurroundEnabled = 0;
 	DiffSurroundSetParam(jdsp, 0.0f, 10.0f);
+	jdsp->viperClarityEnabled = 0;
+	ViperClaritySetParam(jdsp, 0, 3.5f);
+	jdsp->fieldSurroundEnabled = 0;
+	FieldSurroundSetParam(jdsp, 30.0f, 50.0f);
+	jdsp->agcEnabled = 0;
+	AgcSetParam(jdsp, 30.0f, 12.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect

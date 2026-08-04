@@ -8,9 +8,9 @@
         android:icon="@drawable/ic_twotone_speaker_24dp"
         app:iconSpaceReserved="false">
         <Preference
+            android:key="section_info"
             android:title="@string/section_info_title"
             android:summary="@string/bass_info"
-            android:selectable="false"
             android:persistent="false"
             app:allowDividerAbove="false"
             app:iconSpaceReserved="false"/>

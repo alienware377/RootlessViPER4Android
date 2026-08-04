@@ -139,6 +139,12 @@ class JamesDspRemoteEngine(
         return true
     }
 
+    override fun setViperClarity(enable: Boolean, mode: Int, gain: Float): Boolean = true
+
+    override fun setFieldSurround(enable: Boolean, strength: Float, midImage: Float): Boolean = true
+
+    override fun setAgc(enable: Boolean, target: Float, maxBoost: Float): Boolean = true
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         // Spectrum extension is unsupported in root/plugin mode (remote engine)
         return true

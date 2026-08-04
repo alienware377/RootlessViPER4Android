@@ -109,6 +109,18 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setDiffSurround(handle, enable, delayLms, delayRms)
     }
 
+    override fun setViperClarity(enable: Boolean, mode: Int, gain: Float): Boolean {
+        return JamesDspWrapper.setViperClarity(handle, enable, mode, gain)
+    }
+
+    override fun setFieldSurround(enable: Boolean, strength: Float, midImage: Float): Boolean {
+        return JamesDspWrapper.setFieldSurround(handle, enable, strength, midImage)
+    }
+
+    override fun setAgc(enable: Boolean, target: Float, maxBoost: Float): Boolean {
+        return JamesDspWrapper.setAgc(handle, enable, target, maxBoost)
+    }
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         return JamesDspWrapper.setSpectrumExtension(handle, enable, barkFreq, strength)
     }

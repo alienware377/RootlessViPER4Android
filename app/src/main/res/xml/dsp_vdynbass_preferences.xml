@@ -5,12 +5,12 @@
         android:key="@string/key_vdynbass_enable"
         android:disableDependentsState="false"
         android:title="@string/vdynbass_enable"
-        android:icon="@drawable/ic_twotone_volume_up_24dp"
+        android:icon="@drawable/ic_twotone_speaker_group_24dp"
         app:iconSpaceReserved="false">
         <Preference
+            android:key="section_info"
             android:title="@string/section_info_title"
             android:summary="@string/vdynbass_info"
-            android:selectable="false"
             android:persistent="false"
             app:allowDividerAbove="false"
             app:iconSpaceReserved="false"/>
@@ -30,12 +30,6 @@
             app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true"
             app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <Preference
-            android:summary="@string/vdynbass_custom_note"
-            android:selectable="false"
-            android:persistent="false"
-            app:allowDividerAbove="false"
-            app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
             android:key="@string/key_vdynbass_x1"
             android:title="@string/vdynbass_x1"

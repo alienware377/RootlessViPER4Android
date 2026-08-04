@@ -5,12 +5,12 @@
         android:key="@string/key_bassex_enable"
         android:disableDependentsState="false"
         android:title="@string/bassex_enable"
-        android:icon="@drawable/ic_twotone_volume_up_24dp"
+        android:icon="@drawable/ic_twotone_speaker_24dp"
         app:iconSpaceReserved="false">
         <Preference
+            android:key="section_info"
             android:title="@string/bassex_info_title"
             android:summary="@string/bassex_info"
-            android:selectable="false"
             android:persistent="false"
             app:allowDividerAbove="false"
             app:iconSpaceReserved="false"/>
