@@ -259,4 +259,31 @@
         <item name="colorSurfaceInverse">@color/tidalwave_inverseSurface</item>
         <item name="colorPrimaryInverse">@color/tidalwave_primaryInverse</item>
     </style>
+
+    <!--== ViPER Purple Theme ==-->
+    <style name="Theme.RootlessJamesDSP.Viper">
+        <!-- Theme Colors -->
+        <item name="colorPrimary">@color/viper_primary</item>
+        <item name="colorOnPrimary">@color/viper_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/viper_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/viper_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/viper_secondary</item>
+        <item name="colorOnSecondary">@color/viper_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/viper_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/viper_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/viper_tertiary</item>
+        <item name="colorOnTertiary">@color/viper_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/viper_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/viper_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/viper_background</item>
+        <item name="colorOnBackground">@color/viper_onBackground</item>
+        <item name="colorSurface">@color/viper_surface</item>
+        <item name="colorOnSurface">@color/viper_onSurface</item>
+        <item name="colorSurfaceVariant">@color/viper_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/viper_onSurfaceVariant</item>
+        <item name="colorOutline">@color/viper_outline</item>
+        <item name="colorOnSurfaceInverse">@color/viper_inverseOnSurface</item>
+        <item name="colorSurfaceInverse">@color/viper_inverseSurface</item>
+        <item name="colorPrimaryInverse">@color/viper_primaryInverse</item>
+    </style>
 </resources>

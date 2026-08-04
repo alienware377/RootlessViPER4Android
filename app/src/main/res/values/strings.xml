@@ -599,6 +599,7 @@
     <string name="theme_yinyang">Yin &amp; Yang</string>
     <string name="theme_yotsuba">Yotsuba</string>
     <string name="theme_tidalwave">Tidal Wave</string>
+    <string name="theme_viper">ViPER Purple</string>
 
     <!-- File library preference -->
     <string name="action_import">Import</string>
