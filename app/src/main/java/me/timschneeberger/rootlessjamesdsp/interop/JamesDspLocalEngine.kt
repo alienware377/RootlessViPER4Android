@@ -125,6 +125,26 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setHpSurround(handle, enable, strength, room)
     }
 
+    override fun setFetComp(enable: Boolean, threshold: Float, ratio: Float, attack: Float, release: Float, makeup: Float): Boolean {
+        return JamesDspWrapper.setFetComp(handle, enable, threshold, ratio, attack, release, makeup)
+    }
+
+    override fun setCure(enable: Boolean, level: Int): Boolean {
+        return JamesDspWrapper.setCure(handle, enable, level)
+    }
+
+    override fun setViperBass(enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean {
+        return JamesDspWrapper.setViperBass(handle, enable, mode, freq, gain)
+    }
+
+    override fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean {
+        return JamesDspWrapper.setVReverb(handle, enable, room, damp, width, wet, dry)
+    }
+
+    override fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean {
+        return JamesDspWrapper.setSpeakerOpt(handle, enable, strength)
+    }
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         return JamesDspWrapper.setSpectrumExtension(handle, enable, barkFreq, strength)
     }

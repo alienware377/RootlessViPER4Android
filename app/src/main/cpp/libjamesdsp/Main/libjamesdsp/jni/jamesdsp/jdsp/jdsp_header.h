@@ -97,6 +97,40 @@ typedef struct
 {
 	float sideGain, midGain;
 } FieldSurround;
+#define VREV_COMBLEN 8192
+#define VREV_APLEN 2048
+typedef struct
+{
+	float thrLin, slope, attC, relC, makeup, env;
+} FetComp;
+typedef struct
+{
+	float lpCoef, feed, norm, lpzL, lpzR;
+} Cure;
+typedef struct
+{
+	int mode;
+	float f[5], fz[2][4];
+	float lp[5], lpz[2][4];
+	float dc[2];
+	float harm;
+} ViperBass;
+typedef struct
+{
+	float comb[2][4][VREV_COMBLEN];
+	float ap[2][2][VREV_APLEN];
+	int clen[2][4], cidx[2][4];
+	int alen[2][2], aidx[2][2];
+	float cflt[2][4];
+	float fb, damp, wet1, wet2, dry;
+} VReverb;
+typedef struct
+{
+	float hp[5], hpz[2][4];
+	float pk[5], pkz[2][4];
+	float sh[5], shz[2][4];
+	float mix;
+} SpeakerOpt;
 typedef struct
 {
 	float bufL[4096], bufR[4096];
@@ -614,6 +648,16 @@ typedef struct dspsys
 	Agc agc;
 	int hpSurroundEnabled;
 	HpSurround hpSurround;
+	int fetCompEnabled;
+	FetComp fetComp;
+	int cureEnabled;
+	Cure cure;
+	int viperBassEnabled;
+	ViperBass viperBass;
+	int vreverbEnabled;
+	VReverb vreverb;
+	int speakerOptEnabled;
+	SpeakerOpt speakerOpt;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -724,6 +768,26 @@ extern void HpSurroundSetParam(JamesDSPLib *jdsp, float strengthPct, float roomP
 extern void HpSurroundProcess(JamesDSPLib *jdsp, size_t n);
 extern void HpSurroundEnable(JamesDSPLib *jdsp);
 extern void HpSurroundDisable(JamesDSPLib *jdsp);
+extern void FetCompSetParam(JamesDSPLib *jdsp, float thresholdDb, float ratio, float attackMs, float releaseMs, float makeupDb);
+extern void FetCompProcess(JamesDSPLib *jdsp, size_t n);
+extern void FetCompEnable(JamesDSPLib *jdsp);
+extern void FetCompDisable(JamesDSPLib *jdsp);
+extern void CureSetParam(JamesDSPLib *jdsp, int level);
+extern void CureProcess(JamesDSPLib *jdsp, size_t n);
+extern void CureEnable(JamesDSPLib *jdsp);
+extern void CureDisable(JamesDSPLib *jdsp);
+extern void ViperBassSetParam(JamesDSPLib *jdsp, int mode, float freq, float gainDb);
+extern void ViperBassProcess(JamesDSPLib *jdsp, size_t n);
+extern void ViperBassEnable(JamesDSPLib *jdsp);
+extern void ViperBassDisable(JamesDSPLib *jdsp);
+extern void VReverbSetParam(JamesDSPLib *jdsp, float roomPct, float dampPct, float widthPct, float wetPct, float dryPct);
+extern void VReverbProcess(JamesDSPLib *jdsp, size_t n);
+extern void VReverbEnable(JamesDSPLib *jdsp);
+extern void VReverbDisable(JamesDSPLib *jdsp);
+extern void SpeakerOptSetParam(JamesDSPLib *jdsp, float strengthPct);
+extern void SpeakerOptProcess(JamesDSPLib *jdsp, size_t n);
+extern void SpeakerOptEnable(JamesDSPLib *jdsp);
+extern void SpeakerOptDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

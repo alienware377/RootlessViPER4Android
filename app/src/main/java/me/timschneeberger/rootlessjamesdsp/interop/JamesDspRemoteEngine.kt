@@ -147,6 +147,16 @@ class JamesDspRemoteEngine(
 
     override fun setHpSurround(enable: Boolean, strength: Float, room: Float): Boolean = true
 
+    override fun setFetComp(enable: Boolean, threshold: Float, ratio: Float, attack: Float, release: Float, makeup: Float): Boolean = true
+
+    override fun setCure(enable: Boolean, level: Int): Boolean = true
+
+    override fun setViperBass(enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean = true
+
+    override fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean = true
+
+    override fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean = true
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         // Spectrum extension is unsupported in root/plugin mode (remote engine)
         return true

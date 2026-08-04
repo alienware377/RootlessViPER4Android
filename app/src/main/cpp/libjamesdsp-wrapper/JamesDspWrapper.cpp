@@ -412,6 +412,51 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setHpSurround(J
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setFetComp(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat threshold, jfloat ratio, jfloat attack, jfloat release, jfloat makeup)
+{
+    DECLARE_DSP_B
+    FetCompSetParam(dsp, threshold, ratio, attack, release, makeup);
+    if (enable) FetCompEnable(dsp); else FetCompDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setCure(JNIEnv *env, jobject obj, jlong self, jboolean enable, jint level)
+{
+    DECLARE_DSP_B
+    CureSetParam(dsp, level);
+    if (enable) CureEnable(dsp); else CureDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setViperBass(JNIEnv *env, jobject obj, jlong self, jboolean enable, jint mode, jfloat freq, jfloat gain)
+{
+    DECLARE_DSP_B
+    ViperBassSetParam(dsp, mode, freq, gain);
+    if (enable) ViperBassEnable(dsp); else ViperBassDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVReverb(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat room, jfloat damp, jfloat width, jfloat wet, jfloat dry)
+{
+    DECLARE_DSP_B
+    VReverbSetParam(dsp, room, damp, width, wet, dry);
+    if (enable) VReverbEnable(dsp); else VReverbDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpeakerOpt(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat strength)
+{
+    DECLARE_DSP_B
+    SpeakerOptSetParam(dsp, strength);
+    if (enable) SpeakerOptEnable(dsp); else SpeakerOptDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectrumExtension(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat barkFreq, jfloat strength)
 {
     DECLARE_DSP_B

@@ -4,7 +4,7 @@
     <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
         android:key="@string/key_hpsurround_enable"
         android:disableDependentsState="false"
-        android:title="@string/hpsurround_enable"
+        android:title="@string/v4a_hpsurround_title"
         android:icon="@drawable/ic_twotone_headset_24dp"
         app:iconSpaceReserved="false">
         <Preference

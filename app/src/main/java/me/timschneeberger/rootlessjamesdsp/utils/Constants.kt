@@ -29,6 +29,11 @@ object Constants {
     const val PREF_FIELDSURROUND = "dsp_fieldsurround"
     const val PREF_AGC = "dsp_agc"
     const val PREF_HPSURROUND = "dsp_hpsurround"
+    const val PREF_FETCOMP = "dsp_fetcomp"
+    const val PREF_CURE = "dsp_cure"
+    const val PREF_VIPERBASS = "dsp_viperbass"
+    const val PREF_VREVERB = "dsp_vreverb"
+    const val PREF_SPEAKEROPT = "dsp_speakeropt"
 
     // Default string values
     const val DEFAULT_CONVOLVER_ADVIMP = "-80;-100;0;0;0;0"
