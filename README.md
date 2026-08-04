@@ -4,7 +4,7 @@
   RootlessViPER4Android
   <br>
 </h1>
-<h4 align="center">ViPER4Android-style audio effects on Android — <b>no root required</b>. A feature-extended fork of RootlessJamesDSP.</h4>
+<h4 align="center">RootlessJamesDSP — ViPER4Android Edition (V4A)<br>ViPER4Android-style audio effects on Android — <b>no root required</b>.</h4>
 
 <p align="center">
   <a href="https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/actions/workflows/build-fork.yml">
@@ -62,6 +62,24 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - Smart UI: irrelevant sliders hide automatically
 - Crash-safe DSP dispatch with built-in diagnostics
 - Works per-app, session-based — no audio HAL patching
+
+## 🆕 Added & changed vs. upstream RootlessJamesDSP
+
+**Added in this fork:**
+- 🐍 **16 native ViPER4Android effect sections** (see table above) — including brand-new engine code for Dynamic System, ViPER Bass, Clarity, FET Compressor, Cure+, Field/Differential/Headphone Surround, Reverberation, Spectrum Extension, AGC & Speaker Optimization
+- 🔊 **Dual-band psychoacoustic bass exciter** — two independently tunable harmonic bands (the second band hides until you enable it)
+- 🛡 **Selectable output limiter modes**: classic peak limiter, smooth **soft-saturation** (tanh) mode, or fully off
+- 🎧 **446 official ViPER-DDC correction files bundled** and auto-installed on first launch
+- ℹ️ Collapsible plain-language explainers on every effect section
+- 🧰 Built-in crash diagnostics: native + JVM crash reports auto-copied to clipboard on next launch
+
+**Changed & fixed:**
+- 🔥 **Tube simulator actually works now** — upstream divided the drive value by 100 before it reached the engine (max ≈ 0.12 dB, inaudible); fixed and range extended to **24 dB**
+- 🐛 Fixed a crash when seekbars use a `%` unit label
+- 🪄 Smart UI: Dynamic System custom sliders only appear in Custom mode; irrelevant controls stay hidden
+- 🗂 All ViPER-equivalent sections renamed to their **authentic V4A titles** and reordered into the classic V4A layout under a dedicated header
+- ➖ Removed the redundant Parametric EQ card (Arbitrary-response/graphic EQ covers it)
+- 📛 App renamed to **RootlessViPER4Android** (updates in place over RootlessJamesDSP)
 
 ## 📲 Download & Install
 1. Grab the latest APK from the [**Releases**](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/releases) page (or fresh builds from [Actions](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/actions)).
