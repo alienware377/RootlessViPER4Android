@@ -99,6 +99,14 @@ typedef struct
 } FieldSurround;
 typedef struct
 {
+	float bufL[4096], bufR[4096];
+	int widx;
+	float cross, room;
+	int dCross, dR1, dR2;
+	float lpCoef, lpzL, lpzR;
+} HpSurround;
+typedef struct
+{
 	float target, maxGain;
 	float envCoef, gainCoef;
 	float env, gain;
@@ -604,6 +612,8 @@ typedef struct dspsys
 	FieldSurround fieldSurround;
 	int agcEnabled;
 	Agc agc;
+	int hpSurroundEnabled;
+	HpSurround hpSurround;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -709,6 +719,11 @@ extern void AgcSetParam(JamesDSPLib *jdsp, float targetPct, float maxBoostDb);
 extern void AgcProcess(JamesDSPLib *jdsp, size_t n);
 extern void AgcEnable(JamesDSPLib *jdsp);
 extern void AgcDisable(JamesDSPLib *jdsp);
+// Headphone surround+ (lite)
+extern void HpSurroundSetParam(JamesDSPLib *jdsp, float strengthPct, float roomPct);
+extern void HpSurroundProcess(JamesDSPLib *jdsp, size_t n);
+extern void HpSurroundEnable(JamesDSPLib *jdsp);
+extern void HpSurroundDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

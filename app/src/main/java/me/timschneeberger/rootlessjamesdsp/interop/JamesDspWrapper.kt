@@ -35,6 +35,7 @@ object JamesDspWrapper {
     external fun setViperClarity(self: JamesDspHandle, enable: Boolean, mode: Int, gain: Float): Boolean
     external fun setFieldSurround(self: JamesDspHandle, enable: Boolean, strength: Float, midImage: Float): Boolean
     external fun setAgc(self: JamesDspHandle, enable: Boolean, target: Float, maxBoost: Float): Boolean
+    external fun setHpSurround(self: JamesDspHandle, enable: Boolean, strength: Float, room: Float): Boolean
     external fun setSpectrumExtension(self: JamesDspHandle, enable: Boolean, barkFreq: Float, strength: Float): Boolean
     external fun initCrashGuard(path: String)
     external fun setPostGain(self: JamesDspHandle, postGain: Float): Boolean

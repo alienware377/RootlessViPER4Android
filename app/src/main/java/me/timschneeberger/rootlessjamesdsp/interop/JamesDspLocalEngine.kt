@@ -121,6 +121,10 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setAgc(handle, enable, target, maxBoost)
     }
 
+    override fun setHpSurround(enable: Boolean, strength: Float, room: Float): Boolean {
+        return JamesDspWrapper.setHpSurround(handle, enable, strength, room)
+    }
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         return JamesDspWrapper.setSpectrumExtension(handle, enable, barkFreq, strength)
     }

@@ -169,5 +169,8 @@
     <string name="key_agc_enable" translatable="false">agc_enable</string>
     <string name="key_agc_target" translatable="false">agc_target</string>
     <string name="key_agc_maxboost" translatable="false">agc_maxboost</string>
+    <string name="key_hpsurround_enable" translatable="false">hpsurround_enable</string>
+    <string name="key_hpsurround_strength" translatable="false">hpsurround_strength</string>
+    <string name="key_hpsurround_room" translatable="false">hpsurround_room</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
 </resources>

@@ -28,6 +28,7 @@ object Constants {
     const val PREF_CLARITY = "dsp_clarity"
     const val PREF_FIELDSURROUND = "dsp_fieldsurround"
     const val PREF_AGC = "dsp_agc"
+    const val PREF_HPSURROUND = "dsp_hpsurround"
 
     // Default string values
     const val DEFAULT_CONVOLVER_ADVIMP = "-80;-100;0;0;0;0"

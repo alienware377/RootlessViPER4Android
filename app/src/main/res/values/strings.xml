@@ -259,7 +259,7 @@
     <string name="convolver_info">Applies an impulse response (IRS/WAV) file — a sound \"fingerprint\" that can simulate speakers, rooms, or custom EQ curves with studio-grade accuracy.</string>
     <string name="liveprog_info">Runs custom EEL2 audio scripts for effects the app doesn\'t have built in. For tinkerers!</string>
     <string name="section_info_title">ℹ️ What is this?</string>
-    <string name="section_info_tap_hint">Tap to learn what this section does</string>
+    <string name="section_info_tap_hint">ℹ️ Tap to learn what this section does</string>
     <string name="clarity_enable">ViPER clarity</string>
     <string name="clarity_info">Makes music sound crisper and more detailed. Natural sharpens transients (attacks of notes), XHiFi lifts the treble shelf, and OZone+ does both.</string>
     <string name="clarity_mode">Mode</string>
@@ -275,6 +275,10 @@
     <string name="agc_info">Keeps volume consistent automatically — quiet songs get gently boosted toward your target level, loud ones are left alone. Slow and smooth, no pumping.</string>
     <string name="agc_target">Target level</string>
     <string name="agc_maxboost">Maximum boost</string>
+    <string name="hpsurround_enable">Headphone surround+ (lite)</string>
+    <string name="hpsurround_info">Simulates listening to speakers in a small room instead of inside your head: some of each channel is delayed, softened and fed to the opposite ear, plus subtle early reflections. Headphones only. Inspired by ViPER\'s VHS+.</string>
+    <string name="hpsurround_strength">Effect strength</string>
+    <string name="hpsurround_room">Room reflections</string>
     <string name="bassex_band2">Second band</string>
     <string name="bassex_band2_summary">Adds a second, independent bass harmonic generator — set it lower (sub warmth) while band 1 handles punch</string>
     <string name="bassex_cutoff2">Band 2 bass range</string>
