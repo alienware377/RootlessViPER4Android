@@ -433,7 +433,7 @@ class MaterialSeekbarPreference : Preference {
 
             if(valueLabelOverride == null)
             {
-                mSeekBarValueTextView!!.text = "%.${mPrecision}f${mUnit}".format(Locale.ROOT, value)
+                mSeekBarValueTextView!!.text = "%.${mPrecision}f${mUnit.replace("%", "%%")}".format(Locale.ROOT, value)
             }
             else
             {
