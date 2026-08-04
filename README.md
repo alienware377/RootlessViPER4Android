@@ -85,14 +85,14 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - 🪄 Smart UI: Dynamic System custom sliders only appear in Custom mode; irrelevant controls stay hidden
 - 🗂 All ViPER-equivalent sections renamed to their **authentic V4A titles** and reordered into the classic V4A layout under a dedicated header
 - ➖ Removed the redundant Parametric EQ card (Arbitrary-response/graphic EQ covers it)
-- 📛 App renamed to **RootlessViPER4Android** (updates in place over RootlessJamesDSP)
+- 📛 App renamed to **RootlessViPER4Android** (installs alongside the original RootlessJamesDSP)
 
 ## 📲 Download & Install
 1. Grab the latest APK from the [**Releases**](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/releases) page (or fresh builds from [Actions](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/actions)).
 2. Install and follow the in-app onboarding — it walks you through the permission setup step-by-step.
 3. Play music, open the app, and start flipping switches 🎶
 
-Settings from the original RootlessJamesDSP carry over; this fork installs as the same package and updates in place.
+Installs **alongside** the original RootlessJamesDSP as a separate app — keep both or remove the original, your choice.
 
 ## ⚠️ Limitations
 Rootless audio capture on Android has inherent restrictions (inherited from upstream RootlessJamesDSP):
