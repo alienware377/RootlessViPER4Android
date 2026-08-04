@@ -458,30 +458,6 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean
     abstract fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean
 
-    companion object {
-        // x1, x2, y1, y2, sideGainX, sideGainY — from the ViperFX DynamicBass presets
-        val vdynBassPresets = arrayOf(
-            floatArrayOf(140f,6200f,40f,60f,10f,80f),
-            floatArrayOf(180f,5800f,55f,80f,10f,70f),
-            floatArrayOf(300f,5600f,60f,105f,10f,50f),
-            floatArrayOf(600f,5400f,60f,105f,10f,20f),
-            floatArrayOf(100f,5600f,40f,80f,50f,50f),
-            floatArrayOf(1200f,6200f,40f,80f,0f,20f),
-            floatArrayOf(1000f,6200f,40f,80f,0f,10f),
-            floatArrayOf(800f,6200f,40f,80f,10f,0f),
-            floatArrayOf(400f,6200f,40f,80f,10f,0f),
-            floatArrayOf(1200f,6200f,50f,90f,15f,10f),
-            floatArrayOf(1000f,6200f,50f,90f,30f,10f),
-            floatArrayOf(1100f,6200f,60f,100f,20f,0f),
-            floatArrayOf(1200f,6200f,50f,100f,10f,50f),
-            floatArrayOf(1200f,6200f,60f,100f,0f,30f),
-            floatArrayOf(1200f,6200f,40f,80f,0f,30f),
-            floatArrayOf(1000f,6200f,60f,100f,0f,0f),
-            floatArrayOf(1000f,6200f,60f,120f,0f,0f),
-            floatArrayOf(1000f,6200f,80f,140f,0f,0f),
-            floatArrayOf(800f,6200f,80f,140f,0f,0f)
-        )
-    }
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean
     abstract fun setCrossfeed(enable: Boolean, mode: Int): Boolean
@@ -527,3 +503,26 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         private val dfMergeGain = java.text.DecimalFormat("0.000000", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.ENGLISH))
     }
 }
+
+// x1, x2, y1, y2, sideGainX, sideGainY — from the ViperFX DynamicBass presets
+internal val vdynBassPresets = arrayOf(
+    floatArrayOf(140f,6200f,40f,60f,10f,80f),
+    floatArrayOf(180f,5800f,55f,80f,10f,70f),
+    floatArrayOf(300f,5600f,60f,105f,10f,50f),
+    floatArrayOf(600f,5400f,60f,105f,10f,20f),
+    floatArrayOf(100f,5600f,40f,80f,50f,50f),
+    floatArrayOf(1200f,6200f,40f,80f,0f,20f),
+    floatArrayOf(1000f,6200f,40f,80f,0f,10f),
+    floatArrayOf(800f,6200f,40f,80f,10f,0f),
+    floatArrayOf(400f,6200f,40f,80f,10f,0f),
+    floatArrayOf(1200f,6200f,50f,90f,15f,10f),
+    floatArrayOf(1000f,6200f,50f,90f,30f,10f),
+    floatArrayOf(1100f,6200f,60f,100f,20f,0f),
+    floatArrayOf(1200f,6200f,50f,100f,10f,50f),
+    floatArrayOf(1200f,6200f,60f,100f,0f,30f),
+    floatArrayOf(1200f,6200f,40f,80f,0f,30f),
+    floatArrayOf(1000f,6200f,60f,100f,0f,0f),
+    floatArrayOf(1000f,6200f,60f,120f,0f,0f),
+    floatArrayOf(1000f,6200f,80f,140f,0f,0f),
+    floatArrayOf(800f,6200f,80f,140f,0f,0f)
+)
