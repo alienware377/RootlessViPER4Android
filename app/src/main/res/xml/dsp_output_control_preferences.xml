@@ -9,9 +9,9 @@
       android:selectable="false"
       android:persistent="false" />
   <Preference
+            android:key="section_info"
       android:title="@string/section_info_title"
       android:summary="@string/output_info"
-      android:selectable="false"
       android:persistent="false"
       app:allowDividerAbove="false"
       app:iconSpaceReserved="false"/>

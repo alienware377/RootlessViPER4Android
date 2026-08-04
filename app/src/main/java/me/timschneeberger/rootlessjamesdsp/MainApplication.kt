@@ -148,6 +148,23 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
             Timber.e(t)
         }
 
+        Thread {
+            try {
+                val ddcDir = java.io.File(getExternalFilesDir(null), "DDC")
+                if (!ddcDir.exists()) ddcDir.mkdirs()
+                assets.list("DDC")?.forEach { name ->
+                    val dst = java.io.File(ddcDir, name)
+                    if (!dst.exists()) {
+                        assets.open("DDC/" + name).use { inp ->
+                            dst.outputStream().use { out -> inp.copyTo(out) }
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                Timber.e(t)
+            }
+        }.start()
+
         Timber.i("====> Application starting up")
 
         val dumpFile = File(filesDir, "dump.txt")

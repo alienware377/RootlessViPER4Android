@@ -8,9 +8,9 @@
         android:icon="@drawable/ic_baseline_led_outline_24dp"
         app:iconSpaceReserved="false">
         <Preference
+            android:key="section_info"
             android:title="@string/section_info_title"
             android:summary="@string/tube_info"
-            android:selectable="false"
             android:persistent="false"
             app:allowDividerAbove="false"
             app:iconSpaceReserved="false"/>

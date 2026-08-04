@@ -85,6 +85,24 @@ typedef struct
 	int widx;
 	float delayL, delayR;
 } DiffSurround;
+typedef struct
+{
+	int mode;
+	float sharp;
+	float prev[2];
+	float shelf[5];
+	float shelfZ[2][4];
+} ViperClarity;
+typedef struct
+{
+	float sideGain, midGain;
+} FieldSurround;
+typedef struct
+{
+	float target, maxGain;
+	float envCoef, gainCoef;
+	float env, gain;
+} Agc;
 #define FFTSIZE_DRS (8192)
 #define ANALYSIS_OVERLAP_DRS_MAX (8)
 #define HALFWNDLEN_DRS ((FFTSIZE_DRS >> 1) + 1)
@@ -580,6 +598,12 @@ typedef struct dspsys
 	VDynamicBass vdynBass;
 	int diffSurroundEnabled;
 	DiffSurround diffSurround;
+	int viperClarityEnabled;
+	ViperClarity viperClarity;
+	int fieldSurroundEnabled;
+	FieldSurround fieldSurround;
+	int agcEnabled;
+	Agc agc;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -670,6 +694,21 @@ extern void DiffSurroundSetParam(JamesDSPLib *jdsp, float delayLms, float delayR
 extern void DiffSurroundProcess(JamesDSPLib *jdsp, size_t n);
 extern void DiffSurroundEnable(JamesDSPLib *jdsp);
 extern void DiffSurroundDisable(JamesDSPLib *jdsp);
+// ViPER clarity
+extern void ViperClaritySetParam(JamesDSPLib *jdsp, int mode, float gainDb);
+extern void ViperClarityProcess(JamesDSPLib *jdsp, size_t n);
+extern void ViperClarityEnable(JamesDSPLib *jdsp);
+extern void ViperClarityDisable(JamesDSPLib *jdsp);
+// Field surround
+extern void FieldSurroundSetParam(JamesDSPLib *jdsp, float strengthPct, float midImagePct);
+extern void FieldSurroundProcess(JamesDSPLib *jdsp, size_t n);
+extern void FieldSurroundEnable(JamesDSPLib *jdsp);
+extern void FieldSurroundDisable(JamesDSPLib *jdsp);
+// Auto gain control
+extern void AgcSetParam(JamesDSPLib *jdsp, float targetPct, float maxBoostDb);
+extern void AgcProcess(JamesDSPLib *jdsp, size_t n);
+extern void AgcEnable(JamesDSPLib *jdsp);
+extern void AgcDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

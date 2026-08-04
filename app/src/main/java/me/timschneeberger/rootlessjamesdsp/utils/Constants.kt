@@ -25,6 +25,9 @@ object Constants {
     const val PREF_SPECTRUMEXT = "dsp_spectrumext"
     const val PREF_VDYNBASS = "dsp_vdynbass"
     const val PREF_DIFFSURROUND = "dsp_diffsurround"
+    const val PREF_CLARITY = "dsp_clarity"
+    const val PREF_FIELDSURROUND = "dsp_fieldsurround"
+    const val PREF_AGC = "dsp_agc"
 
     // Default string values
     const val DEFAULT_CONVOLVER_ADVIMP = "-80;-100;0;0;0;0"

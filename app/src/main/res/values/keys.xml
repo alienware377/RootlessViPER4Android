@@ -160,5 +160,14 @@
     <string name="key_diffsurround_enable" translatable="false">diffsurround_enable</string>
     <string name="key_diffsurround_delay_l" translatable="false">diffsurround_delay_l</string>
     <string name="key_diffsurround_delay_r" translatable="false">diffsurround_delay_r</string>
+    <string name="key_clarity_enable" translatable="false">clarity_enable</string>
+    <string name="key_clarity_mode" translatable="false">clarity_mode</string>
+    <string name="key_clarity_gain" translatable="false">clarity_gain</string>
+    <string name="key_fieldsurround_enable" translatable="false">fieldsurround_enable</string>
+    <string name="key_fieldsurround_strength" translatable="false">fieldsurround_strength</string>
+    <string name="key_fieldsurround_mid" translatable="false">fieldsurround_mid</string>
+    <string name="key_agc_enable" translatable="false">agc_enable</string>
+    <string name="key_agc_target" translatable="false">agc_target</string>
+    <string name="key_agc_maxboost" translatable="false">agc_maxboost</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
 </resources>

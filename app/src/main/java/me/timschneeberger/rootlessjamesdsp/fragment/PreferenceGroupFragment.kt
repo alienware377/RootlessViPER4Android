@@ -94,12 +94,43 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         preferenceManager.sharedPreferencesMode = Context.MODE_MULTI_PROCESS
         addPreferencesFromResource(args.getInt(BUNDLE_XML_RES))
 
+        // Collapsible "What is this?" info cards
+        findPreference<Preference>("section_info")?.let { p ->
+            val full = p.summary
+            var expanded = false
+            p.summary = getString(R.string.section_info_tap_hint)
+            p.isSelectable = true
+            p.setOnPreferenceClickListener {
+                expanded = !expanded
+                p.summary = if (expanded) full else getString(R.string.section_info_tap_hint)
+                true
+            }
+        }
+
         requireContext().registerLocalReceiver(receiver, IntentFilter().apply {
             addAction(Constants.ACTION_PRESET_LOADED)
             addAction(Constants.ACTION_REPORT_SAMPLE_RATE)
         })
 
         when(args.getInt(BUNDLE_XML_RES)) {
+            R.xml.dsp_vdynbass_preferences -> {
+                val customKeys = arrayOf(
+                    R.string.key_vdynbass_x1, R.string.key_vdynbass_x2,
+                    R.string.key_vdynbass_y1, R.string.key_vdynbass_y2,
+                    R.string.key_vdynbass_sgx, R.string.key_vdynbass_sgy)
+                val modePref = findPreference<androidx.preference.ListPreference>(getString(R.string.key_vdynbass_mode))
+                fun applyCustomVisibility(v: String?) {
+                    val custom = v == "19"
+                    customKeys.forEach { k ->
+                        findPreference<Preference>(getString(k))?.isVisible = custom
+                    }
+                }
+                applyCustomVisibility(modePref?.value)
+                modePref?.setOnPreferenceChangeListener { _, newValue ->
+                    applyCustomVisibility(newValue as? String)
+                    true
+                }
+            }
             R.xml.dsp_convolver_preferences -> setupConvolverSampleRateFiles()
             R.xml.dsp_compander_preferences -> {
                 findPreference<MaterialSeekbarPreference>(getString(R.string.key_compander_granularity))?.valueLabelOverride =

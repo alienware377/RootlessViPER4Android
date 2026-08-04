@@ -376,6 +376,33 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setDiffSurround
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setViperClarity(JNIEnv *env, jobject obj, jlong self, jboolean enable, jint mode, jfloat gain)
+{
+    DECLARE_DSP_B
+    ViperClaritySetParam(dsp, mode, gain);
+    if (enable) ViperClarityEnable(dsp); else ViperClarityDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setFieldSurround(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat strength, jfloat midImage)
+{
+    DECLARE_DSP_B
+    FieldSurroundSetParam(dsp, strength, midImage);
+    if (enable) FieldSurroundEnable(dsp); else FieldSurroundDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setAgc(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat target, jfloat maxBoost)
+{
+    DECLARE_DSP_B
+    AgcSetParam(dsp, target, maxBoost);
+    if (enable) AgcEnable(dsp); else AgcDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectrumExtension(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat barkFreq, jfloat strength)
 {
     DECLARE_DSP_B

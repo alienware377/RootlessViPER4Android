@@ -104,6 +104,21 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val dsDelayL = cache.get(R.string.key_diffsurround_delay_l, 0f)
             val dsDelayR = cache.get(R.string.key_diffsurround_delay_r, 10f)
 
+            cache.select(Constants.PREF_CLARITY)
+            val clEnabled = cache.get(R.string.key_clarity_enable, false)
+            val clMode = cache.get(R.string.key_clarity_mode, "0").toInt()
+            val clGain = cache.get(R.string.key_clarity_gain, 3.5f)
+
+            cache.select(Constants.PREF_FIELDSURROUND)
+            val fsEnabled = cache.get(R.string.key_fieldsurround_enable, false)
+            val fsStrength = cache.get(R.string.key_fieldsurround_strength, 30f)
+            val fsMid = cache.get(R.string.key_fieldsurround_mid, 50f)
+
+            cache.select(Constants.PREF_AGC)
+            val agcEnabled = cache.get(R.string.key_agc_enable, false)
+            val agcTarget = cache.get(R.string.key_agc_target, 30f)
+            val agcMaxBoost = cache.get(R.string.key_agc_maxboost, 12f)
+
             cache.select(Constants.PREF_SPECTRUMEXT)
             val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
             val spxBark = cache.get(R.string.key_spectrumext_bark, 7600f)
@@ -171,6 +186,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         setVDynBass(vdbEnabled, vdbGain, p[0], p[1], p[2], p[3], p[4], p[5])
                     }
                     Constants.PREF_DIFFSURROUND -> setDiffSurround(dsEnabled, dsDelayL, dsDelayR)
+                    Constants.PREF_CLARITY -> setViperClarity(clEnabled, clMode, clGain)
+                    Constants.PREF_FIELDSURROUND -> setFieldSurround(fsEnabled, fsStrength, fsMid)
+                    Constants.PREF_AGC -> setAgc(agcEnabled, agcTarget, agcMaxBoost)
                     Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -457,6 +475,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean
     abstract fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean
     abstract fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean
+    abstract fun setViperClarity(enable: Boolean, mode: Int, gain: Float): Boolean
+    abstract fun setFieldSurround(enable: Boolean, strength: Float, midImage: Float): Boolean
+    abstract fun setAgc(enable: Boolean, target: Float, maxBoost: Float): Boolean
 
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean

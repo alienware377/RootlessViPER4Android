@@ -5,12 +5,12 @@
         android:key="@string/key_spectrumext_enable"
         android:disableDependentsState="false"
         android:title="@string/spectrumext_enable"
-        android:icon="@drawable/ic_twotone_volume_up_24dp"
+        android:icon="@drawable/ic_twotone_auto_awesome_24dp"
         app:iconSpaceReserved="false">
         <Preference
+            android:key="section_info"
             android:title="@string/spectrumext_info_title"
             android:summary="@string/spectrumext_info"
-            android:selectable="false"
             android:persistent="false"
             app:allowDividerAbove="false"
             app:iconSpaceReserved="false"/>

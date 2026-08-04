@@ -97,6 +97,18 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_diffsurround_preferences
                 ))
             .replace(
+                R.id.card_clarity, PreferenceGroupFragment.newInstance(Constants.PREF_CLARITY,
+                    R.xml.dsp_clarity_preferences
+                ))
+            .replace(
+                R.id.card_fieldsurround, PreferenceGroupFragment.newInstance(Constants.PREF_FIELDSURROUND,
+                    R.xml.dsp_fieldsurround_preferences
+                ))
+            .replace(
+                R.id.card_agc, PreferenceGroupFragment.newInstance(Constants.PREF_AGC,
+                    R.xml.dsp_agc_preferences
+                ))
+            .replace(
                 R.id.card_eq, PreferenceGroupFragment.newInstance(Constants.PREF_EQ,
                     R.xml.dsp_equalizer_preferences
                 ))
