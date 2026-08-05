@@ -457,6 +457,15 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpeakerOpt(J
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setPitchShift(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat semitones, jfloat mix)
+{
+    DECLARE_DSP_B
+    PitchShiftSetParam(dsp, semitones, mix);
+    if (enable) PitchShiftEnable(dsp); else PitchShiftDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectrumExtension(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat barkFreq, jfloat strength)
 {
     DECLARE_DSP_B

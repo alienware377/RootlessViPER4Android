@@ -311,6 +311,10 @@
     <string name="speakeropt_enable">Speaker optimization</string>
     <string name="speakeropt_info">Tunes sound for tiny phone speakers: removes lows they can\'t play anyway (saving power and rattle) and lifts presence so voices cut through.</string>
     <string name="speakeropt_strength">Strength</string>
+    <string name="pitchshift_enable">Pitch shifter</string>
+    <string name="pitchshift_info">Shifts the pitch of everything up or down without changing playback speed — deep-voice, chipmunk, or subtle retunes in half-semitone steps. A slight watery shimmer at extreme settings is normal for real-time shifting.</string>
+    <string name="pitchshift_semitones">Pitch shift</string>
+    <string name="pitchshift_mix">Mix</string>
     <string name="v4a_tube_title">Tube simulator (6N1J)</string>
     <string name="v4a_agc_title">Playback gain control (AGC)</string>
     <string name="v4a_ddc_title">ViPER-DDC</string>

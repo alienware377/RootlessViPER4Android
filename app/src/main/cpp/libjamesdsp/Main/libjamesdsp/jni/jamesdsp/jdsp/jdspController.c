@@ -315,6 +315,9 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// Input / Compressor
 	if (jdsp->compEnabled)
 		CompressorProcess(jdsp, n);
+	// Pitch shifter
+	if (jdsp->pitchShiftEnabled)
+		PitchShiftProcess(jdsp, n);
 	// FET compressor
 	if (jdsp->fetCompEnabled)
 		FetCompProcess(jdsp, n);
@@ -427,6 +430,9 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// Input / Compressor
 	if (jdsp->compEnabled)
 		CompressorProcess(jdsp, n);
+	// Pitch shifter
+	if (jdsp->pitchShiftEnabled)
+		PitchShiftProcess(jdsp, n);
 	// FET compressor
 	if (jdsp->fetCompEnabled)
 		FetCompProcess(jdsp, n);
@@ -1237,6 +1243,8 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	VReverbSetParam(jdsp, 50.0f, 50.0f, 100.0f, 30.0f, 100.0f);
 	jdsp->speakerOptEnabled = 0;
 	SpeakerOptSetParam(jdsp, 60.0f);
+	jdsp->pitchShiftEnabled = 0;
+	PitchShiftSetParam(jdsp, 0.0f, 100.0f);
 	JLimiterSetCoefficients(jdsp, -(double)(FLT_EPSILON * 10.0f), 100.0);
 	jdsp->postGain = 1.0f;
 	// Init effect
