@@ -361,7 +361,7 @@
     <string name="onboarding_back">Back</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_finish">Finish</string>
-    <string name="onboarding_greeting">Welcome to RootlessJamesDSP!</string>
+    <string name="onboarding_greeting">Welcome to RootlessViPER4Android!</string>
     <string name="onboarding_caption">This assistant will help you to set-up this app.</string>
     <string name="onboarding_warning">Currently, this application is unfinished and unstable. Please note that it may not work on some devices as expected since it uses Android APIs not designed for use by third parties.</string>
     <string name="onboarding_fix_permissions_title">User action required</string>
