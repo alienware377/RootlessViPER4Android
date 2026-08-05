@@ -60,6 +60,7 @@ android {
             manifestPlaceholders["crashlyticsCollectionEnabled"] = "false"
         }
         getByName("release") {
+            applicationIdSuffix = ".v4a"
             manifestPlaceholders += mapOf("crashlyticsCollectionEnabled" to "true")
             configure<CrashlyticsExtension> {
                 nativeSymbolUploadEnabled = true
