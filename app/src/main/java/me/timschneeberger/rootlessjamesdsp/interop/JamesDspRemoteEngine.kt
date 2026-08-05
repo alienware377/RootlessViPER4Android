@@ -157,6 +157,8 @@ class JamesDspRemoteEngine(
 
     override fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean = true
 
+    override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean = true
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         // Spectrum extension is unsupported in root/plugin mode (remote engine)
         return true

@@ -145,6 +145,10 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setSpeakerOpt(handle, enable, strength)
     }
 
+    override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean {
+        return JamesDspWrapper.setPitchShift(handle, enable, semitones, mix)
+    }
+
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
         return JamesDspWrapper.setSpectrumExtension(handle, enable, barkFreq, strength)
     }

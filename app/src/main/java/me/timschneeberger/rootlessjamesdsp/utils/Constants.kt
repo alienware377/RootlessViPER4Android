@@ -34,6 +34,7 @@ object Constants {
     const val PREF_VIPERBASS = "dsp_viperbass"
     const val PREF_VREVERB = "dsp_vreverb"
     const val PREF_SPEAKEROPT = "dsp_speakeropt"
+    const val PREF_PITCHSHIFT = "dsp_pitchshift"
 
     // Default string values
     const val DEFAULT_CONVOLVER_ADVIMP = "-80;-100;0;0;0;0"

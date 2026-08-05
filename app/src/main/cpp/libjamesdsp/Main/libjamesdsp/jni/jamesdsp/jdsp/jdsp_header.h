@@ -97,6 +97,14 @@ typedef struct
 {
 	float sideGain, midGain;
 } FieldSurround;
+typedef struct
+{
+	float buf[2][8192];
+	int w;
+	float phasor;
+	float rate, mix;
+	int win;
+} PitchShift;
 #define VREV_COMBLEN 8192
 #define VREV_APLEN 2048
 typedef struct
@@ -658,6 +666,8 @@ typedef struct dspsys
 	VReverb vreverb;
 	int speakerOptEnabled;
 	SpeakerOpt speakerOpt;
+	int pitchShiftEnabled;
+	PitchShift pitchShift;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
 	Crossfeed advXF;
@@ -788,6 +798,10 @@ extern void SpeakerOptSetParam(JamesDSPLib *jdsp, float strengthPct);
 extern void SpeakerOptProcess(JamesDSPLib *jdsp, size_t n);
 extern void SpeakerOptEnable(JamesDSPLib *jdsp);
 extern void SpeakerOptDisable(JamesDSPLib *jdsp);
+extern void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct);
+extern void PitchShiftProcess(JamesDSPLib *jdsp, size_t n);
+extern void PitchShiftEnable(JamesDSPLib *jdsp);
+extern void PitchShiftDisable(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

@@ -129,6 +129,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_speakeropt_preferences
                 ))
             .replace(
+                R.id.card_pitchshift, PreferenceGroupFragment.newInstance(Constants.PREF_PITCHSHIFT,
+                    R.xml.dsp_pitchshift_preferences
+                ))
+            .replace(
                 R.id.card_agc, PreferenceGroupFragment.newInstance(Constants.PREF_AGC,
                     R.xml.dsp_agc_preferences
                 ))

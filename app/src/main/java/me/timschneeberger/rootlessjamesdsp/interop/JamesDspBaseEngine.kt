@@ -154,6 +154,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val soEnabled = cache.get(R.string.key_speakeropt_enable, false)
             val soStrength = cache.get(R.string.key_speakeropt_strength, 60f)
 
+            cache.select(Constants.PREF_PITCHSHIFT)
+            val psEnabled = cache.get(R.string.key_pitchshift_enable, false)
+            val psSemitones = cache.get(R.string.key_pitchshift_semitones, 0f)
+            val psMix = cache.get(R.string.key_pitchshift_mix, 100f)
+
             cache.select(Constants.PREF_SPECTRUMEXT)
             val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
             val spxBark = cache.get(R.string.key_spectrumext_bark, 7600f)
@@ -230,6 +235,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_VIPERBASS -> setViperBass(vbEnabled, vbMode, vbFreq, vbGain)
                     Constants.PREF_VREVERB -> setVReverb(vrEnabled, vrRoom, vrDamp, vrWidth, vrWet, vrDry)
                     Constants.PREF_SPEAKEROPT -> setSpeakerOpt(soEnabled, soStrength)
+                    Constants.PREF_PITCHSHIFT -> setPitchShift(psEnabled, psSemitones, psMix)
                     Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
                     Constants.PREF_GEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
@@ -525,6 +531,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setViperBass(enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean
     abstract fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean
     abstract fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean
+    abstract fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean
 
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean
     abstract fun setReverb(enable: Boolean, preset: Int): Boolean
