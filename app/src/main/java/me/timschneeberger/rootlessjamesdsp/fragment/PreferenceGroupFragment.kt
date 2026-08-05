@@ -99,6 +99,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             val full = p.summary
             var expanded = false
             p.title = null
+            p.setIcon(R.drawable.ic_twotone_info_24dp)
             p.summary = getString(R.string.section_info_tap_hint)
             p.isSelectable = true
             p.setOnPreferenceClickListener {
