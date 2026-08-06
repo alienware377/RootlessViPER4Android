@@ -32,6 +32,14 @@
                 app:chipIcon="@drawable/ic_baseline_add_24dp" />
 
             <com.google.android.material.chip.Chip
+                android:id="@+id/remove"
+                style="@style/Widget.Material3.Chip.Assist.Elevated"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/peq_remove_band"
+                app:chipIcon="@drawable/ic_twotone_remove_24dp" />
+
+            <com.google.android.material.chip.Chip
                 android:id="@+id/undo"
                 style="@style/Widget.Material3.Chip.Assist.Elevated"
                 android:layout_width="wrap_content"

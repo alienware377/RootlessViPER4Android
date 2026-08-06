@@ -44,6 +44,7 @@ class ParametricEqualizerFragment : Fragment() {
         set(value) {
             field = value
             binding.add.isEnabled = !value
+            binding.remove.isEnabled = !value
             binding.reset.isEnabled = !value
             binding.importFile.isEnabled = !value
             binding.exportFile.isEnabled = !value
@@ -62,6 +63,9 @@ class ParametricEqualizerFragment : Fragment() {
                 binding.preampInput.value = result.preampDb.toFloat()
                 binding.equalizerSurface.setPreampDb(result.preampDb)
 
+                sortBandsByFrequency()
+                binding.equalizerSurface.setBands(adapter.bands, result.preampDb)
+                adapter.notifyDataSetChanged()
                 save()
                 updateViewState()
                 val msg = getString(R.string.peq_import_success, adapter.bands.size)
@@ -175,6 +179,26 @@ class ParametricEqualizerFragment : Fragment() {
             binding.qInput.value = 1.41f
             setFilterTypeSelection(ParametricEqFilterType.PEAKING)
             updateViewState()
+        }
+
+        binding.remove.setOnClickListener {
+            // Mirrors long-pressing a handle, for anyone who hasn't found that
+            val target = selectedForEdit ?: adapter.bands.lastOrNull()
+            if (target == null) {
+                requireContext().toast(R.string.peq_remove_none)
+                return@setOnClickListener
+            }
+            pushHistory(snapshot())
+            adapter.bands.remove(target)
+            selectedForEdit = null
+            editorBandUuid = null
+            editorActive = false
+            sortBandsByFrequency()
+            binding.equalizerSurface.setBands(adapter.bands, binding.preampInput.value.toDouble())
+            binding.equalizerSurface.selectBand(-1)
+            adapter.notifyDataSetChanged()
+            updateViewState()
+            save()
         }
 
         binding.importFile.setOnClickListener {

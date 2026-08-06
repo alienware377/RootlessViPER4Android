@@ -107,7 +107,8 @@ typedef struct
 	float fs, delaySamples, feedback;
 	int model, filterType;
 	float stereoSpread, wet, dry;
-	float svfF, svfQ, svfLp[2], svfBp[2];
+	float svfG, svfK, svfA1, svfA2, svfA3;
+	float svfIc1[2], svfIc2[2];
 	float modRate, modDepth, modInc, modPhase;
 	float diffusion, satDrive;
 } EchoDelay;

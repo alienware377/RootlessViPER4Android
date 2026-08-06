@@ -174,14 +174,18 @@ class LiveprogParamsFragment : PreferenceFragmentCompat(), NonPersistentDatastor
     }
 
     private fun reload() {
-        val newPath = context?.let { ctx ->
-            ctx.getExternalFilesDir(null)!!.absolutePath + "/" + PreferenceCache.uncachedGet(
-                ctx,
-                Constants.PREF_LIVEPROG,
-                R.string.key_liveprog_file,
-                ""
-            )
-        }
+        // Use the script this screen was opened for. Re-reading the main
+        // Liveprog preference here would drag chained slots 2-4 back to
+        // slot 1's script.
+        val newPath = arguments?.getString(BUNDLE_TARGET_FILE)
+            ?: context?.let { ctx ->
+                ctx.getExternalFilesDir(null)!!.absolutePath + "/" + PreferenceCache.uncachedGet(
+                    ctx,
+                    Constants.PREF_LIVEPROG,
+                    R.string.key_liveprog_file,
+                    ""
+                )
+            }
 
         if(newPath != eelParser.path && newPath != null) {
             Timber.d("Liveprog path changed. Switching to $newPath")
@@ -209,7 +213,7 @@ class LiveprogParamsFragment : PreferenceFragmentCompat(), NonPersistentDatastor
     }
 
     companion object {
-        private const val BUNDLE_TARGET_FILE = "TargetFile"
+        const val BUNDLE_TARGET_FILE = "TargetFile"
 
         fun newInstance(targetFile: String): LiveprogParamsFragment {
             val fragment = LiveprogParamsFragment()
