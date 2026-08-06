@@ -222,12 +222,25 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     override fun onDestroy() {
         isServiceDisposing = true
 
+        // Release the projection FIRST. If anything below fails, the capture
+        // must still be handed back or every app on the device stays silent
+        // until this process is killed.
+        try {
+            mediaProjection?.unregisterCallback(projectionCallback)
+            mediaProjection?.stop()
+        }
+        catch (ex: Exception) { Timber.e(ex, "Failed to release media projection") }
+        finally { mediaProjection = null }
+
         // Stop recording and release engine
-        stopRecording()
-        engine.close()
+        try { stopRecording() }
+        catch (ex: Exception) { Timber.e(ex, "Failed to stop recording") }
+        try { engine.close() }
+        catch (ex: Throwable) { Timber.e(ex, "Failed to close engine") }
 
         // Stop foreground service
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        try { stopForeground(STOP_FOREGROUND_REMOVE) }
+        catch (ex: Exception) { Timber.e(ex) }
 
         // Notify app about service termination
         sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
@@ -237,8 +250,6 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         // Unregister receivers and release resources
         unregisterLocalReceiver(broadcastReceiver)
-        mediaProjection?.unregisterCallback(projectionCallback)
-        mediaProjection = null
 
         sessionManager.sessionPolicyDatabase.unregisterOnRestrictedSessionChangeListener(onSessionPolicyChangeListener)
         sessionManager.sessionDatabase.unregisterOnSessionChangeListener(onSessionChangeListener)

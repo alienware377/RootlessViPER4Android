@@ -339,18 +339,33 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
      */
     private val slotsChangedReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
-            applyLiveprogSlotVisibility()
+            applyLiveprogSlotVisibility(rebuild = true)
         }
     }
 
-    fun applyLiveprogSlotVisibility() {
+    fun applyLiveprogSlotVisibility(rebuild: Boolean = false) {
         if (!isAdded) return
         val ids = intArrayOf(R.id.card_liveprog2, R.id.card_liveprog3, R.id.card_liveprog4)
+        val prefs = arrayOf(Constants.PREF_LIVEPROG2, Constants.PREF_LIVEPROG3, Constants.PREF_LIVEPROG4)
+        val xml = intArrayOf(
+            R.xml.dsp_liveprog2_preferences,
+            R.xml.dsp_liveprog3_preferences,
+            R.xml.dsp_liveprog4_preferences
+        )
         val occupied = LiveprogSlots.read(requireContext())
         ids.forEachIndexed { index, id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
             container?.isVisible = occupied[index + 1].isNotBlank()
         }
+        if (!rebuild) return
+        // The picker wrote these namespaces directly, so the existing preference
+        // screens still hold the old values - rebuild them to re-read.
+        val tx = childFragmentManager.beginTransaction().setReorderingAllowed(true)
+        ids.forEachIndexed { index, id ->
+            if (occupied[index + 1].isNotBlank() && !deferredCards.any { it.viewId == id })
+                tx.replace(id, PreferenceGroupFragment.newInstance(prefs[index], xml[index]))
+        }
+        tx.commitAllowingStateLoss()
     }
 
     private fun setupEffectSearch() {
