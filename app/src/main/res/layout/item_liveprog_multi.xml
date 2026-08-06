@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:minHeight="52dp"
+    android:paddingHorizontal="20dp">
+
+    <!-- Shows the slot number this script is assigned to, instead of a tick,
+         so it's obvious which Liveprog card each selection feeds. -->
+    <TextView
+        android:id="@+id/slot_badge"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:background="@drawable/bg_slot_badge_empty"
+        android:gravity="center"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnPrimary"
+        android:layout_marginEnd="16dp"
+        tools:ignore="MissingConstraints" />
+
+    <TextView
+        android:id="@android:id/text1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceBodyLarge" />
+</LinearLayout>

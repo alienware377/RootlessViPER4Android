@@ -36,6 +36,7 @@ import me.timschneeberger.rootlessjamesdsp.activity.LiveprogEditorActivity
 import me.timschneeberger.rootlessjamesdsp.databinding.DialogFilelibraryBinding
 import me.timschneeberger.rootlessjamesdsp.interop.JdspImpResToolbox
 import me.timschneeberger.rootlessjamesdsp.liveprog.EelParser
+import me.timschneeberger.rootlessjamesdsp.utils.LiveprogSlots
 import me.timschneeberger.rootlessjamesdsp.model.preset.Preset
 import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showAlert
@@ -62,6 +63,12 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
     private val eelParser = EelParser()
     private val scriptScannerScope = CoroutineScope(Dispatchers.IO)
     private var currentTag: String? = null
+    /** Multi-select is offered only by the first Liveprog card. */
+    private val isSlotHost by lazy {
+        fileLibPreference.isLiveprog() &&
+            fileLibPreference.key == getString(R.string.key_liveprog_file)
+    }
+    private var multiMode = false
     private var currentTagScripts: List<String>? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -108,6 +115,43 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
                     import()
             }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isVisible = false
+
+            if (isSlotHost) {
+                multiMode = LiveprogSlots.isMultiMode(requireContext())
+                binding.multiSelectSwitch.isVisible = true
+                binding.multiSelectSwitch.isChecked = multiMode
+                binding.multiSelectSwitch.setOnCheckedChangeListener { _, checked ->
+                    multiMode = checked
+                    LiveprogSlots.setMultiMode(requireContext(), checked)
+                    dialog.listView.choiceMode = if (checked)
+                        android.widget.ListView.CHOICE_MODE_NONE
+                    else
+                        android.widget.ListView.CHOICE_MODE_SINGLE
+                    refresh()
+                }
+                if (multiMode)
+                    dialog.listView.choiceMode = android.widget.ListView.CHOICE_MODE_NONE
+            }
+
+            // In multi mode a tap assigns/frees a slot and the dialog stays open
+            dialog.listView.setOnItemClickListener { _, _, position, _ ->
+                val entry = dialog.listView.adapter.getItem(position) as Entry
+                if (multiMode) {
+                    val assigned = LiveprogSlots.toggle(requireContext(), entry.value.toString())
+                    if (assigned < 0 &&
+                        LiveprogSlots.slotNumberOf(requireContext(), entry.value.toString()) == null &&
+                        LiveprogSlots.read(requireContext()).none { it.isBlank() }) {
+                        requireContext().toast(getString(R.string.liveprog_multi_full))
+                    }
+                    (dialog.listView.adapter as? ListItemAdapter)?.notifyDataSetChanged()
+                    notifySlotsChanged()
+                }
+                else {
+                    clickedEntryValue = entry.value
+                    onDialogClosed(true)
+                    dialog.dismiss()
+                }
+            }
         }
 
         dialog.listView.setOnItemLongClickListener {
@@ -326,6 +370,11 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         }
     }
 
+    /** Tells the DSP screen to add/remove the extra Liveprog cards. */
+    private fun notifySlotsChanged() {
+        requireContext().sendLocalBroadcast(Intent(Constants.ACTION_LIVEPROG_SLOTS_CHANGED))
+    }
+
     private fun refresh() {
         fileLibPreference.refresh()
         dialog.listView.adapter = createAdapter()
@@ -422,6 +471,7 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         return ListItemAdapter(
             requireContext(),
             if (fileLibPreference.isPreset()) R.layout.item_preset_list
+            else if (multiMode) R.layout.item_liveprog_multi
             else com.google.android.material.R.layout.select_dialog_singlechoice_material,
             android.R.id.text1,
             fileLibPreference.entries.zip(fileLibPreference.entryValues){
@@ -506,6 +556,22 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         fun indexOf(value: String): Int {
             return items.map { it.value }.indexOf(value)
         }
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = super.getView(position, convertView, parent)
+            if (multiMode) {
+                val badge = view.findViewById<TextView>(R.id.slot_badge)
+                val slot = LiveprogSlots.slotNumberOf(context, items[position].value.toString())
+                if (badge != null) {
+                    badge.text = slot?.toString() ?: ""
+                    badge.setBackgroundResource(
+                        if (slot != null) R.drawable.bg_slot_badge
+                        else R.drawable.bg_slot_badge_empty
+                    )
+                }
+            }
+            return view
+        }
+
         override fun hasStableIds(): Boolean = true
         override fun getCount(): Int = items.size
         override fun getItem(position: Int): Entry = items[position]

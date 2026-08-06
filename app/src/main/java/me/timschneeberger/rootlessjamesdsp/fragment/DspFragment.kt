@@ -17,6 +17,9 @@ import kotlinx.coroutines.launch
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.databinding.FragmentDspBinding
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
+import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
+import me.timschneeberger.rootlessjamesdsp.utils.LiveprogSlots
 import me.timschneeberger.rootlessjamesdsp.utils.EffectLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showYesNoAlert
@@ -37,6 +40,20 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     override fun onCreate(savedInstanceState: Bundle?) {
         prefsApp.registerOnSharedPreferenceChangeListener(this)
         super.onCreate(savedInstanceState)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireContext().registerLocalReceiver(
+            slotsChangedReceiver,
+            android.content.IntentFilter(Constants.ACTION_LIVEPROG_SLOTS_CHANGED)
+        )
+        applyLiveprogSlotVisibility()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireContext().unregisterLocalReceiver(slotsChangedReceiver)
     }
 
     override fun onDestroy() {
@@ -308,9 +325,31 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                 binding.root.postDelayed({ installVisibleCards() }, 48)
             } else {
                 layoutManager?.applyLayout()
+                applyLiveprogSlotVisibility()
             }
         } finally {
             installingCards = false
+        }
+    }
+
+    /**
+     * Extra Liveprog cards exist only while their slot holds a script. Slots keep
+     * their identity, so removing the middle script leaves that card hidden and
+     * the ones after it where they were.
+     */
+    private val slotsChangedReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            applyLiveprogSlotVisibility()
+        }
+    }
+
+    fun applyLiveprogSlotVisibility() {
+        if (!isAdded) return
+        val ids = intArrayOf(R.id.card_liveprog2, R.id.card_liveprog3, R.id.card_liveprog4)
+        val occupied = LiveprogSlots.read(requireContext())
+        ids.forEachIndexed { index, id ->
+            val container = binding.root.findViewById<View>(id)?.parent as? View
+            container?.isVisible = occupied[index + 1].isNotBlank()
         }
     }
 
