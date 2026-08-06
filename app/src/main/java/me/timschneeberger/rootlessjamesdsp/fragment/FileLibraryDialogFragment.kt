@@ -71,13 +71,17 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         fileLibPreference.isLiveprog() &&
             fileLibPreference.key == getString(R.string.key_liveprog_file)
     }
-    private var multiMode = false
+    /** Liveprog always picks several scripts at once; other libraries don't. */
+    private val multiMode get() = isSlotHost
     private var currentTagScripts: List<String>? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         dialog = super.onCreateDialog(savedInstanceState) as AlertDialog
         // Workaround to prevent the button from closing the dialog
         dialog.setOnShowListener {
+            if (multiMode)
+                binding.multiSelectHint.isVisible = true
+
             if(fileLibPreference.isPreset() && dialog.listView.adapter.isEmpty) {
                 requireContext().toast(getString(R.string.filelibrary_no_presets))
             }
@@ -119,21 +123,9 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
             }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isVisible = false
 
-            if (isSlotHost) {
-                multiMode = LiveprogSlots.isMultiMode(requireContext())
-                binding.multiSelectSwitch.isVisible = true
-                binding.multiSelectSwitch.isChecked = multiMode
-                binding.multiSelectSwitch.setOnCheckedChangeListener { _, checked ->
-                    multiMode = checked
-                    LiveprogSlots.setMultiMode(requireContext(), checked)
-                    dialog.listView.choiceMode = if (checked)
-                        android.widget.ListView.CHOICE_MODE_NONE
-                    else
-                        android.widget.ListView.CHOICE_MODE_SINGLE
-                    refresh()
-                }
-                if (multiMode)
-                    dialog.listView.choiceMode = android.widget.ListView.CHOICE_MODE_NONE
+            if (multiMode) {
+                // Numbered badges replace the single-choice radio buttons
+                dialog.listView.choiceMode = android.widget.ListView.CHOICE_MODE_NONE
             }
 
             // In multi mode a tap assigns/frees a slot and the dialog stays open
