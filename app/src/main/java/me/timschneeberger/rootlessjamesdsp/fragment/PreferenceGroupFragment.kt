@@ -178,10 +178,25 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                             it.toString()
                     }
             }
-            R.xml.dsp_liveprog_preferences -> {
-                val liveprogParams = findPreference<Preference>(getString(R.string.key_liveprog_params))
-                val liveprogEdit = findPreference<Preference>(getString(R.string.key_liveprog_edit))
-                val liveprogFile = findPreference<FileLibraryPreference>(getString(R.string.key_liveprog_file))
+            R.xml.dsp_liveprog_preferences,
+            R.xml.dsp_liveprog2_preferences,
+            R.xml.dsp_liveprog3_preferences,
+            R.xml.dsp_liveprog4_preferences -> {
+                // Each chained slot has its own file/params/edit keys but shares
+                // all of the behaviour below.
+                val slotKeys = when (args.getInt(BUNDLE_XML_RES)) {
+                    R.xml.dsp_liveprog2_preferences -> Triple(
+                        R.string.key_liveprog2_file, R.string.key_liveprog2_params, R.string.key_liveprog2_edit)
+                    R.xml.dsp_liveprog3_preferences -> Triple(
+                        R.string.key_liveprog3_file, R.string.key_liveprog3_params, R.string.key_liveprog3_edit)
+                    R.xml.dsp_liveprog4_preferences -> Triple(
+                        R.string.key_liveprog4_file, R.string.key_liveprog4_params, R.string.key_liveprog4_edit)
+                    else -> Triple(
+                        R.string.key_liveprog_file, R.string.key_liveprog_params, R.string.key_liveprog_edit)
+                }
+                val liveprogParams = findPreference<Preference>(getString(slotKeys.second))
+                val liveprogEdit = findPreference<Preference>(getString(slotKeys.third))
+                val liveprogFile = findPreference<FileLibraryPreference>(getString(slotKeys.first))
 
                 fun updateLiveprog(newValue: String) {
                     eelParser.load(FileLibraryPreference.createFullPathCompat(requireContext(), newValue))

@@ -813,6 +813,9 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLiveprogSlot
         LOGW("JamesDspWrapper::setLiveprogSlot: failed to compile script for slot %d (code %d)", slot, ret)
         return false;
     }
+
+    // Without this the slot holds a compiled script but never runs
+    LiveProgEnableSlot(dsp, slot);
     return true;
 }
 
