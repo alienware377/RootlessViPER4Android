@@ -212,12 +212,18 @@ class MainActivity : BaseActivity() {
             prefsVar.set(R.string.key_snooze_translation_notice, (System.currentTimeMillis() / 1000L) + 1800L)
         }
 
-        // Load main fragment
-        dspFragment = DspFragment.newInstance()
-        if(!hasLoadFailed)
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.dsp_fragment_container, dspFragment)
-                .commit()
+        // Load main fragment. On a recreate (theme change, returning from the
+        // projection prompt, rotation) the FragmentManager already restored it -
+        // replacing again would build every effect card a second time.
+        val restored = supportFragmentManager
+            .findFragmentById(R.id.dsp_fragment_container) as? DspFragment
+        dspFragment = restored ?: DspFragment.newInstance()
+        if(!hasLoadFailed) {
+            if (restored == null)
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.dsp_fragment_container, dspFragment)
+                    .commit()
+        }
         else
             showLibraryLoadError()
 
