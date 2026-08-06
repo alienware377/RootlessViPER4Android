@@ -3,6 +3,7 @@
 // reflections with feedback + mid/side widening. Inspired by ViPER VHS.
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../jdsp_header.h"
 
 #define HPS_BUFLEN 8192
@@ -53,6 +54,8 @@ void HpSurroundProcess(JamesDSPLib *jdsp, size_t n)
 	size_t i;
 	if (!jdsp->tmpBuffer[0] || !jdsp->tmpBuffer[1])
 		return;
+	if (!h->bufL || !h->bufR)
+		return;
 	for (i = 0; i < n; i++)
 	{
 		int w = h->widx;
@@ -100,8 +103,16 @@ void HpSurroundEnable(JamesDSPLib *jdsp)
 {
 	if (!jdsp->hpSurroundEnabled)
 	{
-		memset(jdsp->hpSurround.bufL, 0, sizeof(jdsp->hpSurround.bufL));
-		memset(jdsp->hpSurround.bufR, 0, sizeof(jdsp->hpSurround.bufR));
+		HpSurround *hs = &jdsp->hpSurround;
+		if (!hs->bufL) hs->bufL = (float*)calloc(HPS_BUFLEN, sizeof(float));
+		if (!hs->bufR) hs->bufR = (float*)calloc(HPS_BUFLEN, sizeof(float));
+		if (!hs->bufL || !hs->bufR)
+		{
+			jdsp->hpSurroundEnabled = 0;
+			return;
+		}
+		memset(hs->bufL, 0, HPS_BUFLEN * sizeof(float));
+		memset(hs->bufR, 0, HPS_BUFLEN * sizeof(float));
 		jdsp->hpSurround.lpzL = jdsp->hpSurround.lpzR = 0.0f;
 		jdsp->hpSurround.fbzL = jdsp->hpSurround.fbzR = 0.0f;
 		jdsp->hpSurround.widx = 0;
@@ -111,5 +122,8 @@ void HpSurroundEnable(JamesDSPLib *jdsp)
 
 void HpSurroundDisable(JamesDSPLib *jdsp)
 {
+	HpSurround *hs = &jdsp->hpSurround;
 	jdsp->hpSurroundEnabled = 0;
+	if (hs->bufL) { free(hs->bufL); hs->bufL = 0; }
+	if (hs->bufR) { free(hs->bufR); hs->bufR = 0; }
 }

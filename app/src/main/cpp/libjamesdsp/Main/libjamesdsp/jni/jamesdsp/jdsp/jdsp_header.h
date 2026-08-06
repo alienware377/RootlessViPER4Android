@@ -101,7 +101,7 @@ typedef struct
 #define ECHO_APLEN 2048
 typedef struct
 {
-	float bufL[ECHO_BUFLEN], bufR[ECHO_BUFLEN];
+	float *bufL, *bufR;
 	float apL[ECHO_APLEN], apR[ECHO_APLEN];
 	int widx, diffDelay;
 	float fs, delaySamples, feedback;
@@ -113,7 +113,7 @@ typedef struct
 } EchoDelay;
 typedef struct
 {
-	float buf[2][8192];
+	float *buf[2];
 	int w;
 	float phasor;
 	float rate, mix;
@@ -139,8 +139,9 @@ typedef struct
 } ViperBass;
 typedef struct
 {
-	float comb[2][4][VREV_COMBLEN];
-	float ap[2][2][VREV_APLEN];
+	float *combMem;
+	float *comb[2][4];
+	float *ap[2][2];
 	int clen[2][4], cidx[2][4];
 	int alen[2][2], aidx[2][2];
 	float cflt[2][4];
@@ -155,7 +156,7 @@ typedef struct
 } SpeakerOpt;
 typedef struct
 {
-	float bufL[8192], bufR[8192];
+	float *bufL, *bufR;
 	int widx;
 	float cross, room, width, fb, norm;
 	int dCross, dR1, dR2, dR3;
@@ -875,6 +876,7 @@ extern void EchoDelaySetParam(JamesDSPLib *jdsp, float timeMs, float feedbackPct
 extern void EchoDelayProcess(JamesDSPLib *jdsp, size_t n);
 extern void EchoDelayEnable(JamesDSPLib *jdsp);
 extern void EchoDelayDisable(JamesDSPLib *jdsp);
+extern void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp);
 // Compressor
 extern void CompressorConstructor(JamesDSPLib *jdsp);
 extern void CompressorDestructor(JamesDSPLib *jdsp);

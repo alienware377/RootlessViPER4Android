@@ -2,6 +2,7 @@
 // crossfade (classic harmonizer topology). Shifts pitch without tempo change.
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../jdsp_header.h"
 
 #define PS_BUFLEN 8192
@@ -36,6 +37,8 @@ void PitchShiftProcess(JamesDSPLib *jdsp, size_t n)
 	PitchShift *p = &jdsp->pitchShift;
 	size_t i;
 	if (!jdsp->tmpBuffer[0] || !jdsp->tmpBuffer[1])
+		return;
+	if (!p->buf[0] || !p->buf[1])
 		return;
 	float W = (float)p->win;
 	float halfW = W * 0.5f;
@@ -76,14 +79,27 @@ void PitchShiftEnable(JamesDSPLib *jdsp)
 {
 	if (!jdsp->pitchShiftEnabled)
 	{
-		memset(jdsp->pitchShift.buf, 0, sizeof(jdsp->pitchShift.buf));
-		jdsp->pitchShift.w = 0;
-		jdsp->pitchShift.phasor = 0.0f;
+		PitchShift *ps = &jdsp->pitchShift;
+		for (int c = 0; c < 2; c++)
+			if (!ps->buf[c])
+				ps->buf[c] = (float*)calloc(PS_BUFLEN, sizeof(float));
+		if (!ps->buf[0] || !ps->buf[1])
+		{
+			jdsp->pitchShiftEnabled = 0;
+			return;
+		}
+		for (int c = 0; c < 2; c++)
+			memset(ps->buf[c], 0, PS_BUFLEN * sizeof(float));
+		ps->w = 0;
+		ps->phasor = 0.0f;
 	}
 	jdsp->pitchShiftEnabled = 1;
 }
 
 void PitchShiftDisable(JamesDSPLib *jdsp)
 {
+	PitchShift *ps = &jdsp->pitchShift;
 	jdsp->pitchShiftEnabled = 0;
+	for (int c = 0; c < 2; c++)
+		if (ps->buf[c]) { free(ps->buf[c]); ps->buf[c] = 0; }
 }

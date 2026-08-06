@@ -2,6 +2,7 @@
 // style) and Speaker optimization — inspired ports for the V4A edition fork.
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../jdsp_header.h"
 
 static void vx2Biquad(float *c, float fs, float f0, float q, float gainDb, int type)
@@ -278,6 +279,8 @@ void VReverbProcess(JamesDSPLib *jdsp, size_t n)
 	size_t i;
 	if (!jdsp->tmpBuffer[0] || !jdsp->tmpBuffer[1])
 		return;
+	if (!v->combMem)
+		return;
 	for (i = 0; i < n; i++)
 	{
 		float l = jdsp->tmpBuffer[0][i];
@@ -304,15 +307,43 @@ void VReverbEnable(JamesDSPLib *jdsp)
 {
 	if (!jdsp->vreverbEnabled)
 	{
-		memset(jdsp->vreverb.comb, 0, sizeof(jdsp->vreverb.comb));
-		memset(jdsp->vreverb.ap, 0, sizeof(jdsp->vreverb.ap));
+		VReverb *rv = &jdsp->vreverb;
+		if (!rv->combMem)
+		{
+			// One block for all comb + allpass lines, carved up below
+			size_t total = (size_t)2 * 4 * VREV_COMBLEN + (size_t)2 * 2 * VREV_APLEN;
+			rv->combMem = (float*)calloc(total, sizeof(float));
+			if (!rv->combMem)
+			{
+				jdsp->vreverbEnabled = 0;
+				return;
+			}
+			float *p = rv->combMem;
+			for (int c = 0; c < 2; c++)
+				for (int k = 0; k < 4; k++) { rv->comb[c][k] = p; p += VREV_COMBLEN; }
+			for (int c = 0; c < 2; c++)
+				for (int k = 0; k < 2; k++) { rv->ap[c][k] = p; p += VREV_APLEN; }
+		}
+		memset(rv->combMem, 0,
+			((size_t)2 * 4 * VREV_COMBLEN + (size_t)2 * 2 * VREV_APLEN) * sizeof(float));
 		memset(jdsp->vreverb.cidx, 0, sizeof(jdsp->vreverb.cidx));
 		memset(jdsp->vreverb.aidx, 0, sizeof(jdsp->vreverb.aidx));
 		memset(jdsp->vreverb.cflt, 0, sizeof(jdsp->vreverb.cflt));
 	}
 	jdsp->vreverbEnabled = 1;
 }
-void VReverbDisable(JamesDSPLib *jdsp) { jdsp->vreverbEnabled = 0; }
+void VReverbDisable(JamesDSPLib *jdsp)
+{
+	VReverb *rv = &jdsp->vreverb;
+	jdsp->vreverbEnabled = 0;
+	if (rv->combMem)
+	{
+		free(rv->combMem);
+		rv->combMem = 0;
+		memset(rv->comb, 0, sizeof(rv->comb));
+		memset(rv->ap, 0, sizeof(rv->ap));
+	}
+}
 
 // ---------------- Speaker optimization ----------------
 void SpeakerOptSetParam(JamesDSPLib *jdsp, float strengthPct)
