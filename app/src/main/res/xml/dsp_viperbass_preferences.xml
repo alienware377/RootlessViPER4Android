@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_viperbass_enable"
+        android:disableDependentsState="false"
+        android:title="@string/viperbass_enable"
+        android:icon="@drawable/ic_twotone_speaker_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/viperbass_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <ListPreference android:key="@string/key_viperbass_mode" android:title="@string/viperbass_mode"
+            android:defaultValue="0" android:entries="@array/viperbass_modes" android:entryValues="@array/viperbass_modes_values"
+            app:useSimpleSummaryProvider="true" app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_viperbass_freq" android:title="@string/viperbass_freq"
+            android:defaultValue="76" app:minValue="20" app:maxValue="200" app:unit="Hz" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_viperbass_gain" android:title="@string/viperbass_gain"
+            android:defaultValue="6" app:minValue="0" app:maxValue="12" app:unit="dB" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

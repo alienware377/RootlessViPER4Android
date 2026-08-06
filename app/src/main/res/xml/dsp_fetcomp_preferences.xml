@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_fetcomp_enable"
+        android:disableDependentsState="false"
+        android:title="@string/fetcomp_enable"
+        android:icon="@drawable/ic_twotone_volume_up_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/fetcomp_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_fetcomp_threshold" android:title="@string/fetcomp_threshold"
+            android:defaultValue="-18" app:minValue="-60" app:maxValue="0" app:unit="dB" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_fetcomp_ratio" android:title="@string/fetcomp_ratio"
+            android:defaultValue="4" app:minValue="1" app:maxValue="20" app:unit=":1" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_fetcomp_attack" android:title="@string/fetcomp_attack"
+            android:defaultValue="5" app:minValue="0.1" app:maxValue="100" app:unit="ms" app:precision="1"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_fetcomp_release" android:title="@string/fetcomp_release"
+            android:defaultValue="120" app:minValue="10" app:maxValue="1000" app:unit="ms" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_fetcomp_makeup" android:title="@string/fetcomp_makeup"
+            android:defaultValue="0" app:minValue="0" app:maxValue="24" app:unit="dB" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

@@ -1,0 +1,46 @@
+Use Equalizador James como equalizador do sistema sem acesso raiz.
+
+Este aplicativo tem várias limitações que podem ser decepcionante para algumas pessoas. Por favor, leia este documento antes de usar o aplicativo. Shizuku (Android 11+) ou acesso ao ADB através de um computador são necessários para a configuração inicial.
+
+Equalizador James suporta os seguintes efeitos de áudio:
+Controle de volume
+* Controle do ganho de saída
+* Compressor de faixa dinâmica
+* Controle do grave
+* Equalizador de impulso
+* Equalizador paramétrico
+* VIPER-DDC
+* Convolução
+* DSP programável ao vivo (mecanismo de definição de efeitos de áudio)
+* Modelagem analógica
+* Amplitude do palco sonoro
+* Crossfeed
+* Efeito de sala virtual (ressonância)
+
+Além disso, este aplicativo se integra diretamente com o AutoEQ. Usando a integração AutoEQ, você pode procurar e importar frequências que busquem corrigir seu fone de ouvido a um som neutro. Vá para 'Equalizador Paramétrico> Resposta de frequência > Perfis de AutoEQ' para começar.
+
+--- Limitações
+* Os aplicativos que bloqueiam a captura interna de áudio permanecem sem processamento (por exemplo, Spotify, Google Chrome)
+* Aplicativos usando alguns modos de reprodução acelerada por HW podem causar problemas e precisar ser excluído manualmente (por exemplo, alguns jogos Unity)
+* Não é possível coexistir com (poucos) outros aplicativos de efeito de áudio (por exemplo, Wavelet e outros aplicativos que utilizam a API do Android "DynamicsProcessing")
+
+
+_ Aplicativos confirmados funcionando:
+* YouTube
+* YouTube Music
+* Amazon Music
+* Deezer
+* Poweramp
+* Substreamer
+* Twitch
+* ...
+
+_ Aplicativos não suportados incluem:
+* Spotify (Nota: patch do Spotify ReVanced é necessário para suportar o Spotify)
+* Google Chrome
+* SoundCloud
+* ...
+
+--- Tradução
+Ajude-nos a traduzir este app aqui: https://crowdin.com/project/rootlessjamesdsp
+Para solicitar um novo idioma que ainda não está habilitado no Crowdin, abra um "issue" aqui no GitHub e vou ativá-lo.
