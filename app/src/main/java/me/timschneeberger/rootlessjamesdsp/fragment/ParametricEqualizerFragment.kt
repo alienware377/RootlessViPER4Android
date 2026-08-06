@@ -276,10 +276,36 @@ class ParametricEqualizerFragment : Fragment() {
             save()
         }
 
+        surface.onDragFinished = {
+            sortBandsByFrequency()
+            binding.equalizerSurface.setBands(adapter.bands, binding.preampInput.value.toDouble())
+        }
+
         surface.onBandSelected = { index ->
-            val before = snapshot()
-            pushHistory(before)
-            adapter.bands.getOrNull(index)?.let { selectedForEdit = it }
+            pushHistory(snapshot())
+            val band = adapter.bands.getOrNull(index)
+            if (band != null) {
+                // Show this band's knobs straight away - no extra tap needed
+                selectedForEdit = band
+                editorBandUuid = band.uuid
+                editorBandBackup = null
+                editorActive = true
+                binding.freqInput.value = band.frequency.toFloat()
+                binding.gainInput.value = band.gain.toFloat()
+                binding.qInput.value = band.q.toFloat()
+                updateViewState()
+            }
+        }
+
+        surface.onSelectionCleared = {
+            if (editorActive) {
+                // Tapped away from every handle: back to the frequency list
+                editorBandUuid = null
+                editorBandBackup = null
+                editorActive = false
+                sortBandsByFrequency()
+                updateViewState()
+            }
         }
 
         surface.onBandAddRequested = { frequency, gain ->
@@ -291,6 +317,7 @@ class ParametricEqualizerFragment : Fragment() {
                     1.41
                 )
             )
+            sortBandsByFrequency()
             adapter.notifyDataSetChanged()
             surface.setBands(adapter.bands, binding.preampInput.value.toDouble())
             updateViewState()
@@ -369,20 +396,29 @@ class ParametricEqualizerFragment : Fragment() {
         binding.filterTypeGroup.check(buttonId)
     }
 
+    /** Keeps the band list in ascending frequency order. */
+    @SuppressLint("NotifyDataSetChanged")
+    private fun sortBandsByFrequency() {
+        if (adapter.bands.size < 2) return
+        val sorted = adapter.bands.sortedBy { it.frequency }
+        if (sorted == adapter.bands.toList()) return
+        adapter.bands.clear()
+        adapter.bands.addAll(sorted)
+        adapter.notifyDataSetChanged()
+    }
+
     private fun updateViewState() {
         val empty = adapter.bands.isEmpty()
         binding.emptyView.isVisible = empty && !editorActive
         binding.bandList.isVisible = !empty && !editorActive
         binding.bandEdit.isVisible = editorActive
-        binding.bandDetailContextButtons.visibility = if (editorActive) View.VISIBLE else View.INVISIBLE
+        // Knob changes apply live - Undo is the safety net, so no confirm/discard
+        binding.bandDetailContextButtons.visibility = View.GONE
         binding.editCardTitle.text = getString(if (editorActive) R.string.peq_band_editor else R.string.peq_band_list)
     }
 
     override fun onStop() {
-        if (editorActive) {
-            Timber.d("onStop: discarding unsaved changes")
-            editorDiscard()
-        }
+        // Edits are applied as they're made, so there is nothing to discard
         super.onStop()
     }
 

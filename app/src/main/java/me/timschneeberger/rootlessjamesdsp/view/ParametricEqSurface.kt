@@ -41,6 +41,10 @@ class ParametricEqSurface(context: Context?, attrs: AttributeSet?) : View(contex
     /** Called with the band index when the user long-presses an existing handle. */
     var onBandRemoveRequested: ((Int) -> Unit)? = null
     var onBandSelected: ((Int) -> Unit)? = null
+    /** Fired when the user taps somewhere that isn't a handle. */
+    var onSelectionCleared: (() -> Unit)? = null
+    /** Fired once a drag gesture completes. */
+    var onDragFinished: (() -> Unit)? = null
     var interactive = false
 
     private var mHeight = 0.0f
@@ -238,8 +242,11 @@ class ParametricEqSurface(context: Context?, attrs: AttributeSet?) : View(contex
                     mSelectedBand = mDownOnHandle
                     mDragging = true
                     onBandSelected?.invoke(mSelectedBand)
-                    postInvalidate()
+                } else {
+                    mSelectedBand = -1
+                    onSelectionCleared?.invoke()
                 }
+                postInvalidate()
                 return true
             }
             android.view.MotionEvent.ACTION_POINTER_DOWN -> {
@@ -278,6 +285,7 @@ class ParametricEqSurface(context: Context?, attrs: AttributeSet?) : View(contex
             }
             android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                 removeCallbacks(mLongPressRunnable)
+                if (mDragging) onDragFinished?.invoke()
                 mDragging = false
                 mLastPinchDist = -1f
                 parent?.requestDisallowInterceptTouchEvent(false)

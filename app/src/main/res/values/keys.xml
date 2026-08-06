@@ -138,6 +138,24 @@
 
     <string name="key_liveprog2_file" translatable="false">liveprog2_file</string>
 
+
+    <string name="key_liveprog2_params" translatable="false">liveprog2_params</string>
+
+
+    <string name="key_liveprog2_edit" translatable="false">liveprog2_edit</string>
+
+
+    <string name="key_liveprog3_params" translatable="false">liveprog3_params</string>
+
+
+    <string name="key_liveprog3_edit" translatable="false">liveprog3_edit</string>
+
+
+    <string name="key_liveprog4_params" translatable="false">liveprog4_params</string>
+
+
+    <string name="key_liveprog4_edit" translatable="false">liveprog4_edit</string>
+
     <string name="key_liveprog3_enable" translatable="false">liveprog3_enable</string>
 
     <string name="key_liveprog3_file" translatable="false">liveprog3_file</string>
