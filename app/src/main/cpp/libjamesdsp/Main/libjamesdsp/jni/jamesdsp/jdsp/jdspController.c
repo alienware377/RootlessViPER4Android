@@ -1253,8 +1253,14 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->pitchShiftEnabled = 0;
 	PitchShiftSetParam(jdsp, 0.0f, 100.0f);
 	jdsp->echoDelayEnabled = 0;
-	EchoDelaySetParam(jdsp, 350.0f, 40.0f, 1, 50.0f, 12000.0f, 10.0f, 0,
-		0.0f, 0.0f, 0.0f, 0.0f, 35.0f, 100.0f);
+	EchoDelaySetParam(jdsp, 100.0f, 350.0f, 20.0f, 0.0f, 0,
+		1, 50.0f,
+		40.0f, 12000.0f, 10.0f, 0,
+		100.0f, 24.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f,
+		1, 0.0f, 50.0f, 0.0f,
+		0.0f, 35.0f, 100.0f);
 	for (int i = 0; i < JDSP_LIVEPROG_EXTRA; i++)
 		jdsp->liveprogExtraEnabled[i] = 0;
 	JamesDSPResetChainOrder(jdsp);

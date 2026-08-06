@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/echo_scroll">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="4dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_delay_time" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_time"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="TIME"
+                app:knobMin="1"
+                app:knobMax="2500"
+                app:knobValue="350"
+                app:knobUnit="ms"
+                app:knobPrecision="0"
+                app:knobLogScale="true" />
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="vertical" android:paddingHorizontal="4dp">
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_keep_pitch" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp"
+                    android:text="@string/echo_keep_pitch" />
+            </LinearLayout>
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_smoothing"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="SMOOTHING"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="20"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_offset"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="OFFSET"
+                app:knobMin="-200"
+                app:knobMax="200"
+                app:knobValue="0"
+                app:knobUnit="ms"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_delay_model" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <RadioGroup android:id="@+id/group_model" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:paddingEnd="6dp">
+                <RadioButton android:id="@+id/model_mono" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_model_mono" />
+                <RadioButton android:id="@+id/model_stereo" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_model_stereo" />
+                <RadioButton android:id="@+id/model_pingpong" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_model_pingpong" />
+                <RadioButton android:id="@+id/model_off" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_filter_off" />
+            </RadioGroup>
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_stereo"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="STEREO"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="50"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_feedback" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_feedback"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="LEVEL"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="40"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_cutoff"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="CUTOFF"
+                app:knobMin="20"
+                app:knobMax="20000"
+                app:knobValue="12000"
+                app:knobUnit="Hz"
+                app:knobPrecision="0"
+                app:knobLogScale="true" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_res"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="RES"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="10"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <RadioGroup android:id="@+id/group_filter" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:paddingHorizontal="6dp">
+                <RadioButton android:id="@+id/filter_lp" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_filter_lp_short" />
+                <RadioButton android:id="@+id/filter_hp" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_filter_hp_short" />
+                <RadioButton android:id="@+id/filter_bp" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_filter_bp_short" />
+                <RadioButton android:id="@+id/filter_off" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_filter_off" />
+            </RadioGroup>
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_smp_rate"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="SMP RATE"
+                app:knobMin="1"
+                app:knobMax="100"
+                app:knobValue="100"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_bits"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="BITS"
+                app:knobMin="1"
+                app:knobMax="24"
+                app:knobValue="24"
+                app:knobUnit="bit"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_modulation" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_mod_rate"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="RATE"
+                app:knobMin="0"
+                app:knobMax="10"
+                app:knobValue="0"
+                app:knobUnit="Hz"
+                app:knobPrecision="1"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_mod_time"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="TIME"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_mod_cutoff"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="CUTOFF"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_diffusion" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_diffusion"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="LEVEL"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_spread"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="SPREAD"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_distortion" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <RadioGroup android:id="@+id/group_dist" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:paddingEnd="6dp">
+                <RadioButton android:id="@+id/dist_limit" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_dist_limit" />
+                <RadioButton android:id="@+id/dist_sat" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textSize="12sp" android:text="@string/echo_dist_sat" />
+            </RadioGroup>
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_dist_level"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="LEVEL"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_knee"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="KNEE"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="50"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_symmetry"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="SYMMETRY"
+                app:knobMin="-100"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="10dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:letterSpacing="0.12"
+                    android:textAllCaps="true"
+                    android:textStyle="bold"
+                    android:textSize="11sp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/echo_sec_output" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_input"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="IN"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="100"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_wet"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="WET"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="35"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_tone"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="TONE"
+                app:knobMin="-100"
+                app:knobMax="100"
+                app:knobValue="0"
+                app:knobUnit=""
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+            <me.timschneeberger.rootlessjamesdsp.view.KnobView
+                android:id="@+id/knob_dry"
+                android:layout_width="72dp"
+                android:layout_height="88dp"
+                app:knobLabel="DRY"
+                app:knobMin="0"
+                app:knobMax="100"
+                app:knobValue="100"
+                app:knobUnit="%"
+                app:knobPrecision="0"
+                app:knobLogScale="false" />
+                </LinearLayout>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</ScrollView>

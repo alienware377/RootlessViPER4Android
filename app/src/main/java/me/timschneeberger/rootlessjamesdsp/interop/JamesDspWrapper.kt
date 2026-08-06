@@ -41,10 +41,7 @@ object JamesDspWrapper {
     external fun setViperBass(self: JamesDspHandle, enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean
     external fun setVReverb(self: JamesDspHandle, enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean
     external fun setSpeakerOpt(self: JamesDspHandle, enable: Boolean, strength: Float): Boolean
-    external fun setEchoDelay(self: JamesDspHandle, enable: Boolean, time: Float, feedback: Float,
-                              model: Int, stereo: Float, cutoff: Float, resonance: Float, filterType: Int,
-                              modRate: Float, modDepth: Float, diffusion: Float, saturation: Float,
-                              wet: Float, dry: Float): Boolean
+    external fun setEchoDelay(self: JamesDspHandle, enable: Boolean, input: Float, time: Float, smoothing: Float, offset: Float, keepPitch: Boolean, model: Int, stereo: Float, feedback: Float, cutoff: Float, res: Float, filter: Int, smpRate: Float, bits: Float, modRate: Float, modTime: Float, modCutoff: Float, diffusion: Float, spread: Float, distMode: Int, distLevel: Float, knee: Float, symmetry: Float, tone: Float, wet: Float, dry: Float): Boolean
     external fun setPitchShift(self: JamesDspHandle, enable: Boolean, semitones: Float, mix: Float): Boolean
     external fun setChainOrder(self: JamesDspHandle, order: IntArray?): Boolean
     external fun setSpectrumExtension(self: JamesDspHandle, enable: Boolean, barkFreq: Float, strength: Float): Boolean

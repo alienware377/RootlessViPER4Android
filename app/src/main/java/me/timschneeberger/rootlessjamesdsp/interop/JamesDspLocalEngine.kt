@@ -145,12 +145,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setSpeakerOpt(handle, enable, strength)
     }
 
-    override fun setEchoDelay(enable: Boolean, time: Float, feedback: Float, model: Int,
-                              stereo: Float, cutoff: Float, resonance: Float, filterType: Int,
-                              modRate: Float, modDepth: Float, diffusion: Float,
-                              saturation: Float, wet: Float, dry: Float): Boolean {
-        return JamesDspWrapper.setEchoDelay(handle, enable, time, feedback, model, stereo,
-            cutoff, resonance, filterType, modRate, modDepth, diffusion, saturation, wet, dry)
+    override fun setEchoDelay(enable: Boolean, input: Float, time: Float, smoothing: Float, offset: Float, keepPitch: Boolean, model: Int, stereo: Float, feedback: Float, cutoff: Float, res: Float, filter: Int, smpRate: Float, bits: Float, modRate: Float, modTime: Float, modCutoff: Float, diffusion: Float, spread: Float, distMode: Int, distLevel: Float, knee: Float, symmetry: Float, tone: Float, wet: Float, dry: Float): Boolean {
+        return JamesDspWrapper.setEchoDelay(handle, enable, input, time, smoothing, offset, keepPitch, model, stereo, feedback, cutoff, res, filter, smpRate, bits, modRate, modTime, modCutoff, diffusion, spread, distMode, distLevel, knee, symmetry, tone, wet, dry)
     }
 
     override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean {
