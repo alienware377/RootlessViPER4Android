@@ -77,7 +77,6 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // Inflating every effect card at once blocks the first frame for
         // seconds. Commit the first few immediately, then let the rest fill
         // in on the next frame so the app opens instantly.
-        val tStart = android.os.SystemClock.uptimeMillis()
         childFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
             .replace(R.id.card_device_profiles, DeviceProfilesCardFragment.newInstance())
@@ -106,7 +105,6 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // The remaining cards are installed only once they're about to scroll
         // into view. Committing them all up front cost ~3.4s of main-thread
         // time (measured), which is what froze the UI on startup.
-        Timber.w("PERF onCreateView done +%dms", android.os.SystemClock.uptimeMillis() - tStart)
         deferredCards.clear()
         deferredCards.addAll(deferredCardSpecs)
         binding.dspScrollview.viewTreeObserver.addOnScrollChangedListener {
@@ -285,7 +283,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         try {
             val scroll = binding.dspScrollview
             val top = scroll.scrollY
-            val bottom = top + scroll.height + scroll.height // one screen of lookahead
+            val bottom = top + scroll.height + scroll.height / 2 // half a screen of lookahead
 
             val ready = deferredCards.filter { spec ->
                 val card = binding.root.findViewById<View>(spec.viewId)?.parent as? View
@@ -295,7 +293,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             if (ready.isEmpty()) return
 
             // Cap per pass so a fling never triggers a long stall
-            val batch = ready.take(4)
+            val batch = ready.take(2)
             val tx = childFragmentManager.beginTransaction().setReorderingAllowed(true)
             batch.forEach { spec ->
                 tx.replace(
@@ -303,15 +301,11 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     PreferenceGroupFragment.newInstance(spec.prefName, spec.xmlRes)
                 )
             }
-            val tb = android.os.SystemClock.uptimeMillis()
             tx.commitAllowingStateLoss()
-            childFragmentManager.executePendingTransactions()
-            Timber.w("PERF batch of %d took %dms (%d left)", batch.size,
-                android.os.SystemClock.uptimeMillis() - tb, deferredCards.size - batch.size)
             deferredCards.removeAll(batch.toSet())
 
             if (deferredCards.isNotEmpty()) {
-                binding.root.postDelayed({ installVisibleCards() }, 32)
+                binding.root.postDelayed({ installVisibleCards() }, 48)
             } else {
                 layoutManager?.applyLayout()
             }
