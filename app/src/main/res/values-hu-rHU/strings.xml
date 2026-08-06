@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Main menu bar -->
+    <string name="action_settings">Beállítások</string>
+    <string name="action_presets">Sémák</string>
+    <string name="action_revert">Alapértelmezett beállítások visszaállítása</string>
+    <string name="action_blocked_apps">Kizárt alkalmazások</string>
+    <!-- Notification channels -->
+    <string name="notification_group_service">Szolgáltatás</string>
+    <string name="notification_channel_service">Szolgáltatási értesítés</string>
+    <string name="notification_channel_session_loss_alert">Bezárult munkamenet</string>
+    <string name="notification_channel_permission_prompt">Engedély kérése</string>
+    <string name="notification_channel_app_compat_alert">App nem kompatibilis</string>
+    <string name="notification_group_backup">Mentés és visszaállítás</string>
+    <string name="notification_channel_backup_progress">Folyamatban</string>
+    <string name="notification_channel_backup_complete">Mentés kész</string>
+    <!-- Service notifications -->
+    <string name="action_retry">Újra</string>
+    <string name="action_fix">Hibajavítás</string>
+    <string name="action_stop">Megállítás</string>
+    <string name="notification_processing">Aktív appok %1$s</string>
+    <string name="notification_idle">Hang feldolgozása inaktív</string>
+    <string name="notification_processing_title">Hang feldolgozása aktív</string>
+    <string name="notification_processing_disabled_title">Hang feldolgozása letiltva</string>
+    <string name="notification_processing_legacy">Koppintson a JamesDSP menedzser megnyitásához</string>
+    <!-- Permission request notifications -->
+    <string name="notification_request_permission_title">Felhasználó beavatkozása szügséges a JamesDSP indításához</string>
+    <string name="notification_request_permission">Koppintson a képernyőrögzítési jogosultság megadásához hogy engedélyezze a JamesDSP hang feldolgozását</string>
+    <!-- Session control loss notifications -->
+    <string name="session_control_loss_toast">JamesDSP leállt mivel a hang munkamenete elvesztette az irányítást. Kérjük tiltson le más hangot befolyásoló appokat.</string>
+    <string name="session_control_loss_notification_title">Hang feldolgozása leállt. Egy másik app gátolja a JamesDSP működését.</string>
+    <string name="session_control_loss_notification">Kérjük tiltsa le az összes további appot ami globális hanghatásokat nyújt mielőtt újra engedélyezi a JamesDSP szolgáltatást.</string>
+    <!-- App compatibility issue notifications -->
+    <string name="session_app_compat_toast">JamesDSP leállt mivel a médiát lejátszó app nem kompatibilis. Kérjük ellenőrizze az értesítést a probléma megoldásához.</string>
+    <string name="session_app_compat_notification_title">Hang feldolgozása leállt. Egy másik app gátolja a JamesDSP működését.</string>
+    <string name="session_app_compat_notification">Koppintson erre az értesítésre a probléma megoldásához.</string>
+    <!-- Capture permission revoked notifications -->
+    <string name="capture_permission_revoked_toast">A JamesDSP le lett állítva mivel a hangrögzítési jogosultság vissza lett vonva.</string>
+    <!-- General purpose -->
+    <string name="install">Telepítés</string>
+    <string name="update">Frissítés</string>
+    <string name="unknown_error">Ismeretlen hiba</string>
+    <string name="details">Részletek</string>
+    <string name="actions">Műveletek</string>
+    <string name="warning">Figyelmeztetés</string>
+    <string name="success">Siker</string>
+    <string name="open">Megnyitás</string>
+    <string name="close">Bezárás</string>
+    <string name="delete">Gomb: Törlés
+Törlés</string>
+    <string name="copy">Másolás</string>
+    <string name="paste">Beilleszt</string>
+    <string name="add">Hozzáadás</string>
+    <string name="yes">Igen</string>
+    <string name="no">Nem</string>
+    <string name="value_not_set">Nincs beállítva</string>
+    <string name="undo">Visszavonás</string>
+    <string name="redo">Mégis végrehajt</string>
+    <string name="no_activity_found">Nem található cselekvés a tett kezeléséhez</string>
+    <string name="permission_allowed">Engedélyezve</string>
+    <string name="permission_not_allowed">Nincs engedélyezve</string>
+    <string name="error_projection_api_missing">Az eszközöd gyártója letiltotta a belső audiót felvevő API-kat. Ez az alkalmazás nem működik ezek nélkül.</string>
+    <!-- Main screen -->
+    <string name="power_button_alt">Hang feldolgozás bekapcsolása</string>
+    <string name="eq_filter_type">Szűrőtípus</string>
+    <string name="eq_interpolator">Interpolátor</string>
+    <string name="eq_interpolator_chip">Darabos hermitikus kocka többtagú interpoláció</string>
+    <string name="eq_interpolator_mha">Módosított Hiroshi Akima spline</string>
+    <string name="eq_preset_acoustic">Akusztikus</string>
+    <string name="eq_preset_bass">Basszus</string>
+    <string name="eq_preset_beats">Ritmus</string>
+    <string name="eq_preset_classic">Klasszikus</string>
+    <string name="eq_preset_clear">Tiszta</string>
+    <string name="eq_preset_deep">Mély</string>
+    <string name="eq_preset_dubstep">Dubstep</string>
+    <string name="eq_preset_electronic">Elektronikus</string>
+    <string name="eq_preset_flat">Lapos</string>
+    <string name="eq_preset_hardstyle">Hardstyle</string>
+    <string name="eq_preset_hiphop">Hip-Hop</string>
+    <string name="eq_preset_jazz">Jazz</string>
+    <string name="eq_preset_metal">Metál</string>
+    <string name="eq_preset_movie">Film</string>
+    <string name="eq_preset_pop">Pop</string>
+    <string name="eq_preset_rb">R&amp;B</string>
+    <string name="eq_preset_rock">Rock</string>
+    <string name="eq_preset_vocal">Énekhang Kiemelés</string>
+    <string name="geq_enable">Tetszőleges hangszínszabályzói átvitel</string>
+    <string name="geq_nodes">Magnitúdó jelleggörbe</string>
+    <string name="bass_enable">Dinamikus mélyhang kiemelés</string>
+    <string name="bass_max_gain">Maximális erősítés</string>
+    <string name="reverb_enable">Virtuális szoba hatás</string>
+    <string name="reverb_room_type">Szoba típusa</string>
+    <string name="reverb_preset_default">Alapértelmezett</string>
+    <string name="reverb_preset_small_hall1">Kis terem 1</string>
+    <string name="reverb_preset_small_hall2">Kis terem 2</string>
+    <string name="reverb_preset_medium_hall2">Közepes terem</string>
+    <string name="reverb_preset_large_hall1">Nagy terem</string>
+    <string name="reverb_preset_small_room1">Kis szoba 1</string>
+    <string name="reverb_preset_small_room2">Kis szoba 2</string>
+    <string name="reverb_preset_medium_room1">Közepes szoba</string>
+    <string name="reverb_preset_large_room1">Nagy szoba</string>
+    <string name="reverb_preset_plate_high">Nagy színpad</string>
+    <string name="reverb_preset_plate_low">Kis színpad</string>
+    <string name="reverb_preset_long_reverb1">Hosszú visszhang 1</string>
+    <string name="reverb_preset_long_reverb2">Hosszú visszhang 2</string>
+    <string name="convolver_enable">Tekercs</string>
+    <string name="convolver_impulse">Impulzus jelleggörbe</string>
+    <string name="convolver_advanced_editing">Haladó hullámforma szerkesztés</string>
+    <string name="convolver_convolution_mode">Impulzus jelleggörbe optimalizálás</string>
+    <string name="convolver_convolution_mode_original">Eredeti</string>
+    <string name="convolver_convolution_mode_shrink">Összehúzódás</string>
+    <string name="convolver_convolution_mode_minimum_phase_shrink">Minimális fázistranszformáció és zsugorítás</string>
+    <string name="ddc_enable">ViPER-DDC</string>
+    <string name="ddc_file">DDC fájl</string>
+    <string name="liveprog_enable">Élőben programozható DSP</string>
+    <string name="liveprog_file">Élőprog szkript</string>
+    <string name="liveprog_additional_params">Hozzáadott szkriptek paraméterei</string>
+    <string name="liveprog_additional_params_not_supported">A kiválasztott szkriptnek nincsenek testreszabható paraméterei</string>
+    <string name="liveprog_not_found">A szkript nem található</string>
+    <string name="liveprog_no_script_selected">Nincs kiválasztva szkript</string>
+    <string name="liveprog_edit_header">A kiválasztott szkript szerkesztése</string>
+    <string name="liveprog_edit">Nyissa meg az aktív szkriptet a beépített szerkesztőben</string>
+    <string name="tube_enable">Analóg modellezés</string>
+    <string name="tube_drive">Előerősítő</string>
+    <string name="output_control_header">Kimenet szabályozás</string>
+    <string name="output_limiter_threshold">Határérték-küszöb</string>
+    <string name="output_limiter_release">Határérték kioldás</string>
+    <string name="output_control_postgain">Után erősítés</string>
+    <string name="stereowide_enable">Hangszíntér szélessége</string>
+    <string name="stereowide_level">Szélesség</string>
+    <string name="stereowide_level_none">Egyik sem</string>
+    <string name="stereowide_level_very_wide">Nagyon széles</string>
+    <string name="stereowide_level_wide">Széles</string>
+    <string name="stereowide_level_very_narrow">Nagyon szűk</string>
+    <string name="stereowide_level_narrow">Szűk</string>
+    <string name="crossfeed_enable">Crossfeed</string>
+    <string name="crossfeed_preset">Séma</string>
+    <string name="crossfeed_preset_bs2b_weak">BS2B Gyenge</string>
+    <string name="crossfeed_preset_bs2b_strong">BS2B Erős</string>
+    <string name="crossfeed_preset_out_of_head">Fejen kívüli</string>
+    <string name="crossfeed_preset_surround1">Surround 1</string>
+    <string name="crossfeed_preset_surround2">Surround 2</string>
+    <string name="crossfeed_preset_realistic_surround">Joe0Blogg Realisztikus térhangzása</string>
+    <!-- Onboarding -->
+    <string name="onboarding_back">Vissza</string>
+    <string name="onboarding_next">Tovább</string>
+    <string name="onboarding_finish">Kész</string>
+    <string name="onboarding_greeting">Üdv a RootlessJamesDSP-ben!</string>
+    <string name="onboarding_caption">Ez az asszisztens segít beállítani az appot.</string>
+    <string name="onboarding_warning">Jelenleg ez az alkalmazás befejezettlen és instabil. Kérlek vedd figyelembe hogy néhány eszközön nem feltétlenül működik az elvártak alapján, mivel olyan Android API-kat használ, amiket nem harmadik felek általi használatra terveztek.</string>
+    <string name="onboarding_fix_permissions_title">Felhasználói beavatkozás szükséges</string>
+    <string name="onboarding_fix_permissions">Egy vagy több engedély visszavonásra került általad vagy a rendszer által.\nAhhoz, hogy biztosítsd az alkalmazás működését, újra meg kell adnod ezeket az engedélyeket.\n\nKérlek menj végig újra a beállítási varázslón, hogy újra megadd ezeket az engedélyeket.</string>
+    <string name="onboarding_limitations_title">Korlátozások</string>
+    <string name="onboarding_limitations_unstable">Fontos! Kérlek olvasd el figyelmesen a megjegyzéseket mielőtt folytatod.</string>
+    <string name="onboarding_methods_title">Válaszd ki a beállítás módját</string>
+    <string name="onboarding_methods_root_title">Root</string>
+    <string name="onboarding_methods_shizuku_title">Shizuku</string>
+    <string name="onboarding_methods_unsupported_append">inkompatibilis</string>
+    <string name="onboarding_methods_adb_title">ADB</string>
+    <!-- Rootless flavor -->
+    <string name="onboarding_methods_rootless_shizuku">\u25CF Ajánlott\n\u25CF Nincs szükség külső számítógépre\n\u25CF Csak Android 11 felett</string>
+    <string name="onboarding_methods_rootless_adb">\u25CF Haladó felhasználóknak\n\u25CF Számítógép és USB kábel szükséges\n\u25CF Android 10 felett támogatott</string>
+    <!-- Root flavor -->
+    <string name="onboarding_methods_root_root">\u25CF Ajánlott\n\u25CF Nincs szükség külső számítógépre\n\u25CF Minden Android verzió</string>
+    <string name="onboarding_methods_root_shizuku">\u25CF Ajánlott, ha nincs Root beállítva\n\u25CF Nincs szükség külső számítógépre\n\u25CF Csak Android 11 felett</string>
+    <string name="onboarding_methods_root_adb">\u25CF Haladó felhasználóknak\n\u25CF Számítógép és USB kábel szükséges\n\u25CF Minden Android verzió</string>
+    <string name="onboarding_root_shell_fail_title">Nincs Root hozzáférés</string>
+    <string name="onboarding_root_shell_fail">Nincs Root hozzáférés. Kérlek válassz másik beállítási módot.</string>
+    <string name="onboarding_root_shell_fail_unknown">Az engedély biztosítása Root-tal sikertelen. Kérlek használj másik beállítási módot.</string>
+    <string name="onboarding_adb_shizuku_title">Beállítás Shizukuval</string>
+    <string name="onboarding_adb_adb_title">Beállítás ADB-vel</string>
+    <string name="onboarding_adb_shizuku_install_button">Shizuku letöltése</string>
+    <string name="onboarding_adb_shizuku_install_button_done">Már telepítve</string>
+    <string name="onboarding_adb_shizuku_open_button">Shizuku futtatása</string>
+    <string name="onboarding_adb_shizuku_open_button_done">Már aktív</string>
+    <string name="onboarding_adb_shizuku_grant_button">Hozzáférés engedélyezése</string>
+    <string name="onboarding_adb_shizuku_not_installed">A shizuku még nincs letöltve. Kérlek először töltsd le a Google Playről.</string>
+    <string name="onboarding_adb_shizuku_not_installed_title">A Shizuku még nincs letöltve</string>
+    <string name="onboarding_adb_shizuku_grant_fail_server_dead">Kérlek indítsd el a Shizuku szervert mielőtt hozzáférést kérsz. Menj vissza az útmutató 2. lépésére.</string>
+    <string name="onboarding_adb_shizuku_grant_fail_server_dead_title">A Shizuku szerver nem fut</string>
+    <string name="onboarding_adb_shizuku_grant_fail_version">Az alkalmazáshoz a Shizuku 11-es vagy újabb verziója szükséges. Kérjük, frissítse a Shizukut a legújabb verzióra.</string>
+    <string name="onboarding_adb_shizuku_grant_fail_version_title">Nem támogatott Shizuku verzió</string>
+    <string name="onboarding_adb_shizuku_grant_fail_denied_title">Hozzáférés megtagadva</string>
+    <string name="onboarding_adb_shizuku_grant_fail_denied">Kérjük, biztosítson hozzáférést ehhez az alkalmazáshoz Shizuku számára. Előfordulhat, hogy meg kell nyitnia a Shizuku engedélykezelőjét, és kézzel kell megadnia az engedélyt, ha korábban megtagadta, és a felugró ablak már nem jelenik meg.</string>
+    <string name="onboarding_adb_shizuku_no_dump_perm_title">Shizuku nem kapta meg ADB szükséges engedélyeket</string>
+    <string name="onboarding_adb_shizuku_no_dump_perm">Kérjük, várjon néhány másodpercet, és próbálja újra. Ha továbbra sem működik, próbálja ki az alternatív módszert.</string>
+    <string name="onboarding_adb_dump_not_granted_title">Az engedély még nincs megadva</string>
+    <string name="onboarding_adb_dump_not_granted">Kérjük, először kövesse az utasításokat, majd próbálja újra. Az ADB hozzáférés még nincs megfelelően beállítva.</string>
+    <string name="onboarding_adb_manual_step1">Nyissa meg az Android rejtett fejlesztési beállításait, és engedélyezze az USB hibakeresést. Ezeket a beállításokat úgy kell feloldania, hogy többször megérinti a build számot a rendszerbeállításokban.</string>
+    <string name="onboarding_adb_manual_step2">Nyissa meg a https://app.webadb.com webhelyet számítógépe böngészőjében (a Chrome-ban működik a legjobban), és csatlakoztassa eszközét USB-n keresztül a számítógéphez.</string>
+    <string name="onboarding_adb_manual_step3">Adja hozzá és csatlakoztassa az USB-eszközt a WebADB-ben.</string>
+    <string name="onboarding_adb_manual_step4">Lépjen az „Interactive Shell” elemre, és hajtsa végre a következő parancsot a shellben: „pm grant %s android.permission.DUMP”</string>
+    <string name="onboarding_adb_manual_step5">A folytatáshoz érintse meg a „Tovább” gombot ebben az alkalmazásban.</string>
+    <string name="onboarding_adb_manual_step5b">(Opcionális) Véglegesen kihagyhatja a hangrögzítési engedélyt a következő parancs végrehajtásával: \"appops set %s PROJECT_MEDIA enable\"</string>
+    <string name="onboarding_adb_manual_step5c">(Opcionális) Az előző lépésen kívül a következő parancs végrehajtásával is engedélyezheti az automatikus indítást: \'appops set %s SYSTEM_ALERT_WINDOW enable\'</string>
+    <string name="onboarding_adb_manual_step1_button">Nyissa meg a fejlesztési beállításokat</string>
+    <string name="onboarding_perm_title">Egyéb engedélyek</string>
+    <string name="onboarding_perm_caption">Az alkalmazás használatához további engedélyekre van szükség. Kérjük, tekintse át őket, és az engedélyezéshez koppintson a „Tovább” gombra.</string>
+    <string name="onboarding_perm_microphone_title">Hang rögzítési engedély</string>
+    <string name="onboarding_perm_microphone_caption">Szükséges a belső hang rögzítéséhez. A hardveres mikrofon nincs aktiválva.</string>
+    <string name="onboarding_perm_notification_title">Értesítési engedély</string>
+    <string name="onboarding_perm_notification_caption">Fontos állapotfrissítések és a JamesDSP feldolgozási állapotával kapcsolatos információk fogadásához szükséges.</string>
+    <string name="onboarding_perm_cast_title">Szereplési/felvételi engedély</string>
+    <string name="onboarding_perm_cast_caption">Kifejezetten engedélyt kell adnia ennek az alkalmazásnak a hangtartalom rögzítésére minden indításkor.</string>
+    <string name="onboarding_perm_missing_title">A futásidejű engedélyek nincsenek megadva</string>
+    <string name="onboarding_perm_missing">A folytatáshoz adja meg az összes kért futásidejű engedélyt.\n Ha többször is megtagadta az engedélyeket, manuálisan kell megadnia azokat a rendszerbeállításokban.</string>
+    <string name="onboarding_perm_diag">Diagnosztikai jelentések küldésének engedélyezése</string>
+    <string name="onboarding_perm_diag_caption">Ez az alkalmazás összeomlási jelentéseket és egyéb diagnosztikai adatokat küld el, beleértve az egyéb aktív alkalmazásokra vonatkozó információkat is, hogy könnyebben észleljem és megoldjam a kompatibilitási problémákat és a hibákat.</string>
+    <string name="onboarding_finish_header">A JamesDSP be van állítva!</string>
+    <string name="onboarding_finish_caption">Ha bármilyen problémába ütközik, kérjük, keresse fel a hibaelhárítási lehetőségeket.</string>
+    <string name="limit_session_control_conflict_title">Más hangeffektus-alkalmazások letiltása</string>
+    <string name="limit_session_control_conflict">Az Android beépített dinamikus feldolgozási effektusát használó hangeffektus-alkalmazások zavarják ezt az alkalmazást.</string>
+    <string name="limit_unsupported_apps_title">Nem támogatott médiaalkalmazások</string>
+    <string name="limit_unsupported_apps">A belső hangrögzítést blokkoló alkalmazások feldolgozatlanok maradnak (pl. Spotify, Google Chrome).</string>
+    <string name="limit_hw_accel_title">HW-gyorsított hanglejátszási problémák</string>
+    <string name="limit_hw_accel">HW-gyorsított hanglejátszás (gyors sávok) néha duplikált hangot okozhat, vagy bizonyos körülmények között megölheti a JamesDSP-t. Adja hozzá az érintett zenelejátszót a kizárt alkalmazások listájához, nehogy a JamesDSP átirányítsa azt.</string>
+    <string name="limit_detect_delay_title">Az audio munkamenet észlelésének késleltetése</string>
+    <string name="limit_detect_delay"><![CDATA[Miután egy alkalmazás új médiamunkamenetet nyitott a hang lejátszásához, nagyon rövid ideig (körülbelül 250 ms-nál) duplikált vagy levágott hangot hallhat.]]></string>
+    <string name="limit_latency_title">Megnövekedett késleltetés</string>
+    <string name="limit_latency">Ez az alkalmazás némi késleltetést okozhat a hangfolyamban. Felvehet film-/videoalkalmazásokat a kizárási listára, hogy megakadályozza az AV-deszinkronizálást, ha nem dolgozza fel őket.</string>
+    <string name="limit_tested_devices_title">Tesztelt eszközök</string>
+    <string name="limit_tested_devices">Az Android audio alrendszerén az eszköz gyártója által végrehajtott módosítások könnyen megsérthetik ezt az alkalmazást, mert néhány dokumentálatlan API-t használ.\nEzeken az eszközökön tesztelték:\n• Samsung S20+ (Android 12)\n• AOSP emulátor (Android 10– 13)\n• Google Pixel 6 Pro (Android 13)</string>
+    <!-- Settings -->
+    <string name="title_activity_settings">Beállítások</string>
+    <string name="session_exclude_restricted">A nem támogatott alkalmazások kizárása</string>
+    <string name="session_exclude_restricted_off">A hangrögzítést blokkoló alkalmazások némítva maradnak (alapértelmezett Android-viselkedés)</string>
+    <string name="session_exclude_restricted_on">A hangrögzítést blokkoló alkalmazások ki vannak zárva, és feldolgozatlanok maradnak (ajánlott)</string>
+    <string name="session_detection_header">Audio munkamenet észlelése</string>
+    <string name="session_continuous_polling">Folyamatos lekérdezés kényszerítése</string>
+    <string name="session_continuous_polling_off">Csak a munkamenet eseményeit figyelje a rendszerből</string>
+    <string name="session_continuous_polling_on">Folyamatosan sorolja fel az audio munkameneteket</string>
+    <string name="backup_settings">Mentés és visszaállítás</string>
+    <!-- Theme names -->
+    <string name="theme_default">Alapértelmezett</string>
+    <!-- File library preference -->
+    <!-- JamesDSP engine messages -->
+    <!-- GraphicEQ editor -->
+    <string name="title_activity_geq">Magnitúdó jelleggörbe</string>
+    <string name="gep_add_node">Hozzáadás</string>
+    <!-- AutoEQ GraphicEQ selector -->
+    <!-- Customizable liveprog script parameters -->
+    <!-- Liveprog script editor -->
+    <!-- Blocklist -->
+    <string name="title_activity_blocklist">Kizárt alkalmazások</string>
+    <!-- Compatibility issue activity -->
+    <string name="app_compat_retry">Újra</string>
+    <!-- Root: Library load failure -->
+    <!-- Enhanced processing -->
+    <!-- App list -->
+    <!-- Number box view -->
+    <!-- Slider widget -->
+    <!-- Revert confirmation -->
+    <!-- File intent handler -->
+    <!-- Translation notice box -->
+    <!-- Self-updates (Root) -->
+    <!-- Backups -->
+    <!-- Multi-device profiles -->
+    <!-- Root version check -->
+</resources>

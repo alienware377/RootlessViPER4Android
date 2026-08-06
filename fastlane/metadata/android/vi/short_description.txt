@@ -1,0 +1,1 @@
+Ứng dụng xử lý âm thanh toàn hệ thống JamesDPS dành cho các thiết bị chưa root.

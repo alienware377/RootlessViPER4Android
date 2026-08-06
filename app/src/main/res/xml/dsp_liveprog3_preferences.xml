@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_liveprog3_enable"
+        android:disableDependentsState="false"
+        android:title="@string/liveprog3_enable"
+        android:icon="@drawable/ic_baseline_code_tags_24dp"
+        app:iconSpaceReserved="false">
+        <Preference
+            android:key="section_info"
+            android:title="@string/section_info_title"
+            android:summary="@string/liveprog3_info"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
+            android:title="@string/liveprog_file"
+            android:key="@string/key_liveprog3_file"
+            android:defaultValue=""
+            android:dialogTitle="@string/liveprog_file"
+            app:type="Liveprog"
+            app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

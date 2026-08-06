@@ -1,0 +1,12 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="me.timschneeberger.rootlessjamesdsp.activity.MainActivity">
+    <item
+        android:id="@+id/action_reset"
+        android:orderInCategory="100"
+        android:title="@string/action_restore_defaults"
+        android:iconTint="?attr/actionMenuTextColor"
+        android:icon="@drawable/ic_twotone_settings_backup_restore_24dp"
+        app:showAsAction="always" />
+</menu>

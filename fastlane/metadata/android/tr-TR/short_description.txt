@@ -1,0 +1,1 @@
+Root'suz Android cihazlar için sistem çapında JamesDSP ses işleme motoru.

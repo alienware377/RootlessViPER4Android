@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="vertical">
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="8dp"
+            android:alpha="0.8"
+            app:srcCompat="@drawable/ic_twotone_warning_24dp"
+            app:tint="?attr/colorOnSurface"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:text="@string/onboarding_limitations_title"
+            android:textAppearance="?attr/textAppearanceHeadline4" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:id="@+id/notice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:bodyText="@string/onboarding_limitations_unstable"
+                app:cardBackground="?attr/colorErrorContainer"
+                app:cardMargin="8dp"
+                app:iconCentered="true"
+                app:iconSrc="@drawable/ic_twotone_error_24dp"
+                app:iconTint="?attr/colorOnErrorContainer" />
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:titleText="@string/limit_session_control_conflict_title"
+                app:bodyText="@string/limit_session_control_conflict"
+                app:cardMargin="8dp" />
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:titleText="@string/limit_unsupported_apps_title"
+                app:bodyText="@string/limit_unsupported_apps"
+                app:cardMargin="8dp" />
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:titleText="@string/limit_hw_accel_title"
+                app:bodyText="@string/limit_hw_accel"
+                app:cardMargin="8dp" />
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:titleText="@string/limit_detect_delay_title"
+                app:bodyText="@string/limit_detect_delay"
+                app:cardMargin="8dp" />
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:titleText="@string/limit_latency_title"
+                app:bodyText="@string/limit_latency"
+                app:cardMargin="8dp" />
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:titleText="@string/limit_tested_devices_title"
+                app:bodyText="@string/limit_tested_devices"
+                app:cardMargin="8dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

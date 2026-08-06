@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="nodes">
+        <item quantity="other">%d โหนด</item>
+    </plurals>
+    <plurals name="custom_parameters">
+        <item quantity="other">%d พารามิเตอร์ที่ปรับแต่งได้</item>
+    </plurals>
+    <plurals name="unsupported_apps">
+        <item quantity="other">%d แอปที่ไม่รองรับได้รับการยกเว้นโดยอัตโนมัติ แตะเพื่อดูรายละเอียด</item>
+    </plurals>
+</resources>

@@ -1,0 +1,47 @@
+Dùng JamesDSP làm công cụ xử lý âm thanh trên toàn hệ thống mà không cần quyền root.
+
+Ứng dụng này có một số hạn chế có thể gây khó khăn cho một số người; vui lòng đọc toàn bộ tài liệu này trước khi sử dụng ứng dụng. Cần có quyền truy cập Shizuku (Android 11+) hoặc ADB qua máy tính để thiết lập lúc đầu.
+
+JamesDPS hỗ trợ các hiệu ứng âm thanh sau:
+* Kiểm soát giới hạn
+* Kiểm soát mức tăng đầu ra
+* Tự động nén dải động
+* Tăng cường âm trầm sống động
+* Bộ cân bằng FIR nội suy
+* Bộ cân bằng đáp ứng tùy ý (Graphic EQ)
+* ViPER-DDC
+* Convolver
+* DSP có thể lập trình trực tiếp (động cơ kịch bản cho hiệu ứng âm thanh)
+* Mô hình tương tự
+* Độ rộng của âm trường
+* Nguồn cấp dữ liệu chéo
+* Hiệu ứng phòng ảo hóa (vọng lại)
+
+Ngoài ra, ứng dụng này còn tích hợp trực tiếp với AutoEQ. Bằng cách sử dụng AutoEQ được tích hợp, bạn có thể tìm kiếm và nhập tần số phản hồi nhằm điều chỉnh tai nghe của bạn thành âm thanh cân bằng. Đi tới 'Bộ cân bằng phản hồi tùy ý > Phản hồi cường độ > Hồ sơ AutoEQ' để bắt đầu.
+
+--- Các hạn chế
+* Các ứng dụng chặn việc ghi âm âm thanh nội bộ vẫn không được xử lý (ví dụ, Spotify, Google Chrome)
+* Các ứng dụng sử dụng một số loại phát lại tăng tốc phần cứng có thể gây ra lỗi và cần phải được loại trừ thủ công (ví dụ như, một số trò chơi Unity)
+* Không thể dùng kèm (một số) ứng dụng chỉnh âm thanh khác (ví dụ như, Wavelet và các ứng dụng khác sử dụng API Android `DynamicsProcessing`)
+
+
+- Những ứng dụng chắc chắn sẽ hoạt động:
+* YouTube
+* YouTube Music
+* Amazon Music
+* Deezer
+* Poweramp
+* Substreamer
+* Twitch
+* ...
+
+- Các ứng dụng không hỗ trợ gồm:
+* Spotify (Lưu ý: Cần có bản vá Spotify ReVanced để hỗ trợ Spotify)
+* Google Chrome
+* SoundCloud
+* ...
+
+--- Dịch thuật
+Hãy giúp bọn mình dịch ứng dụng ở đây:
+https://crowdin.com/project/rootlessjamesdsp
+Để yêu cầu một ngôn ngữ mới chưa được bật trên Crowdin, vui lòng mở một issue tại đây trên GitHub và mình sẽ bật ngôn ngữ đó lên.

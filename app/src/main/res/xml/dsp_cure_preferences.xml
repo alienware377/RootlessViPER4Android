@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_cure_enable"
+        android:disableDependentsState="false"
+        android:title="@string/cure_enable"
+        android:icon="@drawable/ic_twotone_hearing_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/cure_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <ListPreference android:key="@string/key_cure_level" android:title="@string/cure_level"
+            android:defaultValue="0" android:entries="@array/cure_levels" android:entryValues="@array/cure_levels_values"
+            app:useSimpleSummaryProvider="true" app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

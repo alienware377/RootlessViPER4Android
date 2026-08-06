@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.RootlessJamesDSP" parent="Base.Theme.RootlessJamesDSP" />
+
+    <style name="ThemeOverlay.RootlessJamesDSP.Amoled" parent="">
+        <!-- Theme Colors -->
+        <item name="colorSurface">@color/surface_amoled</item>
+        <item name="android:colorBackground">@color/background_amoled</item>
+    </style>
+
+</resources>

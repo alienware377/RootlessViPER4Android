@@ -1,0 +1,46 @@
+Usa JamesDSP come sistema di elaborazione audio a livello di sistema senza alcun accesso root.
+
+Questa applicazione ha diverse limitazioni che possono essere sgradevoli per alcune persone; leggi per favore l'intero documento prima di utilizzare l'applicazione. È necessario Shizuku (Android 11+) o l'accesso ADB tramite un computer per la configurazione iniziale.
+
+JamesDSP supporta i seguenti effetti audio:
+* Limitatore
+* Controllo del guadagno in uscita
+* Compressore della gamma dinamica automatico
+* Incremento dinamico dei bassi
+* Equalizzatore FIR interpolante
+* Equalizzatore a risposta arbitraria (equalizzatore grafico)
+* ViPER-DDC
+* Convolutore
+* DSP a modifica diretta (motore di scripting per effetti audio)
+* Modellazione analogica
+* Espansore sonoro
+* Crossfeed
+* Effetto stanza virtuale (riverbero)
+
+Inoltre, questa applicazione si integra direttamente con AutoEQ. Utilizzando l'integrazione AutoEQ, è possibile ricercare ed importare risposte in frequenza che mirano a correggere la risposta delle cuffie, ottenendo così un suono neutrale. Vai a "equalizzatore a risposta arbitraria > risposta in ampiezza > profili AutoEQ" per iniziare.
+
+--- Limitazioni
+* Le applicazioni che bloccano l'acquisizione interna dell'audio rimangono non elaborate (ad esempio, Spotify, Google Chrome).
+* Le applicazioni che utilizzano alcuni tipi di riproduzione hardware accelerata possono causare problemi e devono essere escluse manualmente (ad esempio, alcuni giochi Unity).
+* Non può coesistere con (alcune) altre applicazioni di effetti audio (ad esempio, Wavelet e altre applicazioni che fanno uso dell'API Android "DynamicsProcessing").
+
+
+- Funzionamento confermato delle applicazioni:
+* YouTube
+* YouTube Music
+* Amazon Music
+* Deezer
+* Poweramp
+* Substreamer
+* Twitch
+* ...
+
+- Le applicazioni non supportate comprendono:
+* Spotify (nota: la patch Spotify ReVanced è necessaria per supportare Spotify)
+* Google Chrome
+* SoundCloud
+* ...
+
+--- Traduzione
+Aiutaci a tradurre questa app qui: https://crowdin.com/project/rootlessjamesdsp
+Per richiedere una nuova lingua che non è ancora abilitata su Crowdin, apri una discussione qui su GitHub e l'abiliterò.

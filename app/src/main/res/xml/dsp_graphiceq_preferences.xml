@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:disableDependentsState="false"
+        android:key="@string/key_geq_enable"
+        android:title="@string/geq_enable"
+        android:icon="@drawable/ic_baseline_chart_timeline_variant_24dp"
+        app:iconSpaceReserved="false">
+        <!--<EditTextPreference
+            android:key="@string/key_geq_nodes"
+            android:defaultValue="GraphicEQ: "
+            android:dialogTitle="@string/geq_nodes"
+            android:title="@string/geq_nodes"
+            android:inputType="textMultiLine"
+            app:iconSpaceReserved="false"/>-->
+        <me.timschneeberger.rootlessjamesdsp.preference.GraphicEqualizerPreference
+            android:key="@string/key_geq_nodes"
+            android:defaultValue="GraphicEQ: "
+            android:dialogTitle="@string/geq_nodes"
+            android:title="@string/geq_nodes"
+            app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

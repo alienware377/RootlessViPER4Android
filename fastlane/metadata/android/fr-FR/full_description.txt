@@ -1,0 +1,46 @@
+Utilisez JamesDSP comme un moteur de traitement audio à l'échelle du système sans accès root.
+
+Cette application a plusieurs limitations qui peuvent être rédhibitoire par certains ; veuillez lire l'ensemble du document avant d'utiliser l'application. Shizuku (Android 11+) ou un accès ADB via un ordinateur est nécessaire pour la configuration initiale.
+
+JamesDSP prend en charge les effets audio suivants :
+* Contrôle du limiteur
+* Contrôle du gain global
+* Compresseur de plage dynamique automatique
+* Amplification dynamique des basses
+* Interpolation de l'égaliseur FIR
+* Égaliseur à réponse arbitraire (avec égaliseur graphique)
+* ViPER-DDC
+* Convolver
+* DSP programmable en direct (avec moteur de script pour les effets audio)
+* Modélisation analogique
+* Effet d'élargissement de la scène sonore
+* Crossfeed
+* Effet de salle virtuelle (réverbération)
+
+De plus, cette application s'intègre directement avec AutoEQ. Grâce à l’intégration de l’AutoEQ, vous pouvez rechercher et importer des réponses de fréquence qui visent à corriger votre casque pour obtenir un son neutre et pur. Allez dans 'Égaliseur de réponse arbitraire > Réponse de Magnitude > Profils AutoEQ' pour commencer.
+
+--- Limitations
+* Les applications bloquant la capture d'audio interne ne sont pas traitées (par exemple, Spotify, Google Chrome)
+* Les applications utilisant certains types de lecture matériellement accélérés peuvent causer des problèmes et doivent être exclues manuellement (par exemple, certains jeux Unity)
+* Impossible de coexister avec (certains) d'autres applications d'effet audio (par exemple, Wavelet et d'autres applications qui utilisent l'API Android `DynamicsProcessing`)
+
+
+- Applications confirmées comme fonctionnel avec l'application :
+* YouTube
+* YouTube Music
+* Amazon Music
+* Deezer
+* PowerAmp
+* Sous-streameur
+* Twitch
+* ...
+
+- Les applications non prises en charge incluent :
+* Spotify (Note: Spotify ReVanced patch est nécessaire pour soutenir Spotify)
+Google Chrome
+SoundCloud
+* ...
+
+--- Traduction
+Aidez-nous à traduire cette application ici : https://crowdin.com/project/rootlessjamesdsp
+Pour demander une nouvelle langue qui n'est pas encore activée sur Crowdin, veuillez ouvrir un ticket sur GitHub et je l'activerai.

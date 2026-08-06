@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".activity.MainActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:liftOnScrollTargetViewId="@id/dsp_scrollview"
+        app:liftOnScroll="true"
+        android:fitsSystemWindows="true">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:titleCentered="true" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <include layout="@layout/content_main" />
+
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_gravity="bottom"
+        app:fabAlignmentMode="center"
+        app:fabAnchorMode="cradle"
+        app:menuAlignmentMode="auto"
+        android:maxHeight="?attr/actionBarSize"
+        android:contentInsetStart="0.0dip"
+        android:contentInsetLeft="0dp"
+        app:contentInsetLeft="0dp"
+        app:contentInsetStart="0dp"
+        android:fitsSystemWindows="true">
+
+        <androidx.appcompat.widget.ActionMenuView
+            android:id="@+id/left_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="?actionBarSize" />
+    </com.google.android.material.bottomappbar.BottomAppBar>
+
+    <me.timschneeberger.rootlessjamesdsp.view.FloatingToggleButton
+        android:id="@+id/power_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@id/bar"
+        app:srcCompat="@drawable/ic_twotone_power_settings_24dp"
+        android:hapticFeedbackEnabled="true"
+        android:contentDescription="@string/power_button_alt" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
