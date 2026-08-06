@@ -74,8 +74,6 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         val transition = LayoutTransition()
         transition.enableTransitionType(LayoutTransition.CHANGING)
         binding.cardContainer.layoutTransition = transition
-
-        val tStart = android.os.SystemClock.uptimeMillis()
         // Inflating every effect card at once blocks the first frame for
         // seconds. Commit the first few immediately, then let the rest fill
         // in on the next frame so the app opens instantly.
@@ -103,135 +101,21 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_vdynbass_preferences
                 ))
             .commitAllowingStateLoss()
-        Timber.w("PERF phase1 commit issued at +%dms", android.os.SystemClock.uptimeMillis() - tStart)
 
-        binding.root.post {
-            if (!isAdded) return@post
-            val t2 = android.os.SystemClock.uptimeMillis()
-            Timber.w("PERF phase2 START at +%dms", t2 - tStart)
-            childFragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .replace(
-                R.id.card_diffsurround, PreferenceGroupFragment.newInstance(Constants.PREF_DIFFSURROUND,
-                        R.xml.dsp_diffsurround_preferences
-                    ))
-                .replace(
-                R.id.card_clarity, PreferenceGroupFragment.newInstance(Constants.PREF_CLARITY,
-                        R.xml.dsp_clarity_preferences
-                    ))
-                .replace(
-                R.id.card_fieldsurround, PreferenceGroupFragment.newInstance(Constants.PREF_FIELDSURROUND,
-                        R.xml.dsp_fieldsurround_preferences
-                    ))
-                .replace(
-                R.id.card_hpsurround, PreferenceGroupFragment.newInstance(Constants.PREF_HPSURROUND,
-                        R.xml.dsp_hpsurround_preferences
-                    ))
-                .replace(
-                R.id.card_fetcomp, PreferenceGroupFragment.newInstance(Constants.PREF_FETCOMP,
-                        R.xml.dsp_fetcomp_preferences
-                    ))
-                .replace(
-                R.id.card_cure, PreferenceGroupFragment.newInstance(Constants.PREF_CURE,
-                        R.xml.dsp_cure_preferences
-                    ))
-                .replace(
-                R.id.card_viperbass, PreferenceGroupFragment.newInstance(Constants.PREF_VIPERBASS,
-                        R.xml.dsp_viperbass_preferences
-                    ))
-                .replace(
-                R.id.card_vreverb, PreferenceGroupFragment.newInstance(Constants.PREF_VREVERB,
-                        R.xml.dsp_vreverb_preferences
-                    ))
-                .replace(
-                R.id.card_speakeropt, PreferenceGroupFragment.newInstance(Constants.PREF_SPEAKEROPT,
-                        R.xml.dsp_speakeropt_preferences
-                    ))
-                .replace(
-                R.id.card_pitchshift, PreferenceGroupFragment.newInstance(Constants.PREF_PITCHSHIFT,
-                        R.xml.dsp_pitchshift_preferences
-                    ))
-                .replace(
-                R.id.card_echo, PreferenceGroupFragment.newInstance(Constants.PREF_ECHODELAY,
-                        R.xml.dsp_echo_preferences
-                    ))
-                .replace(
-                R.id.card_liveprog2, PreferenceGroupFragment.newInstance(Constants.PREF_LIVEPROG2,
-                        R.xml.dsp_liveprog2_preferences
-                    ))
-                .replace(
-                R.id.card_liveprog3, PreferenceGroupFragment.newInstance(Constants.PREF_LIVEPROG3,
-                        R.xml.dsp_liveprog3_preferences
-                    ))
-                .replace(
-                R.id.card_liveprog4, PreferenceGroupFragment.newInstance(Constants.PREF_LIVEPROG4,
-                        R.xml.dsp_liveprog4_preferences
-                    ))
-                .replace(
-                R.id.card_agc, PreferenceGroupFragment.newInstance(Constants.PREF_AGC,
-                        R.xml.dsp_agc_preferences
-                    ))
-                .replace(
-                R.id.card_eq, PreferenceGroupFragment.newInstance(Constants.PREF_EQ,
-                        R.xml.dsp_equalizer_preferences
-                    ))
-                .replace(
-                R.id.card_geq, PreferenceGroupFragment.newInstance(Constants.PREF_GEQ,
-                        R.xml.dsp_graphiceq_preferences
-                    ))
-                .replace(
-                R.id.card_peq, PreferenceGroupFragment.newInstance(Constants.PREF_PEQ,
-                        R.xml.dsp_parametriceq_preferences
-                    ))
-                .replace(
-                R.id.card_ddc, PreferenceGroupFragment.newInstance(Constants.PREF_DDC,
-                        R.xml.dsp_ddc_preferences
-                    ))
-                .replace(
-                R.id.card_convolver, PreferenceGroupFragment.newInstance(Constants.PREF_CONVOLVER,
-                        R.xml.dsp_convolver_preferences
-                    ))
-                .replace(
-                R.id.card_liveprog, PreferenceGroupFragment.newInstance(Constants.PREF_LIVEPROG,
-                        R.xml.dsp_liveprog_preferences
-                    ))
-                .replace(
-                R.id.card_tube, PreferenceGroupFragment.newInstance(Constants.PREF_TUBE,
-                        R.xml.dsp_tube_preferences
-                    ))
-                .replace(
-                R.id.card_spectrumext, PreferenceGroupFragment.newInstance(Constants.PREF_SPECTRUMEXT,
-                        R.xml.dsp_spectrumext_preferences
-                    ))
-                .replace(
-                R.id.card_stereowide, PreferenceGroupFragment.newInstance(Constants.PREF_STEREOWIDE,
-                        R.xml.dsp_stereowide_preferences
-                    ))
-                .replace(
-                R.id.card_crossfeed, PreferenceGroupFragment.newInstance(Constants.PREF_CROSSFEED,
-                        R.xml.dsp_crossfeed_preferences
-                    ))
-                .replace(
-                R.id.card_reverb, PreferenceGroupFragment.newInstance(Constants.PREF_REVERB,
-                        R.xml.dsp_reverb_preferences
-                    ))
-                .commitAllowingStateLoss()
-            Timber.w("PERF phase2 commit issued (+%dms)", android.os.SystemClock.uptimeMillis() - t2)
-            childFragmentManager.executePendingTransactions()
-            Timber.w("PERF executePendingTransactions took %dms", android.os.SystemClock.uptimeMillis() - t2)
-            val t3 = android.os.SystemClock.uptimeMillis()
-            layoutManager?.applyLayout()
-            Timber.w("PERF applyLayout took %dms (total +%dms)",
-                android.os.SystemClock.uptimeMillis() - t3,
-                android.os.SystemClock.uptimeMillis() - tStart)
+        // The remaining cards are installed only once they're about to scroll
+        // into view. Committing them all up front cost ~3.4s of main-thread
+        // time (measured), which is what froze the UI on startup.
+        deferredCards.clear()
+        deferredCards.addAll(deferredCardSpecs)
+        binding.dspScrollview.viewTreeObserver.addOnScrollChangedListener {
+            installVisibleCards()
         }
+        binding.root.post { installVisibleCards() }
 
         // Load initial preferences
         arrayOf(R.string.key_device_profiles_enable).forEach {
             onSharedPreferenceChanged(null, getString(it))
         }
-
-        Timber.w("PERF onCreateView body done at +%dms", android.os.SystemClock.uptimeMillis() - tStart)
         setupEffectSearch()
         setupLayoutCustomizer()
 
@@ -351,6 +235,83 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             (it.parent as? View)?.isVisible = !searching
         }
         binding.searchEmpty.isVisible = searching && matches == 0
+    }
+
+    private data class CardSpec(val viewId: Int, val prefName: String, val xmlRes: Int)
+
+    /** Cards not shown on first paint; installed lazily as the user scrolls. */
+    private val deferredCardSpecs = listOf(
+        CardSpec(R.id.card_diffsurround, Constants.PREF_DIFFSURROUND, R.xml.dsp_diffsurround_preferences),
+        CardSpec(R.id.card_clarity, Constants.PREF_CLARITY, R.xml.dsp_clarity_preferences),
+        CardSpec(R.id.card_fieldsurround, Constants.PREF_FIELDSURROUND, R.xml.dsp_fieldsurround_preferences),
+        CardSpec(R.id.card_hpsurround, Constants.PREF_HPSURROUND, R.xml.dsp_hpsurround_preferences),
+        CardSpec(R.id.card_fetcomp, Constants.PREF_FETCOMP, R.xml.dsp_fetcomp_preferences),
+        CardSpec(R.id.card_cure, Constants.PREF_CURE, R.xml.dsp_cure_preferences),
+        CardSpec(R.id.card_viperbass, Constants.PREF_VIPERBASS, R.xml.dsp_viperbass_preferences),
+        CardSpec(R.id.card_vreverb, Constants.PREF_VREVERB, R.xml.dsp_vreverb_preferences),
+        CardSpec(R.id.card_speakeropt, Constants.PREF_SPEAKEROPT, R.xml.dsp_speakeropt_preferences),
+        CardSpec(R.id.card_pitchshift, Constants.PREF_PITCHSHIFT, R.xml.dsp_pitchshift_preferences),
+        CardSpec(R.id.card_echo, Constants.PREF_ECHODELAY, R.xml.dsp_echo_preferences),
+        CardSpec(R.id.card_liveprog2, Constants.PREF_LIVEPROG2, R.xml.dsp_liveprog2_preferences),
+        CardSpec(R.id.card_liveprog3, Constants.PREF_LIVEPROG3, R.xml.dsp_liveprog3_preferences),
+        CardSpec(R.id.card_liveprog4, Constants.PREF_LIVEPROG4, R.xml.dsp_liveprog4_preferences),
+        CardSpec(R.id.card_agc, Constants.PREF_AGC, R.xml.dsp_agc_preferences),
+        CardSpec(R.id.card_eq, Constants.PREF_EQ, R.xml.dsp_equalizer_preferences),
+        CardSpec(R.id.card_geq, Constants.PREF_GEQ, R.xml.dsp_graphiceq_preferences),
+        CardSpec(R.id.card_peq, Constants.PREF_PEQ, R.xml.dsp_parametriceq_preferences),
+        CardSpec(R.id.card_ddc, Constants.PREF_DDC, R.xml.dsp_ddc_preferences),
+        CardSpec(R.id.card_convolver, Constants.PREF_CONVOLVER, R.xml.dsp_convolver_preferences),
+        CardSpec(R.id.card_liveprog, Constants.PREF_LIVEPROG, R.xml.dsp_liveprog_preferences),
+        CardSpec(R.id.card_tube, Constants.PREF_TUBE, R.xml.dsp_tube_preferences),
+        CardSpec(R.id.card_spectrumext, Constants.PREF_SPECTRUMEXT, R.xml.dsp_spectrumext_preferences),
+        CardSpec(R.id.card_stereowide, Constants.PREF_STEREOWIDE, R.xml.dsp_stereowide_preferences),
+        CardSpec(R.id.card_crossfeed, Constants.PREF_CROSSFEED, R.xml.dsp_crossfeed_preferences),
+        CardSpec(R.id.card_reverb, Constants.PREF_REVERB, R.xml.dsp_reverb_preferences),
+    )
+
+    private val deferredCards = ArrayList<CardSpec>()
+    private var installingCards = false
+
+    /**
+     * Installs the preference fragment for any pending card that is within one
+     * screen height of the viewport. Keeps startup cheap without the user ever
+     * seeing an empty card.
+     */
+    private fun installVisibleCards() {
+        if (installingCards || deferredCards.isEmpty() || !isAdded) return
+        installingCards = true
+        try {
+            val scroll = binding.dspScrollview
+            val top = scroll.scrollY
+            val bottom = top + scroll.height + scroll.height // one screen of lookahead
+
+            val ready = deferredCards.filter { spec ->
+                val card = binding.root.findViewById<View>(spec.viewId)?.parent as? View
+                    ?: return@filter false
+                card.top < bottom && card.bottom > top - scroll.height
+            }
+            if (ready.isEmpty()) return
+
+            // Cap per pass so a fling never triggers a long stall
+            val batch = ready.take(4)
+            val tx = childFragmentManager.beginTransaction().setReorderingAllowed(true)
+            batch.forEach { spec ->
+                tx.replace(
+                    spec.viewId,
+                    PreferenceGroupFragment.newInstance(spec.prefName, spec.xmlRes)
+                )
+            }
+            tx.commitAllowingStateLoss()
+            deferredCards.removeAll(batch.toSet())
+
+            if (deferredCards.isNotEmpty()) {
+                binding.root.postDelayed({ installVisibleCards() }, 32)
+            } else {
+                layoutManager?.applyLayout()
+            }
+        } finally {
+            installingCards = false
+        }
     }
 
     private fun setupEffectSearch() {
