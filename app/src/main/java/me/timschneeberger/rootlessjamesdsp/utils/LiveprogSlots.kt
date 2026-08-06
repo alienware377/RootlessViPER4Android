@@ -80,19 +80,4 @@ object LiveprogSlots {
         return if (idx < 0) null else idx + 1
     }
 
-    /** True when the user has opted into selecting several scripts at once. */
-    fun isMultiMode(ctx: Context): Boolean =
-        ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
-            .getBoolean(KEY_MULTI_MODE, false)
-
-    fun setMultiMode(ctx: Context, enabled: Boolean) {
-        ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
-            .edit().putBoolean(KEY_MULTI_MODE, enabled).apply()
-        if (!enabled) {
-            // Collapsing back to a single script: keep slot 1, clear the rest
-            for (slot in 1 until COUNT) write(ctx, slot, "")
-        }
-    }
-
-    private const val KEY_MULTI_MODE = "liveprog_multi_select"
 }
