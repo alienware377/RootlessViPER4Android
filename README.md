@@ -30,6 +30,10 @@
 
 **RootlessViPER4Android** (RootlessJamesDSP — ViPER4Android Edition) is a system-wide **Android equalizer and audio effects app** that brings the beloved **ViPER4Android (V4A)** sound experience to **non-rooted phones**. It combines the powerful open-source **JamesDSP** engine with native re-implementations of ViPER's classic effects — Dynamic System, ViPER Bass, ViPER Clarity, Spectrum Extension, Field Surround, Tube Simulator (6N1J) and many more — all running **without root, without Magisk, and without custom ROMs**.
 
+Beyond the ViPER suite, it adds a **fully reorderable DSP chain**, so you decide the order every effect runs in, with the output limiter always kept last. An **interactive parametric equalizer** lets you drag bands directly on the response curve, add or remove them with a long press, and fine-tune frequency, Q and gain on rotary controls with full undo. A **studio-grade echo/delay** offers mono, stereo and ping-pong modes with a filtered feedback path, sample-rate and bit-depth crushing, tape-style modulation, diffusion and feedback distortion — all laid out on a knob panel that reflows to fit any screen. **Up to four Liveprog (EEL2) scripts** can be chained together and picked in one multi-select pass, and **446 official ViPER DDC profiles** are bundled and ready to load.
+
+The interface is yours to arrange: **reorder, hide and group the effect cards**, search across every effect, and save the whole setup — including your layout and chain order — into portable presets. Effect cards load as you scroll so the app opens instantly, and large effect buffers are allocated only while an effect is switched on, keeping memory use modest even with many apps playing audio.
+
 ## 📸 Screenshots
 
 | ViPER effects & FIR EQ | Output control & Bass exciter | Surround, Dynamic system & Clarity |
