@@ -1374,8 +1374,17 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	}
 	jdsp_unlock(jdsp);
 }
+void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp)
+{
+	EchoDelayDisable(jdsp);
+	VReverbDisable(jdsp);
+	PitchShiftDisable(jdsp);
+	HpSurroundDisable(jdsp);
+}
+
 void JamesDSPFree(JamesDSPLib *jdsp)
 {
+	JamesDSPReleaseEffectBuffers(jdsp);
 	jdsp_lock(jdsp);
 	StereoEnhancementDestructor(jdsp);
 	CompressorDestructor(jdsp);

@@ -4,6 +4,7 @@
 // diffusion, and soft saturation inside the feedback path.
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../jdsp_header.h"
 
 #define ECHO_MASK (ECHO_BUFLEN - 1)
@@ -84,6 +85,8 @@ void EchoDelayProcess(JamesDSPLib *jdsp, size_t n)
 	size_t i;
 	if (!jdsp->tmpBuffer[0] || !jdsp->tmpBuffer[1])
 		return;
+	if (!e->bufL || !e->bufR)
+		return;
 	if (e->model == 3)
 		return;
 
@@ -163,8 +166,20 @@ void EchoDelayEnable(JamesDSPLib *jdsp)
 	EchoDelay *e = &jdsp->echoDelay;
 	if (!jdsp->echoDelayEnabled)
 	{
-		memset(e->bufL, 0, sizeof(e->bufL));
-		memset(e->bufR, 0, sizeof(e->bufR));
+		// Allocate the (large) delay lines only while the effect is in use.
+		// The engine is instantiated per audio session, so keeping megabytes
+		// of idle buffers inside the struct multiplies across every session.
+		if (!e->bufL)
+			e->bufL = (float*)calloc(ECHO_BUFLEN, sizeof(float));
+		if (!e->bufR)
+			e->bufR = (float*)calloc(ECHO_BUFLEN, sizeof(float));
+		if (!e->bufL || !e->bufR)
+		{
+			jdsp->echoDelayEnabled = 0;
+			return;
+		}
+		memset(e->bufL, 0, ECHO_BUFLEN * sizeof(float));
+		memset(e->bufR, 0, ECHO_BUFLEN * sizeof(float));
 		memset(e->apL, 0, sizeof(e->apL));
 		memset(e->apR, 0, sizeof(e->apR));
 		e->widx = 0;
@@ -179,5 +194,8 @@ void EchoDelayEnable(JamesDSPLib *jdsp)
 
 void EchoDelayDisable(JamesDSPLib *jdsp)
 {
+	EchoDelay *e = &jdsp->echoDelay;
 	jdsp->echoDelayEnabled = 0;
+	if (e->bufL) { free(e->bufL); e->bufL = 0; }
+	if (e->bufR) { free(e->bufR); e->bufR = 0; }
 }
