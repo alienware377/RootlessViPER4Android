@@ -139,6 +139,13 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
                         requireContext().toast(getString(R.string.liveprog_multi_full))
                     }
                     (dialog.listView.adapter as? ListItemAdapter)?.notifyDataSetChanged()
+                    // Keep this preference in step with slot 1 so its summary
+                    // doesn't keep showing the previously chosen script.
+                    val slot1 = LiveprogSlots.read(requireContext())[0]
+                    if (fileLibPreference.value != slot1) {
+                        if (fileLibPreference.callChangeListener(slot1))
+                            fileLibPreference.value = slot1
+                    }
                     notifySlotsChanged()
                 }
                 else {
