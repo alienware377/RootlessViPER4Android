@@ -198,6 +198,13 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 val liveprogEdit = findPreference<Preference>(getString(slotKeys.third))
                 val liveprogFile = findPreference<FileLibraryPreference>(getString(slotKeys.first))
 
+                // Slots 2-4 are driven by the multi-selection made in the first
+                // card, so they display their script but don't open a picker.
+                if (args.getInt(BUNDLE_XML_RES) != R.xml.dsp_liveprog_preferences) {
+                    liveprogFile?.isSelectable = false
+                    liveprogFile?.setTitle(R.string.liveprog_file)
+                }
+
                 fun updateLiveprog(newValue: String) {
                     eelParser.load(FileLibraryPreference.createFullPathCompat(requireContext(), newValue))
                     val count = eelParser.properties.size

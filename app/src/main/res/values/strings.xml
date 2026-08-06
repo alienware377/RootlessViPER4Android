@@ -360,6 +360,10 @@
     <string name="speakeropt_enable">Speaker optimization</string>
     <string name="speakeropt_info">Tunes sound for tiny phone speakers: removes lows they can\'t play anyway (saving power and rattle) and lifts presence so voices cut through.</string>
     <string name="speakeropt_strength">Strength</string>
+    <string name="liveprog_multi_select">Select several scripts</string>
+    <string name="liveprog_multi_select_hint">Numbers show which Liveprog card each script feeds</string>
+    <string name="liveprog_multi_full">All four Liveprog slots are in use</string>
+    <string name="liveprog_bound_to_first">Chosen in the first Liveprog card</string>
     <string name="crash_log_title">Crash logs</string>
     <string name="crash_log_summary">View and copy recent crash reports</string>
     <string name="crash_log_empty">No crashes have been recorded</string>

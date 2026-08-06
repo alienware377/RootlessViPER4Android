@@ -16,6 +16,15 @@
         android:paddingTop="0dp"
         android:text="@string/filelibrary_hint_tap_and_hold"/>
 
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/multi_select_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="6dp"
+        android:visibility="gone"
+        android:text="@string/liveprog_multi_select" />
+
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

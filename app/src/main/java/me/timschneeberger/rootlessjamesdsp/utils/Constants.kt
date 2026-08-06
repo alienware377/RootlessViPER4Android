@@ -17,6 +17,7 @@ object Constants {
     const val PREF_GEQ = "dsp_graphiceq"
     const val PREF_PEQ = "dsp_parametriceq"
     const val PREF_LIVEPROG = "dsp_liveprog"
+    const val ACTION_LIVEPROG_SLOTS_CHANGED = "me.timschneeberger.rootlessjamesdsp.LIVEPROG_SLOTS_CHANGED"
     const val PREF_LIVEPROG2 = "dsp_liveprog2"
     const val PREF_LIVEPROG3 = "dsp_liveprog3"
     const val PREF_LIVEPROG4 = "dsp_liveprog4"
