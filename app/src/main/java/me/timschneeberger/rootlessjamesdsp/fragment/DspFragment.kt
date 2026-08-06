@@ -75,6 +75,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         transition.enableTransitionType(LayoutTransition.CHANGING)
         binding.cardContainer.layoutTransition = transition
 
+        val tStart = android.os.SystemClock.uptimeMillis()
         // Inflating every effect card at once blocks the first frame for
         // seconds. Commit the first few immediately, then let the rest fill
         // in on the next frame so the app opens instantly.
@@ -102,9 +103,12 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     R.xml.dsp_vdynbass_preferences
                 ))
             .commitAllowingStateLoss()
+        Timber.w("PERF phase1 commit issued at +%dms", android.os.SystemClock.uptimeMillis() - tStart)
 
         binding.root.post {
             if (!isAdded) return@post
+            val t2 = android.os.SystemClock.uptimeMillis()
+            Timber.w("PERF phase2 START at +%dms", t2 - tStart)
             childFragmentManager.beginTransaction()
                 .setReorderingAllowed(true)
                 .replace(
@@ -212,8 +216,14 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                         R.xml.dsp_reverb_preferences
                     ))
                 .commitAllowingStateLoss()
+            Timber.w("PERF phase2 commit issued (+%dms)", android.os.SystemClock.uptimeMillis() - t2)
             childFragmentManager.executePendingTransactions()
+            Timber.w("PERF executePendingTransactions took %dms", android.os.SystemClock.uptimeMillis() - t2)
+            val t3 = android.os.SystemClock.uptimeMillis()
             layoutManager?.applyLayout()
+            Timber.w("PERF applyLayout took %dms (total +%dms)",
+                android.os.SystemClock.uptimeMillis() - t3,
+                android.os.SystemClock.uptimeMillis() - tStart)
         }
 
         // Load initial preferences
@@ -221,6 +231,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             onSharedPreferenceChanged(null, getString(it))
         }
 
+        Timber.w("PERF onCreateView body done at +%dms", android.os.SystemClock.uptimeMillis() - tStart)
         setupEffectSearch()
         setupLayoutCustomizer()
 
