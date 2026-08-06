@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import android.widget.RadioButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.databinding.FragmentEchoPanelBinding
@@ -59,17 +59,17 @@ class EchoPanelFragment : Fragment() {
 
         bindSwitch(binding.switchKeepPitch, R.string.key_echo_keep_pitch)
 
-        bindRadio(
-            R.string.key_echo_model, "1",
-            listOf(binding.modelMono, binding.modelStereo, binding.modelPingpong, binding.modelOff)
+        bindToggle(
+            binding.groupModel, R.string.key_echo_model, "1",
+            intArrayOf(R.id.model_mono, R.id.model_stereo, R.id.model_pingpong, R.id.model_off)
         )
-        bindRadio(
-            R.string.key_echo_filter, "0",
-            listOf(binding.filterLp, binding.filterHp, binding.filterBp, binding.filterOff)
+        bindToggle(
+            binding.groupFilter, R.string.key_echo_filter, "0",
+            intArrayOf(R.id.filter_lp, R.id.filter_hp, R.id.filter_bp, R.id.filter_off)
         )
-        bindRadio(
-            R.string.key_echo_dist_mode, "1",
-            listOf(binding.distLimit, binding.distSat)
+        bindToggle(
+            binding.groupDist, R.string.key_echo_dist_mode, "1",
+            intArrayOf(R.id.dist_limit, R.id.dist_sat)
         )
 
         return binding.root
@@ -91,17 +91,18 @@ class EchoPanelFragment : Fragment() {
         }
     }
 
-    /** Radio groups persist the selected index as a string, matching ListPreference. */
-    private fun bindRadio(keyRes: Int, default: String, buttons: List<RadioButton>) {
+    /** Segmented buttons persist the selected index as a string, matching ListPreference. */
+    private fun bindToggle(
+        group: MaterialButtonToggleGroup, keyRes: Int, default: String, ids: IntArray
+    ) {
         val key = getString(keyRes)
         val current = (prefs.getString(key, default) ?: default).toIntOrNull() ?: 0
-        buttons.getOrNull(current)?.isChecked = true
-        buttons.forEachIndexed { index, button ->
-            button.setOnClickListener {
-                buttons.forEach { it.isChecked = false }
-                button.isChecked = true
+        ids.getOrNull(current)?.let { group.check(it) }
+        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val index = ids.indexOf(checkedId)
+            if (index >= 0)
                 prefs.edit().putString(key, index.toString()).apply()
-            }
         }
     }
 

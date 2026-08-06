@@ -177,7 +177,7 @@
         <activity
             android:name=".activity.EchoPanelActivity"
             android:exported="false"
-            android:label="@string/title_activity_peq"
+            android:label="@string/echo_panel_title"
             android:theme="@style/Theme.RootlessJamesDSP">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
