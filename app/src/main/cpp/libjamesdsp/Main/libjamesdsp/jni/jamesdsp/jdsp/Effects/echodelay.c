@@ -42,13 +42,19 @@ void EchoDelaySetParam(JamesDSPLib *jdsp, float timeMs, float feedbackPct,
 	e->wet = wetPct * 0.01f;
 	e->dry = dryPct * 0.01f;
 
-	// State-variable filter coefficients for the feedback loop
+	// Topology-preserving (zero-delay-feedback) state variable filter.
+	// The naive Chamberlin form used previously goes unstable above ~fs/6,
+	// which blew the feedback loop up to NaN at the default 12 kHz cutoff and
+	// silenced the whole chain. This form is stable across the full range.
 	if (cutoffHz < 40.0f) cutoffHz = 40.0f;
-	if (cutoffHz > fs * 0.45f) cutoffHz = fs * 0.45f;
-	e->svfF = 2.0f * sinf(3.14159265358979f * cutoffHz / fs);
+	if (cutoffHz > fs * 0.49f) cutoffHz = fs * 0.49f;
 	float q = 0.5f + resonance * 0.045f;       // resonance 0..100 -> Q 0.5..5
 	if (q < 0.5f) q = 0.5f;
-	e->svfQ = 1.0f / q;
+	e->svfG = tanf(3.14159265358979f * cutoffHz / fs);
+	e->svfK = 1.0f / q;
+	e->svfA1 = 1.0f / (1.0f + e->svfG * (e->svfG + e->svfK));
+	e->svfA2 = e->svfG * e->svfA1;
+	e->svfA3 = e->svfG * e->svfA2;
 	e->filterType = filterType;                // 0 LP, 1 HP, 2 BP, 3 off
 
 	e->modRate = modRateHz;
@@ -63,14 +69,14 @@ static inline float echoSvf(EchoDelay *e, int ch, float x)
 {
 	if (e->filterType == 3)
 		return x;
-	float lp = e->svfLp[ch] + e->svfF * e->svfBp[ch];
-	float hp = x - lp - e->svfQ * e->svfBp[ch];
-	float bp = e->svfF * hp + e->svfBp[ch];
-	e->svfLp[ch] = lp;
-	e->svfBp[ch] = bp;
-	if (e->filterType == 0) return lp;
-	if (e->filterType == 1) return hp;
-	return bp;
+	float v3 = x - e->svfIc2[ch];
+	float v1 = e->svfA1 * e->svfIc1[ch] + e->svfA2 * v3;
+	float v2 = e->svfIc2[ch] + e->svfA2 * e->svfIc1[ch] + e->svfA3 * v3;
+	e->svfIc1[ch] = 2.0f * v1 - e->svfIc1[ch];
+	e->svfIc2[ch] = 2.0f * v2 - e->svfIc2[ch];
+	if (e->filterType == 0) return v2;                       // low pass
+	if (e->filterType == 1) return x - e->svfK * v1 - v2;    // high pass
+	return v1;                                               // band pass
 }
 
 static inline float echoSat(EchoDelay *e, float x)
@@ -151,8 +157,21 @@ void EchoDelayProcess(JamesDSPLib *jdsp, size_t n)
 		e->bufL[w] = echoSat(e, inL + fbL * e->feedback);
 		e->bufR[w] = echoSat(e, inR + fbR * e->feedback);
 
-		jdsp->tmpBuffer[0][i] = inL * e->dry + echoL * e->wet;
-		jdsp->tmpBuffer[1][i] = inR * e->dry + echoR * e->wet;
+		float outL = inL * e->dry + echoL * e->wet;
+		float outR = inR * e->dry + echoR * e->wet;
+		// Guard: if anything ever goes non-finite, drop back to dry audio and
+		// reset the loop rather than pushing NaN into the rest of the chain.
+		if (!isfinite(outL) || !isfinite(outR))
+		{
+			memset(e->bufL, 0, ECHO_BUFLEN * sizeof(float));
+			memset(e->bufR, 0, ECHO_BUFLEN * sizeof(float));
+			e->svfIc1[0] = e->svfIc1[1] = 0.0f;
+			e->svfIc2[0] = e->svfIc2[1] = 0.0f;
+			outL = inL;
+			outR = inR;
+		}
+		jdsp->tmpBuffer[0][i] = outL;
+		jdsp->tmpBuffer[1][i] = outR;
 
 		e->modPhase += e->modInc;
 		if (e->modPhase > 6.28318530717959f)
@@ -184,8 +203,8 @@ void EchoDelayEnable(JamesDSPLib *jdsp)
 		memset(e->apR, 0, sizeof(e->apR));
 		e->widx = 0;
 		e->modPhase = 0.0f;
-		e->svfLp[0] = e->svfLp[1] = 0.0f;
-		e->svfBp[0] = e->svfBp[1] = 0.0f;
+		e->svfIc1[0] = e->svfIc1[1] = 0.0f;
+		e->svfIc2[0] = e->svfIc2[1] = 0.0f;
 		e->diffDelay = (int)(0.0071f * e->fs);
 		if (e->diffDelay < 8 || e->diffDelay >= ECHO_APLEN) e->diffDelay = 331;
 	}
