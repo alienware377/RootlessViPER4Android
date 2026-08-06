@@ -110,7 +110,10 @@ android {
             dimension = "version"
 
             manifestPlaceholders["label"] = "JamesDSP"
-            project.setProperty("archivesBaseName", "RootlessViPER4Android-root-v${AndroidConfig.versionName}-${AndroidConfig.versionCode}")
+            // NOTE: archivesBaseName is a project-wide property, so setting it per
+            // flavor makes the last-configured flavor win for every variant. The
+            // base name is set once above; the variant suffix (rootless-fdroid /
+            // root-fdroid) already distinguishes the outputs.
             applicationId = "james.dsp"
             AndroidConfig.minSdk = 26
             minSdk = AndroidConfig.minSdk
