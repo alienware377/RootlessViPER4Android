@@ -149,7 +149,7 @@ class KnobView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val desired = (108 * context.resources.displayMetrics.density).toInt()
+        val desired = (92 * context.resources.displayMetrics.density).toInt()
         setMeasuredDimension(
             resolveSize(desired, widthMeasureSpec),
             resolveSize(desired, heightMeasureSpec)
@@ -187,8 +187,23 @@ class KnobView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
             indicatorPaint
         )
 
-        canvas.drawText(formatValue(), cx, cy + radius * 0.15f, valueTextPaint)
-        canvas.drawText(label, cx, height - 6f * density, labelPaint)
+        // Text scales with the knob so it stays legible and inside the dial at
+        // any size the layout gives us.
+        valueTextPaint.textSize = (size * 0.27f).coerceIn(9f * density, 15f * density)
+        var valueText = formatValue()
+        while (valueTextPaint.measureText(valueText) > size * 0.92f &&
+               valueTextPaint.textSize > 7f * density) {
+            valueTextPaint.textSize -= 1f
+        }
+        canvas.drawText(valueText, cx, cy + radius * 0.15f, valueTextPaint)
+
+        labelPaint.textSize = (size * 0.19f).coerceIn(8f * density, 11f * density)
+        var labelText = label
+        while (labelPaint.measureText(labelText) > width - 2f * density &&
+               labelPaint.textSize > 6.5f * density) {
+            labelPaint.textSize -= 0.5f
+        }
+        canvas.drawText(labelText, cx, height - 5f * density, labelPaint)
     }
 
     private fun formatValue(): String {
