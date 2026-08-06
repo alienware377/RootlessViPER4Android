@@ -77,6 +77,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // Inflating every effect card at once blocks the first frame for
         // seconds. Commit the first few immediately, then let the rest fill
         // in on the next frame so the app opens instantly.
+        val tStart = android.os.SystemClock.uptimeMillis()
         childFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
             .replace(R.id.card_device_profiles, DeviceProfilesCardFragment.newInstance())
@@ -105,6 +106,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // The remaining cards are installed only once they're about to scroll
         // into view. Committing them all up front cost ~3.4s of main-thread
         // time (measured), which is what froze the UI on startup.
+        Timber.w("PERF onCreateView done +%dms", android.os.SystemClock.uptimeMillis() - tStart)
         deferredCards.clear()
         deferredCards.addAll(deferredCardSpecs)
         binding.dspScrollview.viewTreeObserver.addOnScrollChangedListener {
@@ -301,7 +303,11 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                     PreferenceGroupFragment.newInstance(spec.prefName, spec.xmlRes)
                 )
             }
+            val tb = android.os.SystemClock.uptimeMillis()
             tx.commitAllowingStateLoss()
+            childFragmentManager.executePendingTransactions()
+            Timber.w("PERF batch of %d took %dms (%d left)", batch.size,
+                android.os.SystemClock.uptimeMillis() - tb, deferredCards.size - batch.size)
             deferredCards.removeAll(batch.toSet())
 
             if (deferredCards.isNotEmpty()) {
