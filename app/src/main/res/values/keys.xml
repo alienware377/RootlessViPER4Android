@@ -227,6 +227,22 @@
     <string name="key_vreverb_dry" translatable="false">vreverb_dry</string>
     <string name="key_speakeropt_enable" translatable="false">speakeropt_enable</string>
     <string name="key_speakeropt_strength" translatable="false">speakeropt_strength</string>
+    <string name="key_echo_input" translatable="false">echo_input</string>
+    <string name="key_echo_smoothing" translatable="false">echo_smoothing</string>
+    <string name="key_echo_offset" translatable="false">echo_offset</string>
+    <string name="key_echo_keep_pitch" translatable="false">echo_keep_pitch</string>
+    <string name="key_echo_res" translatable="false">echo_res</string>
+    <string name="key_echo_smp_rate" translatable="false">echo_smp_rate</string>
+    <string name="key_echo_bits" translatable="false">echo_bits</string>
+    <string name="key_echo_mod_time" translatable="false">echo_mod_time</string>
+    <string name="key_echo_mod_cutoff" translatable="false">echo_mod_cutoff</string>
+    <string name="key_echo_spread" translatable="false">echo_spread</string>
+    <string name="key_echo_dist_mode" translatable="false">echo_dist_mode</string>
+    <string name="key_echo_dist_level" translatable="false">echo_dist_level</string>
+    <string name="key_echo_knee" translatable="false">echo_knee</string>
+    <string name="key_echo_symmetry" translatable="false">echo_symmetry</string>
+    <string name="key_echo_tone" translatable="false">echo_tone</string>
+    <string name="key_echo_open_panel" translatable="false">echo_open_panel</string>
     <string name="key_echo_enable" translatable="false">echo_enable</string>
     <string name="key_echo_time" translatable="false">echo_time</string>
     <string name="key_echo_feedback" translatable="false">echo_feedback</string>

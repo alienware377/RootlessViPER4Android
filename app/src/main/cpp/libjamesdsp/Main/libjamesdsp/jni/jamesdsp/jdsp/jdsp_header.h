@@ -104,13 +104,21 @@ typedef struct
 	float *bufL, *bufR;
 	float apL[ECHO_APLEN], apR[ECHO_APLEN];
 	int widx, diffDelay;
-	float fs, delaySamples, feedback;
+	float fs;
+	float inputLevel;
+	float delaySamples, targetDelay, smoothCoeff, offsetSamples;
+	int keepPitch;
+	float xfade, xfadePos;
 	int model, filterType;
-	float stereoSpread, wet, dry;
-	float svfG, svfK, svfA1, svfA2, svfA3;
-	float svfIc1[2], svfIc2[2];
-	float modRate, modDepth, modInc, modPhase;
-	float diffusion, satDrive;
+	float stereoSpread, feedback;
+	float cutoffHz, svfK, svfA1, svfA2, svfA3, svfIc1[2], svfIc2[2];
+	float srStep, srPhase, srHoldL, srHoldR, bitLevels;
+	float modRate, modInc, modPhase, modTime, modCutoff;
+	float diffusion, spread;
+	int distMode;
+	float distLevel, knee, symmetry;
+	float tone, toneCoeff, toneZL, toneZR;
+	float wet, dry;
 } EchoDelay;
 typedef struct
 {
@@ -870,10 +878,16 @@ extern void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct)
 extern void PitchShiftProcess(JamesDSPLib *jdsp, size_t n);
 extern void PitchShiftEnable(JamesDSPLib *jdsp);
 extern void PitchShiftDisable(JamesDSPLib *jdsp);
-extern void EchoDelaySetParam(JamesDSPLib *jdsp, float timeMs, float feedbackPct,
-	int model, float stereoPct, float cutoffHz, float resonance, int filterType,
-	float modRateHz, float modDepthPct, float diffusionPct,
-	float satPct, float wetPct, float dryPct);
+extern void EchoDelaySetParam(JamesDSPLib *jdsp, float inputLevel, float timeMs,
+	float smoothingPct, float offsetMs, int keepPitch,
+	int model, float stereoPct,
+	float feedbackPct, float cutoffHz, float resonance, int filterType,
+	float smpRatePct, float bits,
+	float modRateHz, float modTimePct, float modCutoffPct,
+	float diffusionPct, float spreadPct,
+	int distMode, float distLevel, float knee, float symmetry,
+	float tonePct, float wetPct, float dryPct);
+extern void EchoDelayUpdateFilter(EchoDelay *e, float cutoffHz);
 extern void EchoDelayProcess(JamesDSPLib *jdsp, size_t n);
 extern void EchoDelayEnable(JamesDSPLib *jdsp);
 extern void EchoDelayDisable(JamesDSPLib *jdsp);

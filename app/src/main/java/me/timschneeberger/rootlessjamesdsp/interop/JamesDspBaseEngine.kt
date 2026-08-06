@@ -158,17 +158,29 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
             cache.select(Constants.PREF_ECHODELAY)
             val echoEnabled = cache.get(R.string.key_echo_enable, false)
+            val echoInput = cache.get(R.string.key_echo_input, 100f)
             val echoTime = cache.get(R.string.key_echo_time, 350f)
-            val echoFeedback = cache.get(R.string.key_echo_feedback, 40f)
+            val echoSmoothing = cache.get(R.string.key_echo_smoothing, 20f)
+            val echoOffset = cache.get(R.string.key_echo_offset, 0f)
+            val echoKeepPitch = cache.get(R.string.key_echo_keep_pitch, false)
             val echoModel = cache.get(R.string.key_echo_model, "1").toInt()
             val echoStereo = cache.get(R.string.key_echo_stereo, 50f)
+            val echoFeedback = cache.get(R.string.key_echo_feedback, 40f)
             val echoCutoff = cache.get(R.string.key_echo_cutoff, 12000f)
-            val echoResonance = cache.get(R.string.key_echo_resonance, 10f)
+            val echoRes = cache.get(R.string.key_echo_res, 10f)
             val echoFilter = cache.get(R.string.key_echo_filter, "0").toInt()
+            val echoSmpRate = cache.get(R.string.key_echo_smp_rate, 100f)
+            val echoBits = cache.get(R.string.key_echo_bits, 24f)
             val echoModRate = cache.get(R.string.key_echo_mod_rate, 0f)
-            val echoModDepth = cache.get(R.string.key_echo_mod_depth, 0f)
+            val echoModTime = cache.get(R.string.key_echo_mod_time, 0f)
+            val echoModCutoff = cache.get(R.string.key_echo_mod_cutoff, 0f)
             val echoDiffusion = cache.get(R.string.key_echo_diffusion, 0f)
-            val echoSaturation = cache.get(R.string.key_echo_saturation, 0f)
+            val echoSpread = cache.get(R.string.key_echo_spread, 0f)
+            val echoDistMode = cache.get(R.string.key_echo_dist_mode, "1").toInt()
+            val echoDistLevel = cache.get(R.string.key_echo_dist_level, 0f)
+            val echoKnee = cache.get(R.string.key_echo_knee, 50f)
+            val echoSymmetry = cache.get(R.string.key_echo_symmetry, 0f)
+            val echoTone = cache.get(R.string.key_echo_tone, 0f)
             val echoWet = cache.get(R.string.key_echo_wet, 35f)
             val echoDry = cache.get(R.string.key_echo_dry, 100f)
 
@@ -266,9 +278,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_SPEAKEROPT -> setSpeakerOpt(soEnabled, soStrength)
                     Constants.PREF_PITCHSHIFT -> setPitchShift(psEnabled, psSemitones, psMix)
                     Constants.PREF_ECHODELAY -> setEchoDelay(
-                        echoEnabled, echoTime, echoFeedback, echoModel, echoStereo,
-                        echoCutoff, echoResonance, echoFilter, echoModRate, echoModDepth,
-                        echoDiffusion, echoSaturation, echoWet, echoDry
+                        echoEnabled, echoInput, echoTime, echoSmoothing, echoOffset, echoKeepPitch, echoModel, echoStereo, echoFeedback, echoCutoff, echoRes, echoFilter, echoSmpRate, echoBits, echoModRate, echoModTime, echoModCutoff, echoDiffusion, echoSpread, echoDistMode, echoDistLevel, echoKnee, echoSymmetry, echoTone, echoWet, echoDry
                     )
                     Constants.PREF_SPECTRUMEXT -> setSpectrumExtension(spxEnabled, spxBark, spxStrength)
                     Constants.PREF_EQ -> setMultiEqualizer(eqEnabled, eqFilterType, eqInterpolationMode, eqBands)
@@ -588,10 +598,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean
     abstract fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean
     abstract fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean
-    abstract fun setEchoDelay(enable: Boolean, time: Float, feedback: Float, model: Int,
-                              stereo: Float, cutoff: Float, resonance: Float, filterType: Int,
-                              modRate: Float, modDepth: Float, diffusion: Float,
-                              saturation: Float, wet: Float, dry: Float): Boolean
+    abstract fun setEchoDelay(enable: Boolean, input: Float, time: Float, smoothing: Float, offset: Float, keepPitch: Boolean, model: Int, stereo: Float, feedback: Float, cutoff: Float, res: Float, filter: Int, smpRate: Float, bits: Float, modRate: Float, modTime: Float, modCutoff: Float, diffusion: Float, spread: Float, distMode: Int, distLevel: Float, knee: Float, symmetry: Float, tone: Float, wet: Float, dry: Float): Boolean
     abstract fun setChainOrder(order: IntArray?): Boolean
 
     abstract fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean

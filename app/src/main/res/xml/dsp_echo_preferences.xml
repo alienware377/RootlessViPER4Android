@@ -10,44 +10,12 @@
         <Preference android:key="section_info" android:title="@string/section_info_title"
             android:summary="@string/echo_info" android:persistent="false"
             app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_time" android:title="@string/echo_time"
-            android:defaultValue="350" app:minValue="1" app:maxValue="2500" app:unit="ms" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_feedback" android:title="@string/echo_feedback"
-            android:defaultValue="40" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <ListPreference android:key="@string/key_echo_model" android:title="@string/echo_model"
-            android:defaultValue="1" android:entries="@array/echo_models" android:entryValues="@array/echo_models_values"
-            app:useSimpleSummaryProvider="true" app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_stereo" android:title="@string/echo_stereo"
-            android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <ListPreference android:key="@string/key_echo_filter" android:title="@string/echo_filter"
-            android:defaultValue="0" android:entries="@array/echo_filters" android:entryValues="@array/echo_filters_values"
-            app:useSimpleSummaryProvider="true" app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_cutoff" android:title="@string/echo_cutoff"
-            android:defaultValue="12000" app:minValue="40" app:maxValue="20000" app:unit="Hz" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_resonance" android:title="@string/echo_resonance"
-            android:defaultValue="10" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_mod_rate" android:title="@string/echo_mod_rate"
-            android:defaultValue="0" app:minValue="0" app:maxValue="10" app:unit="Hz" app:precision="1"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_mod_depth" android:title="@string/echo_mod_depth"
-            android:defaultValue="0" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_diffusion" android:title="@string/echo_diffusion"
-            android:defaultValue="0" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_saturation" android:title="@string/echo_saturation"
-            android:defaultValue="0" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_wet" android:title="@string/echo_wet"
-            android:defaultValue="35" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_echo_dry" android:title="@string/echo_dry"
-            android:defaultValue="100" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
-            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="@string/key_echo_open_panel"
+            android:title="@string/echo_open_panel"
+            android:summary="@string/echo_open_panel_summary"
+            android:persistent="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false"/>
     </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
 </PreferenceScreen>

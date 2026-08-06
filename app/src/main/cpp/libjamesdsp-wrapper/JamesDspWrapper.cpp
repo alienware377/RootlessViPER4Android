@@ -481,13 +481,35 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setChainOrder(J
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setEchoDelay(JNIEnv *env, jobject obj, jlong self,
-        jboolean enable, jfloat time, jfloat feedback, jint model, jfloat stereo,
-        jfloat cutoff, jfloat resonance, jint filterType, jfloat modRate, jfloat modDepth,
-        jfloat diffusion, jfloat saturation, jfloat wet, jfloat dry)
+        jboolean enable,
+        jfloat input,
+        jfloat time,
+        jfloat smoothing,
+        jfloat offset,
+        jboolean keepPitch,
+        jint model,
+        jfloat stereo,
+        jfloat feedback,
+        jfloat cutoff,
+        jfloat res,
+        jint filter,
+        jfloat smpRate,
+        jfloat bits,
+        jfloat modRate,
+        jfloat modTime,
+        jfloat modCutoff,
+        jfloat diffusion,
+        jfloat spread,
+        jint distMode,
+        jfloat distLevel,
+        jfloat knee,
+        jfloat symmetry,
+        jfloat tone,
+        jfloat wet,
+        jfloat dry)
 {
     DECLARE_DSP_B
-    EchoDelaySetParam(dsp, time, feedback, model, stereo, cutoff, resonance, filterType,
-                      modRate, modDepth, diffusion, saturation, wet, dry);
+    EchoDelaySetParam(dsp, input, time, smoothing, offset, keepPitch, model, stereo, feedback, cutoff, res, filter, smpRate, bits, modRate, modTime, modCutoff, diffusion, spread, distMode, distLevel, knee, symmetry, tone, wet, dry);
     if (enable) EchoDelayEnable(dsp); else EchoDelayDisable(dsp);
     return true;
 }
