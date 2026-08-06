@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.appcompat.widget.AppCompatRadioButton
+import android.widget.RadioButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.databinding.FragmentEchoPanelBinding
@@ -92,7 +92,7 @@ class EchoPanelFragment : Fragment() {
     }
 
     /** Radio groups persist the selected index as a string, matching ListPreference. */
-    private fun bindRadio(keyRes: Int, default: String, buttons: List<AppCompatRadioButton>) {
+    private fun bindRadio(keyRes: Int, default: String, buttons: List<RadioButton>) {
         val key = getString(keyRes)
         val current = (prefs.getString(key, default) ?: default).toIntOrNull() ?: 0
         buttons.getOrNull(current)?.isChecked = true
