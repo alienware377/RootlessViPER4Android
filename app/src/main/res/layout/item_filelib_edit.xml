@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="4dp"
+    android:minHeight="48dp">
+
+    <TextView
+        android:id="@+id/edit_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="15sp"
+        android:ellipsize="middle"
+        android:singleLine="true" />
+
+    <ImageButton
+        android:id="@+id/edit_up"
+        android:layout_width="40dp"
+        android:layout_height="44dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/filelib_move_up"
+        android:src="@drawable/ic_baseline_keyboard_arrow_up_24dp" />
+
+    <ImageButton
+        android:id="@+id/edit_down"
+        android:layout_width="40dp"
+        android:layout_height="44dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/filelib_move_down"
+        android:src="@drawable/ic_baseline_keyboard_arrow_down_24dp" />
+
+    <ImageButton
+        android:id="@+id/edit_eye"
+        android:layout_width="40dp"
+        android:layout_height="44dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/filelib_hide"
+        android:src="@drawable/ic_twotone_visibility_24dp" />
+
+    <ImageButton
+        android:id="@+id/edit_more"
+        android:layout_width="40dp"
+        android:layout_height="44dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/filelib_more"
+        android:src="@drawable/ic_baseline_more_vert_24dp" />
+</LinearLayout>

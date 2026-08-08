@@ -44,7 +44,9 @@ class ParametricEqualizerFragment : Fragment() {
         set(value) {
             field = value
             binding.add.isEnabled = !value
-            binding.remove.isEnabled = !value
+            // Remove acts on the selected band, so it is only usable while one
+            // is actually selected.
+            binding.remove.isEnabled = value
             binding.reset.isEnabled = !value
             binding.importFile.isEnabled = !value
             binding.exportFile.isEnabled = !value
@@ -181,9 +183,10 @@ class ParametricEqualizerFragment : Fragment() {
             updateViewState()
         }
 
+        binding.remove.isEnabled = false
         binding.remove.setOnClickListener {
             // Mirrors long-pressing a handle, for anyone who hasn't found that
-            val target = selectedForEdit ?: adapter.bands.lastOrNull()
+            val target = selectedForEdit
             if (target == null) {
                 requireContext().toast(R.string.peq_remove_none)
                 return@setOnClickListener
@@ -191,6 +194,7 @@ class ParametricEqualizerFragment : Fragment() {
             pushHistory(snapshot())
             adapter.bands.remove(target)
             selectedForEdit = null
+            editorActive = false
             editorBandUuid = null
             editorActive = false
             sortBandsByFrequency()
@@ -303,6 +307,14 @@ class ParametricEqualizerFragment : Fragment() {
         surface.onDragFinished = {
             sortBandsByFrequency()
             binding.equalizerSurface.setBands(adapter.bands, binding.preampInput.value.toDouble())
+            // The knobs still hold the values from when the band was selected;
+            // without this, touching a knob right after a drag writes those
+            // stale values back and the handle jumps to its old position.
+            selectedForEdit?.let { band ->
+                binding.freqInput.value = band.frequency.toFloat()
+                binding.gainInput.value = band.gain.toFloat()
+                binding.qInput.value = band.q.toFloat()
+            }
         }
 
         surface.onBandSelected = { index ->

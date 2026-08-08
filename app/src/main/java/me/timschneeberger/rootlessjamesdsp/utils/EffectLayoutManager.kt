@@ -87,7 +87,8 @@ class EffectLayoutManager(
                     .show()
             }
         }
-        container.addView(button)
+        // Top of the list so it is discoverable in edit mode
+        container.addView(button, 0)
         addGroupButton = button
     }
 
@@ -435,6 +436,22 @@ class EffectLayoutManager(
             }
             rename.setOnClickListener { promptRename(item) }
             row.addView(rename)
+            if (item.key.startsWith("group_custom_")) {
+                val delete = ImageButton(context).apply {
+                    setImageResource(R.drawable.ic_twotone_delete_24dp)
+                    background = null
+                    layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
+                    setOnClickListener {
+                        AlertDialog.Builder(context)
+                            .setTitle(R.string.effect_group_delete)
+                            .setMessage(groupName(item))
+                            .setPositiveButton(android.R.string.ok) { _, _ -> deleteGroup(item) }
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show()
+                    }
+                }
+                row.addView(delete)
+            }
         }
         row.addView(eye)
 
