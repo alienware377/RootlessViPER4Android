@@ -202,7 +202,6 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     findPreference<Preference>(getString(R.string.key_limiter_release))
                         ?.setTitle(R.string.v4a_limit_release)
                     modePref?.isVisible = false
-                    if (modePref?.value != "0") modePref?.value = "0"
                 } else {
                     // Hide limiter params the selected mode ignores: Off uses
                     // neither, soft saturation shapes by threshold only.
@@ -223,9 +222,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             }
             R.xml.dsp_vreverb_preferences -> {
                 if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())) {
-                    val mp = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
-                    if (mp?.value != "0") mp?.value = "0"
-                    mp?.isVisible = false
+                    findPreference<ListPreference>(getString(R.string.key_vreverb_model))
+                        ?.isVisible = false
                     arrayOf(R.string.key_vreverb_predelay, R.string.key_vreverb_decay,
                         R.string.key_vreverb_diffusion, R.string.key_vreverb_mod,
                         R.string.key_vreverb_bass, R.string.key_vreverb_er)
