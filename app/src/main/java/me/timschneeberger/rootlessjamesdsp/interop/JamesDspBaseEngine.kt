@@ -151,8 +151,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             // is preserved and comes back when the mode is switched off.
             val vrModel = if (V4aMode.isOn(context)) 0
                 else cache.get(R.string.key_vreverb_model, "0").toInt()
-            val vrRoom = cache.get(R.string.key_vreverb_roomsize, 50f)
-            val vrDamp = cache.get(R.string.key_vreverb_damping, 50f)
+            val vrRoom = cache.get(R.string.key_vreverb_room, 50f)
+            val vrDamp = cache.get(R.string.key_vreverb_damp, 50f)
             val vrWidth = cache.get(R.string.key_vreverb_width, 100f)
             val vrPredelay = cache.get(R.string.key_vreverb_predelay, 20f)
             val vrDecay = cache.get(R.string.key_vreverb_decay, 45f)

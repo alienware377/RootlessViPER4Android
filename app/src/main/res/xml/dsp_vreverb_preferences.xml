@@ -13,7 +13,7 @@
         <ListPreference android:key="@string/key_vreverb_model" android:title="@string/vreverb_model"
             android:defaultValue="0" android:entries="@array/vreverb_models" android:entryValues="@array/vreverb_models_values"
             app:useSimpleSummaryProvider="true" app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_roomsize" android:title="@string/vreverb_roomsize"
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_room" android:title="@string/vreverb_room"
             android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_decay" android:title="@string/vreverb_decay"
@@ -22,7 +22,7 @@
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_predelay" android:title="@string/vreverb_predelay"
             android:defaultValue="20" app:minValue="0" app:maxValue="200" app:unit="ms" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_damping" android:title="@string/vreverb_damping"
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_damp" android:title="@string/vreverb_damp"
             android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_diffusion" android:title="@string/vreverb_diffusion"
