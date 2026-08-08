@@ -514,4 +514,13 @@
     <string-array name="echo_filters_values" translatable="false">
         <item>0</item><item>1</item><item>2</item><item>3</item>
     </string-array>
+    <string-array name="vreverb_models">
+        <item>@string/vreverb_model_classic</item>
+        <item>@string/vreverb_model_plate</item>
+        <item>@string/vreverb_model_hall</item>
+        <item>@string/vreverb_model_room</item>
+    </string-array>
+    <string-array name="vreverb_models_values" translatable="false">
+        <item>0</item><item>1</item><item>2</item><item>3</item>
+    </string-array>
 </resources>

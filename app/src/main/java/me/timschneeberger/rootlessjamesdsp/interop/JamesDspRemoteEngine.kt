@@ -153,7 +153,9 @@ class JamesDspRemoteEngine(
 
     override fun setViperBass(enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean = true
 
-    override fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean = true
+    override fun setVReverb(enable: Boolean, model: Int, room: Float, damp: Float,
+                            width: Float, predelay: Float, decay: Float, diffusion: Float,
+                            mod: Float, bass: Float, er: Float, wet: Float, dry: Float): Boolean = true
 
     override fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean = true
 

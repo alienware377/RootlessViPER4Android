@@ -439,10 +439,12 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setViperBass(JN
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVReverb(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat room, jfloat damp, jfloat width, jfloat wet, jfloat dry)
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVReverb(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jint model, jfloat room, jfloat damp, jfloat width, jfloat predelay,
+        jfloat decay, jfloat diffusion, jfloat mod, jfloat bass, jfloat er, jfloat wet, jfloat dry)
 {
     DECLARE_DSP_B
-    VReverbSetParam(dsp, room, damp, width, wet, dry);
+    VReverbSetParam(dsp, model, room, damp, width, predelay, decay, diffusion, mod, bass, er, wet, dry);
     if (enable) VReverbEnable(dsp); else VReverbDisable(dsp);
     return true;
 }

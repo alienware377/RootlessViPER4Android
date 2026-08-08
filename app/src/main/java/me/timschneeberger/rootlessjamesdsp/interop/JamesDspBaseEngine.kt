@@ -144,9 +144,16 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
             cache.select(Constants.PREF_VREVERB)
             val vrEnabled = cache.get(R.string.key_vreverb_enable, false)
-            val vrRoom = cache.get(R.string.key_vreverb_room, 50f)
-            val vrDamp = cache.get(R.string.key_vreverb_damp, 50f)
+            val vrModel = cache.get(R.string.key_vreverb_model, "0").toInt()
+            val vrRoom = cache.get(R.string.key_vreverb_roomsize, 50f)
+            val vrDamp = cache.get(R.string.key_vreverb_damping, 50f)
             val vrWidth = cache.get(R.string.key_vreverb_width, 100f)
+            val vrPredelay = cache.get(R.string.key_vreverb_predelay, 20f)
+            val vrDecay = cache.get(R.string.key_vreverb_decay, 45f)
+            val vrDiffusion = cache.get(R.string.key_vreverb_diffusion, 70f)
+            val vrMod = cache.get(R.string.key_vreverb_mod, 30f)
+            val vrBass = cache.get(R.string.key_vreverb_bass, 50f)
+            val vrEr = cache.get(R.string.key_vreverb_er, 50f)
             val vrWet = cache.get(R.string.key_vreverb_wet, 30f)
             val vrDry = cache.get(R.string.key_vreverb_dry, 100f)
 
@@ -274,7 +281,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_FETCOMP -> setFetComp(fetEnabled, fetThr, fetRatio, fetAtt, fetRel, fetMakeup)
                     Constants.PREF_CURE -> setCure(cureEnabled, cureLevel)
                     Constants.PREF_VIPERBASS -> setViperBass(vbEnabled, vbMode, vbFreq, vbGain)
-                    Constants.PREF_VREVERB -> setVReverb(vrEnabled, vrRoom, vrDamp, vrWidth, vrWet, vrDry)
+                    Constants.PREF_VREVERB -> setVReverb(
+                        vrEnabled, vrModel, vrRoom, vrDamp, vrWidth, vrPredelay, vrDecay,
+                        vrDiffusion, vrMod, vrBass, vrEr, vrWet, vrDry)
                     Constants.PREF_SPEAKEROPT -> setSpeakerOpt(soEnabled, soStrength)
                     Constants.PREF_PITCHSHIFT -> setPitchShift(psEnabled, psSemitones, psMix)
                     Constants.PREF_ECHODELAY -> setEchoDelay(
@@ -595,7 +604,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setFetComp(enable: Boolean, threshold: Float, ratio: Float, attack: Float, release: Float, makeup: Float): Boolean
     abstract fun setCure(enable: Boolean, level: Int): Boolean
     abstract fun setViperBass(enable: Boolean, mode: Int, freq: Float, gain: Float): Boolean
-    abstract fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean
+    abstract fun setVReverb(enable: Boolean, model: Int, room: Float, damp: Float,
+                            width: Float, predelay: Float, decay: Float, diffusion: Float,
+                            mod: Float, bass: Float, er: Float, wet: Float, dry: Float): Boolean
     abstract fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean
     abstract fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean
     abstract fun setEchoDelay(enable: Boolean, input: Float, time: Float, smoothing: Float, offset: Float, keepPitch: Boolean, model: Int, stereo: Float, feedback: Float, cutoff: Float, res: Float, filter: Int, smpRate: Float, bits: Float, modRate: Float, modTime: Float, modCutoff: Float, diffusion: Float, spread: Float, distMode: Int, distLevel: Float, knee: Float, symmetry: Float, tone: Float, wet: Float, dry: Float): Boolean

@@ -8,12 +8,33 @@
         android:icon="@drawable/ic_twotone_surround_sound_24dp"
         app:iconSpaceReserved="false">
         <Preference android:key="section_info" android:title="@string/section_info_title"
-            android:summary="@string/vreverb_info" android:persistent="false"
+            android:summary="@string/vreverb_model_info" android:persistent="false"
             app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_room" android:title="@string/vreverb_room"
+        <ListPreference android:key="@string/key_vreverb_model" android:title="@string/vreverb_model"
+            android:defaultValue="0" android:entries="@array/vreverb_models" android:entryValues="@array/vreverb_models_values"
+            app:useSimpleSummaryProvider="true" app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_roomsize" android:title="@string/vreverb_roomsize"
             android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
-        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_damp" android:title="@string/vreverb_damp"
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_decay" android:title="@string/vreverb_decay"
+            android:defaultValue="45" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_predelay" android:title="@string/vreverb_predelay"
+            android:defaultValue="20" app:minValue="0" app:maxValue="200" app:unit="ms" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_damping" android:title="@string/vreverb_damping"
+            android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_diffusion" android:title="@string/vreverb_diffusion"
+            android:defaultValue="70" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_mod" android:title="@string/vreverb_mod"
+            android:defaultValue="30" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_bass" android:title="@string/vreverb_bass"
+            android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_er" android:title="@string/vreverb_er"
             android:defaultValue="50" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_vreverb_width" android:title="@string/vreverb_width"

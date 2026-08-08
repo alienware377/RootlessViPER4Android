@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.XmlRes
 import androidx.appcompat.app.AlertDialog
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.Preference.SummaryProvider
 import androidx.preference.PreferenceFragmentCompat
@@ -185,6 +186,28 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         startActivity(Intent(requireContext(), EchoPanelActivity::class.java))
                         true
                     }
+            }
+            R.xml.dsp_vreverb_preferences -> {
+                // Each room type exposes only the controls it actually uses, so
+                // the card never shows a slider that does nothing.
+                fun applyModelVisibility(model: String) {
+                    val plate = model == "1"
+                    val hall = model == "2"
+                    val room = model == "3"
+                    val advanced = plate || hall || room
+                    findPreference<Preference>(getString(R.string.key_vreverb_predelay))?.isVisible = advanced
+                    findPreference<Preference>(getString(R.string.key_vreverb_decay))?.isVisible = advanced
+                    findPreference<Preference>(getString(R.string.key_vreverb_diffusion))?.isVisible = plate
+                    findPreference<Preference>(getString(R.string.key_vreverb_mod))?.isVisible = plate
+                    findPreference<Preference>(getString(R.string.key_vreverb_bass))?.isVisible = hall || room
+                    findPreference<Preference>(getString(R.string.key_vreverb_er))?.isVisible = room
+                }
+                val modelPref = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
+                applyModelVisibility(modelPref?.value ?: "0")
+                modelPref?.setOnPreferenceChangeListener { _, newValue ->
+                    applyModelVisibility(newValue as? String ?: "0")
+                    true
+                }
             }
             R.xml.dsp_liveprog_preferences,
             R.xml.dsp_liveprog2_preferences,

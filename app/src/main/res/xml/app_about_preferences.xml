@@ -74,6 +74,71 @@
             android:data="https://github.com/james34602" />
     </Preference>
 
+    <Preference
+        android:title="@string/credits_viper"
+        android:summary="ViPER's Audio team — original ViPER4Android effect designs"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/ViPER-Audio" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_sndfilter"
+        android:summary="Sean Connelly (@voidqk) — sndfilter reverb used by the Reverberation effect (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/voidqk/sndfilter" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_dattorro"
+        android:summary="Jon Dattorro — figure-eight plate reverb topology (Effect Design, JAES 1997), basis of the Plate room type"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://ccrma.stanford.edu/~dattorro/EffectDesignPart1.pdf" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_freeverb"
+        android:summary="Jezar at Dreampoint — Freeverb, basis of the Classic ViPER room type"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://ccrma.stanford.edu/~jos/pasp/Freeverb.html" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_zita"
+        android:summary="Fons Adriaensen — zita-rev1, reference for the Concert hall FDN topology"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://kokkinizita.linuxaudio.org/linuxaudio/" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_dragonfly"
+        android:summary="Michael Willis and contributors — Dragonfly Reverb, reference for the Room early-reflection arrangement"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/michaelwillis/dragonfly-reverb" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_mverb"
+        android:summary="Martin Eastwood — MVerb, Dattorro-topology studio reference"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/martineastwood/mverb" />
+    </Preference>
+    <Preference
+        android:title="@string/credits_headsetcontrol"
+        android:summary="Sapd and contributors — HeadsetControl, reference for device protocol work"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/Sapd/HeadsetControl" />
+    </Preference>
+
     <PreferenceCategory
         android:key="@string/key_translators"
         app:title="@string/translators"
