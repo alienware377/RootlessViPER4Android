@@ -72,7 +72,45 @@ class EchoPanelFragment : Fragment() {
             intArrayOf(R.id.dist_limit, R.id.dist_sat)
         )
 
+        refreshUsability()
+
         return binding.root
+    }
+
+
+    /**
+     * Dims and locks knobs the current settings make inert, instead of hiding
+     * them - hiding would reflow the panel and move controls mid-gesture.
+     * Dead cases, from the engine: filter Off ignores cutoff/res; mod rate 0
+     * freezes the LFO so its time/cutoff do nothing; diffusion 0 bypasses
+     * spread; distortion level 0 bypasses mode/knee/symmetry; model Off
+     * bypasses the whole effect.
+     */
+    private fun refreshUsability() {
+        fun set(v: View, usable: Boolean) {
+            v.isEnabled = usable
+            v.alpha = if (usable) 1f else 0.35f
+        }
+        val model = (prefs.getString(getString(R.string.key_echo_model), "1") ?: "1")
+        val on = model != "3"
+        val filterOff = (prefs.getString(getString(R.string.key_echo_filter), "0") ?: "0") == "3"
+        val modOff = prefs.getFloat(getString(R.string.key_echo_mod_rate), 0f) <= 0.01f
+        val diffOff = prefs.getFloat(getString(R.string.key_echo_diffusion), 0f) <= 0.01f
+        val distOff = prefs.getFloat(getString(R.string.key_echo_dist_level), 0f) <= 0.01f
+
+        set(binding.knobCutoff, on && !filterOff)
+        set(binding.knobRes, on && !filterOff)
+        set(binding.knobModTime, on && !modOff)
+        set(binding.knobModCutoff, on && !modOff)
+        set(binding.knobSpread, on && !diffOff)
+        set(binding.groupDist, on && !distOff)
+        set(binding.knobKnee, on && !distOff)
+        set(binding.knobSymmetry, on && !distOff)
+        listOf(binding.knobTime, binding.switchKeepPitch, binding.knobSmoothing,
+            binding.knobOffset, binding.knobStereo, binding.knobFeedback,
+            binding.groupFilter, binding.knobSmpRate, binding.knobBits,
+            binding.knobModRate, binding.knobDiffusion, binding.knobInput,
+            binding.knobWet, binding.knobTone).forEach { set(it, on) }
     }
 
     private fun bindKnob(knob: KnobView, keyRes: Int, default: Float) {
@@ -80,6 +118,7 @@ class EchoPanelFragment : Fragment() {
         knob.value = prefs.getFloat(key, default)
         knob.setOnValueChangedListener {
             prefs.edit().putFloat(key, knob.value).apply()
+            refreshUsability()
         }
     }
 
@@ -101,8 +140,10 @@ class EchoPanelFragment : Fragment() {
         group.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val index = ids.indexOf(checkedId)
-            if (index >= 0)
+            if (index >= 0) {
                 prefs.edit().putString(key, index.toString()).apply()
+                refreshUsability()
+            }
         }
     }
 

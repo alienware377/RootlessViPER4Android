@@ -187,6 +187,19 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         true
                     }
             }
+            R.xml.dsp_output_control_preferences -> {
+                // Hide limiter params the selected mode ignores: Off uses
+                // neither, soft saturation shapes by threshold only.
+                fun apply(mode: String) {
+                    findPreference<Preference>(getString(R.string.key_limiter_threshold))?.isVisible = mode != "2"
+                    findPreference<Preference>(getString(R.string.key_limiter_release))?.isVisible = mode == "0"
+                }
+                val modePref = findPreference<ListPreference>(getString(R.string.key_limiter_mode))
+                apply(modePref?.value ?: "0")
+                modePref?.setOnPreferenceChangeListener { _, v ->
+                    apply(v as? String ?: "0"); true
+                }
+            }
             R.xml.dsp_vreverb_preferences -> {
                 // Each room type exposes only the controls it actually uses, so
                 // the card never shows a slider that does nothing.
