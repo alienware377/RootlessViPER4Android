@@ -420,11 +420,13 @@
     <string-array name="limiter_modes">
         <item>@string/limiter_mode_normal</item>
         <item>@string/limiter_mode_soft</item>
+        <item>@string/limiter_mode_viper</item>
         <item>@string/limiter_mode_off</item>
     </string-array>
     <string-array name="limiter_modes_values" translatable="false">
         <item>0</item>
         <item>1</item>
+        <item>3</item>
         <item>2</item>
     </string-array>
     <string-array name="vdynbass_modes">

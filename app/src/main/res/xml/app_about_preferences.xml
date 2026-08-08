@@ -139,6 +139,15 @@
             android:data="https://github.com/Sapd/HeadsetControl" />
     </Preference>
 
+    <Preference
+        android:title="@string/credits_viperfxre"
+        android:summary="ViPERFX_RE project — reverse-engineered ViPER4Android source, reference for the ViPER classic limiter"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/AndroidAudioMods/ViPERFX_RE" />
+    </Preference>
+
     <PreferenceCategory
         android:key="@string/key_translators"
         app:title="@string/translators"

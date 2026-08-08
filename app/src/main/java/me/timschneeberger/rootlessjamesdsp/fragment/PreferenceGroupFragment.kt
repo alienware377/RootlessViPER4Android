@@ -207,7 +207,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     // neither, soft saturation shapes by threshold only.
                     fun apply(mode: String) {
                         findPreference<Preference>(getString(R.string.key_limiter_threshold))?.isVisible = mode != "2"
-                        findPreference<Preference>(getString(R.string.key_limiter_release))?.isVisible = mode == "0"
+                        findPreference<Preference>(getString(R.string.key_limiter_release))?.isVisible = mode == "0" || mode == "3"
                     }
                     apply(modePref?.value ?: "0")
                     modePref?.setOnPreferenceChangeListener { _, v ->
