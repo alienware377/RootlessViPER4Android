@@ -90,6 +90,14 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     // Idle detection
     private var isProcessorIdle = false
+    /** Seconds of continuous digital silence seen by the capture thread. */
+    private var silenceGateSecs = 0.0
+
+    /** Returns true while the silence gate should keep the DSP chain skipped. */
+    private fun updateSilenceGate(silentBuffer: Boolean, bufferSecs: Double): Boolean {
+        silenceGateSecs = if (silentBuffer) silenceGateSecs + bufferSecs else 0.0
+        return silenceGateSecs >= 20.0
+    }
     private var suspendOnIdle = false
 
     // Exclude restricted apps flag
@@ -485,6 +493,14 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 val floatOutBuffer = FloatArray(bufferSize)
                 val shortBuffer = ShortArray(bufferSize)
                 val shortOutBuffer = ShortArray(bufferSize)
+                // Silence gate: session-based idle never fires while an app
+                // sits paused holding its audio session, so the pipeline used
+                // to process pure silence indefinitely. After 20s of silent
+                // input (longer than the longest reverb tail) the DSP chain
+                // and output track are skipped; capture keeps running so the
+                // first non-silent buffer resumes instantly and loses nothing.
+                var bufferGated = false
+                val bufferSecs = (bufferSize / 2.0) / sampleRate.toDouble()
                 while (!isProcessorDisposing) {
                     if(recreateRecorderRequested) {
                         recreateRecorderRequested = false
@@ -538,13 +554,31 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                     // Choose encoding and process data
                     if(encoding == AudioEncoding.PcmShort) {
                         recorder.read(shortBuffer, 0, shortBuffer.size, AudioRecord.READ_BLOCKING)
-                        engine.processInt16(shortBuffer, shortOutBuffer)
-                        track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                        var silent = suspendOnIdle
+                        if (silent) {
+                            for (v in shortBuffer) if (v.toInt() != 0) { silent = false; break }
+                        }
+                        if (updateSilenceGate(silent, bufferSecs)) {
+                            if (!bufferGated) { bufferGated = true; track.stop() }
+                        } else {
+                            if (bufferGated) { bufferGated = false; track.play() }
+                            engine.processInt16(shortBuffer, shortOutBuffer)
+                            track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                        }
                     }
                     else {
                         recorder.read(floatBuffer, 0, floatBuffer.size, AudioRecord.READ_BLOCKING)
-                        engine.processFloat(floatBuffer, floatOutBuffer)
-                        track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                        var silent = suspendOnIdle
+                        if (silent) {
+                            for (v in floatBuffer) if (v > 1e-7f || v < -1e-7f) { silent = false; break }
+                        }
+                        if (updateSilenceGate(silent, bufferSecs)) {
+                            if (!bufferGated) { bufferGated = true; track.stop() }
+                        } else {
+                            if (bufferGated) { bufferGated = false; track.play() }
+                            engine.processFloat(floatBuffer, floatOutBuffer)
+                            track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                        }
                     }
                 }
             } catch (e: IOException) {
