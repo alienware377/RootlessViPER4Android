@@ -358,6 +358,14 @@
     <string name="credits_dragonfly">Dragonfly Reverb</string>
     <string name="credits_mverb">MVerb</string>
     <string name="credits_headsetcontrol">HeadsetControl</string>
+    <string name="v4a_mode_title">ViPER4Android only mode</string>
+    <string name="v4a_mode_summary">Show only the original V4A effects with V4A naming. Everything else is switched off and uses no resources.</string>
+    <string name="v4a_master_limiter">Master limiter</string>
+    <string name="v4a_output_gain">Output gain</string>
+    <string name="v4a_limit_threshold">Limit threshold</string>
+    <string name="v4a_limit_release">Limit release</string>
+    <string name="v4a_fir_equalizer">FIR equalizer</string>
+    <string name="v4a_playback_gain">Playback gain control</string>
     <string name="vreverb_model">Room type</string>
     <string name="vreverb_model_classic">Classic (ViPER)</string>
     <string name="vreverb_model_plate">Plate</string>

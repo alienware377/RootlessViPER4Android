@@ -249,6 +249,7 @@
     <string name="key_echo_knee" translatable="false">echo_knee</string>
     <string name="key_echo_symmetry" translatable="false">echo_symmetry</string>
     <string name="key_echo_tone" translatable="false">echo_tone</string>
+    <string name="key_v4a_mode" translatable="false">v4a_only_mode</string>
     <string name="key_echo_open_panel" translatable="false">echo_open_panel</string>
     <string name="key_echo_enable" translatable="false">echo_enable</string>
     <string name="key_echo_time" translatable="false">echo_time</string>

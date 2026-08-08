@@ -20,6 +20,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.LiveprogSlots
+import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.EffectLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showYesNoAlert
@@ -44,6 +45,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
     override fun onResume() {
         super.onResume()
+        applyV4aVisibility()
         requireContext().registerLocalReceiver(
             slotsChangedReceiver,
             android.content.IntentFilter(Constants.ACTION_LIVEPROG_SLOTS_CHANGED)
@@ -240,7 +242,9 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                 val userHidden = layoutManager?.isHidden(
                     resources.getResourceEntryName(entry.cardId)
                 ) == true
-                val visible = !userHidden && (!searching || title.contains(q))
+                val v4aHidden = V4aMode.isOn(requireContext()) &&
+                        entry.cardId in V4aMode.hiddenCardIds
+                val visible = !userHidden && !v4aHidden && (!searching || title.contains(q))
                 card.isVisible = visible
                 if (visible && searching) matches++
             }
@@ -341,6 +345,19 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
             applyLiveprogSlotVisibility(rebuild = true)
         }
+    }
+
+    /** Hides every card the original ViPER4Android didn't have. */
+    private fun applyV4aVisibility() {
+        if (!isAdded) return
+        val on = V4aMode.isOn(requireContext())
+        V4aMode.hiddenCardIds.forEach { id ->
+            val container = binding.root.findViewById<View>(id)?.parent as? View
+            if (on) container?.isVisible = false
+            else if (container?.isVisible == false && !deferredCards.any { it.viewId == id })
+                container.isVisible = true
+        }
+        if (on) deferredCards.removeAll { it.viewId in V4aMode.hiddenCardIds }
     }
 
     fun applyLiveprogSlotVisibility(rebuild: Boolean = false) {
