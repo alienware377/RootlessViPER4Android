@@ -487,6 +487,51 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 			jdsp->tmpBuffer[0][i] = th * tanhf(xL / th);
 			jdsp->tmpBuffer[1][i] = th * tanhf(xR / th);
 		}
+		else if (jdsp->limiter.mode == 3)
+		{
+			/* ViPER classic: the original V4A SoftwareLimiter behaviour.
+			   A 256-sample lookahead lets the smoothed attack duck just in
+			   time; the windowed maximum keeps low frequencies from rippling
+			   the gain; the final clamp hard-catches the residue, which is
+			   the subtle transient "bite" V4A was known for. */
+			JLimiter *lim = &jdsp->limiter;
+			float r1 = fabsf(xL);
+			float r2 = fabsf(xR);
+			float m = r1 > r2 ? r1 : r2;
+			int leaf = 256 + lim->vIdx;
+			lim->vTree[leaf] = m;
+			for (leaf >>= 1; leaf >= 1; leaf >>= 1)
+			{
+				float a = lim->vTree[leaf << 1];
+				float b = lim->vTree[(leaf << 1) | 1];
+				lim->vTree[leaf] = a > b ? a : b;
+			}
+			float wmax = lim->vTree[1];
+			float gate = lim->threshold;
+			float target = (wmax > gate) ? (gate / wmax) : 1.0f;
+			lim->vAtt = target * 0.0999f + lim->vAtt * 0.8999f;
+			float rel = lim->vGain + (1.0f - lim->relCoef) * (1.0f - lim->vGain);
+			lim->vGain = lim->vAtt < rel ? lim->vAtt : rel;
+			int rd = (lim->vIdx + 1) & 255;
+			float dL = lim->vLook[0][rd];
+			float dR = lim->vLook[1][rd];
+			lim->vLook[0][lim->vIdx] = xL;
+			lim->vLook[1][lim->vIdx] = xR;
+			lim->vIdx = rd;
+			float oL = dL * lim->vGain;
+			float oR = dR * lim->vGain;
+			float om = fabsf(oL) > fabsf(oR) ? fabsf(oL) : fabsf(oR);
+			if (om >= gate)
+			{
+				float dm = fabsf(dL) > fabsf(dR) ? fabsf(dL) : fabsf(dR);
+				float g2 = (dm > 1e-9f) ? (gate / dm) : 1.0f;
+				lim->vGain = g2;
+				oL = dL * g2;
+				oR = dR * g2;
+			}
+			jdsp->tmpBuffer[0][i] = oL;
+			jdsp->tmpBuffer[1][i] = oR;
+		}
 		else
 		{
 			float rect1 = fabsf(xL);
@@ -526,6 +571,51 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 			float th = jdsp->limiter.threshold;
 			jdsp->tmpBuffer[0][i] = th * tanhf(xL / th);
 			jdsp->tmpBuffer[1][i] = th * tanhf(xR / th);
+		}
+		else if (jdsp->limiter.mode == 3)
+		{
+			/* ViPER classic: the original V4A SoftwareLimiter behaviour.
+			   A 256-sample lookahead lets the smoothed attack duck just in
+			   time; the windowed maximum keeps low frequencies from rippling
+			   the gain; the final clamp hard-catches the residue, which is
+			   the subtle transient "bite" V4A was known for. */
+			JLimiter *lim = &jdsp->limiter;
+			float r1 = fabsf(xL);
+			float r2 = fabsf(xR);
+			float m = r1 > r2 ? r1 : r2;
+			int leaf = 256 + lim->vIdx;
+			lim->vTree[leaf] = m;
+			for (leaf >>= 1; leaf >= 1; leaf >>= 1)
+			{
+				float a = lim->vTree[leaf << 1];
+				float b = lim->vTree[(leaf << 1) | 1];
+				lim->vTree[leaf] = a > b ? a : b;
+			}
+			float wmax = lim->vTree[1];
+			float gate = lim->threshold;
+			float target = (wmax > gate) ? (gate / wmax) : 1.0f;
+			lim->vAtt = target * 0.0999f + lim->vAtt * 0.8999f;
+			float rel = lim->vGain + (1.0f - lim->relCoef) * (1.0f - lim->vGain);
+			lim->vGain = lim->vAtt < rel ? lim->vAtt : rel;
+			int rd = (lim->vIdx + 1) & 255;
+			float dL = lim->vLook[0][rd];
+			float dR = lim->vLook[1][rd];
+			lim->vLook[0][lim->vIdx] = xL;
+			lim->vLook[1][lim->vIdx] = xR;
+			lim->vIdx = rd;
+			float oL = dL * lim->vGain;
+			float oR = dR * lim->vGain;
+			float om = fabsf(oL) > fabsf(oR) ? fabsf(oL) : fabsf(oR);
+			if (om >= gate)
+			{
+				float dm = fabsf(dL) > fabsf(dR) ? fabsf(dL) : fabsf(dR);
+				float g2 = (dm > 1e-9f) ? (gate / dm) : 1.0f;
+				lim->vGain = g2;
+				oL = dL * g2;
+				oR = dR * g2;
+			}
+			jdsp->tmpBuffer[0][i] = oL;
+			jdsp->tmpBuffer[1][i] = oR;
 		}
 		else
 		{

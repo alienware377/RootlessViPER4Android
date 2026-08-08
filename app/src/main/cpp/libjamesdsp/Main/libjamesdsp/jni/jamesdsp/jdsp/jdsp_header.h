@@ -35,7 +35,14 @@ typedef struct
 	float threshold;
 	float relCoef;
 	float envOverThreshold;
-	int mode; // 0 = peak limiter, 1 = soft saturator, 2 = off
+	int mode; // 0 = peak limiter, 1 = soft saturator, 2 = off, 3 = ViPER classic
+	/* ViPER classic (mode 3): faithful re-creation of V4A's SoftwareLimiter -
+	   a 256-sample lookahead ring per channel, a tournament tree holding the
+	   window maximum, a ~10-sample smoothed attack and a final hard clamp. */
+	float vLook[2][256];
+	float vTree[512];
+	int vIdx;
+	float vAtt, vGain;
 } JLimiter;
 typedef struct
 {

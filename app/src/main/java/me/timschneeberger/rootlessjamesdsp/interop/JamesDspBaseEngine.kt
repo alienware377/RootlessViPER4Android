@@ -65,7 +65,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val outputPostGain = cache.get(R.string.key_output_postgain, 0f)
             val limiterThreshold = cache.get(R.string.key_limiter_threshold, -0.1f)
             val limiterRelease = cache.get(R.string.key_limiter_release, 60f)
-            val limiterMode = if (V4aMode.isOn(context)) 0
+            // V4A mode uses the faithful port of the original SoftwareLimiter
+            val limiterMode = if (V4aMode.isOn(context)) 3
                 else cache.get(R.string.key_limiter_mode, "0").toInt()
 
             cache.select(Constants.PREF_COMPANDER)

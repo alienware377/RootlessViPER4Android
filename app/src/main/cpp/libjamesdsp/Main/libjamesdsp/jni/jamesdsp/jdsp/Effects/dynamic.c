@@ -20,6 +20,14 @@ void JLimiterInit(JamesDSPLib *jdsp)
 }
 void JLimiterSetMode(JamesDSPLib *jdsp, int mode)
 {
+	if (mode == 3 && jdsp->limiter.mode != 3)
+	{
+		memset(jdsp->limiter.vLook, 0, sizeof(jdsp->limiter.vLook));
+		memset(jdsp->limiter.vTree, 0, sizeof(jdsp->limiter.vTree));
+		jdsp->limiter.vIdx = 0;
+		jdsp->limiter.vAtt = 1.0f;
+		jdsp->limiter.vGain = 1.0f;
+	}
 	jdsp->limiter.mode = mode;
 }
 #ifndef M_PI
