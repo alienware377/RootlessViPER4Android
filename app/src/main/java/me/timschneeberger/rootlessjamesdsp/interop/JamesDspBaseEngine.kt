@@ -16,6 +16,7 @@ import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.utils.BiquadUtils
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import timber.log.Timber
 import java.io.File
@@ -64,7 +65,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val outputPostGain = cache.get(R.string.key_output_postgain, 0f)
             val limiterThreshold = cache.get(R.string.key_limiter_threshold, -0.1f)
             val limiterRelease = cache.get(R.string.key_limiter_release, 60f)
-            val limiterMode = cache.get(R.string.key_limiter_mode, "0").toInt()
+            val limiterMode = if (V4aMode.isOn(context)) 0
+                else cache.get(R.string.key_limiter_mode, "0").toInt()
 
             cache.select(Constants.PREF_COMPANDER)
             val compEnabled = cache.get(R.string.key_compander_enable, false)
@@ -144,7 +146,10 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
             cache.select(Constants.PREF_VREVERB)
             val vrEnabled = cache.get(R.string.key_vreverb_enable, false)
-            val vrModel = cache.get(R.string.key_vreverb_model, "0").toInt()
+            // V4A mode pins the classic model at read time; the stored choice
+            // is preserved and comes back when the mode is switched off.
+            val vrModel = if (V4aMode.isOn(context)) 0
+                else cache.get(R.string.key_vreverb_model, "0").toInt()
             val vrRoom = cache.get(R.string.key_vreverb_roomsize, 50f)
             val vrDamp = cache.get(R.string.key_vreverb_damping, 50f)
             val vrWidth = cache.get(R.string.key_vreverb_width, 100f)
