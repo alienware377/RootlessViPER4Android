@@ -809,9 +809,9 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
             false, null
         ) { query ->
             if (query.isNullOrBlank()) return@showInputAlert
-            libNetwork(getString(R.string.filelib_searching)) {
+            libNetwork(getString(R.string.filelib_searching), {
                 GithubLibraryDownloader.searchRepositories(query.trim())
-            } { repos ->
+            }) { repos ->
                 if (repos.isEmpty()) {
                     requireContext().toast(getString(R.string.filelibrary_no_presets)); return@libNetwork
                 }
@@ -827,9 +827,9 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
     }
 
     private fun browseSource(source: GithubLibraryDownloader.Source) {
-        libNetwork(getString(R.string.filelib_loading_list)) {
+        libNetwork(getString(R.string.filelib_loading_list), {
             GithubLibraryDownloader.listFiles(source.repo, source.branch, libExtensions())
-        } { files ->
+        }) { files ->
             val localNames = fileLibPreference.directory?.list()
                 ?.map { it.lowercase(Locale.getDefault()) } ?: emptyList()
             val fresh = files.filter { !localNames.contains(it.name.lowercase(Locale.getDefault())) }
