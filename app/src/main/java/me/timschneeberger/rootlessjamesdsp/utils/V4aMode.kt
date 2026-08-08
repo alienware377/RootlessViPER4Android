@@ -1,0 +1,55 @@
+package me.timschneeberger.rootlessjamesdsp.utils
+
+import android.content.Context
+import me.timschneeberger.rootlessjamesdsp.R
+
+/**
+ * "ViPER4Android only" mode: restricts the app to the effect set the original
+ * V4A shipped, disables everything else (so their engines free their buffers
+ * and cost nothing), and lets screens re-skin themselves with V4A naming.
+ */
+object V4aMode {
+    const val KEY = "v4a_only_mode"
+
+    fun isOn(ctx: Context): Boolean =
+        ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+            .getBoolean(KEY, false)
+
+    /** Effects the original ViPER4Android did NOT have: namespace + enable key. */
+    private fun nonV4a(ctx: Context) = listOf(
+        Constants.PREF_COMPANDER to R.string.key_compander_enable,
+        Constants.PREF_BASS to R.string.key_bass_enable,
+        Constants.PREF_BASSEX to R.string.key_bassex_enable,
+        Constants.PREF_PITCHSHIFT to R.string.key_pitchshift_enable,
+        Constants.PREF_ECHODELAY to R.string.key_echo_enable,
+        Constants.PREF_GEQ to R.string.key_geq_enable,
+        Constants.PREF_PEQ to R.string.key_peq_enable,
+        Constants.PREF_LIVEPROG to R.string.key_liveprog_enable,
+        Constants.PREF_LIVEPROG2 to R.string.key_liveprog2_enable,
+        Constants.PREF_LIVEPROG3 to R.string.key_liveprog3_enable,
+        Constants.PREF_LIVEPROG4 to R.string.key_liveprog4_enable,
+        Constants.PREF_STEREOWIDE to R.string.key_stereowide_enable,
+        Constants.PREF_CROSSFEED to R.string.key_crossfeed_enable,
+        Constants.PREF_REVERB to R.string.key_reverb_enable,
+    )
+
+    /** Card containers that vanish in V4A mode (matches the list above). */
+    val hiddenCardIds = intArrayOf(
+        R.id.card_compressor, R.id.card_bass, R.id.card_bassex,
+        R.id.card_pitchshift, R.id.card_echo, R.id.card_geq, R.id.card_peq,
+        R.id.card_liveprog, R.id.card_liveprog2, R.id.card_liveprog3,
+        R.id.card_liveprog4, R.id.card_stereowide, R.id.card_crossfeed,
+        R.id.card_reverb
+    )
+
+    /**
+     * Switches every non-V4A effect off. Each engine frees its buffers on
+     * disable, so this is also what guarantees they take no resources.
+     */
+    fun disableNonV4aEffects(ctx: Context) {
+        nonV4a(ctx).forEach { (namespace, keyRes) ->
+            ctx.getSharedPreferences(namespace, Context.MODE_MULTI_PROCESS)
+                .edit().putBoolean(ctx.getString(keyRes), false).apply()
+        }
+    }
+}

@@ -188,19 +188,50 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     }
             }
             R.xml.dsp_output_control_preferences -> {
-                // Hide limiter params the selected mode ignores: Off uses
-                // neither, soft saturation shapes by threshold only.
-                fun apply(mode: String) {
-                    findPreference<Preference>(getString(R.string.key_limiter_threshold))?.isVisible = mode != "2"
-                    findPreference<Preference>(getString(R.string.key_limiter_release))?.isVisible = mode == "0"
-                }
+                val v4a = me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())
                 val modePref = findPreference<ListPreference>(getString(R.string.key_limiter_mode))
-                apply(modePref?.value ?: "0")
-                modePref?.setOnPreferenceChangeListener { _, v ->
-                    apply(v as? String ?: "0"); true
+                if (v4a) {
+                    // Original V4A master limiter: output gain, limit threshold,
+                    // limit release - no mode selector (V4A is a peak limiter).
+                    (preferenceScreen.getPreference(0) as? Preference)
+                        ?.setTitle(R.string.v4a_master_limiter)
+                    findPreference<Preference>(getString(R.string.key_output_postgain))
+                        ?.setTitle(R.string.v4a_output_gain)
+                    findPreference<Preference>(getString(R.string.key_limiter_threshold))
+                        ?.setTitle(R.string.v4a_limit_threshold)
+                    findPreference<Preference>(getString(R.string.key_limiter_release))
+                        ?.setTitle(R.string.v4a_limit_release)
+                    modePref?.isVisible = false
+                    if (modePref?.value != "0") modePref?.value = "0"
+                } else {
+                    // Hide limiter params the selected mode ignores: Off uses
+                    // neither, soft saturation shapes by threshold only.
+                    fun apply(mode: String) {
+                        findPreference<Preference>(getString(R.string.key_limiter_threshold))?.isVisible = mode != "2"
+                        findPreference<Preference>(getString(R.string.key_limiter_release))?.isVisible = mode == "0"
+                    }
+                    apply(modePref?.value ?: "0")
+                    modePref?.setOnPreferenceChangeListener { _, v ->
+                        apply(v as? String ?: "0"); true
+                    }
                 }
             }
+            R.xml.dsp_equalizer_preferences -> {
+                if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext()))
+                    findPreference<Preference>(getString(R.string.key_eq_enable))
+                        ?.setTitle(R.string.v4a_fir_equalizer)
+            }
             R.xml.dsp_vreverb_preferences -> {
+                if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())) {
+                    val mp = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
+                    if (mp?.value != "0") mp?.value = "0"
+                    mp?.isVisible = false
+                    arrayOf(R.string.key_vreverb_predelay, R.string.key_vreverb_decay,
+                        R.string.key_vreverb_diffusion, R.string.key_vreverb_mod,
+                        R.string.key_vreverb_bass, R.string.key_vreverb_er)
+                        .forEach { findPreference<Preference>(getString(it))?.isVisible = false }
+                    return
+                }
                 // Each room type exposes only the controls it actually uses, so
                 // the card never shows a slider that does nothing.
                 fun applyModelVisibility(model: String) {

@@ -1,5 +1,12 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+        android:key="@string/key_v4a_mode"
+        android:title="@string/v4a_mode_title"
+        android:summary="@string/v4a_mode_summary"
+        android:defaultValue="false"
+        app:iconSpaceReserved="false" />
+
     <Preference
         app:key="@string/key_appearance"
         app:title="@string/appearance_section_header"

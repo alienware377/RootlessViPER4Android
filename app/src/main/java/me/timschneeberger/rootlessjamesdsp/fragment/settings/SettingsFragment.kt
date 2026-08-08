@@ -15,6 +15,20 @@ class SettingsFragment : SettingsBaseFragment() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
+        findPreference<androidx.preference.TwoStatePreference>(getString(R.string.key_v4a_mode))?.apply {
+            val appPrefs = requireContext().getSharedPreferences(
+                me.timschneeberger.rootlessjamesdsp.utils.Constants.PREF_APP,
+                android.content.Context.MODE_MULTI_PROCESS)
+            isChecked = appPrefs.getBoolean(me.timschneeberger.rootlessjamesdsp.utils.V4aMode.KEY, false)
+            setOnPreferenceChangeListener { _, newValue ->
+                val on = newValue as Boolean
+                appPrefs.edit().putBoolean(me.timschneeberger.rootlessjamesdsp.utils.V4aMode.KEY, on).apply()
+                if (on)
+                    me.timschneeberger.rootlessjamesdsp.utils.V4aMode.disableNonV4aEffects(requireContext())
+                true
+            }
+        }
+
         processing?.summary = getString(
             when {
                 isRootless() -> R.string.audio_format_summary
