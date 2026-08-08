@@ -40,7 +40,11 @@ class ThemingDelegateImpl : ThemingDelegate, KoinComponent {
 
     override fun applyAppTheme(activity: Activity) {
         val isAmoled = preferences.get<Boolean>(R.string.key_appearance_pure_black)
-        val appTheme = AppTheme.valueOf(preferences.get((R.string.key_appearance_app_theme)))
+        // V4A mode brings the ViPER look with it; the stored theme choice is
+        // untouched and returns when the mode is switched off.
+        val appTheme = if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(activity))
+            AppTheme.VIPER
+        else AppTheme.valueOf(preferences.get((R.string.key_appearance_app_theme)))
         ThemingDelegate.getThemeResIds(appTheme, isAmoled).forEach { activity.setTheme(it) }
     }
 }

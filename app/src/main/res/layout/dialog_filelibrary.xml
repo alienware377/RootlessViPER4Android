@@ -10,6 +10,63 @@
     android:orientation="vertical">
     <include layout="@layout/abc_alert_dialog_title_material"/>
 
+
+    <LinearLayout
+        android:id="@+id/lib_search_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:paddingHorizontal="16dp">
+        <EditText
+            android:id="@+id/lib_search_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/filelib_search_hint"
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionSearch" />
+        <ImageButton
+            android:id="@+id/lib_edit_toggle"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/filelib_edit_layout"
+            android:src="@drawable/ic_twotone_edit_24dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/lib_edit_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingHorizontal="12dp">
+        <Button
+            android:id="@+id/lib_hide_all"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:text="@string/filelib_hide_all" />
+        <Button
+            android:id="@+id/lib_show_all"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:text="@string/filelib_show_all" />
+        <Button
+            android:id="@+id/lib_add_group"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:text="@string/effect_group_add" />
+    </LinearLayout>
+
     <TextView android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="@dimen/abc_dialog_padding_material"
