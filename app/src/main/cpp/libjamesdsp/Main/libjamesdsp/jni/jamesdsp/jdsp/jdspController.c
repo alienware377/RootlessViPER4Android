@@ -1247,7 +1247,8 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->viperBassEnabled = 0;
 	ViperBassSetParam(jdsp, 0, 76.0f, 6.0f);
 	jdsp->vreverbEnabled = 0;
-	VReverbSetParam(jdsp, 50.0f, 50.0f, 100.0f, 30.0f, 100.0f);
+	VReverbSetParam(jdsp, 0, 50.0f, 50.0f, 100.0f, 20.0f, 45.0f, 70.0f,
+		30.0f, 50.0f, 50.0f, 30.0f, 100.0f);
 	jdsp->speakerOptEnabled = 0;
 	SpeakerOptSetParam(jdsp, 60.0f);
 	jdsp->pitchShiftEnabled = 0;

@@ -219,6 +219,13 @@
     <string name="key_viperbass_mode" translatable="false">viperbass_mode</string>
     <string name="key_viperbass_freq" translatable="false">viperbass_freq</string>
     <string name="key_viperbass_gain" translatable="false">viperbass_gain</string>
+    <string name="key_vreverb_model" translatable="false">vreverb_model</string>
+    <string name="key_vreverb_predelay" translatable="false">vreverb_predelay</string>
+    <string name="key_vreverb_decay" translatable="false">vreverb_decay</string>
+    <string name="key_vreverb_diffusion" translatable="false">vreverb_diffusion</string>
+    <string name="key_vreverb_mod" translatable="false">vreverb_mod</string>
+    <string name="key_vreverb_bass" translatable="false">vreverb_bass</string>
+    <string name="key_vreverb_er" translatable="false">vreverb_er</string>
     <string name="key_vreverb_enable" translatable="false">vreverb_enable</string>
     <string name="key_vreverb_room" translatable="false">vreverb_room</string>
     <string name="key_vreverb_damp" translatable="false">vreverb_damp</string>

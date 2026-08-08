@@ -137,8 +137,11 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setViperBass(handle, enable, mode, freq, gain)
     }
 
-    override fun setVReverb(enable: Boolean, room: Float, damp: Float, width: Float, wet: Float, dry: Float): Boolean {
-        return JamesDspWrapper.setVReverb(handle, enable, room, damp, width, wet, dry)
+    override fun setVReverb(enable: Boolean, model: Int, room: Float, damp: Float,
+                            width: Float, predelay: Float, decay: Float, diffusion: Float,
+                            mod: Float, bass: Float, er: Float, wet: Float, dry: Float): Boolean {
+        return JamesDspWrapper.setVReverb(handle, enable, model, room, damp, width,
+            predelay, decay, diffusion, mod, bass, er, wet, dry)
     }
 
     override fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean {

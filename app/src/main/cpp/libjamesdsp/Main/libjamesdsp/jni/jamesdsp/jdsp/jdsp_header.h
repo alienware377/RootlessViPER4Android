@@ -146,15 +146,46 @@ typedef struct
 	float dc[2];
 	float harm;
 } ViperBass;
+#define VREV_PREMAX 96000
+#define VREV_DIFF_N 4
+#define VREV_TANK_N 6
+#define VREV_FDN_N 8
 typedef struct
 {
+	/* Classic (freeverb-lineage) network - the original ViPER model */
 	float *combMem;
 	float *comb[2][4];
 	float *ap[2][2];
-	int clen[2][4], cidx[2][4];
-	int alen[2][2], aidx[2][2];
+	int clen[2][4], alen[2][2];
+	int cidx[2][4], aidx[2][2];
+	float cstore[2][4];
 	float cflt[2][4];
+	float astore[2][2];
 	float fb, damp, wet1, wet2, dry;
+
+	/* Shared */
+	int model;
+	float fs, roomSize, dampAmt, width, wetAmt;
+	float decay, diffusionAmt, modDepth, bassMult, erLevel;
+	float *preMem;
+	int preLen, preIdx;
+
+	/* Plate: Dattorro figure-eight tank (MVerb lineage) */
+	float *datMem;
+	float *diff[VREV_DIFF_N];
+	int diffLen[VREV_DIFF_N], diffIdx[VREV_DIFF_N];
+	float *tank[VREV_TANK_N];
+	int tankLen[VREV_TANK_N], tankIdx[VREV_TANK_N];
+	float tankLp[2], modPhase;
+
+	/* Hall / Room: feedback delay network (zita-rev1 lineage) */
+	float *fdnMem;
+	float *fdn[VREV_FDN_N];
+	int fdnLen[VREV_FDN_N], fdnIdx[VREV_FDN_N];
+	float fdnLp[VREV_FDN_N], fdnBass[VREV_FDN_N];
+	float fdnGainHi[VREV_FDN_N], fdnGainLo[VREV_FDN_N];
+	float *erMem;
+	int erLen, erIdx;
 } VReverb;
 typedef struct
 {
@@ -866,7 +897,9 @@ extern void ViperBassSetParam(JamesDSPLib *jdsp, int mode, float freq, float gai
 extern void ViperBassProcess(JamesDSPLib *jdsp, size_t n);
 extern void ViperBassEnable(JamesDSPLib *jdsp);
 extern void ViperBassDisable(JamesDSPLib *jdsp);
-extern void VReverbSetParam(JamesDSPLib *jdsp, float roomPct, float dampPct, float widthPct, float wetPct, float dryPct);
+extern void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
+	float widthPct, float predelayMs, float decayPct, float diffusionPct,
+	float modPct, float bassPct, float erPct, float wetPct, float dryPct);
 extern void VReverbProcess(JamesDSPLib *jdsp, size_t n);
 extern void VReverbEnable(JamesDSPLib *jdsp);
 extern void VReverbDisable(JamesDSPLib *jdsp);
