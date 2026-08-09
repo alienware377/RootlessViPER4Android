@@ -289,6 +289,10 @@
 
     <style name="Theme.RootlessJamesDSP.V4AClassic">
         <item name="v4aColorfulIcons">true</item>
+        <!-- Structure, not just colour: the original V4A is a flat full-width
+             list of rows separated by hairlines, not floating rounded cards. -->
+        <item name="materialCardViewStyle">@style/Widget.V4AClassic.CardView</item>
+        <item name="android:listDivider">@color/v4a_divider</item>
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/v4a_primary</item>
         <item name="colorOnPrimary">@color/v4a_onPrimary</item>
@@ -312,5 +316,16 @@
         <item name="colorOnSurfaceInverse">@color/v4a_inverseOnSurface</item>
         <item name="colorSurfaceInverse">@color/v4a_inverseSurface</item>
         <item name="colorPrimaryInverse">@color/v4a_primaryInverse</item>
+    </style>
+
+    <style name="Widget.V4AClassic.CardView" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">0dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardBackgroundColor">@color/v4a_surface</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">@color/v4a_divider</item>
+        <item name="contentPadding">0dp</item>
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:layout_marginBottom">0dp</item>
     </style>
 </resources>
