@@ -66,4 +66,5 @@
         <attr name="knobLabel" format="string" />
         <attr name="knobLogScale" format="boolean" />
     </declare-styleable>
+    <attr name="v4aColorfulIcons" format="boolean" />
 </resources>

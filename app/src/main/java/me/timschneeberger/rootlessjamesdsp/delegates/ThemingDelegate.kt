@@ -16,6 +16,7 @@ interface ThemingDelegate {
             resIds += when (appTheme) {
                 AppTheme.MONET -> R.style.Theme_RootlessJamesDSP_Monet
                 AppTheme.VIPER -> R.style.Theme_RootlessJamesDSP_Viper
+                AppTheme.V4A_CLASSIC -> R.style.Theme_RootlessJamesDSP_V4AClassic
                 AppTheme.GREEN_APPLE -> R.style.Theme_RootlessJamesDSP_GreenApple
                 AppTheme.STRAWBERRY_DAIQUIRI -> R.style.Theme_RootlessJamesDSP_StrawberryDaiquiri
                 AppTheme.HONEY -> R.style.Theme_RootlessJamesDSP_Honey

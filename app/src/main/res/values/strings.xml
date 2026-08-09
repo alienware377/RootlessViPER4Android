@@ -360,6 +360,7 @@
     <string name="credits_headsetcontrol">HeadsetControl</string>
     <string name="credits_viperfxre">ViPERFX_RE</string>
     <string name="limiter_mode_viper">ViPER classic (V4A)</string>
+    <string name="theme_v4a_classic">ViPER4Android classic</string>
     <string name="v4a_mode_title">ViPER4Android only mode</string>
     <string name="v4a_mode_summary">Show only the original V4A effects with V4A naming. Everything else is switched off and uses no resources.</string>
     <string name="v4a_master_limiter">Master limiter</string>
