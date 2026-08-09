@@ -286,4 +286,30 @@
         <item name="colorSurfaceInverse">@color/viper_inverseSurface</item>
         <item name="colorPrimaryInverse">@color/viper_primaryInverse</item>
     </style>
+
+    <style name="Theme.RootlessJamesDSP.V4AClassic">
+        <!-- Theme Colors -->
+        <item name="colorPrimary">@color/v4a_primary</item>
+        <item name="colorOnPrimary">@color/v4a_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/v4a_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/v4a_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/v4a_secondary</item>
+        <item name="colorOnSecondary">@color/v4a_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/v4a_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/v4a_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/v4a_tertiary</item>
+        <item name="colorOnTertiary">@color/v4a_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/v4a_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/v4a_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/v4a_background</item>
+        <item name="colorOnBackground">@color/v4a_onBackground</item>
+        <item name="colorSurface">@color/v4a_surface</item>
+        <item name="colorOnSurface">@color/v4a_onSurface</item>
+        <item name="colorSurfaceVariant">@color/v4a_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/v4a_onSurfaceVariant</item>
+        <item name="colorOutline">@color/v4a_outline</item>
+        <item name="colorOnSurfaceInverse">@color/v4a_inverseOnSurface</item>
+        <item name="colorSurfaceInverse">@color/v4a_inverseSurface</item>
+        <item name="colorPrimaryInverse">@color/v4a_primaryInverse</item>
+    </style>
 </resources>
