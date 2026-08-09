@@ -288,6 +288,7 @@
     </style>
 
     <style name="Theme.RootlessJamesDSP.V4AClassic">
+        <item name="v4aColorfulIcons">true</item>
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/v4a_primary</item>
         <item name="colorOnPrimary">@color/v4a_onPrimary</item>
