@@ -42,9 +42,14 @@ class ThemingDelegateImpl : ThemingDelegate, KoinComponent {
         val isAmoled = preferences.get<Boolean>(R.string.key_appearance_pure_black)
         // V4A mode brings the ViPER look with it; the stored theme choice is
         // untouched and returns when the mode is switched off.
-        val appTheme = if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(activity))
-            AppTheme.VIPER
-        else AppTheme.valueOf(preferences.get((R.string.key_appearance_app_theme)))
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(activity)) {
+            // Dedicated ViPER4Android classic look: green on dark, like the
+            // original FX Material app. The stored theme choice is untouched.
+            activity.setTheme(R.style.Theme_RootlessJamesDSP_V4AClassic)
+            if (isAmoled) activity.theme.applyStyle(R.style.ThemeOverlay_RootlessJamesDSP_Amoled, true)
+            return
+        }
+        val appTheme = AppTheme.valueOf(preferences.get((R.string.key_appearance_app_theme)))
         ThemingDelegate.getThemeResIds(appTheme, isAmoled).forEach { activity.setTheme(it) }
     }
 }

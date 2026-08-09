@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ViPER4Android classic palette: the green-on-dark look of the original
+         V4A FX Material app. Values chosen to keep Material 3 contrast rules
+         happy while reading unmistakably as V4A. -->
+    <color name="v4a_primary">#4CAF50</color>
+    <color name="v4a_onPrimary">#00340A</color>
+    <color name="v4a_primaryContainer">#1B5E20</color>
+    <color name="v4a_onPrimaryContainer">#C8E6C9</color>
+    <color name="v4a_secondary">#26A69A</color>
+    <color name="v4a_onSecondary">#00332E</color>
+    <color name="v4a_secondaryContainer">#00695C</color>
+    <color name="v4a_onSecondaryContainer">#B2DFDB</color>
+    <color name="v4a_tertiary">#8BC34A</color>
+    <color name="v4a_onTertiary">#1A2E00</color>
+    <color name="v4a_tertiaryContainer">#33691E</color>
+    <color name="v4a_onTertiaryContainer">#DCEDC8</color>
+    <color name="v4a_background">#121212</color>
+    <color name="v4a_onBackground">#E0E0E0</color>
+    <color name="v4a_surface">#1B1B1B</color>
+    <color name="v4a_onSurface">#E6E6E6</color>
+    <color name="v4a_surfaceVariant">#2A2E2A</color>
+    <color name="v4a_onSurfaceVariant">#BFC9BF</color>
+    <color name="v4a_outline">#5C6B5C</color>
+    <color name="v4a_inverseOnSurface">#1B1B1B</color>
+    <color name="v4a_inverseSurface">#E6E6E6</color>
+    <color name="v4a_primaryInverse">#1B5E20</color>
+</resources>

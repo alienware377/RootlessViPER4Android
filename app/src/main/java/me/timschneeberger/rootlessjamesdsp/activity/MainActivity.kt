@@ -142,6 +142,8 @@ class MainActivity : BaseActivity() {
     @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(this))
+            title = "ViPER4Android FX"
 
         run {
             val crash = java.io.File(filesDir, "last_crash.txt")

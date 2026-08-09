@@ -84,6 +84,9 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
     private var libSearch = ""
     private var revealStartY = -1f
 
+    /** GitHub repository search is parked until its flow is hardened. */
+    private val githubSearchEnabled = false
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         dialog = super.onCreateDialog(savedInstanceState) as AlertDialog
         // Workaround to prevent the button from closing the dialog
@@ -746,14 +749,14 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         val customs = GithubLibraryDownloader.customSources(requireContext())
         val all = defaults + customs
         val labels = all.map { it.label } +
-            getString(R.string.filelib_source_search) +
+            (if (githubSearchEnabled) listOf(getString(R.string.filelib_source_search)) else emptyList()) +
             getString(R.string.filelib_source_add)
         val dlg = AlertDialog.Builder(requireContext())
             .setTitle(R.string.filelib_download_title)
             .setItems(labels.toTypedArray()) { _, which ->
                 when {
                     which < all.size -> browseSource(all[which])
-                    which == all.size -> promptRepoSearch()
+                    githubSearchEnabled && which == all.size -> promptRepoSearch()
                     else -> promptAddSource()
                 }
             }
@@ -780,6 +783,7 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
             R.string.filelib_source_add_hint,
             "", false, null
         ) { input ->
+            if (!isAdded) return@showInputAlert
             val parsed = input?.let { GithubLibraryDownloader.parseRepoInput(it) }
             if (parsed == null) {
                 requireContext().toast(getString(R.string.filelib_source_invalid))
@@ -789,10 +793,12 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
             scriptScannerScope.launch {
                 val branch = branchIn ?: GithubLibraryDownloader.defaultBranch(repo)
                 withContext(Dispatchers.Main) {
-                    val customs = GithubLibraryDownloader.customSources(requireContext())
+                    val c = context ?: return@withContext
+                    if (!isAdded) return@withContext
+                    val customs = GithubLibraryDownloader.customSources(c)
                     if (customs.none { it.repo == repo }) {
                         customs.add(GithubLibraryDownloader.Source(repo, branch, repo))
-                        GithubLibraryDownloader.saveCustomSources(requireContext(), customs)
+                        GithubLibraryDownloader.saveCustomSources(c, customs)
                     }
                     browseSource(GithubLibraryDownloader.Source(repo, branch, repo))
                 }
@@ -808,7 +814,7 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
             if (fileLibPreference.isVdc()) "viper ddc" else "viper irs impulse",
             false, null
         ) { query ->
-            if (query.isNullOrBlank()) return@showInputAlert
+            if (!isAdded || query.isNullOrBlank()) return@showInputAlert
             libNetwork(getString(R.string.filelib_searching), {
                 GithubLibraryDownloader.searchRepositories(query.trim())
             }) { repos ->
@@ -856,7 +862,7 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         files: List<GithubLibraryDownloader.RemoteFile>
     ) {
         val dir = fileLibPreference.directory ?: return
-        requireContext().toast(getString(R.string.filelib_downloading, files.size))
+        context?.toast(getString(R.string.filelib_downloading, files.size)) ?: return
         scriptScannerScope.launch {
             var ok = 0
             files.forEach { f ->
@@ -865,27 +871,28 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
                 }
             }
             withContext(Dispatchers.Main) {
-                try {
-                    requireContext().toast(getString(R.string.filelib_downloaded, ok))
-                    refresh()
-                } catch (_: IllegalStateException) {}
+                val c = context ?: return@withContext
+                if (!isAdded) return@withContext
+                c.toast(c.getString(R.string.filelib_downloaded, ok))
+                refresh()
             }
         }
     }
 
     /** Runs a network call off the main thread with a toast + friendly errors. */
     private fun <T> libNetwork(message: String, work: () -> T, done: (T) -> Unit) {
-        requireContext().toast(message)
+        context?.toast(message) ?: return
         scriptScannerScope.launch {
             val result = runCatching { work() }
             withContext(Dispatchers.Main) {
-                try {
-                    result.fold(done) { e ->
-                        requireContext().toast(
-                            if (e is GithubLibraryDownloader.RateLimitException) e.message!!
-                            else getString(R.string.filelib_network_failed))
-                    }
-                } catch (_: IllegalStateException) {}
+                // The dialog may have been dismissed while the request ran
+                val c = context ?: return@withContext
+                if (!isAdded) return@withContext
+                result.fold(done) { e ->
+                    c.toast(
+                        if (e is GithubLibraryDownloader.RateLimitException) e.message!!
+                        else c.getString(R.string.filelib_network_failed))
+                }
             }
         }
     }
