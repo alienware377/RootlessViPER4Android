@@ -116,6 +116,16 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             addAction(Constants.ACTION_REPORT_SAMPLE_RATE)
         })
 
+        // The ViPER4Android classic theme declares v4aColorfulIcons: each
+        // effect card's icon gets its own vivid hue instead of a single tint.
+        val colorfulTv = android.util.TypedValue()
+        if (requireContext().theme.resolveAttribute(R.attr.v4aColorfulIcons, colorfulTv, true) &&
+            colorfulTv.data != 0 && preferenceScreen.preferenceCount > 0) {
+            // mutate() so the tint never leaks into other themes' cached drawables
+            preferenceScreen.getPreference(0).icon?.mutate()?.setTint(
+                me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.forXml(args.getInt(BUNDLE_XML_RES)))
+        }
+
         when(args.getInt(BUNDLE_XML_RES)) {
             R.xml.dsp_vdynbass_preferences -> {
                 val customKeys = arrayOf(
