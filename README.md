@@ -93,14 +93,29 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 
 ## 🗺 Roadmap
 
-Requested by the community, in rough priority order:
+### ✅ Shipped
+
+- ~~**Custom effect groups**~~ — create, rename and delete your own groups, move cards between them, hide what you don't use *(v2.0.0, group management polished since)*
+- ~~**Chained Liveprog scripts**~~ — multi-select scripts and get one card per script, chained in order *(v2.0.0)*
+- ~~**Interactive parametric equalizer**~~ — drag bands on the curve, rotary fine-tuning, live apply *(v2.0.0)*
+- ~~**Reorderable DSP chain**~~ — put the effects in any order you like *(v2.0.0)*
+- ~~**Full echo / delay unit**~~ — ping-pong, filtered feedback, bit crushing, modulation, on its own knob panel *(v2.0.0)*
+
+### 🧪 Done, in the next release
+
+- ~~**More reverb room types**~~ — Plate, Concert hall and Room alongside the classic ViPER model ([#1](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/issues/1))
+- ~~**ViPER4Android-only mode**~~ — hides everything the original V4A didn't have and frees its resources, with a matching classic theme
+- ~~**ViPER classic limiter**~~ — a faithful re-creation of V4A's own limiter, with its lookahead and transient character
+- ~~**Library management for Convolver & DDC**~~ — search, custom sorting, hiding and groups, plus downloading more profiles from public repositories
+- ~~**Idle battery fix**~~ — processing now stops when playback is silent, not just when apps release the audio session
+
+### 🔜 Planned
 
 - **Global "Poweramp-style" mode** — process the whole output mix with Android's built-in effect API instead of audio capture: no capture permission, no persistent notification, and apps that block capture (Spotify) would work. Trade-off: only EQ/bass/limiter-class effects can run there — the ViPER effects need the capture engine. Deprecated by Google and device-dependent (works on many Samsungs, often not Pixels), so it'll ship clearly labelled as experimental.
-- **Custom effect groups** — create, rename and hide your own groups; drag cards between them
-- **Search, sorting & hiding on the presets screen**
-- **Chained Liveprog scripts** — multi-select scripts and get one card per script, chained in order
 - **Rooted mode** — for devices with the JamesDSP magisk module (testers welcome!)
+- **Search, sorting & hiding on the presets screen** — the convolver and DDC libraries have this now; presets are next
 - **Minimum-phase toggle** for the graphic EQ
+- **GitHub search for new profile sources** — built but parked while its edge cases are ironed out; adding your own repository link already works
 
 ## 📲 Download & Install
 1. Grab the latest APK from the [**Releases**](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/releases) page (or fresh builds from [Actions](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/actions)).
