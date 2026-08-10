@@ -135,6 +135,10 @@ This fork stands entirely on the shoulders of giants — thank you!
 * **The ViPER's Audio team (ViPER520 & zhuhang)** — creators of the legendary **[ViPER4Android](https://github.com/vipersaudio)**, whose effect designs inspired every port in this edition
 * All upstream contributors and translators of both projects 💜
 
+## Privacy
+
+The app collects no personal data, contains no analytics or tracking, and processes all audio locally on your device. See [PRIVACY.md](PRIVACY.md) for the full policy.
+
 ## 📄 License
 This project is licensed under **GPL-3.0**, same as upstream RootlessJamesDSP. See [LICENSE](LICENSE). ViPER4Android is a trademark of its respective owners; this project is an independent, unaffiliated re-implementation.
 
