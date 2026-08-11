@@ -42,6 +42,40 @@ object V4aMode {
         R.id.card_reverb
     )
 
+
+    /**
+     * The original ViPER4Android processing order, taken from ViPER.cpp in the
+     * ViPERFX_RE decompilation:
+     *
+     *   convolver -> headphone surround (VHE) -> DDC -> spectrum extension ->
+     *   FIR equalizer -> colourful music (field surround) -> differential
+     *   surround -> reverberation -> speaker correction -> playback gain (AGC)
+     *   -> FET compressor -> dynamic system -> ViPER bass -> ViPER clarity ->
+     *   cure -> tube simulator -> analogX -> software limiter
+     *
+     * The limiter is not listed here: the engine always runs the output stage
+     * last, exactly as V4A did. Effects this fork adds are absent because
+     * V4A-only mode disables them anyway.
+     */
+    val v4aChainOrder = intArrayOf(
+        11, // JDSP_EFX_CONVOLVER
+        21, // JDSP_EFX_HPSURROUND       (VHE)
+        12, // JDSP_EFX_DDC
+        22, // JDSP_EFX_SPECTRUMEXT
+        9,  // JDSP_EFX_EQUALIZER        (FIR equalizer)
+        20, // JDSP_EFX_FIELDSURROUND    (colourful music)
+        4,  // JDSP_EFX_DIFFSURROUND
+        27, // JDSP_EFX_VREVERB          (reverberation)
+        25, // JDSP_EFX_SPEAKEROPT       (speaker correction)
+        24, // JDSP_EFX_AGC              (playback gain)
+        3,  // JDSP_EFX_FETCOMP
+        6,  // JDSP_EFX_VDYNBASS         (dynamic system)
+        7,  // JDSP_EFX_VIPERBASS
+        23, // JDSP_EFX_CLARITY
+        18, // JDSP_EFX_CURE
+        0,  // JDSP_EFX_TUBE
+    )
+
     /**
      * Switches every non-V4A effect off. Each engine frees its buffers on
      * disable, so this is also what guarantees they take no resources.

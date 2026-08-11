@@ -351,6 +351,9 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     private fun applyV4aVisibility() {
         if (!isAdded) return
         val on = V4aMode.isOn(requireContext())
+        // The original V4A had one fixed list: no search, no reordering, no
+        // groups. Hide that whole toolbar while the mode is on.
+        binding.searchCard.isVisible = !on
         V4aMode.hiddenCardIds.forEach { id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
             if (on) container?.isVisible = false
