@@ -206,7 +206,7 @@ class MainActivity : BaseActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java)); true
             }
             R.id.action_more -> {
-                val anchorView = findViewById<View>(R.id.action_more) ?: binding.toolbar
+                val anchorView = findViewById<android.view.View>(R.id.action_more) ?: binding.toolbar
                 androidx.appcompat.widget.PopupMenu(this, anchorView).apply {
                     menuInflater.inflate(R.menu.menu_main_bottom, menu)
                     if (isPlugin() || (isRoot() && !app.isEnhancedProcessing))
