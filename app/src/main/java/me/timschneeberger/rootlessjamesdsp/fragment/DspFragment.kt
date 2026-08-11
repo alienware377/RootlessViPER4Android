@@ -355,7 +355,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // the gap it occupied - the original had one uninterrupted list.
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) {
             binding.v4aSectionHeader.isVisible = false
-            moveDeviceProfileToFooter()
+            hideDeviceProfileCard()
         }
         // The original V4A had one fixed list: no search, no reordering, no
         // groups. Hide that whole toolbar while the mode is on.
@@ -370,27 +370,15 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     }
 
     /**
-     * Classic layout shows the active device profile in the persistent footer
-     * instead of a card in the list. The container view is reparented once,
-     * after its fragment transaction has committed, so the child fragment and
-     * its state move with it - it stays a dropdown, not tabs.
+     * Classic layout shows the device profile in the activity's footer, so the
+     * copy in the scrolling list is removed to avoid two live instances.
      */
-    private var deviceProfileMoved = false
-
-    private fun moveDeviceProfileToFooter() {
-        if (deviceProfileMoved || !isAdded) return
-        val footer = activity?.findViewById<android.widget.FrameLayout>(R.id.classic_footer) ?: return
+    private fun hideDeviceProfileCard() {
+        if (!isAdded) return
         val container = binding.root.findViewById<View>(R.id.card_device_profiles) ?: return
-        val card = container.parent as? ViewGroup ?: return
-        (card.parent as? ViewGroup)?.removeView(card)
-        footer.removeAllViews()
-        footer.addView(card)
-        deviceProfileMoved = true
-        // Keep the last card clear of the footer
-        binding.root.post {
-            binding.root.setPadding(
-                binding.root.paddingLeft, binding.root.paddingTop,
-                binding.root.paddingRight, footer.height)
+        (container.parent as? View)?.isVisible = false
+        childFragmentManager.findFragmentById(R.id.card_device_profiles)?.let {
+            childFragmentManager.beginTransaction().remove(it).commitAllowingStateLoss()
         }
     }
 
