@@ -210,7 +210,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         isEnabled = true
                         isSelectable = true
                         val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity
-                        isChecked = host?.isPowerOn ?: false
+                        setValue(host?.isPowerOn ?: false)
                         setOnPreferenceChangeListener { _, _ ->
                             // The service (or permission flow) decides the real
                             // state, so don't let the switch set it optimistically
