@@ -226,11 +226,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         // Safe even during restore: isPowerOn reports false
                         // until the activity's view exists, and onResume syncs.
                         setValue(host?.isPowerOn ?: false)
-                        setOnPreferenceChangeListener { _, _ ->
-                            // The service (or permission flow) decides the real
-                            // state, so don't let the switch set it optimistically
-                            host?.requestPowerToggle()
-                            false
+                        // The service (and permission flow) decide the real
+                        // state, so route the tap rather than setting it here.
+                        onUserToggle = {
+                            (activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity)
+                                ?.requestPowerToggle()
                         }
                     }
                 }
