@@ -140,6 +140,18 @@ class MainActivity : BaseActivity() {
     }
 
     @SuppressLint("BatteryLife")
+    /**
+     * Classic layout replaces the power FAB with the master limiter switch.
+     * Both drive the same code path - the switch just performs the FAB's click
+     * - so permission handling and root/rootless branching stay in one place.
+     */
+    fun requestPowerToggle() {
+        binding.powerToggle.performClick()
+    }
+
+    val isPowerOn: Boolean
+        get() = binding.powerToggle.isToggled
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -208,6 +220,23 @@ class MainActivity : BaseActivity() {
         // assigned during inflation, so touching it earlier crashes on launch.
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isEnabled(this))
             binding.toolbar.isTitleCentered = false
+
+        // Classic layout: header matches the background with a plain shadow and
+        // never recolours on scroll; menus move to the top right (overflow dots
+        // left of the settings cog); the bottom bar and its power FAB give way
+        // to the master limiter switch, which becomes the power control.
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(this)) {
+            val bg = android.util.TypedValue().also {
+                theme.resolveAttribute(android.R.attr.colorBackground, it, true)
+            }.data
+            binding.appBarLayout.apply {
+                isLiftOnScroll = false
+                setBackgroundColor(bg)
+                elevation = resources.displayMetrics.density * 4f
+                setStateListAnimator(null)
+            }
+            binding.toolbar.setBackgroundColor(bg)
+        }
         setSupportActionBar(binding.toolbar)
 
         actionBar?.setDisplayHomeAsUpEnabled(true)
@@ -247,6 +276,14 @@ class MainActivity : BaseActivity() {
         }
 
         // Inflate bottom left menu
+        val classicLayout = me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(this)
+        if (classicLayout) {
+            // Overflow first, then settings, so the dots sit left of the cog
+            menuInflater.inflate(R.menu.menu_main_bottom, binding.toolbar.menu)
+            menuInflater.inflate(R.menu.menu_main_bottom_left, binding.toolbar.menu)
+            binding.bar.isVisible = false
+            binding.powerToggle.isVisible = false
+        }
         menuInflater.inflate(R.menu.menu_main_bottom_left, binding.leftMenu.menu)
         binding.leftMenu.setOnMenuItemClickListener { arg0 ->
             if (arg0.itemId == R.id.action_settings) {
@@ -304,6 +341,25 @@ class MainActivity : BaseActivity() {
                 }
                 else -> false
             }
+        }
+
+        if (classicLayout) {
+            // Same handler object for the top menu, so every action behaves
+            // identically to the bottom bar it replaces.
+            val handler = binding.bar.menu.let { _ ->
+                androidx.appcompat.widget.Toolbar.OnMenuItemClickListener { item ->
+                    if (item.itemId == R.id.action_settings) {
+                        startActivity(Intent(this, SettingsActivity::class.java))
+                        true
+                    } else {
+                        binding.bar.menu.findItem(item.itemId)?.let { barItem ->
+                            binding.bar.menu.performIdentifierAction(barItem.itemId, 0)
+                        }
+                        true
+                    }
+                }
+            }
+            binding.toolbar.setOnMenuItemClickListener(handler)
         }
 
         IntentFilter(Constants.ACTION_SERVICE_STOPPED).apply {

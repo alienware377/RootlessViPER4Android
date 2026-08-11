@@ -203,6 +203,22 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             }
             R.xml.dsp_output_control_preferences -> {
                 val v4a = me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())
+                // Classic layout: this card's header switch is the master power
+                // control, exactly as V4A's Master limiter row was.
+                if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) {
+                    (preferenceScreen.getPreference(0) as? me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup)?.apply {
+                        isEnabled = true
+                        isSelectable = true
+                        val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity
+                        isChecked = host?.isPowerOn ?: false
+                        setOnPreferenceChangeListener { _, _ ->
+                            // The service (or permission flow) decides the real
+                            // state, so don't let the switch set it optimistically
+                            host?.requestPowerToggle()
+                            false
+                        }
+                    }
+                }
                 val modePref = findPreference<ListPreference>(getString(R.string.key_limiter_mode))
                 if (v4a) {
                     // Original V4A master limiter: output gain, limit threshold,

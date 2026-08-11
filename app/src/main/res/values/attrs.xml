@@ -67,4 +67,5 @@
         <attr name="knobLogScale" format="boolean" />
     </declare-styleable>
     <attr name="v4aColorfulIcons" format="boolean" />
+    <attr name="v4aClassicLayout" format="boolean" />
 </resources>

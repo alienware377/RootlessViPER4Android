@@ -16,6 +16,17 @@ object V4aIconColors {
         return context.theme.resolveAttribute(R.attr.v4aColorfulIcons, tv, true) && tv.data != 0
     }
 
+    /**
+     * True when the active theme wants the classic ViPER4Android *layout*:
+     * flat cards, top-right menus, device picker in the footer, master limiter
+     * doubling as the power switch. This is presentation only - it never
+     * removes a feature, so it is safe outside V4A-only mode.
+     */
+    fun isClassicLayout(context: Context): Boolean {
+        val tv = TypedValue()
+        return context.theme.resolveAttribute(R.attr.v4aClassicLayout, tv, true) && tv.data != 0
+    }
+
     fun tint(context: Context): Int {
         val tv = TypedValue()
         context.theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, tv, true)

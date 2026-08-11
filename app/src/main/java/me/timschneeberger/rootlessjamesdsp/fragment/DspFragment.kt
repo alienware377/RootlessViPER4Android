@@ -351,6 +351,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     private fun applyV4aVisibility() {
         if (!isAdded) return
         val on = V4aMode.isOn(requireContext())
+        // Classic layout drops the "ViPER4Android effects" divider heading and
+        // the gap it occupied - the original had one uninterrupted list.
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext()))
+            binding.v4aSectionHeader.isVisible = false
         // The original V4A had one fixed list: no search, no reordering, no
         // groups. Hide that whole toolbar while the mode is on.
         binding.searchCard.isVisible = !on
