@@ -353,8 +353,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         val on = V4aMode.isOn(requireContext())
         // Classic layout drops the "ViPER4Android effects" divider heading and
         // the gap it occupied - the original had one uninterrupted list.
-        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext()))
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) {
             binding.v4aSectionHeader.isVisible = false
+            moveDeviceProfileToFooter()
+        }
         // The original V4A had one fixed list: no search, no reordering, no
         // groups. Hide that whole toolbar while the mode is on.
         binding.searchCard.isVisible = !on
@@ -365,6 +367,31 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                 container.isVisible = true
         }
         if (on) deferredCards.removeAll { it.viewId in V4aMode.hiddenCardIds }
+    }
+
+    /**
+     * Classic layout shows the active device profile in the persistent footer
+     * instead of a card in the list. The container view is reparented once,
+     * after its fragment transaction has committed, so the child fragment and
+     * its state move with it - it stays a dropdown, not tabs.
+     */
+    private var deviceProfileMoved = false
+
+    private fun moveDeviceProfileToFooter() {
+        if (deviceProfileMoved || !isAdded) return
+        val footer = activity?.findViewById<android.widget.FrameLayout>(R.id.classic_footer) ?: return
+        val container = binding.root.findViewById<View>(R.id.card_device_profiles) ?: return
+        val card = container.parent as? ViewGroup ?: return
+        (card.parent as? ViewGroup)?.removeView(card)
+        footer.removeAllViews()
+        footer.addView(card)
+        deviceProfileMoved = true
+        // Keep the last card clear of the footer
+        binding.root.post {
+            binding.root.setPadding(
+                binding.root.paddingLeft, binding.root.paddingTop,
+                binding.root.paddingRight, footer.height)
+        }
     }
 
     fun applyLiveprogSlotVisibility(rebuild: Boolean = false) {

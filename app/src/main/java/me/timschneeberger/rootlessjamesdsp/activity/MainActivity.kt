@@ -145,6 +145,80 @@ class MainActivity : BaseActivity() {
      * Both drive the same code path - the switch just performs the FAB's click
      * - so permission handling and root/rootless branching stay in one place.
      */
+    /** Bottom-bar actions, shared with the classic layout's top-right menu. */
+    private fun handleMainMenu(itemId: Int): Boolean {
+        return when (itemId) {
+
+                R.id.action_blocklist -> {
+                    if(!app.isEnhancedProcessing && isRoot()) {
+                        showAlert(
+                            R.string.enhanced_processing_feature_unavailable,
+                            R.string.enhanced_processing_feature_unavailable_content
+                        )
+                    }
+                    else
+                        startActivity(Intent(this, BlocklistActivity::class.java))
+                    true
+                }
+                R.id.action_presets -> {
+                    if (presetDialogHost == null) {
+                        Timber.d("Initialize preset dialog host")
+                        presetDialogHost = FakePresetFragment.newInstance()
+                        supportFragmentManager.beginTransaction()
+                            .add(R.id.dsp_fragment_container, presetDialogHost!!)
+                            .commitNow()
+                    }
+                    presetDialogHost?.pref?.refresh()
+
+                    val dialogFragment = FileLibraryDialogFragment.newInstance("presets")
+                    @Suppress("DEPRECATION")
+                    dialogFragment.setTargetFragment(presetDialogHost, 0)
+                    dialogFragment.show(supportFragmentManager, null)
+                    true
+                }
+                R.id.action_revert -> {
+                    this.showYesNoAlert(
+                        R.string.revert_confirmation_title,
+                        R.string.revert_confirmation
+                    ) {
+                        if(it)
+                            restoreDspSettings()
+                    }
+                    true
+                }
+                else -> false
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(this)) {
+            // Inflated here, not by hand: the toolbar is the support action bar,
+            // so the framework owns its menu and would wipe a manual inflate.
+            menuInflater.inflate(R.menu.menu_main_classic, menu)
+            return true
+        }
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java)); true
+            }
+            R.id.action_more -> {
+                val anchorView = findViewById<View>(R.id.action_more) ?: binding.toolbar
+                androidx.appcompat.widget.PopupMenu(this, anchorView).apply {
+                    menuInflater.inflate(R.menu.menu_main_bottom, menu)
+                    if (isPlugin() || (isRoot() && !app.isEnhancedProcessing))
+                        menu.removeItem(R.id.action_blocklist)
+                    setOnMenuItemClickListener { handleMainMenu(it.itemId) }
+                }.show()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     fun requestPowerToggle() {
         binding.powerToggle.performClick()
     }
@@ -278,11 +352,11 @@ class MainActivity : BaseActivity() {
         // Inflate bottom left menu
         val classicLayout = me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(this)
         if (classicLayout) {
-            // Overflow first, then settings, so the dots sit left of the cog
-            menuInflater.inflate(R.menu.menu_main_bottom, binding.toolbar.menu)
-            menuInflater.inflate(R.menu.menu_main_bottom_left, binding.toolbar.menu)
+            // Menus live in the top bar now (see onCreateOptionsMenu); the
+            // bottom bar and power FAB give way to the classic footer.
             binding.bar.isVisible = false
             binding.powerToggle.isVisible = false
+            binding.classicFooter.isVisible = true
         }
         menuInflater.inflate(R.menu.menu_main_bottom_left, binding.leftMenu.menu)
         binding.leftMenu.setOnMenuItemClickListener { arg0 ->
@@ -300,67 +374,8 @@ class MainActivity : BaseActivity() {
         if(isPlugin() || (isRoot() && !app.isEnhancedProcessing))
             binding.bar.menu.removeItem(R.id.action_blocklist)
 
-        binding.bar.setOnMenuItemClickListener { arg0 ->
-            when (arg0.itemId) {
-                R.id.action_blocklist -> {
-                    if(!app.isEnhancedProcessing && isRoot()) {
-                        showAlert(
-                            R.string.enhanced_processing_feature_unavailable,
-                            R.string.enhanced_processing_feature_unavailable_content
-                        )
-                    }
-                    else
-                        startActivity(Intent(this, BlocklistActivity::class.java))
-                    true
-                }
-                R.id.action_presets -> {
-                    if (presetDialogHost == null) {
-                        Timber.d("Initialize preset dialog host")
-                        presetDialogHost = FakePresetFragment.newInstance()
-                        supportFragmentManager.beginTransaction()
-                            .add(R.id.dsp_fragment_container, presetDialogHost!!)
-                            .commitNow()
-                    }
-                    presetDialogHost?.pref?.refresh()
+        binding.bar.setOnMenuItemClickListener { arg0 -> handleMainMenu(arg0.itemId) }
 
-                    val dialogFragment = FileLibraryDialogFragment.newInstance("presets")
-                    @Suppress("DEPRECATION")
-                    dialogFragment.setTargetFragment(presetDialogHost, 0)
-                    dialogFragment.show(supportFragmentManager, null)
-                    true
-                }
-                R.id.action_revert -> {
-                    this.showYesNoAlert(
-                        R.string.revert_confirmation_title,
-                        R.string.revert_confirmation
-                    ) {
-                        if(it)
-                            restoreDspSettings()
-                    }
-                    true
-                }
-                else -> false
-            }
-        }
-
-        if (classicLayout) {
-            // Same handler object for the top menu, so every action behaves
-            // identically to the bottom bar it replaces.
-            val handler = binding.bar.menu.let { _ ->
-                androidx.appcompat.widget.Toolbar.OnMenuItemClickListener { item ->
-                    if (item.itemId == R.id.action_settings) {
-                        startActivity(Intent(this, SettingsActivity::class.java))
-                        true
-                    } else {
-                        binding.bar.menu.findItem(item.itemId)?.let { barItem ->
-                            binding.bar.menu.performIdentifierAction(barItem.itemId, 0)
-                        }
-                        true
-                    }
-                }
-            }
-            binding.toolbar.setOnMenuItemClickListener(handler)
-        }
 
         IntentFilter(Constants.ACTION_SERVICE_STOPPED).apply {
             addAction(Constants.ACTION_SERVICE_STARTED)
