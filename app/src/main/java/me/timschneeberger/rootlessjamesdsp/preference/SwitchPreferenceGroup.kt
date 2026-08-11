@@ -27,6 +27,14 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     private var itemView: View? = null
     private var bgAnimation: ValueAnimator? = null
     private var isIconVisible: Boolean = false
+
+    /**
+     * When set, user taps are routed here instead of changing this preference.
+     * Needed because this class drives its switch directly and never calls
+     * OnPreferenceChangeListener, so that listener can't intercept a toggle.
+     */
+    var onUserToggle: ((Boolean) -> Unit)? = null
+    private var suppressToggleCallback = false
     private var state = false
 
     init {
@@ -63,12 +71,18 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
         setIsIconVisible(isIconVisible)
 
         switch = (holder.findViewById(R.id.switchWidget) as MaterialSwitch).apply {
-            // Apply initial state
+            // Apply initial state. Guarded: a recycled switch may still carry a
+            // listener, and assigning isChecked would fire it as a user toggle.
+            suppressToggleCallback = true
             isChecked = state
+            suppressToggleCallback = false
             isVisible = isSelectable
 
             setOnCheckedChangeListener { _, isChecked ->
-                setValueInternal(isChecked, false)
+                if (suppressToggleCallback) return@setOnCheckedChangeListener
+                val handler = onUserToggle
+                if (handler != null) handler(isChecked)
+                else setValueInternal(isChecked, false)
             }
         }
 
