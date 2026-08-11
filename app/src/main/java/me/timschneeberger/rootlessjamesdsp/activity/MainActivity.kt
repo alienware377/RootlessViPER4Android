@@ -220,11 +220,15 @@ class MainActivity : BaseActivity() {
     }
 
     fun requestPowerToggle() {
-        binding.powerToggle.performClick()
+        if (::binding.isInitialized) binding.powerToggle.performClick()
     }
 
+    /**
+     * Restored fragments run inside super.onCreate, before setContentView has
+     * assigned [binding], so this must never assume the view exists.
+     */
     val isPowerOn: Boolean
-        get() = binding.powerToggle.isToggled
+        get() = ::binding.isInitialized && binding.powerToggle.isToggled
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -357,6 +361,15 @@ class MainActivity : BaseActivity() {
             binding.bar.isVisible = false
             binding.powerToggle.isVisible = false
             binding.classicFooter.isVisible = true
+            // Hosted here rather than reparented out of the scroll list:
+            // moving a FragmentContainerView across hierarchies breaks on
+            // recreate, which is exactly what a theme switch triggers.
+            if (supportFragmentManager.findFragmentById(R.id.classic_footer) == null) {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.classic_footer,
+                        me.timschneeberger.rootlessjamesdsp.fragment.DeviceProfilesCardFragment.newInstance())
+                    .commitAllowingStateLoss()
+            }
         }
         menuInflater.inflate(R.menu.menu_main_bottom_left, binding.leftMenu.menu)
         binding.leftMenu.setOnMenuItemClickListener { arg0 ->

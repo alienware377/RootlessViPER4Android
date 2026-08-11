@@ -89,6 +89,19 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         }
     }
 
+    /**
+     * The power row is bound before the activity's view exists during restore,
+     * so re-read the real state once we're resumed.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (arguments?.getInt(BUNDLE_XML_RES) != R.xml.dsp_output_control_preferences) return
+        if (!me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) return
+        val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity ?: return
+        (preferenceScreen.getPreference(0) as? me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup)
+            ?.setValue(host.isPowerOn)
+    }
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val args = requireArguments()
         preferenceManager.sharedPreferencesName = args.getString(BUNDLE_PREF_NAME)
@@ -210,6 +223,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         isEnabled = true
                         isSelectable = true
                         val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity
+                        // Safe even during restore: isPowerOn reports false
+                        // until the activity's view exists, and onResume syncs.
                         setValue(host?.isPowerOn ?: false)
                         setOnPreferenceChangeListener { _, _ ->
                             // The service (or permission flow) decides the real
