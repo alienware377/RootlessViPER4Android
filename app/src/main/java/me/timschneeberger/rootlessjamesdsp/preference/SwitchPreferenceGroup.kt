@@ -45,6 +45,15 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
 
         itemView = holder.itemView
         itemView?.background = ContextCompat.getDrawable(context, R.drawable.shape_rounded_highlight)
+        // Classic layout keeps every row the same colour whether the effect is
+        // on or off; only the switch itself indicates state.
+        val classic = context?.let {
+            me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(it)
+        } ?: false
+        if (classic) {
+            itemView?.background?.alpha = 0
+            return
+        }
         itemView?.background?.alpha = 0
 
         bgAnimation = ValueAnimator.ofInt(TRANSITION_MIN, TRANSITION_MAX).apply {
