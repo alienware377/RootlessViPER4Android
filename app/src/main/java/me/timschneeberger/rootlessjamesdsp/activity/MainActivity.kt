@@ -142,12 +142,6 @@ class MainActivity : BaseActivity() {
     @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(this))
-            title = "ViPER4Android FX"
-        // Classic theme: title sits left, as in V4A and the modern RE port,
-        // instead of the centred style used elsewhere.
-        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isEnabled(this))
-            binding.toolbar.isTitleCentered = false
 
         run {
             val crash = java.io.File(filesDir, "last_crash.txt")
@@ -206,6 +200,14 @@ class MainActivity : BaseActivity() {
 
         // Setup views
         setContentView(binding.root)
+
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(this))
+            title = "ViPER4Android FX"
+        // Classic theme: title sits left, as in V4A and the modern RE port.
+        // This must run after setContentView - binding is lateinit and is only
+        // assigned during inflation, so touching it earlier crashes on launch.
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isEnabled(this))
+            binding.toolbar.isTitleCentered = false
         setSupportActionBar(binding.toolbar)
 
         actionBar?.setDisplayHomeAsUpEnabled(true)
