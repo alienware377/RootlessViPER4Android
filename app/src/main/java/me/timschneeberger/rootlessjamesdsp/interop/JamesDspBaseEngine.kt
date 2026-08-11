@@ -667,6 +667,13 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
     /** Pushes the user's processing order (if any) down to the engine. */
     fun applyChainOrder() {
+        // V4A-only mode runs the original ViPER4Android chain. Pinned at read
+        // time so the user's own order is preserved and returns untouched when
+        // the mode is switched off.
+        if (V4aMode.isOn(context)) {
+            setChainOrder(V4aMode.v4aChainOrder)
+            return
+        }
         val saved = context
             .getSharedPreferences(Constants.PREF_CHAIN_ORDER, Context.MODE_PRIVATE)
             .getString(Constants.KEY_CHAIN_ORDER, null)
