@@ -46,6 +46,18 @@
             android:layout_height="?actionBarSize" />
     </com.google.android.material.bottomappbar.BottomAppBar>
 
+    <!-- Classic layout footer: hosts the device profile selector. Kept out of
+         the BottomAppBar so it can size to its content. -->
+    <FrameLayout
+        android:id="@+id/classic_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        android:elevation="8dp"
+        android:background="?android:attr/colorBackground"
+        android:fitsSystemWindows="true" />
+
     <me.timschneeberger.rootlessjamesdsp.view.FloatingToggleButton
         android:id="@+id/power_toggle"
         android:layout_width="wrap_content"

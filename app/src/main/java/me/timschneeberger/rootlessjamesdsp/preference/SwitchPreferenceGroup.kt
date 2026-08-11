@@ -46,14 +46,9 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
         itemView = holder.itemView
         itemView?.background = ContextCompat.getDrawable(context, R.drawable.shape_rounded_highlight)
         // Classic layout keeps every row the same colour whether the effect is
-        // on or off; only the switch itself indicates state.
-        val classic = context?.let {
-            me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(it)
-        } ?: false
-        if (classic) {
-            itemView?.background?.alpha = 0
-            return
-        }
+        // on or off; only the switch itself shows state. This must NOT skip the
+        // rest of binding - the switch, the expand behaviour and the row click
+        // listener all live below.
         itemView?.background?.alpha = 0
 
         bgAnimation = ValueAnimator.ofInt(TRANSITION_MIN, TRANSITION_MAX).apply {
@@ -112,6 +107,15 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     }
 
     private fun animateHeaderState(selected: Boolean) {
+        // Classic layout: rows never change colour with state. Guarded here
+        // rather than at each call site so no path can re-tint them.
+        val classic = context?.let {
+            me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(it)
+        } ?: false
+        if (classic) {
+            itemView?.background?.alpha = 0
+            return
+        }
         val current = bgAnimation?.animatedValueAs<Int>() ?: 0
         if(selected && current < TRANSITION_MAX)
             bgAnimation?.start()
