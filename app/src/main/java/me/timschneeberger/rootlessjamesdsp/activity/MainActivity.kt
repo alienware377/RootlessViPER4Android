@@ -219,6 +219,14 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Notified whenever power state changes. The processing service reports in
+     * asynchronously (service bind, plus started/stopped broadcasts), so any UI
+     * mirroring the FAB must observe rather than read once - reading early is
+     * how the classic layout's switch ended up showing the opposite of reality.
+     */
+    var onPowerStateChanged: ((Boolean) -> Unit)? = null
+
     fun requestPowerToggle() {
         if (::binding.isInitialized) binding.powerToggle.performClick()
     }
@@ -398,6 +406,15 @@ class MainActivity : BaseActivity() {
         registerLocalReceiver(processorMessageReceiver, IntentFilter(Constants.ACTION_PROCESSOR_MESSAGE))
 
         // Rootless: don't toggle on click, we handle that in the onClickListener
+        // Every assignment to isToggled runs through the view's setter, so this
+        // catches all of them - including the async service-bind and broadcast
+        // paths that land after fragments have already been created.
+        binding.powerToggle.setOnToggledListener(
+            object : FloatingToggleButton.OnToggledListener {
+                override fun onToggled(toggled: Boolean) {
+                    onPowerStateChanged?.invoke(toggled)
+                }
+            })
         binding.powerToggle.toggleOnClick = false
         binding.powerToggle.setOnToggleClickListener(object : FloatingToggleButton.OnToggleClickListener{
             override fun onClick() {

@@ -98,8 +98,19 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         if (arguments?.getInt(BUNDLE_XML_RES) != R.xml.dsp_output_control_preferences) return
         if (!me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) return
         val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity ?: return
-        (preferenceScreen.getPreference(0) as? me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup)
-            ?.setValue(host.isPowerOn)
+        val row = preferenceScreen.getPreference(0)
+                as? me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup ?: return
+        row.setValue(host.isPowerOn)
+        // Keep following it: the service reports in after this point, so a
+        // single read here would leave the switch showing the opposite.
+        host.onPowerStateChanged = { on -> row.setValue(on) }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (arguments?.getInt(BUNDLE_XML_RES) == R.xml.dsp_output_control_preferences)
+            (activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity)
+                ?.onPowerStateChanged = null
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -231,10 +242,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         onUserToggle = {
                             val a = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity
                             a?.requestPowerToggle()
-                            // The switch must never hold its own state here:
-                            // re-read the truth once the toggle has settled,
-                            // otherwise it drifts inverted from real power.
-                            view?.post { setValue(a?.isPowerOn ?: false) }
+                            // No optimistic state here - onPowerStateChanged
+                            // reports the real result back to this switch.
                         }
                     }
                 }
