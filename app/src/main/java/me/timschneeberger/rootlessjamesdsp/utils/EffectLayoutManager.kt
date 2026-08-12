@@ -164,9 +164,17 @@ class EffectLayoutManager(
             ?: storedGroups().firstOrNull { it.first == item.key }?.second
             ?: context.getString(item.titleRes)
 
+    /** Hides or shows every group heading (used by V4A-only mode). */
+    fun setHeadersVisible(visible: Boolean) {
+        items.filter { it.isHeader }.forEach { item ->
+            container.findViewById<View>(item.viewId)?.isVisible = visible
+        }
+    }
+
     private fun makeHeaderView(text: String): TextView =
         TextView(context).apply {
             id = View.generateViewId()
+            tag = TAG_HEADER
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -522,6 +530,8 @@ class EffectLayoutManager(
     }
 
     companion object {
+        private const val TAG_HEADER = "effect_group_header"
+
         private const val PREFS = "effect_layout"
         private const val KEY_ORDER = "order"
         private const val KEY_HIDDEN = "hidden"

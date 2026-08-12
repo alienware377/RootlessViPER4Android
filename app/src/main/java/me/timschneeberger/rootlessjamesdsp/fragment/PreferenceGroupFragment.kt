@@ -229,8 +229,12 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         // The service (and permission flow) decide the real
                         // state, so route the tap rather than setting it here.
                         onUserToggle = {
-                            (activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity)
-                                ?.requestPowerToggle()
+                            val a = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity
+                            a?.requestPowerToggle()
+                            // The switch must never hold its own state here:
+                            // re-read the truth once the toggle has settled,
+                            // otherwise it drifts inverted from real power.
+                            view?.post { setValue(a?.isPowerOn ?: false) }
                         }
                     }
                 }
@@ -273,8 +277,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         R.string.key_vreverb_diffusion, R.string.key_vreverb_mod,
                         R.string.key_vreverb_bass, R.string.key_vreverb_er)
                         .forEach { findPreference<Preference>(getString(it))?.isVisible = false }
-                    return
-                }
+                    // No early return here: icon visibility is applied after
+                    // this block, and skipping it hid the reverb icon.
+                } else {
                 // Each room type exposes only the controls it actually uses, so
                 // the card never shows a slider that does nothing.
                 fun applyModelVisibility(model: String) {
@@ -294,6 +299,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 modelPref?.setOnPreferenceChangeListener { _, newValue ->
                     applyModelVisibility(newValue as? String ?: "0")
                     true
+                }
                 }
             }
             R.xml.dsp_liveprog_preferences,

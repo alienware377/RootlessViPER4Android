@@ -294,6 +294,7 @@
         <item name="materialCardViewStyle">@style/Widget.V4AClassic.CardView</item>
         <item name="android:listDivider">@color/v4a_divider</item>
         <item name="v4aClassicLayout">true</item>
+        <item name="materialSwitchStyle">@style/Widget.V4AClassic.Switch</item>
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/v4a_primary</item>
         <item name="colorOnPrimary">@color/v4a_onPrimary</item>
@@ -329,5 +330,12 @@
         <item name="contentPadding">0dp</item>
         <item name="android:layout_marginTop">0dp</item>
         <item name="android:layout_marginBottom">0dp</item>
+    </style>
+
+    <!-- Chunky purple switch like the classic app: filled thumb, soft track. -->
+    <style name="Widget.V4AClassic.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/v4a_switch_thumb</item>
+        <item name="trackTint">@color/v4a_switch_track</item>
+        <item name="trackDecorationTint">@android:color/transparent</item>
     </style>
 </resources>
