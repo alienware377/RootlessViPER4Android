@@ -690,12 +690,17 @@ void SpeakerOptSetParam(JamesDSPLib *jdsp, float strengthPct)
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f) fs = 48000.0f;
 	float k = strengthPct * 0.01f;
-	vx2Biquad(s->hp, fs, 150.0f, 0.7071f, 0.0f, 2);
-	vx2Biquad(s->pk, fs, 2500.0f, 1.0f, 6.0f * k, 1);
-	vx2Biquad(s->sh, fs, 8000.0f, 0.7071f, 3.0f * k, 0);
-	// sh built as lowshelf at 8k boosts lows below 8k too; rebuild as peaking
-	vx2Biquad(s->sh, fs, 8000.0f, 1.0f, 3.0f * k, 1);
-	s->mix = k;
+	/* Tuned for the speakers this actually runs on. The old curve spent most
+	   of its effect removing sub-bass a phone speaker cannot reproduce, so it
+	   measured large but sounded like nothing. Now the work happens where a
+	   small driver can be heard: less low-mid boxiness, more presence and air.
+	   Gains scale with strength and the wet/dry blend stays at unity, so the
+	   dial maps directly onto the curve instead of halving it. */
+	vx2Biquad(s->hp, fs, 110.0f, 0.7071f, 0.0f, 2);
+	vx2Biquad(s->pk, fs, 400.0f, 1.1f, -4.0f * k, 1);
+	vx2Biquad(s->sh, fs, 3000.0f, 0.9f, 8.0f * k, 1);
+	vx2Biquad(s->air, fs, 9000.0f, 0.8f, 5.0f * k, 1);
+	s->mix = (k > 0.001f) ? 1.0f : 0.0f;
 }
 
 void SpeakerOptProcess(JamesDSPLib *jdsp, size_t n)
@@ -713,6 +718,7 @@ void SpeakerOptProcess(JamesDSPLib *jdsp, size_t n)
 			float y = vx2Bq(s->hp, s->hpz[c], x);
 			y = vx2Bq(s->pk, s->pkz[c], y);
 			y = vx2Bq(s->sh, s->shz[c], y);
+			y = vx2Bq(s->air, s->airz[c], y);
 			jdsp->tmpBuffer[c][i] = x + s->mix * (y - x);
 		}
 	}
@@ -725,6 +731,7 @@ void SpeakerOptEnable(JamesDSPLib *jdsp)
 		memset(jdsp->speakerOpt.hpz, 0, sizeof(jdsp->speakerOpt.hpz));
 		memset(jdsp->speakerOpt.pkz, 0, sizeof(jdsp->speakerOpt.pkz));
 		memset(jdsp->speakerOpt.shz, 0, sizeof(jdsp->speakerOpt.shz));
+		memset(jdsp->speakerOpt.airz, 0, sizeof(jdsp->speakerOpt.airz));
 	}
 	jdsp->speakerOptEnabled = 1;
 }

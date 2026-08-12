@@ -200,6 +200,8 @@ typedef struct
 	float pk[5], pkz[2][4];
 	float sh[5], shz[2][4];
 	float mix;
+	float air[5];
+	float airz[2][4];
 } SpeakerOpt;
 typedef struct
 {
