@@ -32,7 +32,11 @@
 
 Beyond the ViPER suite, it adds a **fully reorderable DSP chain**, so you decide the order every effect runs in, with the output limiter always kept last. An **interactive parametric equalizer** lets you drag bands directly on the response curve, add or remove them with a long press, and fine-tune frequency, Q and gain on rotary controls with full undo. A **studio-grade echo/delay** offers mono, stereo and ping-pong modes with a filtered feedback path, sample-rate and bit-depth crushing, tape-style modulation, diffusion and feedback distortion — all laid out on a knob panel that reflows to fit any screen. **Up to four Liveprog (EEL2) scripts** can be chained together and picked in one multi-select pass, and **446 official ViPER DDC profiles** are bundled and ready to load.
 
-The interface is yours to arrange: **reorder, hide and group the effect cards**, search across every effect, and save the whole setup — including your layout and chain order — into portable presets. Effect cards load as you scroll so the app opens instantly, and large effect buffers are allocated only while an effect is switched on, keeping memory use modest even with many apps playing audio.
+The interface is yours to arrange: **reorder, hide and group the effect cards**, search across every effect, and save the whole setup — including your layout and chain order — into portable presets. Effect cards load as you scroll so the app opens instantly, and large effect buffers are allocated only while an effect is switched on, keeping memory use modest even with many apps playing audio. Processing also stands down on its own once playback goes quiet, so nothing is spent grinding through silence while your music is paused.
+
+The **Reverberation** effect offers four rooms — the classic ViPER model plus a smooth studio Plate, a large warm Concert hall, and a natural Room with early reflections — and the output stage adds a **ViPER classic limiter**, a faithful re-creation of the original V4A limiter with the lookahead and transient bite that made it distinctive. The **convolver and DDC libraries** have their own search, custom sorting, hiding and groups, and can pull fresh impulse responses and DDC profiles straight from public repositories, skipping anything you already own.
+
+Prefer the original experience? **ViPER4Android-only mode** narrows the app to the effects V4A shipped, using its naming, its processing order and its limiter, and switches everything else off so it costs nothing. A matching **ViPER4Android classic theme** is available on its own too, if you want the classic look without giving up any of the extras.
 
 ## 📸 Screenshots
 
@@ -95,19 +99,17 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 
 ### ✅ Shipped
 
-- ~~**Custom effect groups**~~ — create, rename and delete your own groups, move cards between them, hide what you don't use *(v2.0.0, group management polished since)*
-- ~~**Chained Liveprog scripts**~~ — multi-select scripts and get one card per script, chained in order *(v2.0.0)*
-- ~~**Interactive parametric equalizer**~~ — drag bands on the curve, rotary fine-tuning, live apply *(v2.0.0)*
-- ~~**Reorderable DSP chain**~~ — put the effects in any order you like *(v2.0.0)*
-- ~~**Full echo / delay unit**~~ — ping-pong, filtered feedback, bit crushing, modulation, on its own knob panel *(v2.0.0)*
-
-### 🧪 Done, in the next release
-
+- ~~**Reorderable DSP chain**~~ — put the effects in any order you like
+- ~~**Interactive parametric equalizer**~~ — drag bands on the curve, rotary fine-tuning, live apply
+- ~~**Full echo / delay unit**~~ — ping-pong, filtered feedback, bit crushing, modulation, on its own knob panel
+- ~~**Chained Liveprog scripts**~~ — multi-select scripts, one card per script, chained in order
+- ~~**Custom effect groups**~~ — create, rename and delete groups, move cards between them, hide what you don't use
 - ~~**More reverb room types**~~ — Plate, Concert hall and Room alongside the classic ViPER model ([#1](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/issues/1))
-- ~~**ViPER4Android-only mode**~~ — hides everything the original V4A didn't have and frees its resources, with a matching classic theme
-- ~~**ViPER classic limiter**~~ — a faithful re-creation of V4A's own limiter, with its lookahead and transient character
-- ~~**Library management for Convolver & DDC**~~ — search, custom sorting, hiding and groups, plus downloading more profiles from public repositories
-- ~~**Idle battery fix**~~ — processing now stops when playback is silent, not just when apps release the audio session
+- ~~**ViPER classic limiter**~~ — a faithful re-creation of V4A's own limiter, lookahead and all
+- ~~**ViPER4Android-only mode**~~ — the original effect set, naming, processing order and limiter, with everything else switched off
+- ~~**ViPER4Android classic theme**~~ — the classic look, available with or without the mode
+- ~~**Library management for Convolver & DDC**~~ — search, sorting, hiding, groups, and downloading more profiles from public repositories
+- ~~**Idle battery fix**~~ — processing stands down when playback is silent, not just when apps release the audio session
 
 ### 🔜 Planned
 
@@ -116,6 +118,7 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - **Search, sorting & hiding on the presets screen** — the convolver and DDC libraries have this now; presets are next
 - **Minimum-phase toggle** for the graphic EQ
 - **GitHub search for new profile sources** — built but parked while its edge cases are ironed out; adding your own repository link already works
+- **Remember effect on/off states** across a ViPER4Android-only mode round trip — your settings already survive, but effects switched off by the mode stay off when you leave it
 
 ## 📲 Download & Install
 1. Grab the latest APK from the [**Releases**](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/releases) page (or fresh builds from [Actions](https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/actions)).

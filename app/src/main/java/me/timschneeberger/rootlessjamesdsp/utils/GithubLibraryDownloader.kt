@@ -28,8 +28,13 @@ object GithubLibraryDownloader {
     // ------------------------------------------------------------ user sources
 
     fun customSources(ctx: Context): MutableList<Source> {
-        val raw = ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
-            .getString("filelib_sources", null) ?: return mutableListOf()
+        val store = ctx.getSharedPreferences(Constants.PREF_FILELIBRARY, Context.MODE_MULTI_PROCESS)
+        val legacy = ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+        if (!store.contains("filelib_sources") && legacy.contains("filelib_sources")) {
+            store.edit().putString("filelib_sources", legacy.getString("filelib_sources", null)).apply()
+            legacy.edit().remove("filelib_sources").apply()
+        }
+        val raw = store.getString("filelib_sources", null) ?: return mutableListOf()
         val list = mutableListOf<Source>()
         runCatching {
             val arr = JSONArray(raw)
@@ -46,7 +51,7 @@ object GithubLibraryDownloader {
         sources.forEach {
             arr.put(JSONObject().put("repo", it.repo).put("branch", it.branch).put("label", it.label))
         }
-        ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+        ctx.getSharedPreferences(Constants.PREF_FILELIBRARY, Context.MODE_MULTI_PROCESS)
             .edit().putString("filelib_sources", arr.toString()).apply()
     }
 

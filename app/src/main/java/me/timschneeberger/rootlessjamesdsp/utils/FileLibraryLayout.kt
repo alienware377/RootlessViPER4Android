@@ -15,8 +15,19 @@ import org.json.JSONObject
  */
 class FileLibraryLayout(context: Context, prefKey: String) {
 
-    private val prefs = context.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+    // Kept in a dsp_ namespace so preset backups carry library organisation.
+    private val prefs =
+        context.getSharedPreferences(Constants.PREF_FILELIBRARY, Context.MODE_MULTI_PROCESS)
     private val storeKey = "filelib_layout_$prefKey"
+
+    init {
+        // One-time migration from the old app-namespace location
+        val legacy = context.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+        if (!prefs.contains(storeKey) && legacy.contains(storeKey)) {
+            prefs.edit().putString(storeKey, legacy.getString(storeKey, null)).apply()
+            legacy.edit().remove(storeKey).apply()
+        }
+    }
 
     var tokens: MutableList<String> = mutableListOf()
         private set
@@ -24,6 +35,7 @@ class FileLibraryLayout(context: Context, prefKey: String) {
         private set
 
     init { load() }
+
 
     private fun load() {
         tokens = mutableListOf(); hidden = mutableSetOf()
