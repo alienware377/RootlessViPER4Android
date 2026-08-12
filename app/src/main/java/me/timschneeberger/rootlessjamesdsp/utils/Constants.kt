@@ -41,6 +41,7 @@ object Constants {
     const val PREF_PITCHSHIFT = "dsp_pitchshift"
     const val PREF_ECHODELAY = "dsp_echodelay"
     const val PREF_CHAIN_ORDER = "dsp_chain_order"
+    const val PREF_FILELIBRARY = "dsp_filelibrary"
     const val KEY_CHAIN_ORDER = "order"
 
     // Default string values
