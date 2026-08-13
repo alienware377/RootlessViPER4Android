@@ -55,6 +55,8 @@ object JamesDspWrapper {
     external fun setCompander(self: JamesDspHandle, enable: Boolean, timeConstant: Float, granularity: Int, tfResolution: Int, bands: DoubleArray): Boolean
     external fun setReverb(self: JamesDspHandle, enable: Boolean, preset: Int): Boolean
     external fun setConvolver(self: JamesDspHandle, enable: Boolean, impulseResponse: FloatArray, irChannels: Int, irFrames: Int): Boolean
+    external fun setEqPhaseMode(self: JamesDspHandle, linearPhase: Boolean): Boolean
+
     external fun setGraphicEq(self: JamesDspHandle, enable: Boolean, graphicEq: String): Boolean
     external fun setCrossfeed(self: JamesDspHandle, enable: Boolean, mode: Int, customFcut: Int, customFeed: Int): Boolean
     external fun setBassBoost(self: JamesDspHandle, enable: Boolean, maxGain: Float): Boolean

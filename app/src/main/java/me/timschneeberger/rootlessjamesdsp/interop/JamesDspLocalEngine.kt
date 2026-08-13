@@ -228,6 +228,9 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setConvolver(handle, enable, impulseResponse, irChannels, irFrames)
     }
 
+    override fun setEqPhaseMode(linearPhase: Boolean): Boolean =
+        JamesDspWrapper.setEqPhaseMode(handle, linearPhase)
+
     override fun setGraphicEqInternal(enable: Boolean, bands: String): Boolean {
         return JamesDspWrapper.setGraphicEq(handle, enable, bands)
     }

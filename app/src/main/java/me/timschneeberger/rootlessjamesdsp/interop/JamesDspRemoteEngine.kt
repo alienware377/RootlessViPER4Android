@@ -294,6 +294,8 @@ class JamesDspRemoteEngine(
         }
     }
 
+    override fun setEqPhaseMode(linearPhase: Boolean): Boolean = true
+
     override fun setGraphicEqInternal(enable: Boolean, bands: String): Boolean {
         val prevCrc = this.graphicEqHash
         val currentCrc = bands.crc()

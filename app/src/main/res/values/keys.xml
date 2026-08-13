@@ -102,6 +102,7 @@
     <string name="key_eq_filter_type" translatable="false">eq_filter_type</string>
     <string name="key_eq_interpolation" translatable="false">eq_interpolation</string>
 
+    <string name="key_geq_linear_phase" translatable="false">geq_linear_phase</string>
     <string name="key_geq_enable" translatable="false">geq_enable</string>
     <string name="key_geq_nodes" translatable="false">geq_nodes</string>
 

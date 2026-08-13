@@ -6,6 +6,9 @@
 #include "../jdsp_header.h"
 void ArbitraryResponseEqualizerConstructor(JamesDSPLib *jdsp)
 {
+	/* 0 = minimum phase (no added latency, non-linear phase),
+	   1 = linear phase (symmetric ringing, constant group delay). */
+	jdsp->arbMag.linearPhase = 0;
 	jdsp->arbMag.instance.filterLen = InitArbitraryEq(&jdsp->arbMag.instance.coeffGen, 0);
 	FFTConvolver2x2Init(&jdsp->arbMag.instance.convState);
 	FFTConvolver2x2Init(&jdsp->arbMag.conv);
@@ -22,6 +25,21 @@ void ArbitraryResponseEqualizerDestructor(JamesDSPLib *jdsp)
 	FFTConvolver2x2Free(&jdsp->arbMag.instance.convState);
 	FFTConvolver2x2Free(&jdsp->arbMag.conv);
 }
+/**
+ * Rebuilds the coefficient generator in the requested phase mode. The filter
+ * has to be regenerated because phase behaviour is baked in at init, so the
+ * caller re-sends the node string afterwards.
+ */
+void ArbitraryResponseEqualizerSetPhaseMode(JamesDSPLib *jdsp, int linearPhase)
+{
+	if (jdsp->arbMag.linearPhase == linearPhase)
+		return;
+	jdsp->arbMag.linearPhase = linearPhase;
+	EqNodesFree(&jdsp->arbMag.instance.coeffGen);
+	jdsp->arbMag.instance.filterLen =
+		InitArbitraryEq(&jdsp->arbMag.instance.coeffGen, linearPhase);
+}
+
 void ArbitraryResponseEqualizerStringParser(JamesDSPLib *jdsp, char *stringEq)
 {
 	ArbitraryEqString2SortedNodes(&jdsp->arbMag.instance.coeffGen, stringEq);

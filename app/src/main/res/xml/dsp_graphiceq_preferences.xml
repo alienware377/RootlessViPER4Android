@@ -20,5 +20,12 @@
             android:dialogTitle="@string/geq_nodes"
             android:title="@string/geq_nodes"
             app:iconSpaceReserved="false"/>
-    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+            <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_geq_linear_phase"
+            android:title="@string/geq_linear_phase"
+            android:summary="@string/geq_linear_phase_summary"
+            android:defaultValue="false"
+            app:allowDividerAbove="false"
+            app:iconSpaceReserved="false" />
+</me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
 </PreferenceScreen>
