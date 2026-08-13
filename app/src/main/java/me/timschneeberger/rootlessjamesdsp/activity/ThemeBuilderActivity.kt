@@ -184,6 +184,7 @@ class ThemeBuilderActivity : BaseActivity() {
     private fun updateEditingLabel() {
         val manual = binding.switchManual.isChecked
         binding.manualNote.visibility = if (manual) View.VISIBLE else View.GONE
+        binding.roleHint.visibility = if (manual) View.VISIBLE else View.GONE
         binding.labelEditing.text =
             if (manual) getString(R.string.theme_builder_editing, editingRole)
             else getString(R.string.theme_builder_seed)

@@ -108,6 +108,14 @@ object ManualThemeTint {
                     view.strokeWidth = 0
                 }
             }
+            // Tertiary drives the data-visualisation accents: the EQ response
+            // curve with its handles, and the rotary knobs in the delay panel.
+            // These are the most distinctive things on screen, so it's somewhere
+            // the colour is genuinely visible rather than a faint track line.
+            is me.timschneeberger.rootlessjamesdsp.view.ParametricEqSurface ->
+                roles.tertiary?.let { view.setAccentColor(it) }
+            is me.timschneeberger.rootlessjamesdsp.view.KnobView ->
+                roles.tertiary?.let { view.setAccentColor(it) }
             is AppBarLayout -> roles.background?.let { view.setBackgroundColor(it) }
             is MaterialToolbar -> roles.background?.let { view.setBackgroundColor(it) }
             is com.google.android.material.floatingactionbutton.FloatingActionButton ->
@@ -134,8 +142,10 @@ object ManualThemeTint {
                     view.trackActiveTintList = it
                 }
                 roles.tertiary?.let {
+                    // Was alpha 90, which read as a faint grey line - raised so
+                    // the colour is actually recognisable on the track.
                     view.trackInactiveTintList =
-                        ColorStateList.valueOf(ColorUtils.setAlphaComponent(it, 90))
+                        ColorStateList.valueOf(ColorUtils.setAlphaComponent(it, 140))
                 }
             }
             is CompoundButton -> roles.primary?.let { p ->

@@ -96,8 +96,17 @@ class KnobView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
         isClickable = true
     }
 
+    /** Overrides the arc/indicator colour; used by hand-set themes. */
+    fun setAccentColor(color: Int) {
+        accentOverride = color
+        applyThemeColors()
+        invalidate()
+    }
+
+    private var accentOverride: Int? = null
+
     private fun applyThemeColors() {
-        val accent = themeColor(androidx.appcompat.R.attr.colorAccent)
+        val accent = accentOverride ?: themeColor(androidx.appcompat.R.attr.colorAccent)
         val onSurface = themeColor(com.google.android.material.R.attr.colorOnSurface)
         val outline = themeColor(com.google.android.material.R.attr.colorOutline)
         valuePaint.color = accent
