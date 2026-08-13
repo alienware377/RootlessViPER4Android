@@ -74,6 +74,16 @@ object ManualThemeTint {
         intArrayOf(checked, unchecked)
     )
 
+    /**
+     * The power button reports its state through isSelected rather than
+     * isChecked, so it needs its own state list - a flat colour left it looking
+     * identical whether processing was on or off.
+     */
+    private fun selectedList(selected: Int, unselected: Int) = ColorStateList(
+        arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
+        intArrayOf(selected, unselected)
+    )
+
     /** Neutral tones for the unchecked state, matched to the surface's lightness. */
     private fun neutrals(base: Int?): Pair<Int, Int> {
         val light = base != null && ColorUtils.calculateLuminance(base) > 0.5
@@ -133,7 +143,10 @@ object ManualThemeTint {
             is androidx.recyclerview.widget.RecyclerView ->
                 roles.bars?.let { view.setBackgroundColor(it) }
             is com.google.android.material.floatingactionbutton.FloatingActionButton ->
-                roles.secondary?.let { view.backgroundTintList = ColorStateList.valueOf(it) }
+                roles.secondary?.let { c ->
+                    val (_, offFill) = neutrals(roles.surface ?: roles.background)
+                    view.backgroundTintList = selectedList(c, offFill)
+                }
             is com.google.android.material.button.MaterialButton ->
                 roles.secondary?.let { c ->
                     if (view.isCheckable) {
