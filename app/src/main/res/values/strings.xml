@@ -366,6 +366,11 @@
     <string name="theme_builder">Custom theme builder</string>
     <string name="theme_builder_summary">Design your own colour scheme</string>
     <string name="theme_builder_preview">Preview</string>
+    <string name="theme_builder_manual">Set each colour individually</string>
+    <string name="theme_builder_manual_summary">Off: every colour is derived from one base colour. On: tap a swatch to pick that colour yourself. Colours you don\'t set stay derived.</string>
+    <string name="theme_builder_editing">Editing: %1$s</string>
+    <string name="theme_builder_reset_role">Reset to derived</string>
+    <string name="theme_builder_manual_note">Accent colours apply throughout the app. Surface and background shades are harmonised by Android when the theme is applied.</string>
     <string name="theme_builder_preview_note">Approximate. The exact shades are generated when the theme is applied.</string>
     <string name="theme_builder_seed">Base colour</string>
     <string name="theme_builder_seed_summary">Everything else is derived from this one colour, so the result stays balanced.</string>
