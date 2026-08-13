@@ -366,6 +366,7 @@
     <string name="theme_builder">Custom theme builder</string>
     <string name="theme_builder_summary">Design your own colour scheme</string>
     <string name="theme_builder_preview">Preview</string>
+    <string name="theme_builder_preview_note">Approximate. The exact shades are generated when the theme is applied.</string>
     <string name="theme_builder_seed">Base colour</string>
     <string name="theme_builder_seed_summary">Everything else is derived from this one colour, so the result stays balanced.</string>
     <string name="theme_builder_hue">Hue</string>
