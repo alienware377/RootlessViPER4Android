@@ -64,9 +64,13 @@ class ThemingDelegateImpl : ThemingDelegate, KoinComponent {
                 // This Material version derives the palette from an image, so
                 // hand it a solid swatch of the seed - the extracted source is
                 // then exactly the colour the user chose.
+                // In manual mode the accent the user picked for Primary is what
+                // drives the scheme, so the colour they chose is the colour the
+                // app's accents actually become.
+                val source = if (t.manual) t.colors["Primary"] ?: t.seed else t.seed
                 val swatch = android.graphics.Bitmap.createBitmap(
                     8, 8, android.graphics.Bitmap.Config.ARGB_8888
-                ).apply { eraseColor(t.seed) }
+                ).apply { eraseColor(source) }
                 com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(
                     activity,
                     com.google.android.material.color.DynamicColorsOptions.Builder()

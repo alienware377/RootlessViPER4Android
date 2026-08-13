@@ -26,6 +26,9 @@ class ThemeBuilderActivity : BaseActivity() {
     private lateinit var binding: ActivityThemeBuilderBinding
     private var editingId: String? = null
     private var updating = false
+    /** Which role the sliders are editing while manual mode is on. */
+    private var editingRole = "Primary"
+    private val overrides = mutableMapOf<String, Int>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +47,10 @@ class ThemeBuilderActivity : BaseActivity() {
         binding.switchDark.isChecked = active?.dark ?: true
         binding.switchAmoled.isChecked = active?.amoled ?: false
         binding.inputName.setText(active?.name ?: "")
+        binding.switchManual.isChecked = active?.manual ?: false
+        active?.colors?.let { overrides.putAll(it) }
         applySeedToControls(seed)
+        updateEditingLabel()
 
         listOf(binding.sliderHue, binding.sliderSat, binding.sliderVal).forEach { slider ->
             slider.addOnChangeListener { _, _, fromUser ->
@@ -52,6 +58,8 @@ class ThemeBuilderActivity : BaseActivity() {
                     updating = true
                     binding.inputHex.setText(hexOf(currentSeed()))
                     updating = false
+                    if (binding.switchManual.isChecked)
+                        overrides[editingRole] = currentSeed()
                     refreshPreview()
                 }
             }
@@ -63,6 +71,15 @@ class ThemeBuilderActivity : BaseActivity() {
             updating = true
             applySeedToControls(parsed)
             updating = false
+            if (binding.switchManual.isChecked)
+                overrides[editingRole] = parsed
+            refreshPreview()
+        }
+        binding.switchManual.setOnCheckedChangeListener { _, on ->
+            // Leaving manual mode keeps the overrides on file, so toggling back
+            // and forth doesn't throw away work.
+            if (!on) editingRole = "Primary"
+            updateEditingLabel()
             refreshPreview()
         }
         binding.switchDark.setOnCheckedChangeListener { _, _ -> refreshPreview() }
@@ -120,11 +137,23 @@ class ThemeBuilderActivity : BaseActivity() {
      * abandoning the generator, so they offer to re-centre the palette instead
      * of pretending to be editable.
      */
+    /**
+     * Tapping a swatch. In manual mode it selects that role for the sliders and
+     * hex field so it can be set outright; otherwise only the base colour is
+     * meaningful, so the generated roles offer to re-centre the palette.
+     */
     private fun editRole(label: String, color: Int) {
+        if (binding.switchManual.isChecked) {
+            editingRole = label
+            overrides[label] = color
+            updating = true
+            applySeedToControls(color)
+            updating = false
+            updateEditingLabel()
+            refreshPreview()
+            return
+        }
         val isBase = label == "Primary"
-        val content = layoutInflater.inflate(
-            android.R.layout.simple_list_item_1, null
-        )
         val input = android.widget.EditText(this).apply {
             setText(hexOf(color))
             setPadding(dp(20), dp(12), dp(20), dp(12))
@@ -152,12 +181,21 @@ class ThemeBuilderActivity : BaseActivity() {
             .show()
     }
 
+    private fun updateEditingLabel() {
+        val manual = binding.switchManual.isChecked
+        binding.manualNote.visibility = if (manual) View.VISIBLE else View.GONE
+        binding.labelEditing.text =
+            if (manual) getString(R.string.theme_builder_editing, editingRole)
+            else getString(R.string.theme_builder_seed)
+    }
+
     private fun refreshPreview() {
         val dark = binding.switchDark.isChecked
         val amoled = binding.switchAmoled.isChecked
-        val roles = CustomThemeStore.previewRoles(
+        val roles = CustomThemeStore.resolveRoles(
             binding.sliderHue.value, binding.sliderSat.value / 100f,
-            binding.sliderVal.value / 100f, dark, amoled
+            binding.sliderVal.value / 100f, dark, amoled,
+            binding.switchManual.isChecked, overrides
         )
 
         binding.previewRoot.setBackgroundColor(roles.last().second)
@@ -179,6 +217,13 @@ class ThemeBuilderActivity : BaseActivity() {
                 }
                 isClickable = true
                 setOnClickListener { editRole(label, color) }
+                setOnLongClickListener {
+                    if (binding.switchManual.isChecked && overrides.remove(label) != null) {
+                        toast(getString(R.string.theme_builder_reset_role))
+                        refreshPreview()
+                    }
+                    true
+                }
             }
             val text = TextView(this).apply {
                 this.text = label
@@ -208,6 +253,8 @@ class ThemeBuilderActivity : BaseActivity() {
             seed = currentSeed(),
             dark = binding.switchDark.isChecked,
             amoled = binding.switchAmoled.isChecked,
+            manual = binding.switchManual.isChecked,
+            colors = HashMap(overrides).toMutableMap(),
         )
         editingId = theme.id
         CustomThemeStore.upsert(this, theme)

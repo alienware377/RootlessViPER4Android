@@ -51,6 +51,15 @@
                         android:textSize="11sp"
                         android:alpha="0.7"
                         android:text="@string/theme_builder_preview_note" />
+                    <TextView
+                        android:id="@+id/manual_note"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="2dp"
+                        android:textSize="11sp"
+                        android:alpha="0.7"
+                        android:visibility="gone"
+                        android:text="@string/theme_builder_manual_note" />
                     <LinearLayout
                         android:id="@+id/preview_swatches"
                         android:layout_width="match_parent"
@@ -60,7 +69,23 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switch_manual"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:text="@string/theme_builder_manual" />
+
             <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="4dp"
+                android:textSize="12sp"
+                android:alpha="0.7"
+                android:text="@string/theme_builder_manual_summary" />
+
+            <TextView
+                android:id="@+id/label_editing"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="20dp"

@@ -12,12 +12,18 @@ import org.json.JSONObject
  */
 object CustomThemeStore {
 
+    /** Roles the user can set by hand, in the order they appear in the preview. */
+    val ROLES = listOf("Primary", "Secondary", "Tertiary", "Surface", "Background")
+
     data class CustomTheme(
         val id: String,
         var name: String,
         var seed: Int,
         var dark: Boolean = true,
         var amoled: Boolean = false,
+        /** When true, [colors] is used verbatim instead of deriving from [seed]. */
+        var manual: Boolean = false,
+        var colors: MutableMap<String, Int> = mutableMapOf(),
     )
 
     private const val KEY_THEMES = "custom_themes"
@@ -33,6 +39,10 @@ object CustomThemeStore {
             val arr = JSONArray(raw)
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
+                val colors = mutableMapOf<String, Int>()
+                o.optJSONObject("colors")?.let { c ->
+                    ROLES.forEach { role -> if (c.has(role)) colors[role] = c.getInt(role) }
+                }
                 out.add(
                     CustomTheme(
                         o.getString("id"),
@@ -40,6 +50,8 @@ object CustomThemeStore {
                         o.getInt("seed"),
                         o.optBoolean("dark", true),
                         o.optBoolean("amoled", false),
+                        o.optBoolean("manual", false),
+                        colors,
                     )
                 )
             }
@@ -50,6 +62,8 @@ object CustomThemeStore {
     fun save(ctx: Context, themes: List<CustomTheme>) {
         val arr = JSONArray()
         themes.forEach {
+            val colors = JSONObject()
+            it.colors.forEach { (role, color) -> colors.put(role, color) }
             arr.put(
                 JSONObject()
                     .put("id", it.id)
@@ -57,6 +71,8 @@ object CustomThemeStore {
                     .put("seed", it.seed)
                     .put("dark", it.dark)
                     .put("amoled", it.amoled)
+                    .put("manual", it.manual)
+                    .put("colors", colors)
             )
         }
         prefs(ctx).edit().putString(KEY_THEMES, arr.toString()).apply()
@@ -102,6 +118,21 @@ object CustomThemeStore {
      * set of colours. Every role now scales off the real saturation/value across
      * their full 0-100% range, and hue is never round-tripped through RGB.
      */
+    /**
+     * The palette to display: hand-set colours where the user provided them,
+     * derived ones everywhere else. Keeping the derived values underneath means
+     * switching manual mode off restores a coherent scheme instead of leaving
+     * holes.
+     */
+    fun resolveRoles(
+        hue: Float, saturation: Float, brightness: Float, dark: Boolean, amoled: Boolean,
+        manual: Boolean, overrides: Map<String, Int>
+    ): List<Pair<String, Int>> {
+        val derived = previewRoles(hue, saturation, brightness, dark, amoled)
+        if (!manual) return derived
+        return derived.map { (role, color) -> role to (overrides[role] ?: color) }
+    }
+
     fun previewRoles(
         hue: Float, saturation: Float, brightness: Float, dark: Boolean, amoled: Boolean
     ): List<Pair<String, Int>> {
