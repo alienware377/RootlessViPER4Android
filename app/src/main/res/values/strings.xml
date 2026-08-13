@@ -372,7 +372,7 @@
     <string name="theme_builder_manual_summary">Off: every colour is derived from one base colour. On: tap a swatch to pick that colour yourself. Colours you don\'t set stay derived.</string>
     <string name="theme_builder_editing">Editing: %1$s</string>
     <string name="theme_builder_reset_role">Reset to derived</string>
-    <string name="theme_builder_role_hint">Primary: switches, sliders, checkboxes.  Secondary: power button and buttons.  Tertiary: EQ curve and knobs.</string>
+    <string name="theme_builder_role_hint">Primary: switches, sliders, checkboxes.  Secondary: power button and buttons.  Tertiary: EQ graphs and knobs.  Surface: cards.  Bars: app bar, footer, menus and settings lists.  Background: the window behind everything.</string>
     <string name="theme_builder_manual_note">Accent colours apply throughout the app. Surface and background shades are harmonised by Android when the theme is applied.</string>
     <string name="theme_builder_preview_note">Approximate. The exact shades are generated when the theme is applied.</string>
     <string name="theme_builder_seed">Base colour</string>
