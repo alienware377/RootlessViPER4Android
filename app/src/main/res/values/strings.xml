@@ -360,6 +360,8 @@
     <string name="credits_headsetcontrol">HeadsetControl</string>
     <string name="credits_viperfxre">ViPERFX_RE</string>
     <string name="limiter_mode_viper">ViPER classic (V4A)</string>
+    <string name="geq_linear_phase">Linear phase</string>
+    <string name="geq_linear_phase_summary">Symmetric filters with constant group delay. Off uses minimum phase, which adds no latency and is usually the better choice for listening.</string>
     <string name="action_more">More options</string>
     <string name="theme_v4a_classic">ViPER4Android classic</string>
     <string name="v4a_mode_title">ViPER4Android only mode</string>

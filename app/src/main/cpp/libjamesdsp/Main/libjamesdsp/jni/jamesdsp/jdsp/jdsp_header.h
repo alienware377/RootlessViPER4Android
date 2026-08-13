@@ -717,6 +717,7 @@ typedef struct
 {
 	ArbEqConv instance;
 	FFTConvolver2x2 conv;
+	int linearPhase;
 } arbitraryMagnitude;
 typedef struct
 {
@@ -1007,6 +1008,7 @@ extern int Convolver1DLoadImpulseResponse(JamesDSPLib *jdsp, float *tempImpulseF
 // Arbitrary magnitude response
 extern void ArbitraryResponseEqualizerConstructor(JamesDSPLib *jdsp);
 extern void ArbitraryResponseEqualizerDestructor(JamesDSPLib *jdsp);
+extern void ArbitraryResponseEqualizerSetPhaseMode(JamesDSPLib *jdsp, int linearPhase);
 extern void ArbitraryResponseEqualizerStringParser(JamesDSPLib *jdsp, char *stringEq);
 extern void ArbitraryResponseEqualizerEnable(JamesDSPLib *jdsp, char enable);
 extern void ArbitraryResponseEqualizerDisable(JamesDSPLib *jdsp);

@@ -78,7 +78,9 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
     private var currentTagScripts: List<String>? = null
 
     /** Convolver and DDC libraries get search, custom sorting, hiding and groups. */
-    private val libEditable by lazy { fileLibPreference.isIrs() || fileLibPreference.isVdc() }
+    private val libEditable by lazy {
+        fileLibPreference.isIrs() || fileLibPreference.isVdc() || fileLibPreference.isPreset()
+    }
     private val libLayout by lazy { FileLibraryLayout(requireContext(), fileLibPreference.key) }
     private var libEditMode = false
     private var libSearch = ""
@@ -130,7 +132,7 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
                     }
                     popupMenu.show()
                 }
-                else if (libEditable) {
+                else if (libEditable && !fileLibPreference.isPreset()) {
                     val popup = PopupMenu(requireContext(), it)
                     popup.menu.add(0, 1, 0, R.string.action_import)
                     popup.menu.add(0, 2, 1, R.string.filelib_download_more)

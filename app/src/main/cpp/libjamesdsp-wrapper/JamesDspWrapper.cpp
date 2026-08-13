@@ -706,6 +706,14 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setConvolver(JN
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setEqPhaseMode(JNIEnv *env, jobject obj, jlong self, jboolean linearPhase)
+{
+    DECLARE_DSP_B
+    ArbitraryResponseEqualizerSetPhaseMode(dsp, linearPhase ? 1 : 0);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setGraphicEq(JNIEnv *env, jobject obj, jlong self,
                                                                              jboolean enable, jstring graphicEq)
 {

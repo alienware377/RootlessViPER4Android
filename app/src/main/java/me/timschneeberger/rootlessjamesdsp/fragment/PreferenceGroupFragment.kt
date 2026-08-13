@@ -121,6 +121,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         addPreferencesFromResource(args.getInt(BUNDLE_XML_RES))
 
         // Collapsible "What is this?" info rows (single line when collapsed)
+        // V4A-only mode mirrors the original app, which had no explanations
+        if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext()))
+            findPreference<Preference>("section_info")?.isVisible = false
         findPreference<Preference>("section_info")?.let { p ->
             val full = p.summary
             var expanded = false
