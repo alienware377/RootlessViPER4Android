@@ -363,6 +363,8 @@
     <string name="geq_linear_phase">Linear phase</string>
     <string name="geq_linear_phase_summary">Symmetric filters with constant group delay. Off uses minimum phase, which adds no latency and is usually the better choice for listening.</string>
     <string name="action_more">More options</string>
+    <string name="v4a_layout_title">ViPER4Android layout</string>
+    <string name="v4a_layout_summary">Flat full-width rows, menus in the top right, device profile in the footer, and the master limiter as the power switch. Works with any theme and keeps its colours.</string>
     <string name="theme_builder">Custom theme builder</string>
     <string name="theme_builder_summary">Design your own colour scheme</string>
     <string name="theme_builder_preview">Preview</string>

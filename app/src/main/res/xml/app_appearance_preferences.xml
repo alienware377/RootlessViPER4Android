@@ -50,4 +50,10 @@
         app:summary="@string/theme_builder_summary"
         app:icon="@drawable/ic_twotone_color_lens_24dp"
         app:iconSpaceReserved="false" />
+    <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+        app:key="v4a_classic_layout"
+        app:title="@string/v4a_layout_title"
+        app:summary="@string/v4a_layout_summary"
+        app:defaultValue="false"
+        app:iconSpaceReserved="false" />
 </PreferenceScreen>

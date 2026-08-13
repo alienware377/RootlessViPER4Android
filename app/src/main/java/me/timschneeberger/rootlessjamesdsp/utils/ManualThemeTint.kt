@@ -30,50 +30,90 @@ import me.timschneeberger.rootlessjamesdsp.R
 object ManualThemeTint {
 
     fun apply(activity: Activity) {
-        val theme = CustomThemeStore.active(activity) ?: return
-        if (!theme.manual || theme.colors.isEmpty()) return
+        val flatten = V4aIconColors.isClassicLayout(activity)
+        val theme = CustomThemeStore.active(activity)
+        val manual = theme?.manual == true && theme.colors.isNotEmpty()
+        // Flattening cards is a layout choice, so it runs even when the colours
+        // are being generated rather than hand-set.
+        if (!manual && !flatten) return
 
-        val primary = theme.colors["Primary"]
-        val surface = theme.colors["Surface"]
-        val background = theme.colors["Background"]
+        val primary = theme?.colors?.get("Primary")?.takeIf { manual }
+        val secondary = theme?.colors?.get("Secondary")?.takeIf { manual }
+        val tertiary = theme?.colors?.get("Tertiary")?.takeIf { manual }
+        val surface = theme?.colors?.get("Surface")?.takeIf { manual }
+        val background = theme?.colors?.get("Background")?.takeIf { manual }
 
         background?.let {
             activity.window.setBackgroundDrawable(ColorDrawable(it))
         }
 
+        val roles = Roles(primary, secondary, tertiary, surface, background, flatten)
         val root = activity.window.decorView
-        tintTree(root, primary, surface, background)
+        tintTree(root, roles)
 
         // Preference rows are inflated during layout and recycled as the list
         // scrolls, so a single pass would miss most of the app. Views already
         // handled are tagged, which keeps repeat passes cheap and stops the
         // re-tint from bouncing layout back and forth.
         root.viewTreeObserver.addOnGlobalLayoutListener {
-            tintTree(root, primary, surface, background)
+            tintTree(root, roles)
         }
     }
 
-    private fun tintTree(view: View, primary: Int?, surface: Int?, background: Int?) {
+    private data class Roles(
+        val primary: Int?, val secondary: Int?, val tertiary: Int?,
+        val surface: Int?, val background: Int?, val flatten: Boolean,
+    )
+
+    private fun tintTree(view: View, roles: Roles) {
         if (view.getTag(R.id.manual_tint_done) == null) {
-            tintView(view, primary, surface, background)
+            tintView(view, roles)
             view.setTag(R.id.manual_tint_done, true)
         }
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
-                tintTree(view.getChildAt(i), primary, surface, background)
+                tintTree(view.getChildAt(i), roles)
             }
         }
     }
 
-    private fun tintView(view: View, primary: Int?, surface: Int?, background: Int?) {
-        val accent = primary?.let { ColorStateList.valueOf(it) }
+    private fun tintView(view: View, roles: Roles) {
+        val accent = roles.primary?.let { ColorStateList.valueOf(it) }
         when (view) {
-            is MaterialCardView -> surface?.let { view.setCardBackgroundColor(it) }
-            is AppBarLayout -> background?.let { view.setBackgroundColor(it) }
-            is MaterialToolbar -> background?.let { view.setBackgroundColor(it) }
-            is Slider -> accent?.let {
-                view.thumbTintList = it
-                view.trackActiveTintList = it
+            is MaterialCardView -> {
+                roles.surface?.let { view.setCardBackgroundColor(it) }
+                if (roles.flatten) {
+                    // Structure only: the card keeps whatever colour it has, so
+                    // a custom theme's surface stays distinct from background.
+                    view.radius = 0f
+                    view.cardElevation = 0f
+                    view.strokeWidth = 0
+                }
+            }
+            is AppBarLayout -> roles.background?.let { view.setBackgroundColor(it) }
+            is MaterialToolbar -> roles.background?.let { view.setBackgroundColor(it) }
+            is com.google.android.material.floatingactionbutton.FloatingActionButton ->
+                roles.secondary?.let { view.backgroundTintList = ColorStateList.valueOf(it) }
+            is com.google.android.material.button.MaterialButton ->
+                roles.secondary?.let { c ->
+                    // Filled buttons take the fill; outlined ones only the text
+                    // and stroke, so they don't turn into solid blocks.
+                    if (view.backgroundTintList != null && view.strokeWidth == 0)
+                        view.backgroundTintList = ColorStateList.valueOf(c)
+                    else {
+                        view.setTextColor(c)
+                        view.strokeColor = ColorStateList.valueOf(c)
+                    }
+                }
+            is Slider -> {
+                accent?.let {
+                    view.thumbTintList = it
+                    view.trackActiveTintList = it
+                }
+                roles.tertiary?.let {
+                    view.trackInactiveTintList =
+                        ColorStateList.valueOf(ColorUtils.setAlphaComponent(it, 90))
+                }
             }
             is CompoundButton -> accent?.let {
                 // Covers switches, checkboxes and radio buttons
@@ -82,7 +122,7 @@ object ManualThemeTint {
                     val sw = view as? com.google.android.material.materialswitch.MaterialSwitch
                     sw?.thumbTintList = it
                     sw?.trackTintList = ColorStateList.valueOf(
-                        ColorUtils.setAlphaComponent(primary, 120)
+                        ColorUtils.setAlphaComponent(roles.primary!!, 120)
                     )
                 }
             }
@@ -90,7 +130,7 @@ object ManualThemeTint {
                 // Keep text readable against a hand-set surface: pick black or
                 // white by luminance and preserve the original relative alpha,
                 // so titles stay stronger than summaries.
-                val base = surface ?: background ?: return
+                val base = roles.surface ?: roles.background ?: return
                 val onColor = if (ColorUtils.calculateLuminance(base) > 0.5) Color.BLACK
                 else Color.WHITE
                 val alpha = Color.alpha(view.currentTextColor)
