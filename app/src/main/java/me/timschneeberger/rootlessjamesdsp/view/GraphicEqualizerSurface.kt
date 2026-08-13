@@ -17,6 +17,16 @@ import kotlin.math.*
 
 class GraphicEqualizerSurface(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
+
+    // Declared ahead of the paint setup that reads it
+    private var accentOverride: Int? = null
+
+    /** Overrides the curve and fill colour; used by hand-set themes. */
+    fun setAccentColor(color: Int) {
+        accentOverride = color
+        onSizeChanged(width, height, width, height)
+        invalidate()
+    }
     private var mGridLines = Paint()
     private var mGridThickLines = Paint()
     private var mControlBarText = Paint()
@@ -69,7 +79,7 @@ class GraphicEqualizerSurface(context: Context?, attrs: AttributeSet?) : View(co
         mFrequencyResponseBg.alpha = 192
 
         mFrequencyResponseHighlight.style = Paint.Style.STROKE
-        mFrequencyResponseHighlight.color = getColor(android.R.attr.colorAccent)
+        mFrequencyResponseHighlight.color = accentOverride ?: getColor(android.R.attr.colorAccent)
         mFrequencyResponseHighlight.isAntiAlias = true
         mFrequencyResponseHighlight.strokeWidth = 8f
     }
@@ -108,7 +118,7 @@ class GraphicEqualizerSurface(context: Context?, attrs: AttributeSet?) : View(co
         mHeight = (bottom - top).toFloat()
 
         val responseColors =
-            intArrayOf(getColor(android.R.attr.colorAccent), getColor(android.R.color.transparent))
+            intArrayOf(accentOverride ?: getColor(android.R.attr.colorAccent), getColor(android.R.color.transparent))
         val responsePositions = floatArrayOf(0.0f, 1f)
         mFrequencyResponseBg.shader = getLinearGradient(mHeight, responseColors, responsePositions)
     }

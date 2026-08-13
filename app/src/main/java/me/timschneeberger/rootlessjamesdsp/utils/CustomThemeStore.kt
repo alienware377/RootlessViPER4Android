@@ -13,7 +13,7 @@ import org.json.JSONObject
 object CustomThemeStore {
 
     /** Roles the user can set by hand, in the order they appear in the preview. */
-    val ROLES = listOf("Primary", "Secondary", "Tertiary", "Surface", "Background")
+    val ROLES = listOf("Primary", "Secondary", "Tertiary", "Surface", "Bars", "Background")
 
     data class CustomTheme(
         val id: String,
@@ -160,6 +160,11 @@ object CustomThemeStore {
             "Secondary" to tone(0f, saturation * 0.33f, brightness * 0.85f + 0.10f),
             "Tertiary" to tone(60f, saturation * 0.55f, brightness * 0.85f + 0.08f),
             "Surface" to surface,
+            // Bars: app bar, footer, menus, dialogs and settings screens. These
+            // sit between surface and background in the real scheme, which is
+            // why they looked like a third colour nobody could set.
+            "Bars" to if (dark) tone(0f, saturation * 0.20f, 0.18f + brightness * 0.10f)
+            else tone(0f, saturation * 0.10f, 0.94f - brightness * 0.06f),
             "Background" to bg,
         )
     }

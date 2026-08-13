@@ -41,13 +41,17 @@ object ManualThemeTint {
         val secondary = theme?.colors?.get("Secondary")?.takeIf { manual }
         val tertiary = theme?.colors?.get("Tertiary")?.takeIf { manual }
         val surface = theme?.colors?.get("Surface")?.takeIf { manual }
+        val bars = theme?.colors?.get("Bars")?.takeIf { manual }
         val background = theme?.colors?.get("Background")?.takeIf { manual }
 
         background?.let {
             activity.window.setBackgroundDrawable(ColorDrawable(it))
         }
+        bars?.let { c ->
+            activity.findViewById<View>(R.id.classic_footer)?.setBackgroundColor(c)
+        }
 
-        val roles = Roles(primary, secondary, tertiary, surface, background, flatten)
+        val roles = Roles(primary, secondary, tertiary, surface, bars, background, flatten)
         val root = activity.window.decorView
         tintTree(root, roles)
 
@@ -80,7 +84,7 @@ object ManualThemeTint {
 
     private data class Roles(
         val primary: Int?, val secondary: Int?, val tertiary: Int?,
-        val surface: Int?, val background: Int?, val flatten: Boolean,
+        val surface: Int?, val bars: Int?, val background: Int?, val flatten: Boolean,
     )
 
     private fun tintTree(view: View, roles: Roles) {
@@ -116,8 +120,18 @@ object ManualThemeTint {
                 roles.tertiary?.let { view.setAccentColor(it) }
             is me.timschneeberger.rootlessjamesdsp.view.KnobView ->
                 roles.tertiary?.let { view.setAccentColor(it) }
-            is AppBarLayout -> roles.background?.let { view.setBackgroundColor(it) }
-            is MaterialToolbar -> roles.background?.let { view.setBackgroundColor(it) }
+            is me.timschneeberger.rootlessjamesdsp.view.BaseEqualizerSurface ->
+                roles.tertiary?.let { view.setAccentColor(it) }
+            is me.timschneeberger.rootlessjamesdsp.view.GraphicEqualizerSurface ->
+                roles.tertiary?.let { view.setAccentColor(it) }
+            is AppBarLayout -> (roles.bars ?: roles.background)?.let { view.setBackgroundColor(it) }
+            is MaterialToolbar -> (roles.bars ?: roles.background)?.let { view.setBackgroundColor(it) }
+            is com.google.android.material.bottomappbar.BottomAppBar ->
+                (roles.bars ?: roles.background)?.let { view.setBackgroundColor(it) }
+            // Settings, presets, convolver and DDC lists all draw on a
+            // RecyclerView, which is where that unsettable colour came from.
+            is androidx.recyclerview.widget.RecyclerView ->
+                roles.bars?.let { view.setBackgroundColor(it) }
             is com.google.android.material.floatingactionbutton.FloatingActionButton ->
                 roles.secondary?.let { view.backgroundTintList = ColorStateList.valueOf(it) }
             is com.google.android.material.button.MaterialButton ->

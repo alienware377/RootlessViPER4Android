@@ -42,6 +42,16 @@ abstract class BaseEqualizerSurface(
             }
         }
 
+
+    // Declared ahead of the paint setup that reads it
+    protected var accentOverride: Int? = null
+
+    /** Overrides the curve, knob and fill colour; used by hand-set themes. */
+    fun setAccentColor(color: Int) {
+        accentOverride = color
+        onSizeChanged(width, height, width, height)
+        invalidate()
+    }
     private var mGridLines = Paint()
     private var mControlBarText = Paint()
     private var mFrequencyResponseBg = Paint()
@@ -74,7 +84,7 @@ abstract class BaseEqualizerSurface(
 
         mControlBarKnob.style = Paint.Style.FILL
         mControlBarKnob.isAntiAlias = true
-        mControlBarKnob.color = getColor(android.R.attr.colorAccent)
+        mControlBarKnob.color = accentOverride ?: getColor(android.R.attr.colorAccent)
 
         mGridLines.color = getColor(android.R.attr.colorControlHighlight)
         mGridLines.style = Paint.Style.STROKE
@@ -92,7 +102,7 @@ abstract class BaseEqualizerSurface(
         mFrequencyResponseBg.alpha = 192
 
         mFrequencyResponseHighlight.style = Paint.Style.STROKE
-        mFrequencyResponseHighlight.color = getColor(android.R.attr.colorAccent)
+        mFrequencyResponseHighlight.color = accentOverride ?: getColor(android.R.attr.colorAccent)
         mFrequencyResponseHighlight.isAntiAlias = true
         mFrequencyResponseHighlight.strokeWidth = 8f
     }
@@ -125,7 +135,7 @@ abstract class BaseEqualizerSurface(
         mHeight = (bottom - top).toFloat()
 
         val responseColors =
-            intArrayOf(getColor(android.R.attr.colorAccent), getColor(android.R.color.transparent))
+            intArrayOf(accentOverride ?: getColor(android.R.attr.colorAccent), getColor(android.R.color.transparent))
         val responsePositions = floatArrayOf(0.0f, 1f)
         mFrequencyResponseBg.shader = getLinearGradient(mHeight, responseColors, responsePositions)
     }
