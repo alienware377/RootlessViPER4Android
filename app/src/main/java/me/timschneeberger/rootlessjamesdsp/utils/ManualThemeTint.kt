@@ -60,6 +60,24 @@ object ManualThemeTint {
         }
     }
 
+    /**
+     * ColorStateList.valueOf() returns one colour for every state, so using it
+     * on a switch or a toggle button paints the off position in the accent too.
+     * These build real state lists so "off" reads as off.
+     */
+    private fun checkedList(checked: Int, unchecked: Int) = ColorStateList(
+        arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+        intArrayOf(checked, unchecked)
+    )
+
+    /** Neutral tones for the unchecked state, matched to the surface's lightness. */
+    private fun neutrals(base: Int?): Pair<Int, Int> {
+        val light = base != null && ColorUtils.calculateLuminance(base) > 0.5
+        // thumb, track
+        return if (light) Color.parseColor("#79747E") to Color.parseColor("#E7E0EC")
+        else Color.parseColor("#938F99") to Color.parseColor("#49454F")
+    }
+
     private data class Roles(
         val primary: Int?, val secondary: Int?, val tertiary: Int?,
         val surface: Int?, val background: Int?, val flatten: Boolean,
@@ -96,11 +114,16 @@ object ManualThemeTint {
                 roles.secondary?.let { view.backgroundTintList = ColorStateList.valueOf(it) }
             is com.google.android.material.button.MaterialButton ->
                 roles.secondary?.let { c ->
-                    // Filled buttons take the fill; outlined ones only the text
-                    // and stroke, so they don't turn into solid blocks.
-                    if (view.backgroundTintList != null && view.strokeWidth == 0)
+                    if (view.isCheckable) {
+                        // Segmented buttons: only the selected one is filled,
+                        // otherwise every option looks selected at once.
+                        val (_, offFill) = neutrals(roles.surface ?: roles.background)
+                        view.backgroundTintList = checkedList(c, Color.TRANSPARENT)
+                        view.strokeColor = ColorStateList.valueOf(offFill)
+                    } else if (view.backgroundTintList != null && view.strokeWidth == 0) {
                         view.backgroundTintList = ColorStateList.valueOf(c)
-                    else {
+                    } else {
+                        // Outlined: text and stroke only, so it stays outlined
                         view.setTextColor(c)
                         view.strokeColor = ColorStateList.valueOf(c)
                     }
@@ -115,14 +138,16 @@ object ManualThemeTint {
                         ColorStateList.valueOf(ColorUtils.setAlphaComponent(it, 90))
                 }
             }
-            is CompoundButton -> accent?.let {
-                // Covers switches, checkboxes and radio buttons
-                view.buttonTintList = it
-                runCatching {
-                    val sw = view as? com.google.android.material.materialswitch.MaterialSwitch
-                    sw?.thumbTintList = it
-                    sw?.trackTintList = ColorStateList.valueOf(
-                        ColorUtils.setAlphaComponent(roles.primary!!, 120)
+            is CompoundButton -> roles.primary?.let { p ->
+                // Covers switches, checkboxes and radio buttons. Each needs a
+                // checked/unchecked pair, not a flat colour.
+                val (offThumb, offTrack) = neutrals(roles.surface ?: roles.background)
+                view.buttonTintList = checkedList(p, offThumb)
+                val sw = view as? com.google.android.material.materialswitch.MaterialSwitch
+                if (sw != null) {
+                    sw.thumbTintList = checkedList(p, offThumb)
+                    sw.trackTintList = checkedList(
+                        ColorUtils.setAlphaComponent(p, 120), offTrack
                     )
                 }
             }
