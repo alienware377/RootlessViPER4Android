@@ -78,16 +78,26 @@ class ParametricEqSurface(context: Context?, attrs: AttributeSet?) : View(contex
         mFrequencyResponseBg.alpha = 192
 
         mFrequencyResponseHighlight.style = Paint.Style.STROKE
-        mFrequencyResponseHighlight.color = getColor(android.R.attr.colorAccent)
+        mFrequencyResponseHighlight.color = accentOverride ?: getColor(android.R.attr.colorAccent)
         mFrequencyResponseHighlight.isAntiAlias = true
         mFrequencyResponseHighlight.strokeWidth = 8f
 
         mHandlePaint.style = Paint.Style.FILL
-        mHandlePaint.color = getColor(android.R.attr.colorAccent)
+        mHandlePaint.color = accentOverride ?: getColor(android.R.attr.colorAccent)
         mHandlePaint.isAntiAlias = true
         mHandleSelectedPaint.style = Paint.Style.FILL
         mHandleSelectedPaint.color = getColor(android.R.attr.textColorPrimary)
         mHandleSelectedPaint.isAntiAlias = true
+    }
+
+    private var accentOverride: Int? = null
+
+    /** Overrides the curve and handle colour; used by hand-set themes. */
+    fun setAccentColor(color: Int) {
+        accentOverride = color
+        mFrequencyResponseHighlight.color = color
+        mHandlePaint.color = color
+        invalidate()
     }
 
     private fun getColor(colorAttribute: Int): Int {

@@ -60,6 +60,15 @@
                         android:alpha="0.7"
                         android:visibility="gone"
                         android:text="@string/theme_builder_manual_note" />
+                    <TextView
+                        android:id="@+id/role_hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="2dp"
+                        android:textSize="11sp"
+                        android:alpha="0.7"
+                        android:visibility="gone"
+                        android:text="@string/theme_builder_role_hint" />
                     <LinearLayout
                         android:id="@+id/preview_swatches"
                         android:layout_width="match_parent"
