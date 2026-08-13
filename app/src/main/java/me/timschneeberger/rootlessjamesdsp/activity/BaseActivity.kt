@@ -50,6 +50,13 @@ abstract class BaseActivity :
         }
     }
 
+    override fun onContentChanged() {
+        super.onContentChanged()
+        // Hand-set colours can't live in a runtime theme, so they're painted on
+        // after the layout exists. No-op unless manual mode is on.
+        me.timschneeberger.rootlessjamesdsp.utils.ManualThemeTint.apply(this)
+    }
+
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         if(key == getString(R.string.key_appearance_pure_black) ||
             key == getString(R.string.key_appearance_app_theme) ||
