@@ -1,6 +1,7 @@
 package me.timschneeberger.rootlessjamesdsp.activity
 
 import android.graphics.Color
+import kotlin.math.roundToInt
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
@@ -94,9 +95,13 @@ class ThemeBuilderActivity : BaseActivity() {
     private fun applySeedToControls(color: Int) {
         val hsv = FloatArray(3)
         Color.colorToHSV(color, hsv)
-        binding.sliderHue.value = hsv[0].coerceIn(0f, 360f)
-        binding.sliderSat.value = (hsv[1] * 100f).coerceIn(0f, 100f)
-        binding.sliderVal.value = (hsv[2] * 100f).coerceIn(0f, 100f)
+        // Sliders use stepSize 1, which requires whole-number values - Color's
+        // HSV conversion returns fractional degrees/percent (the default seed
+        // #7C4DFF is 255.84268° hue), so round before assigning or the slider
+        // throws on layout.
+        binding.sliderHue.value = hsv[0].roundToInt().coerceIn(0, 360).toFloat()
+        binding.sliderSat.value = (hsv[1] * 100f).roundToInt().coerceIn(0, 100).toFloat()
+        binding.sliderVal.value = (hsv[2] * 100f).roundToInt().coerceIn(0, 100).toFloat()
         binding.inputHex.setText(hexOf(color))
     }
 
