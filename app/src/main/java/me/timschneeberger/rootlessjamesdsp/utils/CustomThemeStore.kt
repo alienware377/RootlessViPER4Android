@@ -122,9 +122,12 @@ object CustomThemeStore {
         else tone(0f, saturation * 0.08f, 0.96f - brightness * 0.08f)
         return listOf(
             // Primary is exactly the colour being chosen - no floor, no override.
+            // Follows how Material derives a scheme: secondary keeps the hue
+            // at much lower chroma, tertiary sits a fixed step around the wheel.
+            // Still an approximation of the real generator, which works in HCT.
             "Primary" to tone(0f, saturation, brightness),
-            "Secondary" to tone(-28f, saturation * 0.6f, (brightness * 0.7f + 0.15f)),
-            "Tertiary" to tone(38f, saturation * 0.7f, (brightness * 0.75f + 0.10f)),
+            "Secondary" to tone(0f, saturation * 0.33f, brightness * 0.85f + 0.10f),
+            "Tertiary" to tone(60f, saturation * 0.55f, brightness * 0.85f + 0.08f),
             "Surface" to surface,
             "Background" to bg,
         )

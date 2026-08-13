@@ -115,45 +115,6 @@ class ThemeBuilderActivity : BaseActivity() {
     // ---------------------------------------------------------------- preview
 
     /**
-     * The colours the theme engine will actually produce for this seed.
-     *
-     * The preview used to hand-roll its own palette with fixed hue shifts,
-     * which had nothing to do with what the engine generates - so the Secondary
-     * and Tertiary swatches showed colours that never appeared in the app. This
-     * asks the engine itself by wrapping a context with the same options used
-     * when applying, then reading the resolved theme attributes back out.
-     *
-     * Returns null when the device can't do generated palettes, in which case
-     * the caller falls back to the rough approximation.
-     */
-    private fun engineRoles(seed: Int): List<Pair<String, Int>>? {
-        if (!com.google.android.material.color.DynamicColors.isDynamicColorAvailable())
-            return null
-        val swatch = android.graphics.Bitmap.createBitmap(
-            8, 8, android.graphics.Bitmap.Config.ARGB_8888
-        ).apply { eraseColor(seed) }
-        val ctx = com.google.android.material.color.DynamicColors.wrapContextIfAvailable(
-            this,
-            com.google.android.material.color.DynamicColorsOptions.Builder()
-                .setContentBasedSource(swatch)
-                .build()
-        )
-        fun attr(a: Int): Int {
-            val tv = android.util.TypedValue()
-            if (!ctx.theme.resolveAttribute(a, tv, true)) return Color.GRAY
-            return if (tv.resourceId != 0)
-                androidx.core.content.ContextCompat.getColor(ctx, tv.resourceId) else tv.data
-        }
-        return listOf(
-            "Primary" to attr(com.google.android.material.R.attr.colorPrimary),
-            "Secondary" to attr(com.google.android.material.R.attr.colorSecondary),
-            "Tertiary" to attr(com.google.android.material.R.attr.colorTertiary),
-            "Surface" to attr(com.google.android.material.R.attr.colorSurface),
-            "Background" to attr(android.R.attr.colorBackground),
-        )
-    }
-
-    /**
      * Tapping a swatch. Primary is the base colour, so it is directly editable.
      * The rest are generated from it and can't be set independently without
      * abandoning the generator, so they offer to re-centre the palette instead
@@ -194,9 +155,7 @@ class ThemeBuilderActivity : BaseActivity() {
     private fun refreshPreview() {
         val dark = binding.switchDark.isChecked
         val amoled = binding.switchAmoled.isChecked
-        // Ask the engine what it will really produce; only fall back to the
-        // approximation when the device can't generate palettes at all.
-        val roles = engineRoles(currentSeed()) ?: CustomThemeStore.previewRoles(
+        val roles = CustomThemeStore.previewRoles(
             binding.sliderHue.value, binding.sliderSat.value / 100f,
             binding.sliderVal.value / 100f, dark, amoled
         )
