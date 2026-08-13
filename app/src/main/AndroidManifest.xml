@@ -175,6 +175,11 @@
                 android:value=".activity.MainActivity" />
         </activity>
         <activity
+            android:name=".activity.ThemeBuilderActivity"
+            android:exported="false"
+            android:label="@string/theme_builder"
+            android:theme="@style/Theme.RootlessJamesDSP" />
+        <activity
             android:name=".activity.EchoPanelActivity"
             android:exported="false"
             android:label="@string/echo_panel_title"
