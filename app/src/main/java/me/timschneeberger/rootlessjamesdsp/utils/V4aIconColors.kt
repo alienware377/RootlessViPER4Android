@@ -22,7 +22,18 @@ object V4aIconColors {
      * doubling as the power switch. This is presentation only - it never
      * removes a feature, so it is safe outside V4A-only mode.
      */
+    /** Preference key for using the classic layout with any theme. */
+    const val KEY_LAYOUT = "v4a_classic_layout"
+
     fun isClassicLayout(context: Context): Boolean {
+        // Either the classic theme asks for it, or the user turned it on for
+        // whatever theme they're using. Structure and colour are separate
+        // choices, so a custom theme keeps its own surface and background.
+        if (context.getSharedPreferences(
+                me.timschneeberger.rootlessjamesdsp.utils.Constants.PREF_APP,
+                Context.MODE_MULTI_PROCESS
+            ).getBoolean(KEY_LAYOUT, false)
+        ) return true
         val tv = TypedValue()
         return context.theme.resolveAttribute(R.attr.v4aClassicLayout, tv, true) && tv.data != 0
     }
