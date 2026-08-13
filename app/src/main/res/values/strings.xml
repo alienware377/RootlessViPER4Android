@@ -377,6 +377,8 @@
     <string name="theme_builder_name">Theme name</string>
     <string name="theme_builder_save_apply">Save and apply</string>
     <string name="theme_builder_delete">Delete</string>
+    <string name="theme_builder_role_derived">%1$s is generated from the base colour, so it can\'t be set on its own. You can make this the new base colour instead.</string>
+    <string name="theme_builder_use_as_base">Use as base colour</string>
     <string name="theme_builder_edit">Edit</string>
     <string name="theme_builder_saved">Saved themes</string>
     <string name="theme_builder_none">No saved themes yet</string>
