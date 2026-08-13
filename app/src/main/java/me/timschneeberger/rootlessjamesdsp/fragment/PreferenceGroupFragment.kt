@@ -93,6 +93,14 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
      * The power row is bound before the activity's view exists during restore,
      * so re-read the real state once we're resumed.
      */
+    override fun onDestroyView() {
+        super.onDestroyView()
+        phaseSyncListener?.let {
+            preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(it)
+        }
+        phaseSyncListener = null
+    }
+
     override fun onResume() {
         super.onResume()
         if (arguments?.getInt(BUNDLE_XML_RES) != R.xml.dsp_output_control_preferences) return
@@ -112,6 +120,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             (activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity)
                 ?.onPowerStateChanged = null
     }
+
+    private var phaseSyncListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val args = requireArguments()
@@ -162,14 +172,22 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         // keep them showing one truth.
         findPreference<androidx.preference.TwoStatePreference>(
             getString(R.string.key_geq_linear_phase))?.let { pref ->
+            val phaseKey = getString(R.string.key_geq_linear_phase)
             val other = if (args.getInt(BUNDLE_XML_RES) == R.xml.dsp_graphiceq_preferences)
                 Constants.PREF_PEQ else Constants.PREF_GEQ
             pref.setOnPreferenceChangeListener { _, v ->
                 requireContext().getSharedPreferences(other, Context.MODE_MULTI_PROCESS)
-                    .edit().putBoolean(getString(R.string.key_geq_linear_phase), v as Boolean)
-                    .apply()
+                    .edit().putBoolean(phaseKey, v as Boolean).apply()
                 true
             }
+            // Both EQ cards can be on screen together, and a write behind a
+            // live PreferenceScreen doesn't refresh it - so watch this card's
+            // own namespace and move the switch when the other card mirrors in.
+            phaseSyncListener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
+                if (key == phaseKey) pref.isChecked = sp.getBoolean(phaseKey, false)
+            }
+            preferenceManager.sharedPreferences
+                ?.registerOnSharedPreferenceChangeListener(phaseSyncListener)
         }
 
         when(args.getInt(BUNDLE_XML_RES)) {
