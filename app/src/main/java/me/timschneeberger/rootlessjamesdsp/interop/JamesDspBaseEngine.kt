@@ -643,6 +643,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         irCrc: Int,
         irSampleRate: Int,
     ): Boolean
+    abstract fun setEqPhaseMode(linearPhase: Boolean): Boolean
+
     protected abstract fun setGraphicEqInternal(enable: Boolean, bands: String): Boolean
     protected abstract fun setLiveprogInternal(enable: Boolean, name: String, script: String): Boolean
 
