@@ -115,10 +115,14 @@ class ThemeBuilderActivity : BaseActivity() {
     // ---------------------------------------------------------------- preview
 
     private fun refreshPreview() {
-        val seed = currentSeed()
         val dark = binding.switchDark.isChecked
         val amoled = binding.switchAmoled.isChecked
-        val roles = CustomThemeStore.previewRoles(seed, dark, amoled)
+        // Straight from the sliders, not through currentSeed()'s RGB round
+        // trip - that lost the hue entirely at 0% saturation or brightness.
+        val roles = CustomThemeStore.previewRoles(
+            binding.sliderHue.value, binding.sliderSat.value / 100f,
+            binding.sliderVal.value / 100f, dark, amoled
+        )
 
         binding.previewRoot.setBackgroundColor(roles.last().second)
         binding.previewTitle.setTextColor(if (dark) Color.WHITE else Color.BLACK)
@@ -173,16 +177,32 @@ class ThemeBuilderActivity : BaseActivity() {
         prefsApp.set(R.string.key_appearance_app_theme, AppTheme.CUSTOM.name)
         prefsApp.set(R.string.key_appearance_pure_black, theme.amoled)
         toast(getString(R.string.theme_builder_saved_toast))
-        refreshSavedList()
-        recreate()
+        relaunchWithNewTheme()
     }
 
     private fun deleteCurrent() {
         val id = editingId ?: return
+        val wasActive = CustomThemeStore.activeId(this) == id
         CustomThemeStore.delete(this, id)
         editingId = null
         refreshSavedList()
-        recreate()
+        if (wasActive) relaunchWithNewTheme() else recreate()
+    }
+
+    /**
+     * recreate() only restyles this screen. MainActivity is stopped underneath
+     * in the back stack and keeps whatever theme it was created with - it is
+     * never told to repaint on its own - so applying a theme silently did
+     * nothing once you pressed back. Clearing the task and starting fresh from
+     * MainActivity is what actually makes the change visible everywhere.
+     */
+    private fun relaunchWithNewTheme() {
+        val intent = android.content.Intent(this, MainActivity::class.java).apply {
+            flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
+        finishAffinity()
     }
 
     private fun refreshSavedList() {

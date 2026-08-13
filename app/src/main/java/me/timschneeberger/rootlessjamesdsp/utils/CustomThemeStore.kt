@@ -92,33 +92,39 @@ object CustomThemeStore {
     // ---------------------------------------------------------------- preview
 
     /**
-     * A small preview palette derived from the seed. This mirrors the shape of
-     * what the theme engine produces so the preview is honest, without trying
-     * to reproduce every tone exactly.
+     * A small preview palette derived directly from the slider's HSV, not from
+     * an already-built RGB colour. Two bugs lived in the previous version:
+     * every role but Primary hard-coded its saturation and value, so moving
+     * those sliders visibly changed nothing except a floored Primary; and
+     * building the seed as RGB first and decomposing it back to HSV here lost
+     * the hue entirely at 0% saturation or 0% brightness (hue is mathematically
+     * undefined for pure greys and black), producing a fixed, slider-independent
+     * set of colours. Every role now scales off the real saturation/value across
+     * their full 0-100% range, and hue is never round-tripped through RGB.
      */
-    fun previewRoles(seed: Int, dark: Boolean, amoled: Boolean): List<Pair<String, Int>> {
-        val hsv = FloatArray(3)
-        Color.colorToHSV(seed, hsv)
+    fun previewRoles(
+        hue: Float, saturation: Float, brightness: Float, dark: Boolean, amoled: Boolean
+    ): List<Pair<String, Int>> {
         fun tone(hueShift: Float, sat: Float, value: Float): Int =
             Color.HSVToColor(
                 floatArrayOf(
-                    (hsv[0] + hueShift + 360f) % 360f,
+                    (hue + hueShift + 360f) % 360f,
                     sat.coerceIn(0f, 1f),
                     value.coerceIn(0f, 1f)
                 )
             )
         val bg = when {
             amoled -> Color.BLACK
-            dark -> tone(0f, 0.06f, 0.09f)
-            else -> tone(0f, 0.03f, 0.99f)
+            dark -> tone(0f, saturation * 0.12f, 0.08f + brightness * 0.06f)
+            else -> tone(0f, saturation * 0.06f, 0.99f - brightness * 0.05f)
         }
-        val surface = if (dark) tone(0f, 0.08f, if (amoled) 0.10f else 0.16f)
-        else tone(0f, 0.04f, 0.96f)
+        val surface = if (dark) tone(0f, saturation * 0.16f, 0.14f + brightness * 0.08f)
+        else tone(0f, saturation * 0.08f, 0.96f - brightness * 0.08f)
         return listOf(
-            "Primary" to if (dark) tone(0f, hsv[1].coerceAtLeast(0.45f), 0.85f)
-            else tone(0f, hsv[1].coerceAtLeast(0.55f), 0.60f),
-            "Secondary" to tone(-28f, 0.35f, if (dark) 0.78f else 0.62f),
-            "Tertiary" to tone(38f, 0.42f, if (dark) 0.80f else 0.60f),
+            // Primary is exactly the colour being chosen - no floor, no override.
+            "Primary" to tone(0f, saturation, brightness),
+            "Secondary" to tone(-28f, saturation * 0.6f, (brightness * 0.7f + 0.15f)),
+            "Tertiary" to tone(38f, saturation * 0.7f, (brightness * 0.75f + 0.10f)),
             "Surface" to surface,
             "Background" to bg,
         )
