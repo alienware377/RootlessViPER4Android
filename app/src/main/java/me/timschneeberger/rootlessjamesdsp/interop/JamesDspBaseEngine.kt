@@ -304,7 +304,10 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         setEqPhaseMode(geqLinearPhase)
                         setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
                     }
-                    Constants.PREF_PEQ -> setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
+                    Constants.PREF_PEQ -> {
+                        setEqPhaseMode(geqLinearPhase)
+                        setGraphicEqCombined(geqEnabled, geqBands, peqEnabled, peqBandsStr, peqPreamp)
+                    }
                     Constants.PREF_REVERB -> setReverb(reverbEnabled, reverbPreset)
                     Constants.PREF_STEREOWIDE -> setStereoEnhancement(swEnabled, swMode)
                     Constants.PREF_CROSSFEED -> setCrossfeed(crossfeedEnabled, crossfeedMode)
