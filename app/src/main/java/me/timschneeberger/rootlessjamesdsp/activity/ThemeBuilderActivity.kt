@@ -165,8 +165,8 @@ class ThemeBuilderActivity : BaseActivity() {
         editingId = theme.id
         CustomThemeStore.upsert(this, theme)
         CustomThemeStore.setActive(this, theme.id)
-        preferences.set(R.string.key_appearance_app_theme, AppTheme.CUSTOM.name)
-        preferences.set(R.string.key_appearance_pure_black, theme.amoled)
+        prefsApp.set(R.string.key_appearance_app_theme, AppTheme.CUSTOM.name)
+        prefsApp.set(R.string.key_appearance_pure_black, theme.amoled)
         toast(getString(R.string.theme_builder_saved_toast))
         refreshSavedList()
         recreate()

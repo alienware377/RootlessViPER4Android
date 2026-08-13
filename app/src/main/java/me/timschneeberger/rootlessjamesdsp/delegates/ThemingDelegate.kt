@@ -61,10 +61,16 @@ class ThemingDelegateImpl : ThemingDelegate, KoinComponent {
             me.timschneeberger.rootlessjamesdsp.utils.CustomThemeStore.active(activity)?.let { t ->
                 if (t.amoled)
                     activity.theme.applyStyle(R.style.ThemeOverlay_RootlessJamesDSP_Amoled, true)
+                // This Material version derives the palette from an image, so
+                // hand it a solid swatch of the seed - the extracted source is
+                // then exactly the colour the user chose.
+                val swatch = android.graphics.Bitmap.createBitmap(
+                    8, 8, android.graphics.Bitmap.Config.ARGB_8888
+                ).apply { eraseColor(t.seed) }
                 com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(
                     activity,
                     com.google.android.material.color.DynamicColorsOptions.Builder()
-                        .setContentBasedSource(t.seed)
+                        .setContentBasedSource(swatch)
                         .build()
                 )
             }
