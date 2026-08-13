@@ -27,6 +27,9 @@ import kotlin.math.sin
  */
 class KnobView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
+    // Declared before init, which applies the paints
+    private var accentOverride: Int? = null
+
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
@@ -102,8 +105,6 @@ class KnobView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
         applyThemeColors()
         invalidate()
     }
-
-    private var accentOverride: Int? = null
 
     private fun applyThemeColors() {
         val accent = accentOverride ?: themeColor(androidx.appcompat.R.attr.colorAccent)

@@ -57,6 +57,9 @@ class ParametricEqSurface(context: Context?, attrs: AttributeSet?) : View(contex
 
     private val nPts = 256
 
+    // Declared before init, which reads it while building the paints
+    private var accentOverride: Int? = null
+
     init {
         mGridLines.color = getColor(android.R.attr.colorControlHighlight)
         mGridLines.style = Paint.Style.STROKE
@@ -89,8 +92,6 @@ class ParametricEqSurface(context: Context?, attrs: AttributeSet?) : View(contex
         mHandleSelectedPaint.color = getColor(android.R.attr.textColorPrimary)
         mHandleSelectedPaint.isAntiAlias = true
     }
-
-    private var accentOverride: Int? = null
 
     /** Overrides the curve and handle colour; used by hand-set themes. */
     fun setAccentColor(color: Int) {
