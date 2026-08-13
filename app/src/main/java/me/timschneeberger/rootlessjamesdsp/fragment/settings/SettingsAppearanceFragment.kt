@@ -19,6 +19,13 @@ class SettingsAppearanceFragment : SettingsBaseFragment() {
         preferenceManager.sharedPreferencesName = Constants.PREF_APP
         setPreferencesFromResource(R.xml.app_appearance_preferences, rootKey)
 
+        findPreference<androidx.preference.Preference>("theme_builder_open")
+            ?.setOnPreferenceClickListener {
+                startActivity(android.content.Intent(requireContext(),
+                    me.timschneeberger.rootlessjamesdsp.activity.ThemeBuilderActivity::class.java))
+                true
+            }
+
         val appThemes = AppTheme.values().filter {
             val monetFilter = if (it == AppTheme.MONET) {
                 isDynamicColorAvailable

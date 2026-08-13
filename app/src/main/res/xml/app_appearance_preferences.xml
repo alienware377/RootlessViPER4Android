@@ -44,4 +44,10 @@
             app:iconSpaceReserved="false" />
 
     </PreferenceCategory>
+    <Preference
+        app:key="theme_builder_open"
+        app:title="@string/theme_builder"
+        app:summary="@string/theme_builder_summary"
+        app:icon="@drawable/ic_twotone_color_lens_24dp"
+        app:iconSpaceReserved="false" />
 </PreferenceScreen>
