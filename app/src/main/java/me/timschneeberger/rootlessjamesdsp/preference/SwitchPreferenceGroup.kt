@@ -144,12 +144,23 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     }
 
     private fun setChildrenVisibility(visible: Boolean) {
+        // V4A-only mode has no explanation rows. Enforced here rather than once
+        // at setup, because expanding a card re-shows every child and would
+        // otherwise undo it - and here it can't be missed by a card that sets
+        // its own childVisibilityFilter.
+        val hideInfo = context?.let {
+            me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(it)
+        } ?: false
         children.forEach {
-            it.isVisible = visible && (childVisibilityFilter?.invoke(it) != false)
+            val allowed = (childVisibilityFilter?.invoke(it) != false) &&
+                    !(hideInfo && it.key == KEY_SECTION_INFO)
+            it.isVisible = visible && allowed
         }
     }
 
     companion object {
+        private const val KEY_SECTION_INFO = "section_info"
+
         private const val TRANSITION_MIN = 0
         private const val TRANSITION_MAX = 255
     }
