@@ -157,6 +157,21 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             }
         }
 
+        // Phase mode belongs to the combined FIR filter, so it appears on both
+        // EQ cards. They live in different namespaces, so mirror the value to
+        // keep them showing one truth.
+        findPreference<androidx.preference.TwoStatePreference>(
+            getString(R.string.key_geq_linear_phase))?.let { pref ->
+            val other = if (args.getInt(BUNDLE_XML_RES) == R.xml.dsp_graphiceq_preferences)
+                Constants.PREF_PEQ else Constants.PREF_GEQ
+            pref.setOnPreferenceChangeListener { _, v ->
+                requireContext().getSharedPreferences(other, Context.MODE_MULTI_PROCESS)
+                    .edit().putBoolean(getString(R.string.key_geq_linear_phase), v as Boolean)
+                    .apply()
+                true
+            }
+        }
+
         when(args.getInt(BUNDLE_XML_RES)) {
             R.xml.dsp_vdynbass_preferences -> {
                 val customKeys = arrayOf(
