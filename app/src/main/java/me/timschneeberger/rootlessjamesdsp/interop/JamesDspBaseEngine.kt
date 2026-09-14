@@ -346,6 +346,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val psEnabled = cache.get(R.string.key_pitchshift_enable, false)
             val psSemitones = cache.get(R.string.key_pitchshift_semitones, 0f)
             val psMix = cache.get(R.string.key_pitchshift_mix, 100f)
+            val psMode = cache.get(R.string.key_pitchshift_mode, "0").toInt()
 
             cache.select(Constants.PREF_SPECTRUMEXT)
             val spxEnabled = cache.get(R.string.key_spectrumext_enable, false)
@@ -437,7 +438,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         vrEnabled, vrModel, vrRoom, vrDamp, vrWidth, vrPredelay, vrDecay,
                         vrDiffusion, vrMod, vrBass, vrEr, vrWet, vrDry)
                     Constants.PREF_SPEAKEROPT -> setSpeakerOpt(soEnabled, soStrength)
-                    Constants.PREF_PITCHSHIFT -> setPitchShift(psEnabled, psSemitones, psMix)
+                    Constants.PREF_PITCHSHIFT -> setPitchShift(psEnabled, psSemitones, psMix, psMode)
                     Constants.PREF_MAXIMIZER -> setMaximizer(
                         maxrEnabled, maxrMode, maxrGain, maxrCeiling, maxrRelease,
                         maxrCharacter, maxrTransient, maxrTruePeak, maxrStereoLink,
@@ -818,7 +819,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                             width: Float, predelay: Float, decay: Float, diffusion: Float,
                             mod: Float, bass: Float, er: Float, wet: Float, dry: Float): Boolean
     abstract fun setSpeakerOpt(enable: Boolean, strength: Float): Boolean
-    abstract fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean
+    abstract fun setPitchShift(enable: Boolean, semitones: Float, mix: Float, mode: Int): Boolean
     /**
      * Hands the band-select cascade to the engine as a flat array of
      * (frequency, gain, q, type) groups, in the same order the editor shows

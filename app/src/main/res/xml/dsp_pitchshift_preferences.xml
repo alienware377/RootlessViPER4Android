@@ -10,6 +10,14 @@
         <Preference android:key="section_info" android:title="@string/section_info_title"
             android:summary="@string/pitchshift_info" android:persistent="false"
             app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <ListPreference
+            android:key="@string/key_pitchshift_mode"
+            android:title="@string/pitchshift_mode"
+            android:summary="@string/pitchshift_mode_summary"
+            android:entries="@array/pitchshift_modes"
+            android:entryValues="@array/pitchshift_modes_values"
+            android:defaultValue="0"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_pitchshift_semitones" android:title="@string/pitchshift_semitones"
             android:defaultValue="0" app:minValue="-12" app:maxValue="12" app:unit="st" app:precision="1"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
