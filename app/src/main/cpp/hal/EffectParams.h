@@ -81,7 +81,12 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     case 26005: if (fn >= 1) CureSetParam(d, (int)fv[0]); break;
     case 26105: if (on) CureEnable(d); else CureDisable(d); break;
 
-    case 26009: if (fn >= 2) PitchShiftSetParam(d, fv[0], fv[1]); break;
+    case 26009:
+        /* Two floats from an older app build means granular, which is what it
+           would have been sending; three carries the mode. */
+        if (fn >= 3) PitchShiftSetParam(d, fv[0], fv[1], (int)(fv[2] + 0.5f));
+        else if (fn >= 2) PitchShiftSetParam(d, fv[0], fv[1], PITCH_MODE_GRANULAR);
+        break;
     case 26109: if (on) PitchShiftEnable(d); else PitchShiftDisable(d); break;
 
     case 26010:
