@@ -715,10 +715,10 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setDynamicEqBan
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setPitchShift(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat semitones, jfloat mix)
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setPitchShift(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat semitones, jfloat mix, jint mode)
 {
     DECLARE_DSP_B
-    PitchShiftSetParam(dsp, semitones, mix);
+    PitchShiftSetParam(dsp, semitones, mix, mode);
     if (enable) PitchShiftEnable(dsp); else PitchShiftDisable(dsp);
     return true;
 }

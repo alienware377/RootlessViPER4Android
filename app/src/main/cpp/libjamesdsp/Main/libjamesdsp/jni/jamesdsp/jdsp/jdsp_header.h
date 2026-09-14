@@ -418,6 +418,19 @@ typedef struct
 	samplerateTool smp[2];
 	float fs;
 } Maximizer;
+// Which way the shift is done. Smooth costs latency and CPU and gives back
+// the warble the granular one cannot avoid, so neither is simply better.
+enum PitchMode
+{
+	PITCH_MODE_GRANULAR = 0,	// dual-tap crossfade, no latency
+	PITCH_MODE_SMOOTH,			// phase vocoder
+	PITCH_MODE_COUNT
+};
+// 1024 at 48k is about 21ms of latency and a 47Hz bin - fine enough to hold a
+// bass note apart from its neighbour, short enough not to smear a drum.
+#define PV_SIZE 1024
+#define PV_HOP 256
+#define PV_BINS (PV_SIZE / 2 + 1)
 typedef struct
 {
 	float *buf[2];
@@ -425,6 +438,25 @@ typedef struct
 	float phasor;
 	float rate, mix;
 	int win, bypass;
+	int mode;
+	// Phase vocoder. Allocated only while Smooth is the chosen mode, since it
+	// is a good deal of memory to hold for a card most people leave granular.
+	float *pvIn[2], *pvOut[2], *pvAccum[2];
+	float *pvLastPhase[2], *pvSumPhase[2], *pvPrevMag[2];
+	float *pvWindow;
+	float *pvRe, *pvIm, *pvAnaMag, *pvAnaFreq, *pvSynMag, *pvSynFreq;
+	// Which analysis bin fed each synthesis bin. Needed by the transient
+	// reset, which otherwise restarts a partial with a phase belonging to a
+	// completely different frequency.
+	int *pvSrcBin;
+	int pvRover, pvReady;
+	// Per channel: one shared follower would let a drum in the left ear reset
+	// the right one.
+	float pvFs, pvFlux[2];
+	// Counts phase resets. Kept because a detector that never fires and one
+	// that fires constantly both sound plausible from the outside, and only
+	// this number tells them apart.
+	int pvTransients;
 } PitchShift;
 #define VREV_COMBLEN 8192
 #define VREV_APLEN 2048
@@ -1241,7 +1273,7 @@ extern void SpeakerOptSetParam(JamesDSPLib *jdsp, float strengthPct);
 extern void SpeakerOptProcess(JamesDSPLib *jdsp, size_t n);
 extern void SpeakerOptEnable(JamesDSPLib *jdsp);
 extern void SpeakerOptDisable(JamesDSPLib *jdsp);
-extern void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct);
+extern void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct, int mode);
 extern void PitchShiftProcess(JamesDSPLib *jdsp, size_t n);
 extern void PitchShiftEnable(JamesDSPLib *jdsp);
 extern void PitchShiftDisable(JamesDSPLib *jdsp);

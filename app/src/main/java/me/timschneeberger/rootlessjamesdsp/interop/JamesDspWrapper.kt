@@ -57,7 +57,7 @@ object JamesDspWrapper {
     external fun setImaging(self: JamesDspHandle, enable: Boolean, monoBelow: Float, freqLow: Float, freqMid: Float, freqHigh: Float, widthLow: Float, widthMid: Float, widthHigh: Float, mix: Float): Boolean
     external fun setDynamicEq(self: JamesDspHandle, enable: Boolean, mix: Float, msMode: Int): Boolean
     external fun setDynamicEqBands(self: JamesDspHandle, bands: FloatArray?): Boolean
-    external fun setPitchShift(self: JamesDspHandle, enable: Boolean, semitones: Float, mix: Float): Boolean
+    external fun setPitchShift(self: JamesDspHandle, enable: Boolean, semitones: Float, mix: Float, mode: Int): Boolean
     external fun setChainOrder(self: JamesDspHandle, order: IntArray?): Boolean
     external fun setSpectrumExtension(self: JamesDspHandle, enable: Boolean, barkFreq: Float, strength: Float): Boolean
     external fun initCrashGuard(path: String)

@@ -269,6 +269,7 @@
     <string name="key_pitchshift_enable" translatable="false">pitchshift_enable</string>
     <string name="key_pitchshift_semitones" translatable="false">pitchshift_semitones</string>
     <string name="key_pitchshift_mix" translatable="false">pitchshift_mix</string>
+    <string name="key_pitchshift_mode" translatable="false">pitchshift_mode</string>
     <string name="key_output_postgain" translatable="false">output_postgain</string>
     <string name="key_mbd_enable" translatable="false">mbd_enable</string>
     <string name="key_mbd_bands" translatable="false">mbd_bands</string>

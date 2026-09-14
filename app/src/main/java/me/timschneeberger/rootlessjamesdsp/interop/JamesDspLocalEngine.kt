@@ -188,8 +188,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         return JamesDspWrapper.setEchoDelay(handle, enable, input, time, smoothing, offset, keepPitch, model, stereo, feedback, cutoff, res, filter, smpRate, bits, modRate, modTime, modCutoff, diffusion, spread, distMode, distLevel, knee, symmetry, tone, wet, dry)
     }
 
-    override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean {
-        return JamesDspWrapper.setPitchShift(handle, enable, semitones, mix)
+    override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float, mode: Int): Boolean {
+        return JamesDspWrapper.setPitchShift(handle, enable, semitones, mix, mode)
     }
 
     override fun setChainOrder(order: IntArray?): Boolean {

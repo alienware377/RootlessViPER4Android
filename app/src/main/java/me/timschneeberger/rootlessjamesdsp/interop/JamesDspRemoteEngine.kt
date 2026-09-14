@@ -253,8 +253,8 @@ class JamesDspRemoteEngine(
             modRate, modTime, modCutoff, diffusion, spread, distMode.toFloat(),
             distLevel, knee, symmetry, tone, wet, dry))
 
-    override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float): Boolean =
-        sendForkEffect(PARAM_PITCH_SHIFT, enable, floatArrayOf(semitones, mix))
+    override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float, mode: Int): Boolean =
+        sendForkEffect(PARAM_PITCH_SHIFT, enable, floatArrayOf(semitones, mix, mode.toFloat()))
 
     /**
      * Sends one fork effect: its values as a float array, then its enable flag.

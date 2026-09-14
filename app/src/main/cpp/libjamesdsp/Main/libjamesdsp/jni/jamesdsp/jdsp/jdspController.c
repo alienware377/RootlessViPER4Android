@@ -1487,7 +1487,9 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->speakerOptEnabled = 0;
 	SpeakerOptSetParam(jdsp, 60.0f);
 	jdsp->pitchShiftEnabled = 0;
-	PitchShiftSetParam(jdsp, 0.0f, 100.0f);
+	// Granular by default: no latency, and it is what every existing preset
+	// was tuned against.
+	PitchShiftSetParam(jdsp, 0.0f, 100.0f, PITCH_MODE_GRANULAR);
 	jdsp->echoDelayEnabled = 0;
 	EchoDelaySetParam(jdsp, 100.0f, 350.0f, 20.0f, 0.0f, 0,
 		1, 50.0f,
