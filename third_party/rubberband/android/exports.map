@@ -1,0 +1,11 @@
+/* Only Rubber Band's own C API is reachable from outside.
+   Everything else - the C++ classes, the FFT, the resampler - becomes local,
+   which both shrinks the download and means the app can only call the stable,
+   documented surface. -fvisibility=hidden alone did NOT do this: it hid the C
+   API too, leaving a library that loaded and had nothing callable in it. */
+{
+  global:
+    rubberband_*;
+  local:
+    *;
+};

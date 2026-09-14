@@ -1,0 +1,45 @@
+# Builds the optional Rubber Band pitch-shifting library.
+#
+# Deliberately its own workflow rather than a step in the app build. The library
+# is not part of the app: it is downloaded on request, changes only when the
+# vendored source or the build script does, and would otherwise add a couple of
+# minutes to every ordinary build for nothing.
+#
+# The app checks a downloaded file against SHA256SUMS before it will load it, so
+# that file is part of the artefact rather than a nicety.
+name: Build Rubber Band (optional download)
+
+on:
+  push:
+    branches: [ master, viper-extras ]
+    paths:
+      - 'third_party/rubberband/**'
+      - '.github/workflows/build-rubberband.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build all four ABIs
+        run: bash third_party/rubberband/android/build.sh
+
+      - name: Show what was produced
+        run: |
+          ls -laR build/rubberband
+          cat build/rubberband/SHA256SUMS
+
+      # Every download the app can be handed, plus the checksums it verifies
+      # them against and the licence that has to travel with a GPL binary.
+      - name: Collect the licence alongside the binaries
+        run: |
+          cp third_party/rubberband/COPYING build/rubberband/
+          cp third_party/rubberband/README-RV4A.md build/rubberband/
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: rubberband-android
+          path: build/rubberband/
