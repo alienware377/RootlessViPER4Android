@@ -918,6 +918,13 @@
     <string name="blocklist_delete_title">Remove selected app?</string>
     <string name="blocklist_delete">Do you want to remove this app from the exclusion list?</string>
     <string name="blocklist_no_exclusions">No excluded apps</string>
+    <string name="blocklist_mode_exclude">Skip these apps</string>
+    <string name="blocklist_mode_include">Only these apps</string>
+    <string name="blocklist_no_inclusions">No apps chosen yet</string>
+    <string name="blocklist_no_inclusions_hint">Until you add one, every app is processed as usual.</string>
+    <string name="blocklist_add_inclusion_alt">Add application to process</string>
+    <string name="blocklist_include_delete">Do you want to stop processing this app?</string>
+    <string name="title_activity_blocklist_include">Included apps</string>
     <string name="blocklist_unsupported_apps">Unsupported apps</string>
     <string name="blocklist_unsupported_apps_message"><![CDATA[<p>This app does not support processing apps that block third parties from recording their audio output. To prevent these apps from being muted due to their capture restrictions, they are automatically excluded from audio processing and are not re-routed.</p><p><u>Affected apps:</u><br/>%s</p>]]></string>
 

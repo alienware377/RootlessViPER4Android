@@ -74,9 +74,22 @@ class RootAudioProcessorService : BaseAudioProcessorService(), KoinComponent,
             return@Observer
 
         apps?.map { it.uid }?.let { uids ->
-            Timber.d("blockedAppObserver: Excluded UIDs: ${uids.joinToString("; ")}")
-
-            app.rootSessionDatabase.setExcludedUids(uids.toTypedArray())
+            // The same list, read either way round. In allowlist mode an empty
+            // list means "not configured yet" rather than "process nothing",
+            // so it falls through to the ordinary behaviour until at least one
+            // app has been picked.
+            val allowlist = preferences.get<Boolean>(R.string.key_blocklist_allowlist_mode) &&
+                    uids.isNotEmpty()
+            if (allowlist) {
+                Timber.d("blockedAppObserver: Allowed UIDs only: ${uids.joinToString("; ")}")
+                app.rootSessionDatabase.setExcludedUids(arrayOf())
+                app.rootSessionDatabase.setAllowedUids(uids.toTypedArray())
+            }
+            else {
+                Timber.d("blockedAppObserver: Excluded UIDs: ${uids.joinToString("; ")}")
+                app.rootSessionDatabase.setAllowedUids(null)
+                app.rootSessionDatabase.setExcludedUids(uids.toTypedArray())
+            }
             sessionDumpManager?.pollOnce(false)
         }
     }
@@ -205,6 +218,11 @@ class RootAudioProcessorService : BaseAudioProcessorService(), KoinComponent,
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
             getString(R.string.key_audioformat_processing) -> { updateServiceNotification() }
+            getString(R.string.key_blocklist_allowlist_mode) -> {
+                // Re-run the app list through the observer so the change takes
+                // effect now rather than the next time the list itself is edited.
+                blockedAppObserver.onChanged(blockedApps.value)
+            }
             getString(R.string.key_powered_on) -> {
                 app.rootSessionDatabase.enabled = sharedPreferences?.getBoolean(key, true) ?: true
                 updateServiceNotification()
