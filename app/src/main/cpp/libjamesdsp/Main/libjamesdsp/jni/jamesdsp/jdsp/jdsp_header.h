@@ -424,8 +424,17 @@ enum PitchMode
 {
 	PITCH_MODE_GRANULAR = 0,	// dual-tap crossfade, no latency
 	PITCH_MODE_SMOOTH,			// phase vocoder
+	// Both need the optional Rubber Band download. Selecting one without it
+	// falls back to Smooth rather than going silent. Formant preservation is a
+	// second mode rather than a second control because it is the one thing
+	// people reach for Rubber Band to get, and a switch that does nothing in
+	// three modes out of four is worse than an entry in the list.
+	PITCH_MODE_RUBBERBAND,
+	PITCH_MODE_RUBBERBAND_FORMANT,
 	PITCH_MODE_COUNT
 };
+#define PITCH_MODE_IS_RUBBERBAND(m) \
+	((m) == PITCH_MODE_RUBBERBAND || (m) == PITCH_MODE_RUBBERBAND_FORMANT)
 // 1024 at 48k is about 21ms of latency and a 47Hz bin - fine enough to hold a
 // bass note apart from its neighbour, short enough not to smear a drum.
 #define PV_SIZE 1024
@@ -457,6 +466,18 @@ typedef struct
 	// that fires constantly both sound plausible from the outside, and only
 	// this number tells them apart.
 	int pvTransients;
+	// Rubber Band, when the optional library has been downloaded. It works in
+	// fixed blocks, so input is gathered into one and output drained from the
+	// previous one; a single index serves for both.
+	void *rbState;
+	float *rbIn[2], *rbOut[2];
+	int rbBlock, rbFill, rbReady, rbFormant;
+	float rbFs;
+	// Shared by Smooth and Rubber Band. Both need a whole frame of input before
+	// they have anything to give back, and at a full wet mix the gap reads as
+	// the audio cutting out. Ramping the wet path in from silence turns it into
+	// the effect arriving instead.
+	float wetGain, fadeLen;
 } PitchShift;
 #define VREV_COMBLEN 8192
 #define VREV_APLEN 2048
@@ -1277,6 +1298,15 @@ extern void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct,
 extern void PitchShiftProcess(JamesDSPLib *jdsp, size_t n);
 extern void PitchShiftEnable(JamesDSPLib *jdsp);
 extern void PitchShiftDisable(JamesDSPLib *jdsp);
+extern void PitchShiftRefresh(JamesDSPLib *jdsp);
+// The optional Rubber Band download. Load takes the lock itself; the rest are
+// called only from code that already holds it.
+extern int RubberBandLoad(JamesDSPLib *jdsp, const char *path);
+extern int RubberBandAvailable(void);
+extern const char *RubberBandLastError(void);
+extern int RubberBandPrepare(PitchShift *p, float fs, int formant);
+extern void RubberBandRelease(PitchShift *p);
+extern void RubberBandProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n);
 extern void EchoDelaySetParam(JamesDSPLib *jdsp, float inputLevel, float timeMs,
 	float smoothingPct, float offsetMs, int keepPitch,
 	int model, float stereoPct,

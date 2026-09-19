@@ -723,6 +723,24 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setPitchShift(J
     return true;
 }
 
+// Hands the engine the path to the optional Rubber Band download. Returns
+// whether it is usable, so the app can grey out the modes that need it rather
+// than offering something that will quietly fall back. Safe to call with a path
+// that is not there: that is the ordinary case for anyone who never wanted it.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setRubberBandPath(JNIEnv *env, jobject obj, jlong self, jstring path)
+{
+    DECLARE_DSP_B
+    if (!path)
+        return (jboolean) (RubberBandAvailable() != 0);
+    const char *nativePath = env->GetStringUTFChars(path, nullptr);
+    const int ok = RubberBandLoad(dsp, nativePath);
+    if (!ok)
+        LOGW("Rubber Band not loaded: %s", RubberBandLastError());
+    env->ReleaseStringUTFChars(path, nativePath);
+    return (jboolean) (ok != 0);
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectrumExtension(JNIEnv *env, jobject obj, jlong self, jboolean enable, jfloat barkFreq, jfloat strength)
 {
