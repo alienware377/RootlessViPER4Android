@@ -1714,6 +1714,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	DynamicEqRefresh(jdsp);
 	VinylRefresh(jdsp);
 	BalanceRefresh(jdsp);
+	PitchShiftRefresh(jdsp);
 	jdsp_unlock(jdsp);
 }
 void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp)
