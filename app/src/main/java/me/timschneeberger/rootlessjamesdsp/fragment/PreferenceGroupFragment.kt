@@ -15,6 +15,11 @@ import androidx.preference.Preference
 import androidx.preference.Preference.SummaryProvider
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
+import androidx.lifecycle.lifecycleScope
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.RecyclerView
 import me.timschneeberger.rootlessjamesdsp.MainApplication
 import me.timschneeberger.rootlessjamesdsp.R
@@ -34,6 +39,7 @@ import me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
 import me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetector
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
@@ -124,6 +130,96 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
 
     private var phaseSyncListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
+    /**
+     * The optional Rubber Band download: one row that offers it, shows progress
+     * while it arrives, and offers to remove it afterwards.
+     *
+     * Nothing here is remembered in preferences. The only thing that decides
+     * whether the add-on is installed is whether the verified file is on disk,
+     * and a stored flag would eventually disagree with that - after a reinstall,
+     * after clearing app data, after a failed download.
+     */
+    private fun setupRubberBandAddon() {
+        val row = findPreference<Preference>("rubberband_addon") ?: return
+        val mode = findPreference<ListPreference>(getString(R.string.key_pitchshift_mode))
+        var busy = false
+
+        fun refresh() {
+            row.isEnabled = !busy && RubberBandInstaller.isSupported
+            row.summary = when {
+                !RubberBandInstaller.isSupported -> getString(R.string.pitchshift_rubberband_unsupported)
+                RubberBandInstaller.isInstalled(requireContext()) ->
+                    getString(R.string.pitchshift_rubberband_installed, RubberBandInstaller.VERSION)
+                else -> getString(R.string.pitchshift_rubberband_offer, RubberBandInstaller.approximateSizeKb)
+            }
+        }
+        refresh()
+
+        fun download() {
+            busy = true
+            row.summary = getString(R.string.pitchshift_rubberband_working, 0)
+            row.isEnabled = false
+            lifecycleScope.launch {
+                val error = withContext(Dispatchers.IO) {
+                    RubberBandInstaller.install(requireContext().applicationContext) { percent ->
+                        // Hopping back for every chunk would be wasteful; the
+                        // installer only reports whole percentage points.
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            if (busy) row.summary =
+                                getString(R.string.pitchshift_rubberband_working, percent)
+                        }
+                    }
+                }
+                busy = false
+                refresh()
+                Toast.makeText(
+                    requireContext(),
+                    error ?: getString(R.string.pitchshift_rubberband_done),
+                    if (error == null) Toast.LENGTH_SHORT else Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+        row.setOnPreferenceClickListener {
+            if (busy) return@setOnPreferenceClickListener true
+            if (!RubberBandInstaller.isInstalled(requireContext())) {
+                download()
+                return@setOnPreferenceClickListener true
+            }
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.pitchshift_rubberband_remove_title)
+                .setMessage(R.string.pitchshift_rubberband_remove_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.pitchshift_rubberband_remove_confirm) { _, _ ->
+                    RubberBandInstaller.remove(requireContext().applicationContext)
+                    // A method that can no longer work must not be left
+                    // selected: the engine would fall back silently and the
+                    // list would go on claiming Rubber Band was in use.
+                    val current = mode?.value?.toIntOrNull() ?: 0
+                    if (current >= RubberBandInstaller.FIRST_MODE) mode?.value = "1"
+                    refresh()
+                    Toast.makeText(
+                        requireContext(),
+                        R.string.pitchshift_rubberband_removed,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                .show()
+            true
+        }
+
+        // Choosing a method that needs the add-on, without the add-on, would
+        // quietly play as Smooth. Saying so and leaving the list alone is
+        // kinder than letting it look like it worked.
+        mode?.setOnPreferenceChangeListener { _, value ->
+            val wanted = (value as? String)?.toIntOrNull() ?: 0
+            if (wanted < RubberBandInstaller.FIRST_MODE) return@setOnPreferenceChangeListener true
+            if (RubberBandInstaller.isInstalled(requireContext())) return@setOnPreferenceChangeListener true
+            Toast.makeText(requireContext(), R.string.pitchshift_rubberband_needed, Toast.LENGTH_LONG).show()
+            false
+        }
+    }
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val args = requireArguments()
         preferenceManager.sharedPreferencesName = args.getString(BUNDLE_PREF_NAME)
@@ -148,6 +244,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 true
             }
         }
+
+        setupRubberBandAddon()
 
         requireContext().registerLocalReceiver(receiver, IntentFilter().apply {
             addAction(Constants.ACTION_PRESET_LOADED)
