@@ -103,6 +103,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     // Exclude restricted apps flag
     private var excludeRestrictedSessions = false
 
+    // Whether the app list names what to process rather than what to skip
+    private var allowlistMode = false
+
     // Termination flags
     private var isProcessorDisposing = false
     private var isServiceDisposing = false
@@ -154,6 +157,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         preferences.registerOnSharedPreferenceChangeListener(preferencesListener)
         loadFromPreferences(getString(R.string.key_powersave_suspend))
         loadFromPreferences(getString(R.string.key_session_exclude_restricted))
+        loadFromPreferences(getString(R.string.key_blocklist_allowlist_mode))
 
         // Setup database observer
         blockedApps.observeForever(blockedAppObserver)
@@ -416,6 +420,14 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 excludeRestrictedSessions = preferences.get<Boolean>(R.string.key_session_exclude_restricted)
                 Timber.d("Exclude restricted set to $excludeRestrictedSessions")
 
+                requestAudioRecordRecreation()
+            }
+            getString(R.string.key_blocklist_allowlist_mode) -> {
+                allowlistMode = preferences.get<Boolean>(R.string.key_blocklist_allowlist_mode)
+                Timber.d("App list allowlist mode set to $allowlistMode")
+
+                // Android bakes the matching rules into the AudioRecord when it
+                // is built, so flipping this changes nothing until it is rebuilt.
                 requestAudioRecordRecreation()
             }
         }
@@ -683,23 +695,48 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             .addMatchingUsage(AudioAttributes.USAGE_GAME)
             .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
 
-        val excluded = (if(excludeRestrictedSessions)
-            sessionManager.sessionPolicyDatabase.getRestrictedUids().toList()
-        else {
+        // Read the app list the other way round when asked to: capture only the
+        // apps on it rather than everything except them. Android will not let
+        // us do both at once, so this is one branch or the other, never a mix.
+        //
+        // An empty list in this mode is treated as "not configured yet" rather
+        // than "capture nothing": someone who has just turned the mode on and
+        // picked no apps would otherwise get silence and reasonably conclude
+        // the app was broken.
+        // Our own uid is dropped rather than trusted not to be on the list.
+        // In the ordinary path it is excluded explicitly; here there is no
+        // exclusion to hide behind, and capturing ourselves is a loop.
+        val allowed = if (allowlistMode)
+            blockedApps.value?.map { it.uid }.orEmpty().filter { it != Process.myUid() }
+        else emptyList()
+        if (allowed.isNotEmpty()) {
+            allowed.forEach { configBuilder.addMatchingUid(it) }
+            sessionManager.sessionDatabase.setAllowedUids(allowed.toTypedArray())
+            sessionManager.sessionDatabase.setExcludedUids(arrayOf())
             sessionManager.pollOnce(false)
-            emptyList()
-        }).toMutableList()
-
-        blockedApps.value?.map { it.uid }?.let {
-            excluded += it
+            Timber.d("buildAudioRecord: Allowed UIDs only: ${allowed.joinToString("; ")}")
         }
-        excluded += Process.myUid()
+        else {
+            val excluded = (if(excludeRestrictedSessions)
+                sessionManager.sessionPolicyDatabase.getRestrictedUids().toList()
+            else {
+                sessionManager.pollOnce(false)
+                emptyList()
+            }).toMutableList()
 
-        excluded.forEach { configBuilder.excludeUid(it) }
-        sessionManager.sessionDatabase.setExcludedUids(excluded.toTypedArray())
-        sessionManager.pollOnce(false)
+            if (!allowlistMode)
+                blockedApps.value?.map { it.uid }?.let {
+                    excluded += it
+                }
+            excluded += Process.myUid()
 
-        Timber.d("buildAudioRecord: Excluded UIDs: ${excluded.joinToString("; ")}")
+            excluded.forEach { configBuilder.excludeUid(it) }
+            sessionManager.sessionDatabase.setAllowedUids(null)
+            sessionManager.sessionDatabase.setExcludedUids(excluded.toTypedArray())
+            sessionManager.pollOnce(false)
+
+            Timber.d("buildAudioRecord: Excluded UIDs: ${excluded.joinToString("; ")}")
+        }
 
         return AudioRecord.Builder()
             .setAudioFormat(format)
