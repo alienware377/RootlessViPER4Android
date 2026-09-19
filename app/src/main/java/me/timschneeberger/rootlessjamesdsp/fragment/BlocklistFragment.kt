@@ -69,11 +69,28 @@ class BlocklistFragment : Fragment() {
 
         adapter = AppBlocklistAdapter()
         adapter.setOnItemClickListener {
-            requireContext().showYesNoAlert(R.string.blocklist_delete_title, R.string.blocklist_delete) { confirm ->
+            val message = if (isAllowlistMode) R.string.blocklist_include_delete else R.string.blocklist_delete
+            requireContext().showYesNoAlert(R.string.blocklist_delete_title, message) { confirm ->
                 if(confirm)
                     viewModel.delete(it)
             }
         }
+
+        // The same list read either way round: skip these apps, or process only
+        // these apps. Android will not let a capture do both at once, so this is
+        // a mode rather than a second list, and a second list could only end up
+        // disagreeing with the first.
+        binding.modeToggle.check(if (isAllowlistMode) R.id.modeInclude else R.id.modeExclude)
+        binding.modeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val allowlist = checkedId == R.id.modeInclude
+            if (allowlist == isAllowlistMode) return@addOnButtonCheckedListener
+            preferences.set(R.string.key_blocklist_allowlist_mode, allowlist)
+            updateModeLabels()
+            // The empty state says something different in each mode.
+            adapter.currentList.let { binding.emptyview.isVisible = it.isEmpty() }
+        }
+        updateModeLabels()
 
         binding.recyclerview.adapter = adapter
         binding.recyclerview.layoutManager = LinearLayoutManager(requireContext())
@@ -112,6 +129,26 @@ class BlocklistFragment : Fragment() {
         }
 
         return binding.root
+    }
+
+    private val isAllowlistMode: Boolean
+        get() = preferences.get<Boolean>(R.string.key_blocklist_allowlist_mode)
+
+    /**
+     * The words on this screen change with the mode. "No excluded apps" is
+     * actively misleading when the list is the other kind, and an empty
+     * allowlist needs a sentence of its own: nothing is listed, yet everything
+     * is still being processed, which looks like a bug unless it says so.
+     */
+    private fun updateModeLabels() {
+        val allowlist = isAllowlistMode
+        binding.emptyTitle.setText(
+            if (allowlist) R.string.blocklist_no_inclusions else R.string.blocklist_no_exclusions
+        )
+        binding.emptyHint.isVisible = allowlist
+        requireActivity().setTitle(
+            if (allowlist) R.string.title_activity_blocklist_include else R.string.title_activity_blocklist
+        )
     }
 
     override fun onDestroyView() {
