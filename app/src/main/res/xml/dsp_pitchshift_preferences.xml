@@ -24,5 +24,10 @@
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference android:key="@string/key_pitchshift_mix" android:title="@string/pitchshift_mix"
             android:defaultValue="100" app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
             app:allowDividerAbove="false" app:updatesContinuously="true" app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <!-- Kept out of shared preferences on purpose: what matters is whether
+             the file is on disk, and a stored flag could disagree with that. -->
+        <Preference android:key="rubberband_addon" android:title="@string/pitchshift_rubberband"
+            android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
     </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
 </PreferenceScreen>
