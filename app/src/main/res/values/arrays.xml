@@ -614,9 +614,13 @@
     <string-array name="pitchshift_modes">
         <item>Granular (instant)</item>
         <item>Smooth (cleaner, slight delay)</item>
+        <item>Rubber Band (best, needs add-on)</item>
+        <item>Rubber Band, keep voice character</item>
     </string-array>
     <string-array name="pitchshift_modes_values" translatable="false">
         <item>0</item>
         <item>1</item>
+        <item>2</item>
+        <item>3</item>
     </string-array>
 </resources>

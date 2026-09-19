@@ -58,6 +58,8 @@ object JamesDspWrapper {
     external fun setDynamicEq(self: JamesDspHandle, enable: Boolean, mix: Float, msMode: Int): Boolean
     external fun setDynamicEqBands(self: JamesDspHandle, bands: FloatArray?): Boolean
     external fun setPitchShift(self: JamesDspHandle, enable: Boolean, semitones: Float, mix: Float, mode: Int): Boolean
+    /** Points the engine at the optional Rubber Band download. Returns whether it loaded. */
+    external fun setRubberBandPath(self: JamesDspHandle, path: String?): Boolean
     external fun setChainOrder(self: JamesDspHandle, order: IntArray?): Boolean
     external fun setSpectrumExtension(self: JamesDspHandle, enable: Boolean, barkFreq: Float, strength: Float): Boolean
     external fun initCrashGuard(path: String)

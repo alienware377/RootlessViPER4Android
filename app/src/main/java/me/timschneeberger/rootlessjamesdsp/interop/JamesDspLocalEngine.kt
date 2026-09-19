@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import me.timschneeberger.rootlessjamesdsp.interop.structure.EelVmVariable
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import timber.log.Timber
 import java.util.Timer
@@ -189,6 +190,13 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     }
 
     override fun setPitchShift(enable: Boolean, semitones: Float, mix: Float, mode: Int): Boolean {
+        // The Rubber Band modes need the optional download. Pointing the engine
+        // at it here rather than once at startup means a library fetched a
+        // moment ago is picked up without restarting anything, and one that was
+        // never fetched costs nothing at all. If it is missing the engine falls
+        // back to the built-in smooth mode rather than going quiet.
+        if (mode >= RubberBandInstaller.FIRST_MODE && RubberBandInstaller.isInstalled(context))
+            JamesDspWrapper.setRubberBandPath(handle, RubberBandInstaller.path(context))
         return JamesDspWrapper.setPitchShift(handle, enable, semitones, mix, mode)
     }
 
