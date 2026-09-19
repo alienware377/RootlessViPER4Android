@@ -2,7 +2,11 @@
 // than the granular one?
 //
 //   $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -I $J \
-//       tools/pitchshift_harness.c $J/Effects/pitchshift.c tools/lockstub.c -lm -o pitch
+//       tools/pitchshift_harness.c $J/Effects/pitchshift.c $J/Effects/rubberband.c \
+//       tools/lockstub.c -lm -ldl -o pitch
+//
+// Set RUBBERBAND_SO to a built librubberband.so to exercise the optional
+// back-end as well; without it those checks say so and skip.
 //
 // The second question is the whole reason the mode exists, so it is asserted
 // rather than assumed. Granular splices two read heads together, and on a held
@@ -11,6 +15,7 @@
 // is measurable: chop the output into short windows and look at how much the
 // level moves between them.
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "jdsp_header.h"
@@ -68,6 +73,16 @@ static double levelWobble(void)
 		if (db > mx) mx = db;
 	}
 	return mx - mn;
+}
+
+/* Level of the first `len` samples, in dB. A full-scale-referenced number so it
+   can be compared against the input's own level directly. */
+static double headDb(int len)
+{
+	double a = 0.0;
+	for (int i = 0; i < len; i++) a += (double)bufL[i] * (double)bufL[i];
+	a = sqrt(a / len);
+	return 20.0 * log10(a > 1e-9 ? a : 1e-9);
 }
 
 static void check(const char *what, double got, double lo, double hi)
@@ -189,6 +204,69 @@ int main(void)
 		}
 		PitchShiftDisable(&g_lib);
 		check("no non-finite samples across mode flips", (double)bad, 0.0, 0.0);
+	}
+
+	/* A 0.5 amplitude sine sits at -9.0 dB RMS. Both modes need a whole frame
+	   of input before they can give anything back, so without a wet ramp the
+	   first twenty milliseconds after switching the card on are silence at a
+	   full wet mix - the same class of dropout the tape card had. The assertion
+	   is that the level at the very start is the input's, not nothing. */
+	printf("\nswitching a mode on does not punch a hole in the audio\n");
+	{
+		run(PITCH_MODE_SMOOTH, 7.0f);
+		const double head = headDb(480);
+		printf("      input sits at -9.0 dB, first 10ms comes out at %.1f dB\n", head);
+		check("smooth: the first 10ms keeps its level (dB)", head, -12.0, -6.0);
+	}
+
+	printf("\nrubber band, if the optional library is present\n");
+	{
+		/* Not a failure when absent: the whole point of the download is that
+		   most builds and most machines will not have it. What must never
+		   happen is silence or a crash when it is asked for anyway. */
+		const char *path = getenv("RUBBERBAND_SO");
+		prepare();
+		if (path && RubberBandLoad(&g_lib, path))
+		{
+			run(PITCH_MODE_RUBBERBAND, 7.0f);
+			check("it really is the rubber band path", (double)g_lib.pitchShift.rbReady, 1, 1);
+			const double at440 = toneDb(440.0, N / 2, 16384);
+			const double at659 = toneDb(659.26, N / 2, 16384);
+			printf("      440Hz %.1f dB, 659Hz %.1f dB, block %d\n",
+			       at440, at659, g_lib.pitchShift.rbBlock);
+			check("the shifted partial is the loud one (dB)", at659 - at440, 6.0, 80.0);
+			check("the first 10ms keeps its level (dB)", headDb(480), -12.0, -6.0);
+			check("it holds a steady level (dB)", levelWobble(), 0.0, 3.0);
+
+			run(PITCH_MODE_RUBBERBAND_FORMANT, 7.0f);
+			check("formant mode also runs", (double)g_lib.pitchShift.rbReady, 1, 1);
+			int bad = 0;
+			for (int i = 0; i < N; i++) if (!isfinite(bufL[i])) bad++;
+			check("no non-finite samples", (double)bad, 0.0, 0.0);
+			PitchShiftDisable(&g_lib);
+		}
+		else
+			printf("      not loaded (%s) - skipping\n",
+			       path ? RubberBandLastError() : "set RUBBERBAND_SO to test it");
+	}
+
+	printf("\nasking for rubber band without it installed falls back, not silent\n");
+	{
+		prepare();
+		/* A path that cannot resolve is the same situation as a user who
+		   selected the mode and then removed the download. */
+		RubberBandLoad(&g_lib, "/nonexistent/librubberband.so");
+		PitchShiftSetParam(&g_lib, 7.0f, 100.0f, PITCH_MODE_RUBBERBAND);
+		PitchShiftEnable(&g_lib);
+		tone(440.0, 0.5f);
+		PitchShiftProcess(&g_lib, N);
+		printf("      mode ended up as %d, rbReady %d\n",
+		       g_lib.pitchShift.mode, g_lib.pitchShift.rbReady);
+		check("it did not stay on a back-end that is not there",
+		      (double)(g_lib.pitchShift.mode == PITCH_MODE_RUBBERBAND ||
+		               g_lib.pitchShift.mode == PITCH_MODE_RUBBERBAND_FORMANT), 0, 0);
+		check("and something still comes out (dB)", headDb(N / 2), -20.0, 0.0);
+		PitchShiftDisable(&g_lib);
 	}
 
 	printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "PASSED",

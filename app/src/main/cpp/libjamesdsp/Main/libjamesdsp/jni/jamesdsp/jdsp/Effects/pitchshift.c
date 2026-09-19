@@ -18,6 +18,35 @@
 static int pvAllocBuffers(PitchShift *p);
 static void pvFreeBuffers(PitchShift *p);
 
+// Give each mode the memory it needs and take back what the others were using,
+// so choosing Granular really does hand the vocoder's buffers back rather than
+// holding them for a path no longer in use.
+//
+// Every failure walks one step down the same ladder rather than leaving the
+// card silent: Rubber Band that is not installed, or will not start, becomes
+// Smooth; Smooth that cannot allocate becomes Granular, which needs nothing
+// beyond the ring buffer Enable already made. Worse sounding, still running.
+//
+// The caller holds the lock in all three cases - jdsp_lock is not recursive, so
+// this must not take it.
+static void psApplyMode(PitchShift *p, float fs)
+{
+	if (PITCH_MODE_IS_RUBBERBAND(p->mode))
+	{
+		pvFreeBuffers(p);
+		if (RubberBandPrepare(p, fs, p->mode == PITCH_MODE_RUBBERBAND_FORMANT))
+			return;
+		p->mode = PITCH_MODE_SMOOTH;
+	}
+	RubberBandRelease(p);
+	if (p->mode == PITCH_MODE_SMOOTH)
+	{
+		if (!pvAllocBuffers(p)) p->mode = PITCH_MODE_GRANULAR;
+	}
+	else
+		pvFreeBuffers(p);
+}
+
 void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct, int mode)
 {
 	/* Held for the whole update. Changing mode swaps which code path Process
@@ -49,16 +78,7 @@ void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct, int mo
 	// vocoder, which would otherwise cost its own latency for no change.
 	p->bypass = (fabsf(semitones) < 1e-6f && p->mix >= 0.999f) ? 1 : 0;
 
-	/* Buffers follow the mode, so switching to Granular gives the memory back
-	   rather than holding it for a path no longer in use. If the allocation
-	   fails, pvReady stays clear and Process quietly uses the granular path -
-	   worse sounding, but running. */
-	if (p->mode == PITCH_MODE_SMOOTH)
-	{
-		if (!pvAllocBuffers(p)) p->mode = PITCH_MODE_GRANULAR;
-	}
-	else
-		pvFreeBuffers(p);
+	psApplyMode(p, fs);
 	jdsp_unlock(jdsp);
 }
 
@@ -189,6 +209,13 @@ static int pvAllocBuffers(PitchShift *p)
 	p->pvFlux[0] = p->pvFlux[1] = 0.0f;
 	p->pvTransients = 0;
 	p->pvReady = 1;
+	// Nothing comes out of the overlap-add until a whole frame has gone in, and
+	// pvOut starts at zero. At a full wet mix that is the output disappearing
+	// for twenty-odd milliseconds every time this mode is chosen. Holding the
+	// dry signal and fading the wet in over it turns the same gap into the
+	// effect arriving.
+	p->wetGain = 0.0f;
+	p->fadeLen = (float)PV_SIZE + (p->pvFs > 0.0f ? p->pvFs : 48000.0f) * 0.02f;
 	return 1;
 }
 
@@ -299,6 +326,8 @@ static void pvFrame(PitchShift *p, int c, float ratio, float fs)
 static void pvProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n)
 {
 	const float fs = p->pvFs > 0.0f ? p->pvFs : 48000.0f;
+	const float step = p->fadeLen > 0.0f ? 1.0f / p->fadeLen : 1.0f;
+	float g = p->wetGain;
 	for (size_t i = 0; i < n; i++)
 	{
 		const float dry[2] = { jdsp->tmpBuffer[0][i], jdsp->tmpBuffer[1][i] };
@@ -306,8 +335,9 @@ static void pvProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n)
 		{
 			p->pvIn[c][PV_SIZE - PV_HOP + p->pvRover] = dry[c];
 			const float wet = p->pvOut[c][p->pvRover];
-			jdsp->tmpBuffer[c][i] = dry[c] + p->mix * (wet - dry[c]);
+			jdsp->tmpBuffer[c][i] = dry[c] + p->mix * g * (wet - dry[c]);
 		}
+		if (g < 1.0f) { g += step; if (g > 1.0f) g = 1.0f; }
 		p->pvRover++;
 		if (p->pvRover >= PV_HOP)
 		{
@@ -315,6 +345,7 @@ static void pvProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n)
 			for (int c = 0; c < 2; c++) pvFrame(p, c, p->rate, fs);
 		}
 	}
+	p->wetGain = g;
 }
 
 void PitchShiftProcess(JamesDSPLib *jdsp, size_t n)
@@ -325,7 +356,15 @@ void PitchShiftProcess(JamesDSPLib *jdsp, size_t n)
 		return;
 	if (p->bypass)
 		return;
-	if (p->mode == PITCH_MODE_SMOOTH)
+	/* rbReady is the only thing checked, not the mode: if the download went
+	   missing between one block and the next, the mode still says Rubber Band
+	   and there is nothing behind it. */
+	if (PITCH_MODE_IS_RUBBERBAND(p->mode) && p->rbReady)
+	{
+		RubberBandProcess(jdsp, p, n);
+		return;
+	}
+	if (p->mode == PITCH_MODE_SMOOTH || PITCH_MODE_IS_RUBBERBAND(p->mode))
 	{
 		/* Falls back rather than reading a null if the allocation failed. */
 		if (p->pvReady)
@@ -393,12 +432,15 @@ void PitchShiftEnable(JamesDSPLib *jdsp)
 		ps->w = 0;
 		ps->phasor = 0.0f;
 	}
-	// SetParam owns the vocoder buffers, but it may have run before this card
-	// was ever switched on, so make sure they exist for the chosen mode.
+	// SetParam owns everything the chosen mode needs, but it may have run
+	// before this card was ever switched on - and, for Rubber Band, before the
+	// download existed at all. Ask again here.
 	{
 		PitchShift *ps = &jdsp->pitchShift;
-		if (ps->mode == PITCH_MODE_SMOOTH && !pvAllocBuffers(ps))
-			ps->mode = PITCH_MODE_GRANULAR;
+		float fs = (float)jdsp->fs;
+		if (fs < 8000.0f) fs = 48000.0f;
+		ps->pvFs = fs;
+		psApplyMode(ps, fs);
 	}
 	jdsp->pitchShiftEnabled = 1;
 	jdsp_unlock(jdsp);
@@ -415,5 +457,28 @@ void PitchShiftDisable(JamesDSPLib *jdsp)
 	for (int c = 0; c < 2; c++)
 		if (ps->buf[c]) { free(ps->buf[c]); ps->buf[c] = 0; }
 	pvFreeBuffers(ps);
+	RubberBandRelease(ps);
 	jdsp_unlock(jdsp);
+}
+
+// A sample rate change used to leave pvFs at whatever it was built for, which
+// quietly put every partial in the wrong place, and would leave Rubber Band
+// running at the wrong rate entirely. Called with the lock already held, from
+// JamesDSPSetSampleRate and nowhere else.
+void PitchShiftRefresh(JamesDSPLib *jdsp)
+{
+	PitchShift *p = &jdsp->pitchShift;
+	float fs = (float)jdsp->fs;
+	if (fs < 8000.0f) fs = 48000.0f;
+	if (!jdsp->pitchShiftEnabled)
+		return;
+	p->pvFs = fs;
+	int win = (int)(0.05f * fs);
+	if (win > PS_BUFLEN - 200) win = PS_BUFLEN - 200;
+	if (win < 256) win = 256;
+	p->win = win;
+	// The vocoder's history describes the old rate, so start it again rather
+	// than letting the first frames chase a discontinuity.
+	pvFreeBuffers(p);
+	psApplyMode(p, fs);
 }
