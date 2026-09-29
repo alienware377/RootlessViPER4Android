@@ -65,19 +65,31 @@ int Convolver1DLoadImpulseResponse(JamesDSPLib *jdsp, float *tempImpulseFloat, u
 		if (jdsp->impulseResponseStorage.impulseResponse)
 			free(jdsp->impulseResponseStorage.impulseResponse);
 		jdsp->impulseResponseStorage.impulseResponse = (float *)malloc(impChannels * impulseLengthActual * sizeof(float));
+		// Copied into without checking. Inside the audio server a failed
+		// allocation here is a write through NULL, which takes the whole
+		// process down rather than losing one effect.
+		if (!jdsp->impulseResponseStorage.impulseResponse)
+		{
+			jdsp->impulseResponseStorage.impChannels = 0;
+			jdsp->impulseResponseStorage.impulseLengthActual = 0;
+			jdsp_unlock(jdsp);
+			return 0;
+		}
 		memcpy(jdsp->impulseResponseStorage.impulseResponse, tempImpulseFloat, impChannels * impulseLengthActual * sizeof(float));
 		jdsp->impulseResponseStorage.impChannels = impChannels;
 		jdsp->impulseResponseStorage.impulseLengthActual = impulseLengthActual;
 	}
 	Convolver1DConstructor(jdsp);
 	float **finalImpulse = (float**)malloc(impChannels * sizeof(float*));
-	memset(finalImpulse, 0, impChannels * sizeof(float*));
 	int ret = 1;
+	// The check was below the memset, so the one case it exists for was a
+	// write through NULL before it could be reached.
 	if (!finalImpulse)
 	{
 		ret = 0;
 		goto bufDeleteAndUnlock;
 	}
+	memset(finalImpulse, 0, impChannels * sizeof(float*));
 	for (unsigned int i = 0; i < impChannels; i++)
 	{
 		float* channelbuf = (float*)malloc(impulseLengthActual * sizeof(float));
