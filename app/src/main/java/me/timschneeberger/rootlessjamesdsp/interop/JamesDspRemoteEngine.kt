@@ -468,7 +468,9 @@ class JamesDspRemoteEngine(
     enum class PluginState {
         Unavailable,
         Available,
-        Unsupported
+        Unsupported,
+        /** Something answers to our uuid, but it is not this fork's engine. */
+        Foreign
     }
 
     companion object {
@@ -516,7 +518,22 @@ class JamesDspRemoteEngine(
                     .orEmpty()
                     .firstOrNull { it.uuid == EFFECT_JAMESDSP }
                     ?.run {
-                        if(name.contains("v3")) PluginState.Unsupported else PluginState.Available
+                        when {
+                            name.contains("v3") -> PluginState.Unsupported
+                            // Our own engine says so in its descriptor. Stock
+                            // JamesDSP answers to the same uuid, so without
+                            // this the app reported Available, showed every
+                            // fork card, and sent parameter ids the stock
+                            // engine has never heard of. Unhandled ids are
+                            // dropped silently at that end and the app has no
+                            // way to notice, so the user moved sliders that
+                            // could not do anything and nothing said why.
+                            name.contains("RootlessViPER4Android") -> PluginState.Available
+                            else -> {
+                                Timber.w("isPluginInstalled: a different engine answers to this uuid: '$name'")
+                                PluginState.Foreign
+                            }
+                        }
                     } ?: PluginState.Unavailable
             } catch (e: Exception) {
                 Timber.e("isPluginInstalled: exception raised")

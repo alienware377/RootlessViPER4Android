@@ -65,8 +65,18 @@ jobs:
       - name: Package module
         run: cd build/module && zip -qr ../rv4a-effect-aidl.zip . && unzip -l ../rv4a-effect-aidl.zip
 
+      # The installer in this package aborts before it writes anything, on
+      # purpose: taking over the stock effect service's name would leave the
+      # device with no working effect HAL. The artifact was named as though it
+      # were something to flash, which is an invitation to try. Keep building
+      # it so the toolchain does not rot, and say plainly what it is.
+      - name: Confirm the installer still refuses to install
+        run: |
+          grep -q 'abort "! Aborting deliberately"' magisk/aidl/module/customize.sh ||
+            { echo "the AIDL installer no longer aborts; it must not be published until it is finished"; exit 1; }
+
       - name: Upload module
         uses: actions/upload-artifact@v4
         with:
-          name: RootfulViPER4Android-aidl-module
+          name: aidl-effect-service-UNFINISHED-does-not-install
           path: build/rv4a-effect-aidl.zip

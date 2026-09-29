@@ -1,10 +1,10 @@
 # Runs the AIDL service build detached, writing to a log.
 #
-# Why not just run it inline: the Claude Desktop bridge abandons a tool call
-# after about four minutes regardless of the timeout requested, so any build
-# longer than that comes back as "no result received" even though it is still
-# running fine on the machine. Detaching turns a long build into a short call
-# plus polling, which stays well inside that ceiling.
+# Why not just run it inline: this build runs well past the few minutes some
+# tooling allows a single command before giving up on it, so it comes back as
+# "no result" while it is still running perfectly well on the machine.
+# Detaching turns a long build into a short call plus polling, which stays
+# comfortably inside any such ceiling.
 #
 #   powershell -File build-detached.ps1          # start it
 #   Get-Content $env:TEMP\aidlsvc\build.log -Tail 20   # check on it

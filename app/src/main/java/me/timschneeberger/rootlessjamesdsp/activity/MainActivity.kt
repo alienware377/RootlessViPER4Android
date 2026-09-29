@@ -449,6 +449,9 @@ class MainActivity : BaseActivity() {
                         JamesDspRemoteEngine.PluginState.Unavailable -> {
                             toast(getString(R.string.load_fail_header))
                         }
+                        JamesDspRemoteEngine.PluginState.Foreign -> {
+                            toast(getString(R.string.foreign_engine_root_toast))
+                        }
                     }
                 }
                 else if(isPlugin()) {
@@ -483,6 +486,22 @@ class MainActivity : BaseActivity() {
         if(isRoot()) {
             when(JamesDspRemoteEngine.isPluginInstalled()) {
                 JamesDspRemoteEngine.PluginState.Unavailable -> showLibraryLoadError()
+                // Someone else's engine sits behind our uuid, almost always
+                // the stock JamesDSP module. It accepts the connection and
+                // then ignores every parameter this fork adds without saying
+                // so, which looks exactly like the app being broken.
+                JamesDspRemoteEngine.PluginState.Foreign -> {
+                    prefsApp.set(R.string.key_powered_on, false)
+                    showYesNoAlert(
+                        getString(R.string.foreign_engine_root),
+                        getString(R.string.foreign_engine_root_description)
+                    ) {
+                        if(it) {
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                                "https://github.com/alienware377/RootlessViPER4Android/releases/latest")))
+                        }
+                    }
+                }
                 JamesDspRemoteEngine.PluginState.Unsupported -> {
                     prefsApp.set(R.string.key_powered_on, false)
                     showYesNoAlert(
