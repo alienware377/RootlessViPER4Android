@@ -82,3 +82,22 @@ target_include_directories(jamesdsp_hal PUBLIC
 # own target, which emits the same filename. The packaging step renames it when
 # copying into the module, where the audio server expects libjamesdsp.so.
 target_link_libraries(jamesdsp_hal ${log-lib})
+# Loaded by the audio server, so the link has to satisfy what the platform
+# refuses to load rather than what merely builds.
+#  max-page-size: Android 15 devices with 16 KB pages will not map a library
+#    aligned to 4 KB, and the NDK only passes this when a flag we do not set is
+#    on. The failure is a silent skip in the effects factory, not a crash, so
+#    nothing would tell us.
+#  noexecstack: refused since Android 14.
+target_link_options(jamesdsp_hal PRIVATE
+        -Wl,-z,max-page-size=16384
+        -Wl,-z,noexecstack)
+# The target cannot be NAMED jamesdsp: that collides with the APK's own library
+# of the same name. It can still be BUILT as libjamesdsp.so, into a directory
+# of its own, which is what it is installed as. Renaming it afterwards left the
+# soname reading libjamesdsp_hal.so, and bionic registers a library by its
+# soname rather than by the path it was opened from. Passing -Wl,-soname by
+# hand does not work here; CMake emits its own from the output name.
+set_target_properties(jamesdsp_hal PROPERTIES
+        OUTPUT_NAME jamesdsp
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/hal")
