@@ -1,0 +1,21 @@
+# Everything the device runs must reach it with unix line endings. A CR that
+# survives into the module is not a cosmetic problem: post-fs-data.sh would
+# create a file named "disable", which Magisk does not recognise, so the boot
+# watchdog would be silently dead while the module stayed active. A CR in
+# module.prop puts one inside the module id itself.
+#
+# This host has core.autocrlf=true, so without this file a package built here
+# ships CRLF even though the committed blobs are clean.
+* text=auto eol=lf
+
+magisk/**/*.sh   text eol=lf
+magisk/module.prop text eol=lf
+*.sh             text eol=lf
+
+*.png binary
+*.jpg binary
+*.wav binary
+*.irs binary
+*.vdc binary
+*.so  binary
+*.keystore binary
