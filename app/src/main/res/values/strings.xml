@@ -506,6 +506,9 @@
     <string name="pitchshift_mode">Method</string>
     <string name="pitchshift_mode_summary">Granular is instant and costs nothing, but wobbles a little on held notes. Smooth listens to each frequency separately and keeps them steady, which sounds far cleaner on sustained music, at the cost of about 20ms of delay and a bit more work for the phone. The two Rubber Band methods are better again and need the free add-on below; the second one also keeps voices sounding like themselves instead of going chipmunky.</string>
     <string name="pitchshift_mix">Mix</string>
+    <string name="foreign_engine_root">A different engine is installed</string>
+    <string name="foreign_engine_root_description">A JamesDSP engine is installed, but it is not this app\'s own. The original ViPER4Android effects will work; everything this fork adds will do nothing at all, with no error either way. Installing the RootfulViPER4Android engine module fixes it. Open the downloads page?</string>
+    <string name="foreign_engine_root_toast">A different JamesDSP engine is installed. This fork\'s effects will not work.</string>
     <string name="pitchshift_rubberband">Rubber Band add-on</string>
     <string name="pitchshift_rubberband_offer">Not installed. Tap to download, about %1$d KB.</string>
     <string name="pitchshift_rubberband_installed">Installed, version %1$s. Tap to remove.</string>

@@ -1,0 +1,123 @@
+# Builds the Magisk module that makes root mode run this fork's engine.
+#
+# This existed only as a script anybody had to remember to run, so v4.0.0
+# shipped five rootful APKs and no module to pair them with. Anyone who
+# installed the rooted build had nothing of ours to flash, reached for the
+# stock JamesDSP module instead, and got an engine that has never heard of this
+# fork's parameter ids: every fork effect silently does nothing while the
+# upstream ones work. That is issue #12.
+name: Build Magisk module
+
+on:
+  push:
+    branches: [ master, viper-extras ]
+    paths:
+      - 'magisk/**'
+      - 'app/src/main/cpp/**'
+      - 'buildSrc/src/main/kotlin/AndroidConfig.kt'
+      - '.github/workflows/build-magisk-module.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Keep module.prop in step with the app
+        run: |
+          set -eu
+          NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' buildSrc/src/main/kotlin/AndroidConfig.kt)
+          CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' buildSrc/src/main/kotlin/AndroidConfig.kt)
+          echo "app is v$NAME ($CODE)"
+          sed -i "s/^version=.*/version=v$NAME/" magisk/module.prop
+          sed -i "s/^versionCode=.*/versionCode=$CODE/" magisk/module.prop
+          cat magisk/module.prop
+          # A module whose version silently lags the app is how this drifted to
+          # v3.35.0 while the app was on 4.0.0.
+          grep -q "^version=v$NAME$" magisk/module.prop
+          grep -q "^versionCode=$CODE$" magisk/module.prop
+
+      # Everything the device runs is checked before it is packaged, not after.
+      # A carriage return in post-fs-data.sh makes the boot watchdog create a
+      # file Magisk does not recognise, which leaves the module active with its
+      # only safety net dead.
+      - name: Check the scripts
+        run: |
+          set -eu
+          fail=0
+          for f in magisk/*.sh magisk/common/*.sh magisk/module.prop; do
+            if grep -q $'\r' "$f"; then echo "carriage returns in $f"; fail=1; fi
+          done
+          for f in magisk/*.sh magisk/common/*.sh; do
+            sh -n "$f" || { echo "$f is not valid shell"; fail=1; }
+            # dash is closer to the device's mksh than bash is
+            dash -n "$f" || { echo "$f is not valid POSIX shell"; fail=1; }
+          done
+          # Every path the module writes must stay inside $MODPATH. Escaping it
+          # is what makes a module able to leave damage behind after removal.
+          if grep -nE '(^|[^A-Za-z_])(rm|mv|cp|ln|touch|mkdir)\b[^|]*(/data/adb/(service\.d|post-fs-data\.d)|/system/(bin|lib|etc)/)' magisk/*.sh magisk/common/*.sh | grep -v MODPATH | grep -v '^\s*#'; then
+            echo "a script writes outside the module directory"
+            fail=1
+          fi
+          exit $fail
+
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: r27
+
+      - name: Build and package
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+        run: bash magisk/build-module.sh
+
+      # The .so is what the audio server dlopens. Three properties make the
+      # difference between loading and a silent skip, and none of them are
+      # visible without looking.
+      - name: Verify every built library
+        run: |
+          set -eu
+          READELF=$(ls "$ANDROID_NDK_HOME"/toolchains/llvm/prebuilt/*/bin/llvm-readelf | head -1)
+          NM=$(ls "$ANDROID_NDK_HOME"/toolchains/llvm/prebuilt/*/bin/llvm-nm | head -1)
+          fail=0
+          for so in build/magisk/libs/*/libjamesdsp.so; do
+            echo "--- $so"
+            # 16 KB pages: Android 15 devices refuse a 4 KB-aligned library.
+            if $READELF -l "$so" | grep -q "LOAD.*0x1000$"; then
+              echo "  4 KB aligned, would not load on a 16 KB page device"; fail=1
+            fi
+            # Text relocations are refused since Android 10.
+            $READELF -d "$so" | grep -q TEXTREL && { echo "  has TEXTREL"; fail=1; }
+            # An executable stack is refused since Android 14.
+            $READELF -l "$so" | grep -E "^\s+GNU_STACK" | grep -q "RWE" && { echo "  executable stack"; fail=1; }
+            # The soname is what bionic registers it under.
+            $READELF -d "$so" | grep -q "soname: \[libjamesdsp.so\]" || { echo "  wrong soname"; fail=1; }
+            # Without these four the library loads and the effect never appears.
+            for sym in AELI EffectCreate EffectRelease EffectGetDescriptor; do
+              $NM -D --defined-only "$so" | grep -qw "$sym" || { echo "  missing $sym"; fail=1; }
+            done
+            echo "  $(stat -c%s "$so") bytes"
+          done
+          exit $fail
+
+      - name: Check the packaged zip
+        run: |
+          set -eu
+          cd build
+          unzip -l rv4a-engine-module.zip
+          # A zip written by a Windows tool stores literal backslashes, and the
+          # module then installs as files with backslashes in their names
+          # instead of directories, doing nothing at all. Checked against the
+          # raw central directory, because Python normalises separators on read.
+          if grep -qU $'\\\\' <(unzip -l rv4a-engine-module.zip); then
+            echo "backslash paths in the archive"; exit 1
+          fi
+          for f in module.prop customize.sh post-fs-data.sh service.sh common/patch_audio_config.sh; do
+            unzip -l rv4a-engine-module.zip | grep -q " $f$" || { echo "missing $f"; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rv4a-engine-module
+          path: build/rv4a-engine-module.zip
