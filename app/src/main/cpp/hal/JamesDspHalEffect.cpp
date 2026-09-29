@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <hardware/audio_effect.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "EffectParams.h"
 
@@ -46,7 +47,12 @@ static effect_descriptor_t rv4a_descriptor =
     EFFECT_FLAG_TYPE_INSERT | EFFECT_FLAG_INSERT_FIRST,
     10,
     1,
-    "RootlessViPER4Android engine",
+    /* The app matches the engine by uuid, and stock JamesDSP uses the same
+       one, so the only thing that can tell the two apart is this string. It
+       said nothing about which engine or which version, which is why a device
+       running the stock module showed every fork card and responded to none
+       of them: unhandled ids are dropped without a word at both ends. */
+    "RootlessViPER4Android engine v4",
     "alienware377"
 };
 
@@ -82,7 +88,36 @@ struct rv4a_context
        these with an empty engine ranges from silent to a crash in the audio
        server, so the enable is refused until its payload has arrived. */
     bool haveIr, haveGraphicEq, haveDdc, haveLiveprog;
+
+    /* Only used when the server asks us to add to its buffer rather than
+       overwrite it. Per context, never shared: a buffer shared between effects
+       on one mixer thread is freed by whichever is released first and then
+       written through by the others. */
+    float *mixBuf;
+    size_t mixFrames;
 };
+
+/* A frame count larger than this is a corrupt descriptor rather than a real
+   buffer, and the engine would size an allocation from it on the audio thread.
+   Real mixer buffers are a few hundred frames. */
+#define RV4A_MAX_FRAMES 65536
+
+/* Grown on demand and owned by the context. Returns false if it could not be
+   made big enough, in which case the caller must not touch it. */
+static bool rv4a_ensure_mix(rv4a_context *c, size_t frames)
+{
+    if (c->mixBuf && c->mixFrames >= frames)
+        return true;
+    float *grown = (float *)realloc(c->mixBuf, frames * 2 * sizeof(float));
+    if (!grown)
+    {
+        LOGE("process: out of memory for the accumulate buffer (%zu frames)", frames);
+        return false;
+    }
+    c->mixBuf = grown;
+    c->mixFrames = frames;
+    return true;
+}
 
 /* An effect_param_t whose parameter and value are both one 32-bit word. Every
    status read the app performs has this shape. */
@@ -116,55 +151,44 @@ static int32_t rv4a_process(effect_handle_t self, audio_buffer_t *in, audio_buff
     if (frames == 0)
         return 0;
 
-    static thread_local float *left = nullptr, *right = nullptr;
-    static thread_local size_t capacity = 0;
-    if (capacity < RV4A_BLOCK)
+    if (frames > RV4A_MAX_FRAMES)
     {
-        free(left); free(right);
-        left = (float *)malloc(RV4A_BLOCK * sizeof(float));
-        right = (float *)malloc(RV4A_BLOCK * sizeof(float));
-        if (!left || !right)
-        {
-            free(left); free(right);
-            left = right = nullptr; capacity = 0;
-            LOGE("process: out of memory for scratch buffers");
-            return -ENOMEM;
-        }
-        capacity = RV4A_BLOCK;
-        LOGI("process: scratch buffers allocated (%d frames)", RV4A_BLOCK);
+        LOGE("process: implausible frame count %zu, refusing", frames);
+        return -EINVAL;
+    }
+    if (!c->dsp.processFloatMultiplexd)
+    {
+        LOGE("process: engine has no process function; not initialised");
+        return -ENODATA;
     }
 
+    /* The engine owns tmpBuffer, and owns it as ONE allocation: tmpBuffer[1]
+       through [5] are interior pointers into the block tmpBuffer[0] holds, and
+       JamesDSPFree frees exactly that pointer. Writing our own buffers into [0]
+       and [1] therefore leaked the engine's block and handed its free() a
+       pointer we still meant to use, so releasing one effect left every other
+       effect on the same mixer thread writing through freed memory, and two of
+       them freed it twice. It fired on ordinary route changes.
+
+       processFloatMultiplexd is the engine's own interleaved entry point, the
+       one the app has always used. It deinterleaves into its own buffers, so
+       nothing here touches tmpBuffer at all. It also runs the resampler, which
+       the old path skipped: anything that was not 44.1 or 48 kHz, a USB DAC
+       most likely, was being filtered at the wrong rate. */
     const bool accumulate = (c->outAccessMode == EFFECT_BUFFER_ACCESS_ACCUMULATE);
-
-    for (size_t off = 0; off < frames; off += RV4A_BLOCK)
+    float *dst = out->f32;
+    if (accumulate)
     {
-        const size_t n = (frames - off) > RV4A_BLOCK ? RV4A_BLOCK : (frames - off);
-
-        for (size_t i = 0; i < n; i++)
-        {
-            left[i]  = in->f32[(off + i) * 2];
-            right[i] = in->f32[(off + i) * 2 + 1];
-        }
-
-        c->dsp.tmpBuffer[0] = left;
-        c->dsp.tmpBuffer[1] = right;
-        JamesDSPProcess(&c->dsp, n);
-
-        for (size_t i = 0; i < n; i++)
-        {
-            const size_t o = (off + i) * 2;
-            if (accumulate)
-            {
-                out->f32[o]     += left[i];
-                out->f32[o + 1] += right[i];
-            }
-            else
-            {
-                out->f32[o]     = left[i];
-                out->f32[o + 1] = right[i];
-            }
-        }
+        if (!rv4a_ensure_mix(c, frames))
+            return -ENOMEM;
+        dst = c->mixBuf;
     }
+
+    c->dsp.processFloatMultiplexd(&c->dsp, in->f32, dst, frames);
+
+    if (accumulate)
+        for (size_t i = 0; i < frames * 2; i++)
+            out->f32[i] += dst[i];
 
     /* One line every few thousand blocks: enough to confirm audio is flowing
        without flooding logcat on the audio thread. */
@@ -241,8 +265,22 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
             LOGE("impulse geometry rejected (%d ch, %d parts)", channels, parts);
             return true;
         }
+        /* v[0] is the total sample count the app says it is sending. It was
+           taken on trust and divided, so a zero or negative value produced a
+           frame count the convolver would run with, and an oversized one made
+           it read past the end of the buffer we are about to allocate. The
+           buffer holds 4096 frames per partition per channel; nothing may
+           claim more than that. */
+        const int64_t total = v[0];
+        const int64_t maxFrames = (int64_t)4096 * parts;
+        if (total <= 0 || total / channels <= 0 || total / channels > maxFrames)
+        {
+            LOGE("impulse length rejected (%lld samples over %d ch, %d parts)",
+                 (long long)total, channels, parts);
+            return true;
+        }
         c->irChannels = channels;
-        c->irFrames = v[0] / channels;
+        c->irFrames = (int)(total / channels);
         c->irParts = parts;
         c->irCapacity = (size_t)4096 * channels * parts;
         c->irBuf = (float *)calloc(c->irCapacity, sizeof(float));
@@ -266,9 +304,19 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
     case 10004:     /* commit: impulse response */
         if (c->irBuf)
         {
+            /* Used to warn and load anyway, which handed the convolver a
+               frame count covering partitions that never arrived. Refuse it:
+               a truncated impulse is not worth a read past the buffer. */
             if (c->irPartsSeen != c->irParts)
-                LOGW("impulse committed with %d of %d partitions",
+            {
+                LOGE("impulse committed with %d of %d partitions, discarding",
                      c->irPartsSeen, c->irParts);
+                free(c->irBuf);
+                c->irBuf = nullptr;
+                c->irCapacity = 0;
+                c->irPartsSeen = 0;
+                return true;
+            }
             const int rc = Convolver1DLoadImpulseResponse(
                 &c->dsp, c->irBuf, (int16_t)c->irChannels, c->irFrames, 1);
             c->haveIr = rc >= 0;
@@ -366,6 +414,28 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
         c->channels = 2;
         c->outAccessMode = cfg->outputCfg.accessMode;
 
+        /* This arrives again on every route change, and used to re-initialise
+           an engine that still held everything from last time: every filter,
+           convolver and resampler was leaked, once per headphone plug. Free it
+           first, and zero the struct because Init expects the cleared state
+           EffectCreate's calloc gave it.
+
+           The payload flags have to go with it. They say a subsystem has
+           something loaded behind it, that memory has just been freed, and the
+           whole reason they exist is that enabling one of these with an empty
+           engine "ranges from silent to a crash in the audio server". Leaving
+           them set is the exact condition they were written to prevent. */
+        if (c->configured)
+        {
+            JamesDSPFree(&c->dsp);
+            memset(&c->dsp, 0, sizeof(c->dsp));
+            c->haveIr = c->haveGraphicEq = c->haveDdc = c->haveLiveprog = false;
+            c->irPartsSeen = c->irParts = c->irChannels = c->irFrames = 0;
+            c->stringIndex = 0;
+            memset(c->hashSlot, 0, sizeof(c->hashSlot));
+            LOGI("SET_CONFIG: previous engine released before re-initialising");
+        }
+
         JamesDSPInit(&c->dsp, RV4A_BLOCK, c->sampleRate);
         if (!JamesDSPGetMutexStatus(&c->dsp))
             LOGW("SET_CONFIG: engine reports no mutex; concurrent access unsafe");
@@ -378,11 +448,33 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
     }
 
     case EFFECT_CMD_GET_CONFIG:
+    {
         /* Some servers query this before enabling; failing it can stop the
-           effect being used at all. */
-        if (pReplyData && replySize && *replySize >= sizeof(effect_config_t))
-            return 0;
-        return -EINVAL;
+           effect being used at all. It used to report success without writing
+           anything, so the caller read whatever was already in the buffer and
+           believed it was our configuration. */
+        if (!pReplyData || !replySize || *replySize < sizeof(effect_config_t))
+        {
+            if (replySize)
+                *replySize = 0;
+            return -EINVAL;
+        }
+        effect_config_t *reply = (effect_config_t *)pReplyData;
+        memset(reply, 0, sizeof(*reply));
+        reply->inputCfg.samplingRate = reply->outputCfg.samplingRate =
+            c->sampleRate ? c->sampleRate : 48000;
+        reply->inputCfg.channels = reply->outputCfg.channels = AUDIO_CHANNEL_OUT_STEREO;
+        reply->inputCfg.format = reply->outputCfg.format = AUDIO_FORMAT_PCM_FLOAT;
+        reply->inputCfg.accessMode = EFFECT_BUFFER_ACCESS_READ;
+        reply->outputCfg.accessMode = c->outAccessMode;
+        reply->inputCfg.bufferProvider.getBuffer = NULL;
+        reply->inputCfg.bufferProvider.releaseBuffer = NULL;
+        reply->inputCfg.bufferProvider.cookie = NULL;
+        reply->outputCfg.bufferProvider = reply->inputCfg.bufferProvider;
+        reply->inputCfg.mask = reply->outputCfg.mask = EFFECT_CONFIG_ALL;
+        *replySize = sizeof(effect_config_t);
+        return 0;
+    }
 
     case EFFECT_CMD_RESET:
     case EFFECT_CMD_SET_DEVICE:
@@ -420,6 +512,22 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
         effect_param_t *p = (effect_param_t *)pCmdData;
         if (p->psize != sizeof(int32_t))
             return -EINVAL;
+
+        /* psize and vsize describe a tail that has to actually be inside the
+           buffer the server handed us. Nothing checked that: a caller could
+           claim any vsize it liked and every read below, including the reads
+           the buffered-payload handler makes, walked off the end. Computed in
+           64 bits because both fields are uint32_t and would otherwise wrap
+           straight back into a size that looks small enough to pass. */
+        const uint64_t need = (uint64_t)sizeof(effect_param_t)
+                            + (((uint64_t)p->psize + 3u) & ~3ull)
+                            + (uint64_t)p->vsize;
+        if (need > (uint64_t)cmdSize)
+        {
+            LOGE("SET_PARAM: psize %u + vsize %u do not fit in cmdSize %u",
+                 p->psize, p->vsize, cmdSize);
+            return -EINVAL;
+        }
 
         const int32_t id = *(int32_t *)p->data;
         const void *val = p->data + ((p->psize + 3) & ~3);
@@ -484,8 +592,13 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
            the engine having crashed - it toasts and re-creates the effect. An
            unhandled GET_PARAM is therefore not a missing feature but a reboot
            loop, with no settings ever surviving to be applied. */
-        if (!pCmdData || cmdSize < sizeof(effect_param_t) ||
-            !pReplyData || !replySize || *replySize < sizeof(rv4a_reply_1x4_1x4))
+        if (!pCmdData || !pReplyData || !replySize ||
+            *replySize < sizeof(rv4a_reply_1x4_1x4))
+            return -EINVAL;
+        /* sizeof(effect_param_t) stops at the header, so a cmdSize of exactly
+           that passed the old check and the read of q->data below was four
+           bytes past the end. The id has to be in the buffer too. */
+        if (cmdSize < sizeof(effect_param_t) + sizeof(int32_t))
             return -EINVAL;
 
         effect_param_t *q = (effect_param_t *)pCmdData;
@@ -569,14 +682,15 @@ HAL_EXPORT int32_t EffectCreate(const effect_uuid_t *uuid, int32_t sessionId, in
     c->configured = false;
     c->outAccessMode = EFFECT_BUFFER_ACCESS_WRITE;
 
-    /* Shared tables, allocated once for the process rather than per effect. */
-    static bool globalReady = false;
-    if (!globalReady)
-    {
+    /* Shared tables, allocated once for the process rather than per effect.
+       A plain bool was only safe because the legacy factory happens to
+       serialise creation under its own lock; nothing promises that, and the
+       AIDL path makes no such promise at all. */
+    static pthread_once_t globalOnce = PTHREAD_ONCE_INIT;
+    pthread_once(&globalOnce, []() {
         JamesDSPGlobalMemoryAllocation();
-        globalReady = true;
         LOGI("global engine tables allocated");
-    }
+    });
     JamesDSPInit(&c->dsp, RV4A_BLOCK, 48000);
     LOGI("EffectCreate: session=%d io=%d handle=%p", sessionId, ioId, (void *)c);
     *pHandle = (effect_handle_t)c;
@@ -595,6 +709,7 @@ HAL_EXPORT int32_t EffectRelease(effect_handle_t handle)
        holding the partitions gathered so far. */
     free(c->stringBuf);
     free(c->irBuf);
+    free(c->mixBuf);
     free(c);
     return 0;
 }
@@ -602,6 +717,11 @@ HAL_EXPORT int32_t EffectRelease(effect_handle_t handle)
 HAL_EXPORT int32_t EffectGetDescriptor(const effect_uuid_t *uuid, effect_descriptor_t *pDescriptor)
 {
     if (!pDescriptor || !uuid)
+        return -EINVAL;
+    /* Answered for any uuid at all until now, so a config naming our library
+       against somebody else's uuid got our descriptor back and the effect was
+       registered as ours. EffectCreate always compared; this did not. */
+    if (memcmp(uuid, &rv4a_descriptor.uuid, sizeof(effect_uuid_t)) != 0)
         return -EINVAL;
     memcpy(pDescriptor, &rv4a_descriptor, sizeof(effect_descriptor_t));
     return 0;
