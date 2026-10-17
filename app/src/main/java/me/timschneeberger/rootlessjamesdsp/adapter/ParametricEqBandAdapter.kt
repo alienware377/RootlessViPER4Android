@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.model.ParametricEqBand
 import me.timschneeberger.rootlessjamesdsp.model.ParametricEqBandList
+import me.timschneeberger.rootlessjamesdsp.model.ParametricEqChannel
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.*
@@ -87,6 +88,7 @@ class ParametricEqBandAdapter(var bands: ParametricEqBandList) :
         val freq: TextView = view.findViewById(R.id.freq)
         val gain: TextView = view.findViewById(R.id.gain)
         val qFactor: TextView = view.findViewById(R.id.q_factor)
+        val channelButton: Button = view.findViewById(R.id.channel)
         val deleteButton: Button = view.findViewById(R.id.delete)
     }
 
@@ -115,6 +117,24 @@ class ParametricEqBandAdapter(var bands: ParametricEqBandList) :
         viewHolder.freq.text = "${dfFreq.format(band.frequency)}Hz"
         viewHolder.gain.text = "${dfGain.format(band.gain)}dB"
         viewHolder.qFactor.text = "Q${dfQ.format(band.q)}"
+
+        viewHolder.channelButton.text = band.channel.shortLabel
+        viewHolder.channelButton.setOnClickListener {
+            viewHolder.bindingAdapterPosition.let { pos ->
+                val current = bands.getOrNull(pos) ?: return@setOnClickListener
+                val next = when (current.channel) {
+                    ParametricEqChannel.BOTH -> ParametricEqChannel.LEFT
+                    ParametricEqChannel.LEFT -> ParametricEqChannel.RIGHT
+                    ParametricEqChannel.RIGHT -> ParametricEqChannel.BOTH
+                }
+                // Replaced rather than mutated in place, because the list is
+                // observable on identity and a field written behind its back
+                // never reaches the engine or the curve.
+                bands[pos] = ParametricEqBand(
+                    current.frequency, current.gain, current.q,
+                    current.filterType, next, current.uuid)
+            }
+        }
 
         viewHolder.deleteButton.setOnClickListener {
             viewHolder.bindingAdapterPosition.let { pos ->

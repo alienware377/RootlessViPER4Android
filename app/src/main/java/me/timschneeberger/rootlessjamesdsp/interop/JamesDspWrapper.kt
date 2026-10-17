@@ -72,6 +72,8 @@ object JamesDspWrapper {
     external fun setEqPhaseMode(self: JamesDspHandle, linearPhase: Boolean): Boolean
 
     external fun setGraphicEq(self: JamesDspHandle, enable: Boolean, graphicEq: String): Boolean
+    /** One curve per ear, for a parametric EQ with bands assigned to a single channel. */
+    external fun setGraphicEqStereo(self: JamesDspHandle, enable: Boolean, eqLeft: String, eqRight: String): Boolean
     external fun setCrossfeed(self: JamesDspHandle, enable: Boolean, mode: Int, customFcut: Int, customFeed: Int): Boolean
     external fun setBassBoost(self: JamesDspHandle, enable: Boolean, maxGain: Float): Boolean
     external fun setStereoEnhancement(self: JamesDspHandle, enable: Boolean, level: Float): Boolean

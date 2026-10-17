@@ -417,6 +417,18 @@ class JamesDspRemoteEngine(
         return effect.setParameter(1210, enable.toShort()) == AudioEffect.SUCCESS
     }
 
+    /**
+     * Root mode has no way to send two curves: the buffered payload carries one
+     * string and the effect library applies it to both ears. Rather than pick a
+     * side, send the left curve and say what happened, because applying a
+     * correction meant for one ear to both is worse than not applying it.
+     */
+    override fun setGraphicEqStereoInternal(enable: Boolean, bandsLeft: String, bandsRight: String): Boolean {
+        if (enable && bandsLeft != bandsRight)
+            Timber.w("setGraphicEqStereo: root mode cannot carry two curves; using the left one for both ears")
+        return setGraphicEqInternal(enable, bandsLeft)
+    }
+
     override fun setLiveprogSlotInternal(slot: Int, enable: Boolean, name: String, script: String): Boolean = true
 
     override fun setLiveprogInternal(enable: Boolean, name: String, script: String): Boolean {

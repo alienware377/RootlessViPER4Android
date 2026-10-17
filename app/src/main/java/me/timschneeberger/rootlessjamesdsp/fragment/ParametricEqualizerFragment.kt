@@ -534,7 +534,11 @@ class ParametricEqualizerFragment : Fragment() {
                 if (index < 0)
                     Timber.e("editorApply: failed to find matching band UUID")
                 else
-                    adapter.bands[index] = ParametricEqBand(freq, gain, q, filterType, uuid)
+                    // The channel is carried over rather than defaulted: the
+                    // editor does not offer it, so rebuilding the band without
+                    // it would silently move a one-eared band back to both.
+                    adapter.bands[index] = ParametricEqBand(
+                        freq, gain, q, filterType, adapter.bands[index].channel, uuid)
             }
         }
     }

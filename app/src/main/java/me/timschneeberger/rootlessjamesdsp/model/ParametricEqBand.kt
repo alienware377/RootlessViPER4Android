@@ -27,6 +27,30 @@ enum class ParametricEqFilterType(val code: Int, val apoLabel: String, val displ
 }
 
 /**
+ * Which ear a band acts on.
+ *
+ * EqualizerAPO writes this as a "Channel:" line that applies to every filter
+ * after it until the next one, so the labels match what its presets use. The
+ * stored code is what reaches preferences, and BOTH is zero so that every band
+ * saved before this existed reads back as acting on both channels.
+ */
+enum class ParametricEqChannel(val code: Int, val apoLabel: String, val shortLabel: String) {
+    BOTH(0, "ALL", "L+R"),
+    LEFT(1, "L", "L"),
+    RIGHT(2, "R", "R");
+
+    companion object {
+        fun fromCode(code: Int) = entries.firstOrNull { it.code == code } ?: BOTH
+        fun fromApoLabel(label: String) = when (label.trim().uppercase()) {
+            "L", "LEFT" -> LEFT
+            "R", "RIGHT" -> RIGHT
+            "ALL", "C", "ALLCHANNELS" -> BOTH
+            else -> null
+        }
+    }
+}
+
+/**
  * A parametric EQ band definition.
  *
  * [uuid] is excluded from equals/hashCode so that two bands with the
@@ -37,6 +61,7 @@ class ParametricEqBand(
     var gain: Double,
     var q: Double,
     var filterType: ParametricEqFilterType = ParametricEqFilterType.PEAKING,
+    var channel: ParametricEqChannel = ParametricEqChannel.BOTH,
     val uuid: UUID = UUID.randomUUID()
 ) : Serializable {
 
@@ -46,7 +71,8 @@ class ParametricEqBand(
         return frequency == other.frequency &&
                 gain == other.gain &&
                 q == other.q &&
-                filterType == other.filterType
+                filterType == other.filterType &&
+                channel == other.channel
     }
 
     override fun hashCode(): Int {
@@ -54,9 +80,10 @@ class ParametricEqBand(
         result = 31 * result + gain.hashCode()
         result = 31 * result + q.hashCode()
         result = 31 * result + filterType.hashCode()
+        result = 31 * result + channel.hashCode()
         return result
     }
 
     override fun toString(): String =
-        "ParametricEqBand(frequency=$frequency, gain=$gain, q=$q, filterType=$filterType, uuid=$uuid)"
+        "ParametricEqBand(frequency=$frequency, gain=$gain, q=$q, filterType=$filterType, channel=$channel, uuid=$uuid)"
 }

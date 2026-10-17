@@ -24,6 +24,11 @@ void ArbitraryResponseEqualizerDestructor(JamesDSPLib *jdsp)
 	EqNodesFree(&jdsp->arbMag.instance.coeffGen);
 	FFTConvolver2x2Free(&jdsp->arbMag.instance.convState);
 	FFTConvolver2x2Free(&jdsp->arbMag.conv);
+	free(jdsp->arbMag.filterL);
+	free(jdsp->arbMag.filterR);
+	jdsp->arbMag.filterL = 0;
+	jdsp->arbMag.filterR = 0;
+	jdsp->arbMag.keptLen = 0;
 }
 /**
  * Rebuilds the coefficient generator in the requested phase mode. The filter
@@ -40,22 +45,78 @@ void ArbitraryResponseEqualizerSetPhaseMode(JamesDSPLib *jdsp, int linearPhase)
 		InitArbitraryEq(&jdsp->arbMag.instance.coeffGen, linearPhase);
 }
 
+/* Keeps a copy of whatever filters are currently loaded, so the deferred
+   refresh in Enable can put them back without the node strings. */
+static void arbKeepFilters(JamesDSPLib *jdsp, const float *left, const float *right)
+{
+	const unsigned int len = jdsp->arbMag.instance.filterLen;
+	if (jdsp->arbMag.keptLen != len)
+	{
+		free(jdsp->arbMag.filterL);
+		free(jdsp->arbMag.filterR);
+		jdsp->arbMag.filterL = (float *)malloc(len * sizeof(float));
+		jdsp->arbMag.filterR = (float *)malloc(len * sizeof(float));
+		jdsp->arbMag.keptLen = (jdsp->arbMag.filterL && jdsp->arbMag.filterR) ? len : 0;
+	}
+	if (!jdsp->arbMag.keptLen)
+		return;
+	memcpy(jdsp->arbMag.filterL, left, len * sizeof(float));
+	memcpy(jdsp->arbMag.filterR, right, len * sizeof(float));
+}
+
 void ArbitraryResponseEqualizerStringParser(JamesDSPLib *jdsp, char *stringEq)
 {
 	ArbitraryEqString2SortedNodes(&jdsp->arbMag.instance.coeffGen, stringEq);
 	float *eqFil = jdsp->arbMag.instance.coeffGen.GetFilter(&jdsp->arbMag.instance.coeffGen, (float)jdsp->fs);
+	arbKeepFilters(jdsp, eqFil, eqFil);
 	FFTConvolver2x2RefreshImpulseResponse(&jdsp->arbMag.instance.convState, &jdsp->arbMag.conv, eqFil, eqFil, jdsp->arbMag.instance.filterLen);
+}
+
+/* One curve per ear.
+ *
+ * The convolver has always been a 2x2 and has always taken a left and a right
+ * impulse response; every caller simply passed the same one twice. So this
+ * costs one extra filter build and nothing at runtime.
+ *
+ * The order matters: the generator returns a pointer into its own working
+ * buffer, so the left filter has to be copied out before the right one is
+ * built over the top of it. */
+void ArbitraryResponseEqualizerStringParserStereo(JamesDSPLib *jdsp, char *stringEqLeft, char *stringEqRight)
+{
+	const unsigned int len = jdsp->arbMag.instance.filterLen;
+	float *left = (float *)malloc(len * sizeof(float));
+	if (!left)
+	{
+		/* Better one correct curve on both ears than none at all. */
+		ArbitraryResponseEqualizerStringParser(jdsp, stringEqLeft);
+		return;
+	}
+	ArbitraryEqString2SortedNodes(&jdsp->arbMag.instance.coeffGen, stringEqLeft);
+	memcpy(left, jdsp->arbMag.instance.coeffGen.GetFilter(&jdsp->arbMag.instance.coeffGen, (float)jdsp->fs), len * sizeof(float));
+
+	ArbitraryEqString2SortedNodes(&jdsp->arbMag.instance.coeffGen, stringEqRight);
+	float *right = jdsp->arbMag.instance.coeffGen.GetFilter(&jdsp->arbMag.instance.coeffGen, (float)jdsp->fs);
+
+	arbKeepFilters(jdsp, left, right);
+	FFTConvolver2x2RefreshImpulseResponse(&jdsp->arbMag.instance.convState, &jdsp->arbMag.conv, left, right, len);
+	free(left);
 }
 void ArbitraryResponseEqualizerEnable(JamesDSPLib *jdsp, char enable)
 {
 	if (jdsp->arbMagForceRefresh)
 	{
+		/* Reload what was actually set, which may be two different curves.
+		   Asking the generator again would only ever return the last one it
+		   built, so a per-channel setup used to collapse onto one ear's curve
+		   the first time this refresh ran. */
 		float *eqFil = jdsp->arbMag.instance.coeffGen.GetFilter(&jdsp->arbMag.instance.coeffGen, (float)jdsp->fs);
+		const float *useL = jdsp->arbMag.keptLen == jdsp->arbMag.instance.filterLen ? jdsp->arbMag.filterL : eqFil;
+		const float *useR = jdsp->arbMag.keptLen == jdsp->arbMag.instance.filterLen ? jdsp->arbMag.filterR : eqFil;
 		jdsp_lock(jdsp);
 		FFTConvolver2x2Free(&jdsp->arbMag.instance.convState);
 		FFTConvolver2x2Free(&jdsp->arbMag.conv);
-		FFTConvolver2x2LoadImpulseResponse(&jdsp->arbMag.instance.convState, (unsigned int)jdsp->blockSize, eqFil, eqFil, jdsp->arbMag.instance.filterLen);
-		FFTConvolver2x2LoadImpulseResponse(&jdsp->arbMag.conv, (unsigned int)jdsp->blockSize, eqFil, eqFil, jdsp->arbMag.instance.filterLen);
+		FFTConvolver2x2LoadImpulseResponse(&jdsp->arbMag.instance.convState, (unsigned int)jdsp->blockSize, (float *)useL, (float *)useR, jdsp->arbMag.instance.filterLen);
+		FFTConvolver2x2LoadImpulseResponse(&jdsp->arbMag.conv, (unsigned int)jdsp->blockSize, (float *)useL, (float *)useR, jdsp->arbMag.instance.filterLen);
 		jdsp_unlock(jdsp);
 		jdsp->arbMagForceRefresh = 0;
 	}
