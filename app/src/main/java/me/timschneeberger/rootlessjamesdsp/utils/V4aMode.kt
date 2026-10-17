@@ -2,6 +2,7 @@
 
 import android.content.Context
 import me.timschneeberger.rootlessjamesdsp.R
+import timber.log.Timber
 
 /**
  * "ViPER4Android only" mode: restricts the app to the effect set the original
@@ -66,7 +67,14 @@ object V4aMode {
      */
     val hiddenCardIds = intArrayOf(
         R.id.card_compressor, R.id.card_bass, R.id.card_bassex,
-        R.id.card_pitchshift, R.id.card_echo, R.id.card_mbd, R.id.card_maxr, R.id.card_dyneq, R.id.card_imaging, R.id.card_transient, R.id.card_lowend, R.id.card_exciter, R.id.card_tape, R.id.card_geq,
+        R.id.card_pitchshift, R.id.card_echo, R.id.card_mbd, R.id.card_maxr,
+        R.id.card_dyneq, R.id.card_imaging, R.id.card_transient, R.id.card_lowend,
+        R.id.card_exciter, R.id.card_tape,
+        // Vinyl and Balance were missed when their cards were added, which is
+        // the exact failure the comment above warns about: V4A mode switched
+        // their engines off and left both cards sitting on screen.
+        R.id.card_vinyl, R.id.card_balance,
+        R.id.card_geq,
         R.id.card_peq, R.id.card_liveprog, R.id.card_liveprog2,
         R.id.card_liveprog3, R.id.card_liveprog4, R.id.card_stereowide,
         R.id.card_crossfeed, R.id.card_reverb
@@ -106,14 +114,60 @@ object V4aMode {
         0,  // JDSP_EFX_TUBE
     )
 
+    /** Where the pre-V4A-mode on/off states are parked while the mode is on. */
+    private const val SAVED_STATES = "v4a_mode_saved_states"
+
     /**
-     * Switches every non-V4A effect off. Each engine frees its buffers on
-     * disable, so this is also what guarantees they take no resources.
+     * Switches every non-V4A effect off, remembering which ones were on.
+     *
+     * Each engine frees its buffers on disable, so this is also what guarantees
+     * they take no resources. It used to write false over all twenty-four and
+     * keep no record, so turning the mode on and back off left every one of
+     * them switched off: a carefully built chain was silently flattened and
+     * there was no way back but rebuilding it by hand.
      */
     fun disableNonV4aEffects(ctx: Context) {
+        val wasOn = mutableListOf<String>()
         nonV4a(ctx).forEach { (namespace, keyRes) ->
-            ctx.getSharedPreferences(namespace, Context.MODE_MULTI_PROCESS)
-                .edit().putBoolean(ctx.getString(keyRes), false).apply()
+            val key = ctx.getString(keyRes)
+            val prefs = ctx.getSharedPreferences(namespace, Context.MODE_MULTI_PROCESS)
+            if (prefs.getBoolean(key, false))
+                wasOn.add(namespace)
+            prefs.edit().putBoolean(key, false).apply()
         }
+        // Only the namespaces that were on, so the record stays small and an
+        // effect added to the app while the mode is on is simply absent from it
+        // and left alone on the way out.
+        ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+            .edit().putString(SAVED_STATES, wasOn.joinToString(";")).apply()
+        Timber.d("disableNonV4aEffects: parked ${wasOn.size} enabled effect(s)")
+    }
+
+    /**
+     * Puts back whatever was on before the mode was switched on.
+     *
+     * Absent record means the mode was never turned on by this build, in which
+     * case nothing is touched: writing true into anything would be inventing a
+     * chain the user never had.
+     */
+    fun restoreNonV4aEffects(ctx: Context) {
+        val appPrefs = ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+        val record = appPrefs.getString(SAVED_STATES, null)
+        if (record == null) {
+            Timber.d("restoreNonV4aEffects: no record, leaving everything as it is")
+            return
+        }
+        val wasOn = record.split(";").filter { it.isNotBlank() }.toSet()
+        var restored = 0
+        nonV4a(ctx).forEach { (namespace, keyRes) ->
+            if (!wasOn.contains(namespace)) return@forEach
+            ctx.getSharedPreferences(namespace, Context.MODE_MULTI_PROCESS)
+                .edit().putBoolean(ctx.getString(keyRes), true).apply()
+            restored++
+        }
+        // Cleared either way, so a second round trip cannot resurrect a chain
+        // the user has since changed their mind about.
+        appPrefs.edit().remove(SAVED_STATES).apply()
+        Timber.d("restoreNonV4aEffects: put back $restored effect(s)")
     }
 }
