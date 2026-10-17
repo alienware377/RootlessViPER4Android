@@ -1,4 +1,4 @@
-# Consistency checks between the cards, the string resources and the engine.
+﻿# Consistency checks between the cards, the string resources and the engine.
 #
 #   powershell -File tools/check_resources.ps1     (or & .\tools\check_resources.ps1)
 #
@@ -192,6 +192,30 @@ foreach ($m in $specs) {
     }
 }
 Note "$($specs.Count) card bindings checked"
+
+# ---- V4A-only mode: the two lists must stay the same length ----------------
+#
+# V4aMode holds a list of effects to switch off and a list of cards to hide,
+# and they have to agree. They drifted once: Vintage vinyl and Balance were
+# added to the first and missed from the second, so V4A-only mode switched
+# both engines off and left both cards sitting on screen, which is the one
+# failure the list's own comment warns about. Nothing would have caught it.
+$v4a = Get-Content "$root\app\src\main\java\me\timschneeberger\rootlessjamesdsp\utils\V4aMode.kt" -Raw
+$effects = -1
+$cards = -1
+if ($v4a -match '(?s)private fun nonV4a.*?\)\s*\r?\n\s*\r?\n') {
+    $effects = ([regex]::Matches($Matches[0], 'Constants\.PREF_')).Count
+}
+if ($v4a -match '(?s)val hiddenCardIds = intArrayOf\((.*?)\)') {
+    $cards = ([regex]::Matches($Matches[1], 'R\.id\.card_')).Count
+}
+if ($effects -lt 1 -or $cards -lt 1) {
+    Fail "V4aMode: could not read one of the two lists, so they cannot be compared"
+}
+elseif ($effects -ne $cards) {
+    Fail "V4aMode: $effects effects are switched off but only $cards cards are hidden, so some cards stay on screen with their engine off"
+}
+else { Note "V4A-only mode: $effects effects, $cards hidden cards, matched" }
 
 # ---- report ----------------------------------------------------------------
 
