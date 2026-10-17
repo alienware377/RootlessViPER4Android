@@ -48,3 +48,6 @@ tools/perf
 tools/ratechange
 tools/tape
 tools/transient
+
+# Kotlin daemon scratch and crash logs
+.kotlin/
