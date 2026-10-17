@@ -25,6 +25,11 @@
 
 #define FS 48000.0
 #define N  4096
+/* The test tone is a 0.25 amplitude sine and every measurement here is RMS. A
+   sine's RMS is its amplitude over root two, so the reference is 3.01 dB below
+   20*log10(0.25). Getting that wrong is what briefly made an exact EQ look as
+   though it were losing three decibels. */
+#define SINE_RMS_DB (-15.05)
 
 static JamesDSPLib g_lib;
 static int failures = 0;
@@ -134,24 +139,25 @@ int main(void)
 		check("and match the single-curve path", fabs(stereoL - monoL), 0.0, 0.01);
 	}
 
-	/* Asked first, because the per-channel checks are measured against it.
-	   A flat curve ought to be a straight wire and it is not: the existing
-	   single-curve path loses a constant three decibels through it as well, so
-	   whatever that is, it is neither per-channel nor new. Measure it rather
-	   than assume unity, and judge the per-channel results against it, so this
-	   harness tests the feature instead of a quirk the feature inherited. */
-	double flatOffset = 0.0;
-	printf("\nwhat a flat curve does on the path that already shipped\n");
+	/* A flat curve has to be a straight wire, and it is. This block briefly
+	   claimed the EQ lost three decibels, which it does not: every measurement
+	   here is RMS, and a sine's RMS sits 3.01 dB below its amplitude, so
+	   comparing it against 20*log10(0.25) was comparing RMS against peak. The
+	   filter and the convolver were then both measured exactly, tap by tap, in
+	   tools/arbeq_gain_probe.c. SINE_RMS_DB is the correct reference.
+
+	   Kept rather than deleted, because unity through a flat curve is exactly
+	   the kind of property that would rot unnoticed. */
+	printf("\na flat curve is a straight wire\n");
 	{
 		prepare();
 		ArbitraryResponseEqualizerStringParser(&g_lib, flat);
 		ArbitraryResponseEqualizerEnable(&g_lib, 1);
 		settle(1000.0, 0.25f);
 		const double l = levelDb(bufL);
-		flatOffset = l - (-12.04);
-		printf("      single flat curve: %.2f dB from a -12.04 dB input, offset %.2f dB\n", l, flatOffset);
-		check("both ears agree on the old path", fabs(levelDb(bufL) - levelDb(bufR)), 0.0, 0.01);
-		check("the offset is small and constant, not instability", fabs(flatOffset), 0.0, 4.0);
+		printf("      out %.3f dB, input RMS %.3f dB\n", l, SINE_RMS_DB);
+		check("unity through a flat curve (dB)", fabs(l - SINE_RMS_DB), 0.0, 0.1);
+		check("both ears agree", fabs(levelDb(bufL) - levelDb(bufR)), 0.0, 0.01);
 	}
 
 	printf("\na flat curve on one side leaves that side alone\n");
@@ -159,12 +165,11 @@ int main(void)
 		prepare();
 		ArbitraryResponseEqualizerStringParserStereo(&g_lib, flat, right);
 		ArbitraryResponseEqualizerEnable(&g_lib, 1);
-		const double inDb = -12.04;  /* 0.25 amplitude sine */
+		const double inDb = SINE_RMS_DB;
 		settle(1000.0, 0.25f);
 		const double l = levelDb(bufL), r = levelDb(bufR);
 		printf("      input %.2f dB, flat side %.2f dB, cut side %.2f dB\n", inDb, l, r);
-		check("the flat side matches the old path's flat response",
-		      fabs(l - (inDb + flatOffset)), 0.0, 0.5);
+		check("the flat side is left alone", fabs(l - inDb), 0.0, 0.2);
 		check("the cut side is well below it", inDb - r, 6.0, 30.0);
 	}
 
