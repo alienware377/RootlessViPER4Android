@@ -43,6 +43,26 @@
             android:textColor="?android:attr/textColorSecondary"/>
     </LinearLayout>
 
+    <!-- Which ear this band acts on. A plain text button cycling L+R, L, R:
+         three states, tapped far more often than it is read, and a spinner or
+         three chips per row would crowd a list that already fits four values
+         on a phone. Hidden entirely while the band is on both ears would be
+         worse, because then there would be nothing to tap. -->
+    <Button
+        style="?attr/materialButtonOutlinedStyle"
+        android:id="@+id/channel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="56dp"
+        android:insetTop="4dp"
+        android:insetBottom="4dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginEnd="4dp"
+        android:contentDescription="@string/peq_band_channel"
+        android:tooltipText="@string/peq_band_channel"
+        android:textAppearance="?attr/textAppearanceLabelMedium" />
+
     <Button
         style="?attr/materialIconButtonStyle"
         android:id="@+id/delete"

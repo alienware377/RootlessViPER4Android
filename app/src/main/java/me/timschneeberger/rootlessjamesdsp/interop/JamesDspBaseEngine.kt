@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.interop.structure.EelVmVariable
+import me.timschneeberger.rootlessjamesdsp.model.ParametricEqChannel
 import me.timschneeberger.rootlessjamesdsp.model.ParametricEqBandList
 import me.timschneeberger.rootlessjamesdsp.model.ProcessorMessage
 import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
@@ -683,6 +684,22 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         val peqBands = ParametricEqBandList()
         peqBands.deserialize(peqBandsStr)
         val hasPeqBands = peqEnabled && peqBands.isNotEmpty()
+
+        // A band assigned to one ear means two curves to build: the bands for
+        // that ear, plus everything marked as both. Worth checking for rather
+        // than always doing, because it costs a second filter build and almost
+        // nobody will use it.
+        val perChannel = hasPeqBands && peqBands.any { it.channel != ParametricEqChannel.BOTH }
+        val peqResponseLeft = if (perChannel) {
+            BiquadUtils.computeCombinedResponse(
+                peqBands.filterTo(ParametricEqBandList()) { it.channel != ParametricEqChannel.RIGHT },
+                numPoints = 512)
+        } else null
+        val peqResponseRight = if (perChannel) {
+            BiquadUtils.computeCombinedResponse(
+                peqBands.filterTo(ParametricEqBandList()) { it.channel != ParametricEqChannel.LEFT },
+                numPoints = 512)
+        } else null
         val peqResponse = if (hasPeqBands) {
             BiquadUtils.computeCombinedResponse(peqBands, numPoints = 512)
         } else null
@@ -694,6 +711,17 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
         // Apply preamp offset to PEQ response
         val preampOffset = if (hasPeqBands) peqPreamp.toDouble() else 0.0
+
+        if (perChannel && peqResponseLeft != null && peqResponseRight != null) {
+            // The graphic EQ has no per-channel concept of its own, so when it
+            // is on its curve is merged into both ears alike.
+            val mergeGeq = geqEnabled && geqBands.contains("GraphicEQ:", true)
+            val left = if (mergeGeq) mergeGeqWithPeq(geqBands, peqResponseLeft, preampOffset)
+                       else BiquadUtils.toGraphicEqString(peqResponseLeft, preampOffset)
+            val right = if (mergeGeq) mergeGeqWithPeq(geqBands, peqResponseRight, preampOffset)
+                        else BiquadUtils.toGraphicEqString(peqResponseRight, preampOffset)
+            return setGraphicEqStereoInternal(true, left, right)
+        }
 
         if (peqResponse != null && geqEnabled && geqBands.contains("GraphicEQ:", true)) {
             // Both PEQ and GEQ enabled: merge magnitudes
@@ -879,6 +907,17 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setEqPhaseMode(linearPhase: Boolean): Boolean
 
     protected abstract fun setGraphicEqInternal(enable: Boolean, bands: String): Boolean
+
+    /**
+     * One curve per ear. Only called when the parametric EQ actually has a band
+     * assigned to a single channel; everything else keeps going through
+     * [setGraphicEqInternal], so the ordinary case is untouched.
+     *
+     * Root mode has no way to send two curves yet, so its override folds them
+     * back into one and says so rather than applying a correction meant for one
+     * ear to both.
+     */
+    protected abstract fun setGraphicEqStereoInternal(enable: Boolean, bandsLeft: String, bandsRight: String): Boolean
     protected abstract fun setLiveprogInternal(enable: Boolean, name: String, script: String): Boolean
 
     protected abstract fun setLiveprogSlotInternal(slot: Int, enable: Boolean, name: String, script: String): Boolean

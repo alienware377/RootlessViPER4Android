@@ -118,7 +118,7 @@
     <string name="eq_preset_rock">Rock</string>
     <string name="eq_preset_vocal">Vocal Booster</string>
 
-    <string name="peq_info">Fully adjustable parametric EQ: drag any point to move its frequency (left/right) and gain (up/down). Pinch with two fingers on a selected point to widen or narrow its bandwidth (Q). Tap the band count to add or remove bands.</string>
+    <string name="peq_info">Fully adjustable parametric EQ: drag any point to move its frequency (left/right) and gain (up/down). Pinch with two fingers on a selected point to widen or narrow its bandwidth (Q). Tap the band count to add or remove bands. Each band in the list has an L+R button: tap it to send that band to one ear only, which is how you correct a headphone whose two sides do not match, or hearing that is not even.</string>
     <string name="peq_undo">Undo</string>
     <string name="peq_redo">Redo</string>
     <string name="peq_hint_interactive">Drag a point to move it - pinch to change its width - long-press empty space to add a band, or a point to delete it</string>
@@ -140,6 +140,7 @@
     <string name="peq_band_editor">Band editor</string>
     <string name="peq_band_list">Band list</string>
     <string name="peq_no_bands_defined">No bands defined</string>
+    <string name="peq_band_channel">Which ear this band acts on</string>
     <string name="peq_delete_band">Delete band</string>
     <string name="peq_done_spaced">&#160;&#160;Done&#160;</string>
     <string name="peq_done">Done</string>

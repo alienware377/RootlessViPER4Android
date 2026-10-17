@@ -36,7 +36,12 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
     fun serialize(): String {
         val sb = StringBuilder("PEQ: ")
         for (band in this) {
-            sb.append("${dfFreq.format(band.frequency)} ${dfGain.format(band.gain)} ${dfQ.format(band.q)} ${band.filterType.code}; ")
+            sb.append("${dfFreq.format(band.frequency)} ${dfGain.format(band.gain)} ${dfQ.format(band.q)} ${band.filterType.code}")
+            // A fifth field only when it says something. Every band saved
+            // before per-channel existed has four, and a reader that sees four
+            // takes BOTH, so old presets and old builds both stay readable.
+            if (band.channel != ParametricEqChannel.BOTH) sb.append(" ${band.channel.code}")
+            sb.append("; ")
         }
         return sb.toString()
     }
@@ -58,9 +63,12 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
                 val gain = parts.getOrNull(1)?.toDoubleOrNull()
                 val q = parts.getOrNull(2)?.toDoubleOrNull()
                 val type = parts.getOrNull(3)?.toIntOrNull()
+                val channel = parts.getOrNull(4)?.toIntOrNull()
 
                 if (freq != null && gain != null && q != null && type != null) {
-                    this.add(ParametricEqBand(freq, gain, q, ParametricEqFilterType.fromCode(type)))
+                    this.add(ParametricEqBand(freq, gain, q,
+                        ParametricEqFilterType.fromCode(type),
+                        ParametricEqChannel.fromCode(channel ?: 0)))
                 }
             }
     }
@@ -75,9 +83,22 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
     fun toApoString(preampDb: Double = 0.0): String {
         val sb = StringBuilder()
         sb.appendLine("Preamp: ${dfGain.format(preampDb)} dB")
-        for ((i, band) in this.withIndex()) {
+        // A "Channel:" line applies to every filter after it, so one is only
+        // written where the channel actually changes, and none at all when
+        // every band is on both. That keeps an ordinary preset byte-identical
+        // to what this used to produce, which matters because other tools read
+        // these files too.
+        var current: ParametricEqChannel? = null
+        var n = 0
+        for (band in this) {
+            if (band.channel != current) {
+                if (band.channel != ParametricEqChannel.BOTH || current != null)
+                    sb.appendLine("Channel: ${band.channel.apoLabel}")
+                current = band.channel
+            }
+            n++
             sb.appendLine(
-                "Filter ${i + 1}: ON ${band.filterType.apoLabel} Fc ${dfFreq.format(band.frequency)} Hz Gain ${dfGain.format(band.gain)} dB Q ${dfQ.format(band.q)}"
+                "Filter $n: ON ${band.filterType.apoLabel} Fc ${dfFreq.format(band.frequency)} Hz Gain ${dfGain.format(band.gain)} dB Q ${dfQ.format(band.q)}"
             )
         }
         return sb.toString()
@@ -105,6 +126,9 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
             """Preamp:\s*([-\d.]+)\s*dB""",
             RegexOption.IGNORE_CASE
         )
+        // Applies to every filter that follows it, until the next one.
+        val channelRegex = Regex("""Channel:\s*(\S+)""", RegexOption.IGNORE_CASE)
+        var channel = ParametricEqChannel.BOTH
 
         for (line in text.lines()) {
             val trimmed = line.trim()
@@ -121,6 +145,22 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
                     preampDb = preampDb.coerceIn(-30.0, 0.0)
                 } else {
                     Timber.d("fromApoString: could not parse preamp line: $trimmed")
+                }
+                continue
+            }
+
+            if (trimmed.startsWith("Channel", ignoreCase = true)) {
+                val found = channelRegex.find(trimmed)?.groupValues?.get(1)
+                val parsed = found?.let { ParametricEqChannel.fromApoLabel(it) }
+                if (parsed == null) {
+                    // An unknown channel name is worse than a bad filter line:
+                    // silently treating it as both ears would apply a
+                    // correction meant for one side to the other as well. Fall
+                    // back to both, but say so.
+                    Timber.w("fromApoString: unknown channel '$found', treating the bands after it as both")
+                    channel = ParametricEqChannel.BOTH
+                } else {
+                    channel = parsed
                 }
                 continue
             }
@@ -143,7 +183,7 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
                 continue
             }
 
-            this.add(ParametricEqBand(freq, gain, q, filterType))
+            this.add(ParametricEqBand(freq, gain, q, filterType, channel))
         }
 
         return ApoImportResult(skippedFilters = skipped, preampDb = preampDb)
@@ -157,6 +197,8 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
         val q = bundle.getDoubleArray(STATE_Q) ?: return
         val types = bundle.getIntArray(STATE_TYPE) ?: return
         val uuids = bundle.getSerializableAs<Array<UUID>>(STATE_UUID)
+        // Absent in a bundle saved before this existed, which reads as BOTH.
+        val channels = bundle.getIntArray(STATE_CHANNEL)
 
         val count = minOf(freq.size, gain.size, q.size, types.size)
         for (i in 0 until count) {
@@ -164,6 +206,7 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
                 ParametricEqBand(
                     freq[i], gain[i], q[i],
                     ParametricEqFilterType.fromCode(types[i]),
+                    ParametricEqChannel.fromCode(channels?.getOrNull(i) ?: 0),
                     uuids?.getOrNull(i) ?: UUID.randomUUID()
                 )
             )
@@ -176,6 +219,7 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
         val gainArr = DoubleArray(this.size)
         val qArr = DoubleArray(this.size)
         val typeArr = IntArray(this.size)
+        val channelArr = IntArray(this.size)
         val uuidArr = arrayListOf<UUID>()
 
         for ((i, band) in this.withIndex()) {
@@ -183,6 +227,7 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
             gainArr[i] = band.gain
             qArr[i] = band.q
             typeArr[i] = band.filterType.code
+            channelArr[i] = band.channel.code
             uuidArr.add(band.uuid)
         }
 
@@ -190,6 +235,7 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
         bundle.putDoubleArray(STATE_GAIN, gainArr)
         bundle.putDoubleArray(STATE_Q, qArr)
         bundle.putIntArray(STATE_TYPE, typeArr)
+        bundle.putIntArray(STATE_CHANNEL, channelArr)
         bundle.putSerializable(STATE_UUID, uuidArr.toTypedArray())
         return bundle
     }
@@ -200,5 +246,6 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
         private const val STATE_Q = "peq_q"
         private const val STATE_TYPE = "peq_type"
         private const val STATE_UUID = "peq_uuid"
+        private const val STATE_CHANNEL = "peq_channel"
     }
 }
