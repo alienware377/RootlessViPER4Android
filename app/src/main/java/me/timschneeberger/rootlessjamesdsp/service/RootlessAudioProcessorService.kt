@@ -703,12 +703,28 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // than "capture nothing": someone who has just turned the mode on and
         // picked no apps would otherwise get silence and reasonably conclude
         // the app was broken.
-        // Our own uid is dropped rather than trusted not to be on the list.
-        // In the ordinary path it is excluded explicitly; here there is no
-        // exclusion to hide behind, and capturing ourselves is a loop.
-        val allowed = if (allowlistMode)
-            blockedApps.value?.map { it.uid }.orEmpty().filter { it != Process.myUid() }
-        else emptyList()
+        // Android refuses a configuration that both matches and excludes uids,
+        // so in this mode there is no exclusion list to put anything on and
+        // everything that has to be kept out has to be filtered out of the
+        // allowlist itself instead.
+        //
+        // That matters most for apps that forbid being recorded. Capturing one
+        // does not fail, it returns silence, and because this effect re-routes
+        // the audio the user hears nothing at all rather than hearing it
+        // unprocessed. The ordinary path excludes those automatically; this one
+        // skipped the check entirely, so putting such an app on the list would
+        // have silenced it.
+        //
+        // Our own uid goes the same way: there is no exclusion to hide behind
+        // here, and capturing ourselves is a loop.
+        val restricted = if (excludeRestrictedSessions)
+            sessionManager.sessionPolicyDatabase.getRestrictedUids().toSet()
+        else emptySet()
+        val requested = if (allowlistMode) blockedApps.value?.map { it.uid }.orEmpty() else emptyList()
+        val allowed = requested.filter { it != Process.myUid() && !restricted.contains(it) }
+        if (allowlistMode && requested.size != allowed.size)
+            Timber.w("buildAudioRecord: ${requested.size - allowed.size} allowlisted app(s) " +
+                    "cannot be captured and were skipped; processing them would silence them")
         if (allowed.isNotEmpty()) {
             allowed.forEach { configBuilder.addMatchingUid(it) }
             sessionManager.sessionDatabase.setAllowedUids(allowed.toTypedArray())
