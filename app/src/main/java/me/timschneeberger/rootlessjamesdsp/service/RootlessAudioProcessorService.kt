@@ -288,16 +288,20 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 return
             }
 
-            if(preferencesVar.get<Boolean>(R.string.key_is_activity_active)) {
-                // Activity in foreground, toast too disruptive
-                return
-            }
-
             Timber.w("Capture permission revoked. Stopping service.")
 
             sendLocalBroadcast(Intent(Constants.ACTION_DISCARD_AUTHORIZATION))
 
-            this@RootlessAudioProcessorService.toast(getString(R.string.capture_permission_revoked_toast))
+            // Only the toast was ever meant to be conditional. Returning early
+            // skipped the shutdown with it, so a permission revoked while the
+            // app was open left this service running with a capture that could
+            // never deliver anything AND every muting effect still attached to
+            // the apps it had taken over. Rootless mode mutes the source and
+            // replays it processed, so that state is not "no effect", it is
+            // total silence in every app the service had touched, until
+            // something stops the service by hand.
+            if(!preferencesVar.get<Boolean>(R.string.key_is_activity_active))
+                this@RootlessAudioProcessorService.toast(getString(R.string.capture_permission_revoked_toast))
 
             notificationManager.cancel(Notifications.ID_SERVICE_STATUS)
             stopSelf()
