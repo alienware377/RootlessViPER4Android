@@ -23,12 +23,12 @@ for ABI in arm64-v8a armeabi-v7a x86_64 x86; do
         -DANDROID_PLATFORM=android-26
   cmake --build "$BUILD" --target jamesdsp_hal
   mkdir -p "$OUT/libs/$ABI"
-  # Renamed here: the target can't be called libjamesdsp.so in the build tree
-  # without colliding with the APK's own library of that name.
-  # Built into hal/ under its real installed name, so its soname matches what
-  # it is loaded as. The target still cannot be NAMED jamesdsp, because the
-  # APK's own library already is.
-  cp "$BUILD/hal/libjamesdsp.so" "$OUT/libs/$ABI/libjamesdsp.so"
+  # Renamed here: the target cannot be called libjamesdsp.so in the build tree
+  # without colliding with the APK's own library of that name, and giving it
+  # that output name made the impulse toolbox link against this one instead.
+  # Its soname already says libjamesdsp.so, which is what bionic registers it
+  # under once installed.
+  cp "$BUILD/libjamesdsp_hal.so" "$OUT/libs/$ABI/libjamesdsp.so"
   # Unstripped these are about 5 MB each, so four of them put 21 MB of debug
   # symbols into a module whose whole job is one library.
   STRIP="$(ls "$NDK"/toolchains/llvm/prebuilt/*/bin/llvm-strip* 2>/dev/null | head -1)"

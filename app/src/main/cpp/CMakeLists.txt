@@ -89,15 +89,16 @@ target_link_libraries(jamesdsp_hal ${log-lib})
 #    on. The failure is a silent skip in the effects factory, not a crash, so
 #    nothing would tell us.
 #  noexecstack: refused since Android 14.
+# The file has to stay libjamesdsp_hal.so: the APK's own library is already
+# libjamesdsp.so, and giving this target that output name made the impulse
+# toolbox link against THIS library instead, which is built with hidden
+# visibility and exports almost nothing. But it installs as libjamesdsp.so, and
+# bionic registers a library under its soname rather than the path it was
+# opened from, so the soname has to say so. CMake derives its own -soname from
+# the output name and emits it after anything passed here, so the only way to
+# win is to tell CMake not to emit one.
+set_target_properties(jamesdsp_hal PROPERTIES NO_SONAME TRUE)
 target_link_options(jamesdsp_hal PRIVATE
         -Wl,-z,max-page-size=16384
-        -Wl,-z,noexecstack)
-# The target cannot be NAMED jamesdsp: that collides with the APK's own library
-# of the same name. It can still be BUILT as libjamesdsp.so, into a directory
-# of its own, which is what it is installed as. Renaming it afterwards left the
-# soname reading libjamesdsp_hal.so, and bionic registers a library by its
-# soname rather than by the path it was opened from. Passing -Wl,-soname by
-# hand does not work here; CMake emits its own from the output name.
-set_target_properties(jamesdsp_hal PROPERTIES
-        OUTPUT_NAME jamesdsp
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/hal")
+        -Wl,-z,noexecstack
+        -Wl,-soname,libjamesdsp.so)
