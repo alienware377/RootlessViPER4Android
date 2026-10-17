@@ -25,6 +25,8 @@ class SettingsFragment : SettingsBaseFragment() {
                 appPrefs.edit().putBoolean(me.timschneeberger.rootlessjamesdsp.utils.V4aMode.KEY, on).apply()
                 if (on)
                     me.timschneeberger.rootlessjamesdsp.utils.V4aMode.disableNonV4aEffects(requireContext())
+                else
+                    me.timschneeberger.rootlessjamesdsp.utils.V4aMode.restoreNonV4aEffects(requireContext())
                 true
             }
         }
