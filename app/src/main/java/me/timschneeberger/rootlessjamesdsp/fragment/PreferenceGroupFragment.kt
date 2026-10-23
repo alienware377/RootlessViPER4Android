@@ -437,13 +437,18 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     val plate = model == "1"
                     val hall = model == "2"
                     val room = model == "3"
-                    val advanced = plate || hall || room
+                    // The smooth hall and room read diffusion and modulation,
+                    // which the old two never did
+                    val smoothHall = model == "4"
+                    val smoothRoom = model == "5"
+                    val smooth = smoothHall || smoothRoom
+                    val advanced = plate || hall || room || smooth
                     findPreference<Preference>(getString(R.string.key_vreverb_predelay))?.isVisible = advanced
                     findPreference<Preference>(getString(R.string.key_vreverb_decay))?.isVisible = advanced
-                    findPreference<Preference>(getString(R.string.key_vreverb_diffusion))?.isVisible = plate
-                    findPreference<Preference>(getString(R.string.key_vreverb_mod))?.isVisible = plate
-                    findPreference<Preference>(getString(R.string.key_vreverb_bass))?.isVisible = hall || room
-                    findPreference<Preference>(getString(R.string.key_vreverb_er))?.isVisible = room
+                    findPreference<Preference>(getString(R.string.key_vreverb_diffusion))?.isVisible = plate || smooth
+                    findPreference<Preference>(getString(R.string.key_vreverb_mod))?.isVisible = plate || smooth
+                    findPreference<Preference>(getString(R.string.key_vreverb_bass))?.isVisible = hall || room || smooth
+                    findPreference<Preference>(getString(R.string.key_vreverb_er))?.isVisible = room || smoothRoom
                 }
                 val modelPref = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
                 applyModelVisibility(modelPref?.value ?: "0")

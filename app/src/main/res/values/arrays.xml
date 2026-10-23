@@ -521,9 +521,11 @@
         <item>@string/vreverb_model_plate</item>
         <item>@string/vreverb_model_hall</item>
         <item>@string/vreverb_model_room</item>
+        <item>@string/vreverb_model_hall_smooth</item>
+        <item>@string/vreverb_model_room_smooth</item>
     </string-array>
     <string-array name="vreverb_models_values" translatable="false">
-        <item>0</item><item>1</item><item>2</item><item>3</item>
+        <item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item>
     </string-array>
 
     <string-array name="mbd_models">
