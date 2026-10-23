@@ -438,13 +438,15 @@
     <string name="vreverb_model_plate">Plate</string>
     <string name="vreverb_model_hall">Concert hall</string>
     <string name="vreverb_model_room">Room</string>
+    <string name="vreverb_model_hall_smooth">Concert hall (smooth)</string>
+    <string name="vreverb_model_room_smooth">Room (smooth)</string>
     <string name="vreverb_predelay">Pre-delay</string>
     <string name="vreverb_decay">Decay time</string>
     <string name="vreverb_diffusion">Diffusion</string>
     <string name="vreverb_mod">Tank modulation</string>
     <string name="vreverb_bass">Bass richness</string>
     <string name="vreverb_er">Early reflections</string>
-    <string name="vreverb_model_info">Classic is the original ViPER room. Plate is a smooth, dense studio plate. Concert hall is a large, warm space with a long tail. Room adds early reflections for a natural, believable space.</string>
+    <string name="vreverb_model_info">Classic is the original ViPER room. Plate is a smooth, dense studio plate. Concert hall is a large, warm space with a long tail. Room adds early reflections for a natural, believable space. The smooth versions of Concert hall and Room are rebuilt to lose the metallic ring: a denser tail with no repeating echoes.</string>
     <string name="vreverb_enable">Reverberation</string>
     <string name="vreverb_info">ViPER-style room reverb: adds space and echo. Room size sets how big the space feels, damping softens the tail, width spreads it in stereo, wet/dry balance effect vs original.</string>
     <string name="vreverb_room">Room size</string>
