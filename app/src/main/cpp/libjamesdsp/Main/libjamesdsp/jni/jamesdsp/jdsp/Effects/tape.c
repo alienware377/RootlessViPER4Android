@@ -132,6 +132,21 @@ static void tapeDesign(Tape *t, float fs)
 	t->fs = fs;
 }
 
+static inline float tapeRead(const float *line, int widx, float offset)
+{
+	float readPos = (float)widx - offset;
+	while (readPos < 0.0f) readPos += (float)TAPE_LINE;
+	const int ip = (int)readPos;
+	const float frac = readPos - (float)ip;
+	/* Masked, both of them. The add above can round up to exactly
+	   TAPE_LINE: 600 - 600.0002 is -0.0002, and -0.0002 + 8192 is nearer
+	   8192.0 than the float below it. Unmasked, that read one past the end
+	   of the line. TAPE_LINE wraps to 0, which is the same place. */
+	const int i0 = ip & (TAPE_LINE - 1);
+	const int i1 = (ip + 1) & (TAPE_LINE - 1);
+	return line[i0] * (1.0f - frac) + line[i1] * frac;
+}
+
 /* Unlocked on purpose - the caller already holds it. Note this leaves the delay
    line and the oscillator phases alone: the read offset moves to the new rate's
    equivalent of twelve milliseconds, which is a small step rather than the click
@@ -280,12 +295,7 @@ void TapeProcess(JamesDSPLib *jdsp, size_t n)
 			t->line[ch][t->widx] = dry[ch];
 
 			/* Read at a fractional distance behind the write head. */
-			float readPos = (float)t->widx - offset;
-			while (readPos < 0.0f) readPos += (float)TAPE_LINE;
-			const int i0 = (int)readPos;
-			const float frac = readPos - (float)i0;
-			const int i1 = (i0 + 1) & (TAPE_LINE - 1);
-			float y = t->line[ch][i0] * (1.0f - frac) + t->line[ch][i1] * frac;
+			float y = tapeRead(t->line[ch], t->widx, offset);
 
 			if (t->saturation > 0.0f)
 			{

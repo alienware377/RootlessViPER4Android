@@ -52,6 +52,14 @@ void DiffSurroundProcess(JamesDSPLib *jdsp, size_t n)
 		int iR = (int)rpR;
 		float fL = rpL - (float)iL;
 		float fR = rpR - (float)iR;
+		/* The add above can round up to exactly DSUR_BUFLEN, one past the end
+		   of the buffer: a delay a hair over a whole number of samples does it
+		   on every pass round the ring, and 10, 20, 40, 80 and 90 ms at
+		   44.1 kHz all are. It played one sample of whatever followed the
+		   buffer in memory every 0.37 seconds. DSUR_BUFLEN wraps to 0, which
+		   is the same place. */
+		iL &= DSUR_BUFLEN - 1;
+		iR &= DSUR_BUFLEN - 1;
 		int iL1 = iL + 1; if (iL1 >= DSUR_BUFLEN) iL1 = 0;
 		int iR1 = iR + 1; if (iR1 >= DSUR_BUFLEN) iR1 = 0;
 
