@@ -51,6 +51,9 @@ tools/transient
 tools/reverb
 tools/reverb_x86
 tools/reverb_old
+tools/wrapread
+# x86_64 builds of any harness, for running on an emulator
+tools/*_x86
 
 # Kotlin daemon scratch and crash logs
 .kotlin/
