@@ -1,3 +1,34 @@
+/*
+ * This file is derived from bs2b.c in libbs2b, the Bauer stereophonic to
+ * binaural DSP library by Boris Mikhaylov, adapted for this engine. Its
+ * declarations and constants live in jdsp_header.h.
+ *
+ * Upstream: https://bs2b.sourceforge.net/
+ * Source:   https://sourceforge.net/p/bs2b/code/HEAD/tree/trunk/libbs2b/
+ * Licence:  MIT. The upstream copyright and permission notice is reproduced
+ *           below unchanged, as that licence requires.
+ *
+ * Copyright (c) 2005 Boris Mikhaylov
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 #include <math.h>
 #include "../jdsp_header.h"
 #ifndef M_PI
