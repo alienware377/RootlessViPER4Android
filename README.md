@@ -124,6 +124,10 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - ~~**Exciter**~~ — four ranges, each with its own amount, and five characters: three symmetrical ones that add odd harmonics and two lopsided ones that add even harmonics, which is the difference between a transistor sound and a valve one. The older two-band Bass exciter card is left in place so existing setups keep working
 - ~~**Vintage tape**~~ — wow and flutter as a genuinely modulated delay rather than a phase trick, gentle tape saturation, a bias control that runs the right way round (down is brighter and grittier, up is duller), and the head bump that makes tape masters sound weightier
 - ~~**Rooted mode**~~ — a Magisk module carrying this fork's own engine as a system-wide audio effect, so rooted devices run these effects rather than the stock JamesDSP set. Ships as **RootfulViPER4Android**, a separate app that installs alongside the rootless one. Legacy effect HAL, so Android 14 and below
+- ~~**Per-channel parametric EQ**~~ *(next release)*: each band can act on the left ear, the right ear or both, for correcting a pair of earphones whose sides do not match. Imports and exports EqualizerAPO's `Channel:` lines ([#9](https://github.com/alienware377/RootlessViPER4Android/issues/9))
+- ~~**Choose which apps are processed**~~ *(next release)*: the app list can name the apps to process instead of the ones to skip ([#10](https://github.com/alienware377/RootlessViPER4Android/issues/10))
+- ~~**Remember effect on/off states**~~ *(next release)* across a ViPER4Android-only mode round trip: switching the mode off now puts back exactly the effects that were on before
+- ~~**Smooth Concert hall and Room**~~ *(next release)*: rebuilt versions of the two reverbs that sounded metallic, with a dense tail and no repeating echoes. The originals stay, so existing presets sound the same ([#6](https://github.com/alienware377/RootlessViPER4Android/issues/6))
 
 ### 🔜 Planned
 
@@ -135,7 +139,8 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - **Rooted mode on Android 15+** — the effect framework moved to a binder service there, so the Magisk module above does not apply; that work is the AIDL item above
 - **GitHub search for new profile sources** — built but parked while its edge cases are ironed out; adding your own repository link already works
 - **Built-in media player** *(after everything above)* — a library browser in the spirit of jetAudio, with independent tempo and pitch control as well as combined speed, and a now-playing screen modelled on vintage turntables: platter wow and flutter, motor speed drift, surface noise and other period defects as deliberate, adjustable colour. Visual and behavioural reference: the iPad app *Vinyl* ([demo](https://www.youtube.com/watch?v=8leOYocOGSs))
-- **Remember effect on/off states** across a ViPER4Android-only mode round trip — your settings already survive, but effects switched off by the mode stay off when you leave it
+- **Effect suite for PCs (VST3)**: a separate paid plugin that brings this app's effect cards to music software on Windows, with the same card screen: groups, hiding, collapsing, search and a reorderable processing order. Its effects are written fresh rather than copied from this app, so some will sound a little different, and a few that depend on other people's code or data (such as DDC profiles and Rubber Band) will not be included. This app stays free and open source.
+- **Windows app** *(after the VST3 suite)*: a separate paid desktop app using the same effects and card screen as the VST3 suite, plus more of this app's features, such as device profiles, a file library for impulse responses and scripts, and backup and restore. System-wide processing will start with a simple routing setup, with deeper Windows integration looked at later.
 
 ## 📲 Download & Install
 1. Grab the latest APK from the [**Releases**](https://github.com/alienware377/RootlessViPER4Android/releases) page (or fresh builds from [Actions](https://github.com/alienware377/RootlessViPER4Android/actions)).
