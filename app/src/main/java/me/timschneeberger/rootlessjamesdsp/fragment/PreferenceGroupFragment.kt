@@ -421,42 +421,49 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         ?.setTitle(R.string.v4a_fir_equalizer)
             }
             R.xml.dsp_vreverb_preferences -> {
-                if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())) {
-                    findPreference<ListPreference>(getString(R.string.key_vreverb_model))
-                        ?.isVisible = false
-                    arrayOf(R.string.key_vreverb_predelay, R.string.key_vreverb_decay,
-                        R.string.key_vreverb_diffusion, R.string.key_vreverb_mod,
-                        R.string.key_vreverb_bass, R.string.key_vreverb_er)
-                        .forEach { findPreference<Preference>(getString(it))?.isVisible = false }
-                    // No early return here: icon visibility is applied after
-                    // this block, and skipping it hid the reverb icon.
-                } else {
-                // Each room type exposes only the controls it actually uses, so
+                // Each room type shows only the controls it actually uses, so
                 // the card never shows a slider that does nothing.
-                fun applyModelVisibility(model: String) {
+                //
+                // This has to go through the card's visibility filter. Setting
+                // isVisible directly looked right until the card was switched
+                // on, expanded or redrawn: the card re-shows every child at
+                // those moments, so every slider came back whatever the room.
+                // Seen on the tablet, where Classic showed all ten.
+                val group = findPreference<SwitchPreferenceGroup>(getString(R.string.key_vreverb_enable))
+                val modelPref = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
+                val v4a = me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())
+                fun k(id: Int) = getString(id)
+                var model = modelPref?.value ?: "0"
+                group?.childVisibilityFilter = { p ->
                     val plate = model == "1"
                     val hall = model == "2"
                     val room = model == "3"
                     // The smooth hall and room read diffusion and modulation,
                     // which the old two never did
-                    val smoothHall = model == "4"
                     val smoothRoom = model == "5"
-                    val smooth = smoothHall || smoothRoom
+                    val smooth = model == "4" || smoothRoom
                     val advanced = plate || hall || room || smooth
-                    findPreference<Preference>(getString(R.string.key_vreverb_predelay))?.isVisible = advanced
-                    findPreference<Preference>(getString(R.string.key_vreverb_decay))?.isVisible = advanced
-                    findPreference<Preference>(getString(R.string.key_vreverb_diffusion))?.isVisible = plate || smooth
-                    findPreference<Preference>(getString(R.string.key_vreverb_mod))?.isVisible = plate || smooth
-                    findPreference<Preference>(getString(R.string.key_vreverb_bass))?.isVisible = hall || room || smooth
-                    findPreference<Preference>(getString(R.string.key_vreverb_er))?.isVisible = room || smoothRoom
+                    when (p.key) {
+                        // V4A-only mode pins the classic room, so neither the
+                        // choice nor anything the classic room ignores belongs
+                        k(R.string.key_vreverb_model) -> !v4a
+                        k(R.string.key_vreverb_predelay),
+                        k(R.string.key_vreverb_decay) -> !v4a && advanced
+                        k(R.string.key_vreverb_diffusion),
+                        k(R.string.key_vreverb_mod) -> !v4a && (plate || smooth)
+                        k(R.string.key_vreverb_bass) -> !v4a && (hall || room || smooth)
+                        k(R.string.key_vreverb_er) -> !v4a && (room || smoothRoom)
+                        else -> true
+                    }
                 }
-                val modelPref = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
-                applyModelVisibility(modelPref?.value ?: "0")
+                group?.refreshChildrenVisibility()
                 modelPref?.setOnPreferenceChangeListener { _, newValue ->
-                    applyModelVisibility(newValue as? String ?: "0")
+                    model = newValue as? String ?: "0"
+                    group?.refreshChildrenVisibility()
                     true
                 }
-                }
+                // No early return here: icon visibility is applied after this
+                // block, and skipping it hid the reverb icon.
             }
             R.xml.dsp_liveprog_preferences,
             R.xml.dsp_liveprog2_preferences,
