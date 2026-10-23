@@ -1037,6 +1037,15 @@
     <string name="device_profile_status">Active device profile</string>
     <string name="device_profile_manage_copy">Copy profile...</string>
     <string name="device_profile_manage_delete">Delete profiles...</string>
+    <string name="profile_power_outputs_menu">Processing per output...</string>
+    <string name="device_profile_processing_off">%1$s, processing off</string>
+    <string name="profile_power_follow">Switch processing by output</string>
+    <string name="profile_power_follow_summary">Each output remembers whether processing runs on it, and changing output turns processing on or off to match. If Android closes the app while processing is off, it cannot notice a new output until the app is opened again.</string>
+    <string name="profile_power_follow_unavailable">Not available yet: processing could not come back on without asking you. Grant the capture permission once through Shizuku or ADB, as in the setup guide, and allow Display over other apps.</string>
+    <string name="profile_power_outputs">Outputs to process</string>
+    <string name="profile_power_outputs_summary">Choose which outputs run processing. Unticked outputs switch it off.</string>
+    <string name="profile_power_outputs_none">No outputs known yet. Each one is added the first time it plays audio while device profiles are on.</string>
+    <string name="profile_power_disabled_hint">Turn on Switch processing by output in Settings, Device profiles first.</string>
     <string name="device_profile_manage_copy_select_no_target">No profiles to overwrite available</string>
     <string name="device_profile_manage_copy_select">Select profile to copy</string>
     <string name="device_profile_manage_paste_select">Select profiles to overwrite</string>

@@ -92,7 +92,15 @@ class ProfileManager : BroadcastReceiver(), RoutingObserver.RoutingChangedCallba
             storeClearCurrent()
             activeProfile = newProfile.also(::load)
         }
+        // Only on a real change of output, and after that output's settings
+        // are in place, so processing comes back with the right ones. Doing it
+        // on every routing event would undo the power button whenever Android
+        // re-announced the same output.
+        ProfilePower.apply(context, newProfile.id)
     }
+
+    fun currentProfileId(): String? =
+        activeProfile?.id ?: routingObserver.currentDevice?.let { Profile.from(it).id }
 
     fun copy(source: Profile, destinations: Array<Profile>) {
         synchronized(lock) {
