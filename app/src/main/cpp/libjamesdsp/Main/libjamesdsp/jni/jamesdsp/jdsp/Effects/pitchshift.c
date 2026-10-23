@@ -1,3 +1,26 @@
+/*
+ * Third-party notice for the Smooth mode phase vocoder in this file.
+ *
+ * The phase vocoder further down (pvFrame: the analysis, phase unwrapping,
+ * bin shifting and resynthesis steps) is derived from smbPitchShift by
+ * Stephan M. Bernsee. Only that part of the file derives from it.
+ *
+ * Upstream: https://blogs.zynaptiq.com/bernsee/pitch-shifting-using-the-ft/
+ * Source:   https://blogs.zynaptiq.com/bernsee/repo/smbPitchShift.cpp
+ * Licence:  The Wide Open License (WOL). It requires the copyright notice
+ *           and licence below to appear in all source copies, so they are
+ *           reproduced here unchanged.
+ *
+ * COPYRIGHT 1999-2015 Stephan M. Bernsee <s.bernsee [AT] zynaptiq [DOT] com>
+ *
+ *                       The Wide Open License (WOL)
+ *
+ * Permission to use, copy, modify, distribute and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice and this license appear in all source copies.
+ * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT EXPRESS OR IMPLIED WARRANTY OF
+ * ANY KIND. See http://www.dspguru.com/wol.htm for more information.
+ */
 // Pitch shifting, two ways.
 //
 // Granular: dual-tap ring buffer with equal-power sine crossfade (classic

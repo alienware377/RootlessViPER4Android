@@ -84,11 +84,67 @@
     </Preference>
     <Preference
         android:title="@string/credits_sndfilter"
-        android:summary="Sean Connelly (@voidqk) — sndfilter reverb used by the Reverberation effect (MIT)"
+        android:summary="Sean Connelly (@velipso, formerly @voidqk): sndfilter reverb, used by the Virtual room effect card, the preset reverb (MIT). Not used by the Reverberation card. The sndfilter reverb is itself based on the Progenitor2 design from Freeverb3"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="https://github.com/voidqk/sndfilter" />
+            android:data="https://github.com/velipso/sndfilter" />
+    </Preference>
+    <Preference
+        android:title="libbs2b"
+        android:summary="Boris Mikhaylov: Bauer stereophonic-to-binaural DSP, used by the BS2B presets of the Crossfeed card (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://bs2b.sourceforge.net/" />
+    </Preference>
+    <Preference
+        android:title="FFTConvolver"
+        android:summary="HiFi-LoFi: partitioned FFT convolution, ported to C, behind the Convolver, the equalizers, the HRTF crossfeed modes and Live programmable DSP (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/HiFi-LoFi/FFTConvolver" />
+    </Preference>
+    <Preference
+        android:title="Boost.Math interpolators"
+        android:summary="Nick Thompson: PCHIP, makima and cubic Hermite interpolation, ported to C, used by the Multimodal equalizer and the Dynamic range compander (Boost Software License 1.0)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/boostorg/math" />
+    </Preference>
+    <Preference
+        android:title="smbPitchShift"
+        android:summary="Stephan M. Bernsee: phase vocoder that the Smooth method of the Pitch shifter is derived from (Wide Open License)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://blogs.zynaptiq.com/bernsee/pitch-shifting-using-the-ft/" />
+    </Preference>
+    <Preference
+        android:title="libsamplerate"
+        android:summary="Erik de Castro Lopo: sample rate conversion for impulse responses and Live programmable DSP (BSD 2-clause)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/libsndfile/libsamplerate" />
+    </Preference>
+    <Preference
+        android:title="dr_wav, dr_flac, dr_mp3"
+        android:summary="David Reid: audio file decoding for impulse responses and Live programmable DSP (public domain or MIT-0)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/mackron/dr_libs" />
+    </Preference>
+    <Preference
+        android:title="Third-party licence texts"
+        android:summary="Full copyright notices and licence texts for the components above"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/blob/viper-extras/THIRD_PARTY_NOTICES.md" />
     </Preference>
     <Preference
         android:title="@string/credits_dattorro"
