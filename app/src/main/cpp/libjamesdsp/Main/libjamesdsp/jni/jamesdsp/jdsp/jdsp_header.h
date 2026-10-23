@@ -537,6 +537,30 @@ typedef struct
 	float fdnGainHi[VREV_FDN_N], fdnGainLo[VREV_FDN_N];
 	float *erMem;
 	int erLen, erIdx;
+
+	/* Smooth hall / room (models 4 and 5): the same FDN idea rebuilt so it
+	   cannot ring. Diffused input, an allpass inside every line, modulated
+	   fractional reads, and a mixing matrix that is not its own inverse. */
+	float *smMem;
+	float *smDiff[VREV_DIFF_N];
+	int smDiffLen[VREV_DIFF_N], smDiffIdx[VREV_DIFF_N];
+	float *smLine[VREV_FDN_N];
+	int smLineCap[VREV_FDN_N], smLineIdx[VREV_FDN_N];
+	float smDelay[VREV_FDN_N];
+	float *smAp[VREV_FDN_N];
+	int smApLen[VREV_FDN_N], smApIdx[VREV_FDN_N];
+	float smLp[VREV_FDN_N], smBass[VREV_FDN_N];
+	float smGainHi[VREV_FDN_N], smGainLo[VREV_FDN_N];
+	float smOscC[VREV_FDN_N], smOscS[VREV_FDN_N];
+	float smRotC[VREV_FDN_N], smRotS[VREV_FDN_N];
+	float smModAmt, smDiffG, smApG, smDampC;
+
+	/* Every buffer above is sized for one sample rate. allocScale records
+	   which, so a change of rate can never index past the end of them. */
+	float allocScale;
+	/* The settings as given, so a change of sample rate can redo the sizing */
+	int pModel;
+	float pRaw[11];
 } VReverb;
 typedef struct
 {
@@ -1295,6 +1319,7 @@ extern void ViperBassDisable(JamesDSPLib *jdsp);
 extern void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
 	float widthPct, float predelayMs, float decayPct, float diffusionPct,
 	float modPct, float bassPct, float erPct, float wetPct, float dryPct);
+extern void VReverbRefresh(JamesDSPLib *jdsp);
 extern void VReverbProcess(JamesDSPLib *jdsp, size_t n);
 extern void VReverbEnable(JamesDSPLib *jdsp);
 extern void VReverbDisable(JamesDSPLib *jdsp);

@@ -246,7 +246,7 @@ static float vrApProc(VReverb *v, int c, int k, float input)
  * Reverberation models
  *
  * "Classic" is the original ViPER-style freeverb network, kept untouched so
- * existing presets sound the same. The three added models are independent
+ * existing presets sound the same. The added models are independent
  * re-implementations of well-known topologies, written from the published
  * algorithms rather than copied from any codebase:
  *   Plate - Dattorro's figure-eight tank (Dattorro 1997), the topology MVerb
@@ -255,6 +255,16 @@ static float vrApProc(VReverb *v, int c, int k, float input)
  *           damping plus a bass multiplier, in the spirit of zita-rev1.
  *   Room  - early-reflection tap pattern feeding a shorter FDN tail, the
  *           arrangement Dragonfly Room Reverb uses.
+ *
+ * Hall and Room ring. Their eight lines are spaced almost evenly, nothing
+ * diffuses the input, the modulation setting is never read, and the input
+ * enters every line with the same sign and gain, which is exactly the vector
+ * the Hadamard matrix folds into a single line. The result is a few strong
+ * discrete echoes and comb peaks that line up into a pitch. They are kept as
+ * they are, because presets were tuned against them, and rebuilt alongside:
+ *   Concert hall (smooth) - model 4
+ *   Room (smooth)         - model 5
+ * which fix each of those faults rather than covering them with damping.
  * ------------------------------------------------------------------------ */
 
 static const int vrDiffBase[VREV_DIFF_N]  = { 142, 107, 379, 277 };
@@ -267,6 +277,55 @@ static inline int vrTankMax(float scale, int k) { return (int)(vrTankBase[k] * s
 static inline int vrFdnMax(float scale, int k)  { return (int)(vrFdnBase[k] * scale * 1.45f) + 8; }
 static inline int vrErMax(float scale)          { return (int)(vrErBase[11] * scale * 1.6f) + 8; }
 
+/* Smooth models. Line lengths run 37 to 85 ms at 44.1 kHz with the ratio
+   between neighbours wandering from 1.10 to 1.14 and never repeating, so no
+   two lines share a spacing for their comb peaks to line up on. */
+static const int vsLineBase[VREV_FDN_N]  = { 1637, 1871, 2069, 2347, 2593, 2927, 3271, 3733 };
+/* One allpass inside each line, which is what turns each pass round the loop
+   into a smear instead of a click */
+static const int vsApBase[VREV_FDN_N]    = { 109, 163, 211, 271, 337, 401, 467, 541 };
+static const int vsDiffBase[VREV_DIFF_N] = { 199, 151, 431, 331 };
+/* Early reflections for the smooth room, a separate set per ear. Eighteen
+   taps each, and every gap between any two taps of a set differs from every
+   other: a repeated gap is a comb filter, which is heard as a pitch. Gains
+   fall over 30 ms with mixed polarity. The strongest repetition in each set
+   is a third of the old twelve-tap pattern's (0.10 against 0.33). */
+#define VS_ER_N 18
+static const int vsErL[VS_ER_N] = { 173, 255, 291, 336, 369, 400, 500, 549, 606,
+	685, 836, 880, 932, 1357, 1489, 1581, 1807, 1900 };
+static const float vsErGL[VS_ER_N] = { -0.42317f, 0.39774f, -0.38706f, 0.37412f, 0.36490f,
+	-0.35645f, 0.33050f, -0.31849f, -0.30506f, -0.28737f, 0.25638f, 0.24799f, 0.23843f,
+	0.17292f, -0.15650f, 0.14599f, 0.12306f, 0.11471f };
+static const int vsErR[VS_ER_N] = { 391, 438, 474, 506, 558, 623, 682, 716, 751,
+	789, 919, 1025, 1141, 1186, 1420, 1595, 1636, 1972 };
+static const float vsErGR[VS_ER_N] = { 0.40349f, 0.38941f, -0.37896f, -0.36990f, 0.35564f,
+	-0.33859f, -0.32382f, -0.31561f, -0.30737f, 0.29867f, 0.27071f, -0.24987f, 0.22890f,
+	-0.22124f, -0.18537f, -0.16241f, 0.15745f, -0.12214f };
+/* Input weights: unequal and of mixed sign, unit length. The old network fed
+   every line the same, which is the one input the mixing folds into a line. */
+static const float vsIn[VREV_FDN_N] = { 0.42727f, -0.30989f, 0.24885f, 0.39441f,
+	-0.27233f, 0.45544f, -0.37093f, 0.29111f };
+/* Output weights per ear. Each is unit length and the two are orthogonal to
+   within 0.002, so the ears get uncorrelated tails: width without a hole. */
+static const float vsOutL[VREV_FDN_N] = { 0.55964f, 0.23370f, -0.31980f, 0.41204f,
+	0.17835f, -0.45509f, 0.28290f, -0.20295f };
+static const float vsOutR[VREV_FDN_N] = { 0.22856f, -0.45077f, 0.39363f, 0.17142f,
+	-0.34919f, 0.26030f, 0.52695f, -0.30475f };
+/* Slow modulation, one unrelated rate per line */
+static const float vsLfoHz[VREV_FDN_N] = { 0.31f, 0.43f, 0.57f, 0.67f, 0.79f, 0.89f, 1.03f, 1.13f };
+/* Level into the network. Set so the smooth models land at the same loudness
+   as the ones they sit beside, which tools/reverb_harness.c checks. */
+#define VS_IN_GAIN_HALL 0.50f
+#define VS_IN_GAIN_ROOM 0.40f
+/* Modulation depth at 100%, in samples at 44.1 kHz. At the fastest line rate
+   that is a pitch drift of about five cents at most, well short of chorus. */
+#define VS_MOD_DEPTH 20.0f
+
+static inline int vsModMax(float scale)         { return (int)((VS_MOD_DEPTH + 4.0f) * scale) + 2; }
+static inline int vsLineCap(float scale, int k) { return (int)(vsLineBase[k] * scale * 1.45f) + vsModMax(scale) + 8; }
+static inline int vsApLen(float scale, int k)   { return (int)(vsApBase[k] * scale) + 1; }
+static inline int vsDiffLen(float scale, int k) { return (int)(vsDiffBase[k] * scale) + 1; }
+
 static inline float vrRead(const float *buf, int len, int idx, int back)
 {
 	int p = idx - back;
@@ -274,16 +333,145 @@ static inline float vrRead(const float *buf, int len, int idx, int back)
 	return buf[p % len];
 }
 
-void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
-	float widthPct, float predelayMs, float decayPct, float diffusionPct,
-	float modPct, float bassPct, float erPct, float wetPct, float dryPct)
+static void vrFreeModels(VReverb *rv)
+{
+	if (rv->preMem) { free(rv->preMem); rv->preMem = 0; }
+	if (rv->datMem)
+	{
+		free(rv->datMem); rv->datMem = 0;
+		memset(rv->diff, 0, sizeof(rv->diff));
+		memset(rv->tank, 0, sizeof(rv->tank));
+	}
+	if (rv->fdnMem)
+	{
+		free(rv->fdnMem); rv->fdnMem = 0;
+		memset(rv->fdn, 0, sizeof(rv->fdn));
+	}
+	if (rv->erMem) { free(rv->erMem); rv->erMem = 0; }
+	if (rv->smMem)
+	{
+		free(rv->smMem); rv->smMem = 0;
+		memset(rv->smDiff, 0, sizeof(rv->smDiff));
+		memset(rv->smLine, 0, sizeof(rv->smLine));
+		memset(rv->smAp, 0, sizeof(rv->smAp));
+	}
+}
+
+/* All or nothing: on failure nothing is left allocated */
+static int vrAllocModels(VReverb *rv, float scale)
+{
+	size_t total;
+	float *p;
+	int k;
+
+	/* Pre-delay line, shared by the added models */
+	rv->preMem = (float*)calloc(VREV_PREMAX, sizeof(float));
+	/* Dattorro plate: input diffusers plus the figure-eight tank */
+	total = 0;
+	for (k = 0; k < VREV_DIFF_N; k++) total += vrDiffMax(scale, k);
+	for (k = 0; k < VREV_TANK_N; k++) total += vrTankMax(scale, k);
+	rv->datMem = (float*)calloc(total, sizeof(float));
+	if (rv->datMem)
+	{
+		p = rv->datMem;
+		for (k = 0; k < VREV_DIFF_N; k++) { rv->diff[k] = p; p += vrDiffMax(scale, k); }
+		for (k = 0; k < VREV_TANK_N; k++) { rv->tank[k] = p; p += vrTankMax(scale, k); }
+	}
+	/* FDN lines plus the early-reflection tap line */
+	total = 0;
+	for (k = 0; k < VREV_FDN_N; k++) total += vrFdnMax(scale, k);
+	rv->fdnMem = (float*)calloc(total, sizeof(float));
+	if (rv->fdnMem)
+	{
+		p = rv->fdnMem;
+		for (k = 0; k < VREV_FDN_N; k++) { rv->fdn[k] = p; p += vrFdnMax(scale, k); }
+	}
+	rv->erMem = (float*)calloc(vrErMax(scale), sizeof(float));
+	/* Smooth models: diffusers, lines with room to modulate, line allpasses */
+	total = 0;
+	for (k = 0; k < VREV_DIFF_N; k++) total += vsDiffLen(scale, k);
+	for (k = 0; k < VREV_FDN_N; k++) total += vsLineCap(scale, k) + vsApLen(scale, k);
+	rv->smMem = (float*)calloc(total, sizeof(float));
+	if (rv->smMem)
+	{
+		p = rv->smMem;
+		for (k = 0; k < VREV_DIFF_N; k++) { rv->smDiff[k] = p; p += vsDiffLen(scale, k); }
+		for (k = 0; k < VREV_FDN_N; k++) { rv->smLine[k] = p; p += vsLineCap(scale, k); }
+		for (k = 0; k < VREV_FDN_N; k++) { rv->smAp[k] = p; p += vsApLen(scale, k); }
+	}
+
+	if (!rv->preMem || !rv->datMem || !rv->fdnMem || !rv->erMem || !rv->smMem)
+	{
+		vrFreeModels(rv);
+		return 0;
+	}
+	rv->allocScale = scale;
+	return 1;
+}
+
+static void vrClearModels(VReverb *rv)
+{
+	const float scale = rv->allocScale;
+	int k;
+	memset(rv->preMem, 0, VREV_PREMAX * sizeof(float));
+	memset(rv->erMem, 0, vrErMax(scale) * sizeof(float));
+	rv->preIdx = 0;
+	rv->erIdx = 0;
+	rv->modPhase = 0.0f;
+	rv->tankLp[0] = rv->tankLp[1] = 0.0f;
+	for (k = 0; k < VREV_DIFF_N; k++) { rv->diffIdx[k] = 0; memset(rv->diff[k], 0, vrDiffMax(scale, k) * sizeof(float)); }
+	for (k = 0; k < VREV_TANK_N; k++) { rv->tankIdx[k] = 0; memset(rv->tank[k], 0, vrTankMax(scale, k) * sizeof(float)); }
+	for (k = 0; k < VREV_FDN_N; k++)
+	{
+		rv->fdnIdx[k] = 0;
+		rv->fdnLp[k] = 0.0f;
+		rv->fdnBass[k] = 0.0f;
+		memset(rv->fdn[k], 0, vrFdnMax(scale, k) * sizeof(float));
+	}
+	for (k = 0; k < VREV_DIFF_N; k++) { rv->smDiffIdx[k] = 0; memset(rv->smDiff[k], 0, vsDiffLen(scale, k) * sizeof(float)); }
+	for (k = 0; k < VREV_FDN_N; k++)
+	{
+		rv->smLineIdx[k] = 0;
+		rv->smApIdx[k] = 0;
+		rv->smLp[k] = 0.0f;
+		rv->smBass[k] = 0.0f;
+		memset(rv->smLine[k], 0, vsLineCap(scale, k) * sizeof(float));
+		memset(rv->smAp[k], 0, vsApLen(scale, k) * sizeof(float));
+		/* Oscillators start spread round the circle, so no two lines ever
+		   drift in step */
+		rv->smOscC[k] = cosf(0.78539816f * (float)k);
+		rv->smOscS[k] = sinf(0.78539816f * (float)k);
+	}
+}
+
+/* Turns the stored settings into lengths and gains for the current rate.
+   Called with the lock held. */
+static void vrApply(JamesDSPLib *jdsp)
 {
 	VReverb *v = &jdsp->vreverb;
+	const int model = v->pModel;
+	const float roomPct = v->pRaw[0], dampPct = v->pRaw[1], widthPct = v->pRaw[2];
+	const float predelayMs = v->pRaw[3], decayPct = v->pRaw[4], diffusionPct = v->pRaw[5];
+	const float modPct = v->pRaw[6], bassPct = v->pRaw[7], erPct = v->pRaw[8];
+	const float wetPct = v->pRaw[9], dryPct = v->pRaw[10];
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f) fs = 48000.0f;
 	v->fs = fs;
 	float scale = fs / 44100.0f;
 	int c, k;
+
+	/* Every length below is clamped to a buffer sized for this rate. If the
+	   buffers exist and were sized for another rate, those clamps would be a
+	   lie: switched on at 44.1 kHz, then moved to 48 kHz and touched, the
+	   lines wrote up to a tenth past their ends into the heap. Resize first. */
+	if (v->preMem && v->allocScale != scale)
+	{
+		vrFreeModels(v);
+		if (vrAllocModels(v, scale))
+			vrClearModels(v);
+		else
+			jdsp->vreverbEnabled = 0;
+	}
 
 	v->model = model;
 	v->roomSize = roomPct * 0.01f;
@@ -340,6 +528,8 @@ void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
 
 	/* FDN sizing and per-line RT60 gains */
 	float rt60 = 0.25f + v->decay * 11.75f;           /* seconds */
+	float rtLo = rt60 * v->bassMult;
+	if (rtLo < 0.05f) rtLo = 0.05f;
 	for (k = 0; k < VREV_FDN_N; k++)
 	{
 		int len = (int)(vrFdnBase[k] * scale * sz);
@@ -351,14 +541,71 @@ void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
 		/* Separate decay rates per band. The bass multiplier lengthens the low
 		   end by extending its RT60, never by adding gain - a boost here would
 		   push loop gain past unity and the network would self-oscillate. */
-		float rtLo = rt60 * v->bassMult;
-		if (rtLo < 0.05f) rtLo = 0.05f;
 		v->fdnGainHi[k] = powf(10.0f, -3.0f * t / rt60);
 		v->fdnGainLo[k] = powf(10.0f, -3.0f * t / rtLo);
 		if (v->fdnGainHi[k] > 0.995f) v->fdnGainHi[k] = 0.995f;
 		if (v->fdnGainLo[k] > 0.995f) v->fdnGainLo[k] = 0.995f;
 	}
 	v->erLen = vrErMax(scale);
+
+	/* Smooth hall and room. The room is the same network at half the size,
+	   which is what a room is: the same physics with nearer walls. */
+	{
+		const float sizeK = (model == 5) ? 0.5f * sz : sz;
+		const int modMax = vsModMax(scale);
+		v->smModAmt = v->modDepth * VS_MOD_DEPTH * scale;
+		v->smDiffG = 0.40f + 0.35f * v->diffusionAmt;
+		v->smApG = 0.25f + 0.40f * v->diffusionAmt;
+		/* Full strength damping. The old FDN scaled this down to 0.6, which
+		   left the top end ringing on long after the body had gone. */
+		v->smDampC = 0.10f + 0.60f * v->dampAmt;
+		for (k = 0; k < VREV_DIFF_N; k++)
+			v->smDiffLen[k] = vsDiffLen(scale, k);
+		for (k = 0; k < VREV_FDN_N; k++)
+		{
+			const int cap = vsLineCap(scale, k);
+			float d = vsLineBase[k] * scale * sizeK;
+			const float dMax = (float)(cap - modMax - 4);
+			if (d < 64.0f) d = 64.0f;
+			if (d > dMax) d = dMax;
+			v->smDelay[k] = d;
+			v->smLineCap[k] = cap;
+			v->smApLen[k] = vsApLen(scale, k);
+			/* An allpass delays by its own length on average, so the loop is
+			   that much longer than the line, and decays over that time */
+			float t = (d + (float)v->smApLen[k]) / fs;
+			v->smGainHi[k] = powf(10.0f, -3.0f * t / rt60);
+			v->smGainLo[k] = powf(10.0f, -3.0f * t / rtLo);
+			if (v->smGainHi[k] > 0.995f) v->smGainHi[k] = 0.995f;
+			if (v->smGainLo[k] > 0.995f) v->smGainLo[k] = 0.995f;
+			const float w = 6.28318530718f * vsLfoHz[k] / fs;
+			v->smRotC[k] = cosf(w);
+			v->smRotS[k] = sinf(w);
+		}
+	}
+}
+
+void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
+	float widthPct, float predelayMs, float decayPct, float diffusionPct,
+	float modPct, float bassPct, float erPct, float wetPct, float dryPct)
+{
+	/* Held for the whole update: Process reads every length and gain set
+	   here, and may have to have its buffers replaced if the rate moved. */
+	jdsp_lock(jdsp);
+	VReverb *v = &jdsp->vreverb;
+	v->pModel = model;
+	v->pRaw[0] = roomPct;  v->pRaw[1] = dampPct;    v->pRaw[2] = widthPct;
+	v->pRaw[3] = predelayMs; v->pRaw[4] = decayPct; v->pRaw[5] = diffusionPct;
+	v->pRaw[6] = modPct;   v->pRaw[7] = bassPct;    v->pRaw[8] = erPct;
+	v->pRaw[9] = wetPct;   v->pRaw[10] = dryPct;
+	vrApply(jdsp);
+	jdsp_unlock(jdsp);
+}
+
+/* Sample rate changed. The caller holds the lock. */
+void VReverbRefresh(JamesDSPLib *jdsp)
+{
+	vrApply(jdsp);
 }
 
 static inline float vrDamp1(float *state, float x, float coeff)
@@ -484,6 +731,113 @@ static void vrFdn(VReverb *v, float in, float *outL, float *outR)
 	*outR = (s[1] + s[3] + s[5] + s[7]) * 0.25f;
 }
 
+/* Below this a decaying tail is inaudible by a factor of a trillion, and
+   letting it go on shrinking into subnormal numbers costs real CPU on cores
+   that handle them in microcode. Flushing to zero is free by comparison. */
+#define VS_FLUSH(x) do { if (fabsf(x) < 1e-20f) (x) = 0.0f; } while (0)
+
+/* Schroeder allpass, lattice form: (-g + z^-D) / (1 - g z^-D) */
+static inline float vsAllpass(float *buf, int len, int *idx, float g, float x)
+{
+	float d = buf[*idx];
+	float w = x + g * d;
+	float y = d - g * w;
+	VS_FLUSH(w);
+	buf[*idx] = w;
+	if (++*idx >= len) *idx = 0;
+	return y;
+}
+
+/* --- Smooth hall / room ------------------------------------------------ */
+static void vrSmooth(VReverb *v, float in, float *outL, float *outR)
+{
+	float s[VREV_FDN_N];
+	int i;
+
+	/* Diffuse first, so what enters the network is already a smear */
+	float x = in;
+	for (i = 0; i < VREV_DIFF_N; i++)
+		x = vsAllpass(v->smDiff[i], v->smDiffLen[i], &v->smDiffIdx[i], v->smDiffG, x);
+
+	for (i = 0; i < VREV_FDN_N; i++)
+	{
+		/* Advance this line's oscillator by rotation, which costs four
+		   multiplies instead of a sinf. The correction keeps it on the unit
+		   circle against rounding drift. */
+		const float c = v->smOscC[i] * v->smRotC[i] - v->smOscS[i] * v->smRotS[i];
+		const float sn = v->smOscS[i] * v->smRotC[i] + v->smOscC[i] * v->smRotS[i];
+		const float g = 1.5f - 0.5f * (c * c + sn * sn);
+		v->smOscC[i] = c * g;
+		v->smOscS[i] = sn * g;
+
+		/* Fractional read. The delay wanders by a few samples, so each line's
+		   comb peaks keep moving and never settle into a pitch. */
+		const int cap = v->smLineCap[i];
+		float pos = (float)v->smLineIdx[i] - (v->smDelay[i] + v->smModAmt * v->smOscS[i]);
+		if (pos < 0.0f) pos += (float)cap;
+		int i0 = (int)pos;
+		const float fr = pos - (float)i0;
+		/* pos can round up to exactly cap after the wrap */
+		if (i0 >= cap) i0 -= cap;
+		int i1 = i0 + 1;
+		if (i1 >= cap) i1 = 0;
+		const float a = v->smLine[i][i0];
+		const float r = a + fr * (v->smLine[i][i1] - a);
+		/* Allpass sign alternates line to line */
+		s[i] = vsAllpass(v->smAp[i], v->smApLen[i], &v->smApIdx[i],
+			(i & 1) ? -v->smApG : v->smApG, r);
+	}
+
+	/* Hadamard, then a Householder reflection. Each on its own is its own
+	   inverse, so a network mixed by either keeps handing energy back to the
+	   shape it started in; the product is not, and is still lossless. */
+	float t[VREV_FDN_N], u[VREV_FDN_N], w[VREV_FDN_N];
+	for (i = 0; i < VREV_FDN_N; i += 2)
+	{
+		t[i]     = s[i] + s[i + 1];
+		t[i + 1] = s[i] - s[i + 1];
+	}
+	for (i = 0; i < VREV_FDN_N; i += 4)
+	{
+		u[i]     = t[i]     + t[i + 2];
+		u[i + 1] = t[i + 1] + t[i + 3];
+		u[i + 2] = t[i]     - t[i + 2];
+		u[i + 3] = t[i + 1] - t[i + 3];
+	}
+	float sum = 0.0f;
+	for (i = 0; i < 4; i++)
+	{
+		w[i]     = (u[i] + u[i + 4]) * 0.35355339f;
+		w[i + 4] = (u[i] - u[i + 4]) * 0.35355339f;
+		sum += w[i] + w[i + 4];
+	}
+	sum *= 0.25f;   /* 2 / N */
+
+	for (i = 0; i < VREV_FDN_N; i++)
+	{
+		const float sig = w[i] - sum;
+		const float lo = vrDamp1(&v->smBass[i], sig, 0.985f);
+		float y = lo * v->smGainLo[i] + (sig - lo) * v->smGainHi[i];
+		y = vrDamp1(&v->smLp[i], y, v->smDampC);
+		VS_FLUSH(v->smBass[i]);
+		VS_FLUSH(v->smLp[i]);
+		y += x * vsIn[i];
+		if (!isfinite(y)) y = 0.0f;
+		VS_FLUSH(y);
+		v->smLine[i][v->smLineIdx[i]] = y;
+		if (++v->smLineIdx[i] >= v->smLineCap[i]) v->smLineIdx[i] = 0;
+	}
+
+	float l = 0.0f, r = 0.0f;
+	for (i = 0; i < VREV_FDN_N; i++)
+	{
+		l += vsOutL[i] * s[i];
+		r += vsOutR[i] * s[i];
+	}
+	*outL = l;
+	*outR = r;
+}
+
 void VReverbProcess(JamesDSPLib *jdsp, size_t n)
 {
 	VReverb *v = &jdsp->vreverb;
@@ -519,7 +873,7 @@ void VReverbProcess(JamesDSPLib *jdsp, size_t n)
 		return;
 	}
 
-	if (!v->preMem || !v->datMem || !v->fdnMem)
+	if (!v->preMem || !v->datMem || !v->fdnMem || !v->erMem || !v->smMem)
 		return;
 
 	float wetL = v->wetAmt * (v->width * 0.5f + 0.5f);
@@ -545,6 +899,38 @@ void VReverbProcess(JamesDSPLib *jdsp, size_t n)
 		else if (v->model == 2)
 		{
 			vrFdn(v, pre * 0.25f, &outL, &outR);
+		}
+		else if (v->model == 4)
+		{
+			vrSmooth(v, pre * VS_IN_GAIN_HALL, &outL, &outR);
+		}
+		else if (v->model == 5)
+		{
+			/* Smooth room: reflections go straight to the ears and the tail is
+			   fed the plain signal. Feeding the reflections into the tail as
+			   well sounds like a good way to join them up, but it hands their
+			   comb filter to the whole tail, which measured as more twang, not
+			   less. */
+			v->erMem[v->erIdx] = pre;
+			const float span = (v->fs / 44100.0f) * (0.5f + v->roomSize);
+			float erL = 0.0f, erR = 0.0f;
+			int k;
+			for (k = 0; k < VS_ER_N; k++)
+			{
+				int bl = (int)(vsErL[k] * span), br = (int)(vsErR[k] * span);
+				if (bl >= v->erLen) bl = v->erLen - 1;
+				if (br >= v->erLen) br = v->erLen - 1;
+				int pl = v->erIdx - bl, pr = v->erIdx - br;
+				if (pl < 0) pl += v->erLen;
+				if (pr < 0) pr += v->erLen;
+				erL += v->erMem[pl] * vsErGL[k];
+				erR += v->erMem[pr] * vsErGR[k];
+			}
+			if (++v->erIdx >= v->erLen) v->erIdx = 0;
+			float tailL, tailR;
+			vrSmooth(v, pre * VS_IN_GAIN_ROOM, &tailL, &tailR);
+			outL = tailL + erL * v->erLevel * 0.5f;
+			outR = tailR + erR * v->erLevel * 0.5f;
 		}
 		else
 		{
@@ -603,60 +989,17 @@ void VReverbEnable(JamesDSPLib *jdsp)
 		memset(rv->combMem, 0,
 			((size_t)2 * 4 * VREV_COMBLEN + (size_t)2 * 2 * VREV_APLEN) * sizeof(float));
 
-		/* Pre-delay line, shared by the added models */
-		if (!rv->preMem)
-			rv->preMem = (float*)calloc(VREV_PREMAX, sizeof(float));
-		/* Dattorro plate: input diffusers plus the figure-eight tank */
-		if (!rv->datMem)
-		{
-			size_t total = 0;
-			for (k = 0; k < VREV_DIFF_N; k++) total += vrDiffMax(scale, k);
-			for (k = 0; k < VREV_TANK_N; k++) total += vrTankMax(scale, k);
-			rv->datMem = (float*)calloc(total, sizeof(float));
-			if (rv->datMem)
-			{
-				float *p = rv->datMem;
-				for (k = 0; k < VREV_DIFF_N; k++) { rv->diff[k] = p; p += vrDiffMax(scale, k); }
-				for (k = 0; k < VREV_TANK_N; k++) { rv->tank[k] = p; p += vrTankMax(scale, k); }
-			}
-		}
-		/* FDN lines plus the early-reflection tap line */
-		if (!rv->fdnMem)
-		{
-			size_t total = 0;
-			for (k = 0; k < VREV_FDN_N; k++) total += vrFdnMax(scale, k);
-			rv->fdnMem = (float*)calloc(total, sizeof(float));
-			if (rv->fdnMem)
-			{
-				float *p = rv->fdnMem;
-				for (k = 0; k < VREV_FDN_N; k++) { rv->fdn[k] = p; p += vrFdnMax(scale, k); }
-			}
-		}
-		if (!rv->erMem)
-			rv->erMem = (float*)calloc(vrErMax(scale), sizeof(float));
-
-		if (!rv->preMem || !rv->datMem || !rv->fdnMem || !rv->erMem)
+		/* Everything else is sized for one rate. Buffers left from another
+		   rate are replaced, never reused. */
+		if (rv->preMem && rv->allocScale != scale)
+			vrFreeModels(rv);
+		if (!rv->preMem && !vrAllocModels(rv, scale))
 		{
 			jdsp->vreverbEnabled = 0;
 			jdsp_unlock(jdsp);
 			return;
 		}
-
-		memset(rv->preMem, 0, VREV_PREMAX * sizeof(float));
-		memset(rv->erMem, 0, vrErMax(scale) * sizeof(float));
-		rv->preIdx = 0;
-		rv->erIdx = 0;
-		rv->modPhase = 0.0f;
-		rv->tankLp[0] = rv->tankLp[1] = 0.0f;
-		for (k = 0; k < VREV_DIFF_N; k++) { rv->diffIdx[k] = 0; memset(rv->diff[k], 0, vrDiffMax(scale, k) * sizeof(float)); }
-		for (k = 0; k < VREV_TANK_N; k++) { rv->tankIdx[k] = 0; memset(rv->tank[k], 0, vrTankMax(scale, k) * sizeof(float)); }
-		for (k = 0; k < VREV_FDN_N; k++)
-		{
-			rv->fdnIdx[k] = 0;
-			rv->fdnLp[k] = 0.0f;
-			rv->fdnBass[k] = 0.0f;
-			memset(rv->fdn[k], 0, vrFdnMax(scale, k) * sizeof(float));
-		}
+		vrClearModels(rv);
 	}
 	jdsp->vreverbEnabled = 1;
 	jdsp_unlock(jdsp);
@@ -677,19 +1020,7 @@ void VReverbDisable(JamesDSPLib *jdsp)
 		memset(rv->comb, 0, sizeof(rv->comb));
 		memset(rv->ap, 0, sizeof(rv->ap));
 	}
-	if (rv->preMem) { free(rv->preMem); rv->preMem = 0; }
-	if (rv->datMem)
-	{
-		free(rv->datMem); rv->datMem = 0;
-		memset(rv->diff, 0, sizeof(rv->diff));
-		memset(rv->tank, 0, sizeof(rv->tank));
-	}
-	if (rv->fdnMem)
-	{
-		free(rv->fdnMem); rv->fdnMem = 0;
-		memset(rv->fdn, 0, sizeof(rv->fdn));
-	}
-	if (rv->erMem) { free(rv->erMem); rv->erMem = 0; }
+	vrFreeModels(rv);
 	jdsp_unlock(jdsp);
 }
 

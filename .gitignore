@@ -48,6 +48,9 @@ tools/perf
 tools/ratechange
 tools/tape
 tools/transient
+tools/reverb
+tools/reverb_x86
+tools/reverb_old
 
 # Kotlin daemon scratch and crash logs
 .kotlin/
