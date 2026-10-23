@@ -198,6 +198,45 @@ afterEvaluate {
     getTasksByName("assembleRootfulFullPreview", false).firstOrNull()?.finalizedBy("uploadCrashlyticsSymbolFileRootfulFullRelease")
 }
 
+// A single stray double quote in the Windows PATH stops every unit test from
+// running, and the error points nowhere near it.
+//
+// The Android plugin's test task builds -Djava.library.path inside its own
+// executeTests(), after every doFirst hook, starting from the DAEMON's
+// System.getProperty("java.library.path"). On Windows that is the whole PATH.
+// Windows has no argv: the test JVM's command line is one string, and that
+// argument gets wrapped in quotes because it contains spaces. A quote inside it
+// ends the quoted section early, so everything after it is split at the next
+// space and passed to java as separate arguments. The first fragment that is
+// not an option is taken as the class to run:
+//   Could not find or load main class Hub\lib;C:\Users\...;C:\Program
+// "Hub\lib" being simply wherever the next space happened to fall (here, in
+// "Muse Hub"). The quote itself came from a PowerToys install, which left
+// C:\Program Files\PowerToys\DSCModules" in the system PATH.
+//
+// A task-level systemProperty cannot fix it: the plugin APPENDS the task's
+// value to the daemon's, so the bad entry still leads. The daemon's own value is
+// the source, and this script runs inside the daemon, so that is where it is
+// cleaned. A quote can never be part of a Windows directory name, so dropping
+// the entries that carry one is exact: a clean PATH passes through untouched.
+// Changing the property here has no effect on the daemon's own native loading,
+// which the JVM resolved from this value once at startup; the plugin is the only
+// thing that reads it afresh.
+run {
+    val key = "java.library.path"
+    val current = System.getProperty(key)
+    if (current != null && '"' in current) {
+        val entries = current.split(File.pathSeparator)
+        val bad = entries.filter { '"' in it }
+        System.setProperty(key, entries.filter { '"' !in it }.joinToString(File.pathSeparator))
+        logger.warn(
+            "Unit tests: ignoring ${bad.size} PATH entr${if (bad.size == 1) "y" else "ies"} " +
+            "containing a stray double quote, which would otherwise stop the test JVM " +
+            "starting at all: ${bad.joinToString(", ")}. Worth removing from the system PATH."
+        )
+    }
+}
+
 dependencies {
     // Kotlin extensions
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.0.20")
