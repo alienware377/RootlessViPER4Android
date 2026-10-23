@@ -11,6 +11,22 @@
             android:summaryOn="@string/profiles_enable_summary_on"
             app:iconSpaceReserved="false" />
 
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_profile_power_follow"
+            android:defaultValue="@bool/default_profile_power_follow"
+            android:dependency="@string/key_device_profiles_enable"
+            android:title="@string/profile_power_follow"
+            android:summary="@string/profile_power_follow_summary"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="@string/key_profile_power_outputs"
+            android:dependency="@string/key_profile_power_follow"
+            android:persistent="false"
+            android:title="@string/profile_power_outputs"
+            android:summary="@string/profile_power_outputs_summary"
+            app:iconSpaceReserved="false" />
+
         <Preference
             android:key="@string/key_device_profiles_info"
             android:title="@string/profiles_info_title"

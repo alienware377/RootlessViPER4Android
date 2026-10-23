@@ -46,6 +46,9 @@
 
     <!-- Device profiles -->
     <string name="key_device_profiles_enable" translatable="false">device_profiles_enable</string>
+    <string name="key_profile_power_follow" translatable="false">profile_power_follow</string>
+    <string name="key_profile_power_off" translatable="false">profile_power_off</string>
+    <string name="key_profile_power_outputs" translatable="false">profile_power_outputs</string> <!-- static -->
 
     <!-- Appearance -->
     <string name="key_appearance_theme_mode" translatable="false">appearance_theme_mode</string>
