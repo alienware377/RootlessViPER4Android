@@ -41,6 +41,8 @@
 
     <!-- Device profiles -->
     <bool name="default_device_profiles_enable" translatable="false">false</bool>
+    <bool name="default_profile_power_follow" translatable="false">false</bool>
+    <string name="default_profile_power_off" translatable="false">[]</string>
 
     <!-- Appearance -->
     <string name="default_appearance_theme_mode" translatable="false">0</string>

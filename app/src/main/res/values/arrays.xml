@@ -3,6 +3,7 @@
     <string-array name="manange_profiles_menu" translatable="false">
         <item>@string/device_profile_manage_copy</item>
         <item>@string/device_profile_manage_delete</item>
+        <item>@string/profile_power_outputs_menu</item>
     </string-array>
 
     <string-array name="backup_maximum" translatable="false">

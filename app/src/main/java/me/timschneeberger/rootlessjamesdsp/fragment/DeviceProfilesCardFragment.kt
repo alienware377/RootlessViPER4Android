@@ -12,6 +12,7 @@ import me.timschneeberger.rootlessjamesdsp.MainApplication
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.adapter.RoundedRipplePreferenceGroupAdapter
 import me.timschneeberger.rootlessjamesdsp.preference.DropDownPreference
+import me.timschneeberger.rootlessjamesdsp.utils.ProfilePower
 import me.timschneeberger.rootlessjamesdsp.utils.RoutingObserver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showChoiceAlert
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showMultipleChoiceAlert
@@ -30,6 +31,7 @@ class DeviceProfilesCardFragment : PreferenceFragmentCompat(), RoutingObserver.R
             when(it) {
                 0 -> openCopyDialog()
                 1 -> openDeleteDialog()
+                2 -> openPowerDialog()
             }
         }
 
@@ -47,7 +49,13 @@ class DeviceProfilesCardFragment : PreferenceFragmentCompat(), RoutingObserver.R
     }
 
     override fun onRoutingDeviceChanged(device: RoutingObserver.Device?) {
-        profileActive?.summary = device?.name ?: getString(R.string.unknown_error)
+        val name = device?.name ?: getString(R.string.unknown_error)
+        // Say so when this output has processing switched off, or the card
+        // would show a device with no hint of why nothing is happening
+        profileActive?.summary =
+            if (device != null && ProfilePower.isEnabled() && !ProfilePower.isOn(device.id))
+                getString(R.string.device_profile_processing_off, name)
+            else name
         profileActive?.icon = context?.let { ctx ->
             ContextCompat.getDrawable(ctx, when(device?.group) {
                 RoutingObserver.DeviceGroup.ANALOG -> R.drawable.ic_twotone_headphones_24dp
@@ -98,6 +106,17 @@ class DeviceProfilesCardFragment : PreferenceFragmentCompat(), RoutingObserver.R
             ) { destProfiles ->
                  app.profileManager.copy(srcProfile, destProfiles.toTypedArray())
             }
+        }
+    }
+
+    private fun openPowerDialog() {
+        val ctx = context ?: return
+        if (!ProfilePower.isEnabled()) {
+            ctx.toast(R.string.profile_power_disabled_hint)
+            return
+        }
+        ProfilePower.showOutputsDialog(ctx) {
+            onRoutingDeviceChanged(routingObserver.currentDevice)
         }
     }
 
