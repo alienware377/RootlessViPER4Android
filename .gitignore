@@ -73,6 +73,7 @@ tools/mbdnan
 tools/pvphase
 tools/maxrnan
 tools/srdeadlock
+tools/vinylrate
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
