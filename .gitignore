@@ -56,6 +56,7 @@ tools/dbbpos
 tools/vdcparse
 tools/asrcup
 tools/arbphase
+tools/vrevrange
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
