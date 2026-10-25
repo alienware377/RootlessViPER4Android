@@ -28,7 +28,10 @@
 // bounded, so the stage cannot run away no matter what the band filter hands
 // it. `shape` is 0..1 and means something different per model - it is the
 // "character" control, documented per case.
-static inline float mbdShape(int model, float x, float shape)
+// invTanhK is 1 / tanhf(0.6 + shape * 4), the soft curve's normaliser. It
+// depends only on shape, so the caller works it out once per block: done
+// here it was a second tanhf on every oversampled sample of both channels.
+static inline float mbdShape(int model, float x, float shape, float invTanhK)
 {
 	switch (model)
 	{
@@ -46,7 +49,7 @@ static inline float mbdShape(int model, float x, float shape)
 		// Crush shares the curve because bit and rate reduction happen after
 		// it, and its own two dials are the character there.
 		float k = 0.6f + shape * 4.0f;
-		return tanhf(x * k) / tanhf(k);
+		return tanhf(x * k) * invTanhK;
 	}
 
 	case MBD_MODEL_HARD:
@@ -437,6 +440,7 @@ void MultibandDistProcess(JamesDSPLib *jdsp, size_t n)
 		return;
 
 	float *chBuf[2] = { m->chBufL, m->chBufR };
+	const float invTanhK = 1.0f / tanhf(0.6f + m->shape * 4.0f);
 	int haveChorus = (m->chBufL && m->chBufR && m->chMix > 0.0001f);
 	float upsample[MBD_OS_MAX];
 
@@ -474,13 +478,13 @@ void MultibandDistProcess(JamesDSPLib *jdsp, size_t n)
 				oversample_stepupSmp(&m->smpUp[ch], driven, upsample);
 				for (int j = 0; j < m->osFactor; j++)
 					upsample[j] = upsample[j] * (1.0f - m->shaperBlend) +
-						mbdShape(m->model, upsample[j], m->shape) * m->shaperBlend;
+						mbdShape(m->model, upsample[j], m->shape, invTanhK) * m->shaperBlend;
 				d = oversample_stepdownSmpFloat(&m->smpDown[ch], upsample);
 			}
 			else
 			{
 				d = driven * (1.0f - m->shaperBlend) +
-					mbdShape(m->model, driven, m->shape) * m->shaperBlend;
+					mbdShape(m->model, driven, m->shape, invTanhK) * m->shaperBlend;
 			}
 
 			// 3. Bit and rate reduction, which need their own state and so
