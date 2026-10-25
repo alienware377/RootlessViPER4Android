@@ -617,7 +617,11 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
         case 19998: data = (int32_t)c->paramCommits; break;
         case 19999: data = RV4A_BLOCK; break;
         case 20000: data = RV4A_BLOCK; break;
-        case 20001: data = (int32_t)c->sampleRate; break;
+        /* The engine's working rate, not the stream's. Above 48 kHz the
+           engine runs at 44.1 or 48 behind its resampler, and the app
+           resamples impulse responses to this value: given the stream rate,
+           a 96 kHz output played the IR at half speed, an octave down. */
+        case 20001: data = c->configured ? (int32_t)c->dsp.fs : (int32_t)c->sampleRate; break;
         case 20002: data = (int32_t)getpid(); break;
         case 30000:
         case 30001:
