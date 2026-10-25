@@ -265,6 +265,18 @@ int main()
 		setParamRaw(26012, order, 0);
 		snprintf(d, sizeof d, "default[0]=%d custom[0]=%d after empty=%d", def0, cust0, C()->dsp.chainOrder[0]);
 		check("an empty order restores the default", C()->dsp.chainOrder[0] == def0, d);
+		// what JamesDspRemoteEngine.setChainOrder(null) sends now
+		setParamRaw(26012, order, sizeof order);
+		int32_t reset = -1;
+		setParamRaw(26012, &reset, sizeof reset);
+		bool same = C()->dsp.chainCount > 0;
+		JamesDSPLib ref;
+		memset(&ref, 0, sizeof(ref));
+		JamesDSPResetChainOrder(&ref);
+		same = same && C()->dsp.chainCount == ref.chainCount &&
+			memcmp(C()->dsp.chainOrder, ref.chainOrder, ref.chainCount * sizeof(int)) == 0;
+		snprintf(d, sizeof d, "after -1: count %d, matches the default chain %d", C()->dsp.chainCount, (int)same);
+		check("the app's reset marker restores the default", same, d);
 		EffectRelease(h);
 	}
 
