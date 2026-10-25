@@ -63,6 +63,7 @@ tools/comprace
 tools/echofb
 tools/comptfres
 tools/raterefresh
+tools/lpunlock
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
