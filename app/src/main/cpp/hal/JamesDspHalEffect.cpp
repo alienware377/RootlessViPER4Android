@@ -414,33 +414,25 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
         c->channels = 2;
         c->outAccessMode = cfg->outputCfg.accessMode;
 
-        /* This arrives again on every route change, and used to re-initialise
-           an engine that still held everything from last time: every filter,
-           convolver and resampler was leaked, once per headphone plug. Free it
-           first, and zero the struct because Init expects the cleared state
-           EffectCreate's calloc gave it.
+        /* EffectCreate has already built the engine, at 48 kHz, and it lives
+           as long as the effect does. This arrives again on every route
+           change. It used to build a new engine here instead: the first time
+           over EffectCreate's without freeing it, which leaked about 271 MB of
+           allocations in audioserver per effect instance, and every time after
+           that by freeing the old one first, which put every effect back to
+           off and every setting to its default. Nothing on the app side sends
+           them again after a route change, so root mode silently lost all its
+           processing the first time the output changed.
 
-           The payload flags have to go with it. They say a subsystem has
-           something loaded behind it, that memory has just been freed, and the
-           whole reason they exist is that enabling one of these with an empty
-           engine "ranges from silent to a crash in the audio server". Leaving
-           them set is the exact condition they were written to prevent. */
-        if (c->configured)
-        {
-            JamesDSPFree(&c->dsp);
-            memset(&c->dsp, 0, sizeof(c->dsp));
-            c->haveIr = c->haveGraphicEq = c->haveDdc = c->haveLiveprog = false;
-            c->irPartsSeen = c->irParts = c->irChannels = c->irFrames = 0;
-            c->stringIndex = 0;
-            memset(c->hashSlot, 0, sizeof(c->hashSlot));
-            LOGI("SET_CONFIG: previous engine released before re-initialising");
-        }
-
-        JamesDSPInit(&c->dsp, RV4A_BLOCK, c->sampleRate);
+           So only the rate is followed now, the way the legacy effect does it.
+           The engine keeps its settings and its loaded payloads, so the
+           payload flags and hashes stay true. Same rate: nothing to do. */
+        JamesDSPSetSampleRate(&c->dsp, (float)c->sampleRate, 0);
         if (!JamesDSPGetMutexStatus(&c->dsp))
             LOGW("SET_CONFIG: engine reports no mutex; concurrent access unsafe");
         c->configured = true;
-        LOGI("SET_CONFIG: engine initialised at %u Hz, block %d", c->sampleRate, RV4A_BLOCK);
+        LOGI("SET_CONFIG: engine at %u Hz (working rate %.0f), block %d",
+             c->sampleRate, c->dsp.fs, RV4A_BLOCK);
 
         if (pReplyData && replySize && *replySize == sizeof(int))
             *(int *)pReplyData = 0;

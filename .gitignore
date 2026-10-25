@@ -57,6 +57,7 @@ tools/vdcparse
 tools/asrcup
 tools/arbphase
 tools/vrevrange
+tools/halconfig
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
