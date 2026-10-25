@@ -231,8 +231,11 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
                 axis[i] = (double)fv[3 + i];
                 axis[i + 7] = (double)fv[3 + 7 + i];
             }
+            /* Under the lock the compander's dispatch runs under. */
+            jdsp_lock(d);
             CompressorSetParam(d, fv[0], (int)(fv[1] + 0.5f), (int)(fv[2] + 0.5f), 0);
             CompressorSetGain(d, axis, axis + 7, 1);
+            jdsp_unlock(d);
         }
         break;
 

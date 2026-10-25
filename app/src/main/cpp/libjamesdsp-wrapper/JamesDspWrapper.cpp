@@ -847,11 +847,15 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setCompander(JN
 
     if(enable)
     {
-        CompressorSetParam(dsp, timeConstant, granularity, tfresolution, 0);
         auto* nativeBands = (env->GetDoubleArrayElements(bands, nullptr));
+        // Under the lock: the audio thread runs the compander under it, and
+        // these rebuild its whole state.
+        jdsp_lock(dsp);
+        CompressorSetParam(dsp, timeConstant, granularity, tfresolution, 0);
         CompressorSetGain(dsp, nativeBands, nativeBands + 7, 1);
-        env->ReleaseDoubleArrayElements(bands, nativeBands, JNI_ABORT);
         CompressorEnable(dsp, 1);
+        jdsp_unlock(dsp);
+        env->ReleaseDoubleArrayElements(bands, nativeBands, JNI_ABORT);
     }
     else
     {

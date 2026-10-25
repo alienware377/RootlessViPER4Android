@@ -59,6 +59,7 @@ tools/arbphase
 tools/vrevrange
 tools/halconfig
 tools/xfrace
+tools/comprace
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 

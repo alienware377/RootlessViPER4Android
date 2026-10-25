@@ -476,7 +476,13 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 		if (jdsp->tubeEnabled) VacuumTubeProcess(jdsp, n);
 		break;
 	case JDSP_EFX_COMPRESSOR:
+		// Locked: a settings change re-runs FFTCompanderInit on this state
+		// (transform, lengths, windows, function pointer), and a block
+		// running on the half-built result jumped through a stale pointer
+		// with the new lengths and read gigabytes out of bounds.
+		jdsp_lock(jdsp);
 		if (jdsp->compEnabled) CompressorProcess(jdsp, n);
+		jdsp_unlock(jdsp);
 		break;
 	case JDSP_EFX_PITCHSHIFT:
 		jdsp_lock(jdsp);
