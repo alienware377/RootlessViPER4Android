@@ -312,7 +312,15 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     private val broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                ACTION_SAMPLE_RATE_UPDATED -> engine.syncWithPreferences(arrayOf(Constants.PREF_CONVOLVER))
+                // Every card, not only the convolver. Most of the fork effects
+                // work their delays, filters and time constants out from the
+                // rate when their settings arrive and have no rate refresh of
+                // their own, and the sync only resends cards whose settings
+                // changed, so they went on running at the old rate. Clearing
+                // the cache makes every card count as changed, as the soft
+                // reboot does. This also covers the first stream, whose rate
+                // arrives after the settings were pushed at the 48 kHz default.
+                ACTION_SAMPLE_RATE_UPDATED -> { engine.clearCache(); engine.syncWithPreferences() }
                 ACTION_PREFERENCES_UPDATED -> engine.syncWithPreferences()
                 ACTION_SERVICE_RELOAD_LIVEPROG -> engine.syncWithPreferences(arrayOf(Constants.PREF_LIVEPROG, Constants.PREF_LIVEPROG2, Constants.PREF_LIVEPROG3, Constants.PREF_LIVEPROG4))
                 ACTION_SERVICE_HARD_REBOOT_CORE -> restartRecording()
