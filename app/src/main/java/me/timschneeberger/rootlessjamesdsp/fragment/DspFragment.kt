@@ -285,12 +285,21 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             }
         }
 
-        // Group headers and non-effect cards only make sense outside of search
-        binding.root.findViewById<View>(R.id.v4a_section_header)?.isVisible = !searching
+        // Group headers and non-effect cards only make sense outside of search,
+        // and outside it they follow their own rules, not just !searching:
+        // the device profile card only when device profiles are on and not in
+        // classic layout (which removes it), the section heading not in classic
+        // layout. Clearing a search used to show both regardless, the profile
+        // card as an empty shell in classic layout.
+        val classic = me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())
+        binding.root.findViewById<View>(R.id.v4a_section_header)?.isVisible = !searching && !classic
         binding.root.findViewById<View>(R.id.card_device_profiles)?.let {
-            (it.parent as? View)?.isVisible = !searching
+            (it.parent as? View)?.isVisible = !searching && !classic &&
+                prefsApp.get<Boolean>(R.string.key_device_profiles_enable)
         }
         binding.searchEmpty.isVisible = searching && matches == 0
+        // Nor does the loop above know which Liveprog slots are empty.
+        if (!searching) applyLiveprogSlotVisibility()
     }
 
     private data class CardSpec(val viewId: Int, val prefName: String, val xmlRes: Int)
