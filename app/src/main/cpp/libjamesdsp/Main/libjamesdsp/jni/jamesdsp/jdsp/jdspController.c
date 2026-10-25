@@ -528,10 +528,16 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 		if (jdsp->bassExEnabled) BassExciterProcess(jdsp, n);
 		break;
 	case JDSP_EFX_EQUALIZER:
+		// Both EQs locked: their convolvers are rebuilt and refreshed from
+		// the settings thread, and a block must not run through them halfway.
+		jdsp_lock(jdsp);
 		if (jdsp->equalizerEnabled) MultimodalEqualizerProcess(jdsp, n);
+		jdsp_unlock(jdsp);
 		break;
 	case JDSP_EFX_ARBITRARYMAG:
+		jdsp_lock(jdsp);
 		if (jdsp->arbitraryMagEnabled) ArbitraryResponseEqualizerProcess(jdsp, n);
+		jdsp_unlock(jdsp);
 		break;
 	case JDSP_EFX_CONVOLVER:
 		jdsp_lock(jdsp);
@@ -1778,14 +1784,13 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 		BassBoostSetParam(jdsp, jdsp->dbb.maxGain);
 		jdsp->ddcForceRefresh = 1;
 		DDCEnable(jdsp, jdsp->ddcEnabled);
-		/* The crossfeed and the arbitrary EQ take the lock themselves, and it is
+		/* The crossfeed and both EQs take the lock themselves, and it is
 		   not recursive: called here they hung this thread for good, and the
 		   audio thread with it. They are flagged here and run after the
 		   unlock below. The stereo widening uses its lock-free design. */
 		jdsp->crossfeedForceRefresh = 1;
 		jdsp->arbMagForceRefresh = 1;
 		jdsp->equalizerForceRefresh = 1;
-		MultimodalEqualizerEnable(jdsp, jdsp->equalizerEnabled);
 		jdsp->compForceRefresh = 1;
 		CompressorEnable(jdsp, jdsp->compEnabled);
 		StereoEnhancementDesign(jdsp);
@@ -1837,6 +1842,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	{
 		CrossfeedEnable(jdsp, jdsp->crossfeedEnabled);
 		ArbitraryResponseEqualizerEnable(jdsp, jdsp->arbitraryMagEnabled);
+		MultimodalEqualizerEnable(jdsp, jdsp->equalizerEnabled);
 	}
 }
 void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp)
