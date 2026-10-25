@@ -322,8 +322,14 @@ class JamesDspRemoteEngine(
 
     override fun setBassBoost(enable: Boolean, maxGain: Float): Boolean {
         var ret = true
-        if (enable)
+        if (enable) {
             ret = effect.setParameter(112, maxGain.roundToInt().toShort()) == AudioEffect.SUCCESS
+            // 112 is whole dB only, and the slider is continuous, so 7.4 dB
+            // became 7 in root mode. 26200 carries hundredths (15 dB is 1500,
+            // well inside a short). Sent after 112, so a module that does not
+            // know it still has the rounded value.
+            ret = ret and (effect.setParameter(26200, (maxGain * 100).roundToInt().toShort()) == AudioEffect.SUCCESS)
+        }
         return ret and (effect.setParameter(1201, enable.toShort()) == AudioEffect.SUCCESS)
     }
 

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 #include <vector>
 
 // ---- live allocation tracking (only what our objects allocate) ----
@@ -313,6 +314,16 @@ int main()
 			check("IR target rate equals engine rate", getInt(20001) == (int)C()->dsp.fs, d);
 			EffectRelease(h);
 		}
+	}
+
+	// ---- 9: bass boost gain finer than a whole dB ------------------------
+	printf("\n[9] bass boost at 7.4 dB, as JamesDspRemoteEngine.setBassBoost sends it\n");
+	{
+		create(); config(48000);
+		setShort(112, 7); setShort(26200, 740); setShort(1201, 1);
+		snprintf(d, sizeof d, "maxGain %.2f dB", C()->dsp.dbb.maxGain);
+		check("gain arrives to the hundredth of a dB", fabsf(C()->dsp.dbb.maxGain - 7.4f) < 1e-3f, d);
+		EffectRelease(h);
 	}
 
 	printf("\n%d failure(s)\n", failures);
