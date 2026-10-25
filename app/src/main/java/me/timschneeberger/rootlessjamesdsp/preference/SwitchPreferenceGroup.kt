@@ -61,7 +61,7 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     override fun onSetInitialValue(defaultValue: Any?) {
         // Read before the children are shown, or the card would flash open on
         // every bind and then fold itself.
-        collapsed = preferenceManager?.sharedPreferences?.getBoolean(collapseKey, false) ?: false
+        collapsed = key != null && preferenceManager?.sharedPreferences?.getBoolean(collapseKey, false) == true
         setValueInternal(getPersistedBoolean((defaultValue as? Boolean) ?: false), true)
     }
 
@@ -120,7 +120,9 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     }
 
     private fun setCollapsed(value: Boolean) {
-        if (collapsed == value) return
+        // A group with no key (the output control header) has nowhere to keep
+        // the state and would write "null_collapsed" into the card's prefs.
+        if (collapsed == value || key == null) return
         collapsed = value
         preferenceManager?.sharedPreferences?.edit()?.putBoolean(collapseKey, value)?.apply()
         setChildrenVisibility(state)
@@ -130,7 +132,10 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     private fun refreshCollapseToggle() {
         // Nothing to fold away when the card is off, and showing a control that
         // appears to do nothing is worse than not showing it.
-        collapseToggle?.isVisible = state && isSelectable
+        // Nor when there is nothing in the group to fold. In classic layout the
+        // output control header is selectable but keyless, with its rows as
+        // siblings rather than children, so the chevron flipped and hid nothing.
+        collapseToggle?.isVisible = state && isSelectable && key != null && preferenceCount > 0
         (collapseToggle as? androidx.appcompat.widget.AppCompatImageView)?.setImageResource(
             if (collapsed) R.drawable.ic_baseline_keyboard_arrow_down_24dp
             else R.drawable.ic_baseline_keyboard_arrow_up_24dp
