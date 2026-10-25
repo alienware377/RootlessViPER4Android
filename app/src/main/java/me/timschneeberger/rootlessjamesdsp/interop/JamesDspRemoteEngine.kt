@@ -268,8 +268,12 @@ class JamesDspRemoteEngine(
     }
 
     override fun setChainOrder(order: IntArray?): Boolean {
-        order ?: return true
-        return effect.setParameterIntArray(PARAM_CHAIN_ORDER, order) == AudioEffect.SUCCESS
+        // No order means the default one. This used to return without
+        // sending anything, so Reset in the processing-order dialog, or
+        // leaving V4A mode, left the HAL on the old order while the app
+        // showed the default. A single -1 is the HAL's reset marker.
+        val payload = if (order == null || order.isEmpty()) intArrayOf(-1) else order
+        return effect.setParameterIntArray(PARAM_CHAIN_ORDER, payload) == AudioEffect.SUCCESS
     }
 
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {

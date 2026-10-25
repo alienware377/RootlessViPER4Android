@@ -199,7 +199,17 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     /* The order arrives as ints, so it is read from the raw payload rather
        than through the float view every other effect uses. */
     case 26012:
-        if (fn >= 1) JamesDSPSetChainOrder(d, (const int *)fv, (int)fn);
+        /* An empty order, or the app's reset marker (a single -1), puts back
+           the default. There used to be no way to reset at all: the app
+           sent nothing for a reset and an empty payload was ignored, so the
+           processing-order dialog's Reset, and leaving V4A mode, left root
+           mode on the old order. JamesDSPSetChainOrder alone will not do:
+           it skips the -1 and appends every effect in declaration order,
+           which is not the default chain. */
+        if (fn == 0 || ((const int *)fv)[0] < 0)
+            JamesDSPResetChainOrder(d);
+        else
+            JamesDSPSetChainOrder(d, (const int *)fv, (int)fn);
         break;
 
     /* --- upstream ids this HAL used to drop ------------------------------
