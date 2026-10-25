@@ -165,6 +165,16 @@ static void vinylDesign(Vinyl *v, float fs)
 	   slow to close so it does not pump between notes. */
 	v->followAtt = expf(-1.0f / (0.010f * fs));
 	v->followRel = expf(-1.0f / (0.400f * fs));
+
+	/* Event probabilities per sample. Scaled by the rate so a record crackles
+	   at the same speed however fast it is being sampled. They live here, not
+	   in SetParam, so a rate change rescales them too: they used to stay at
+	   the old rate, about 8 % fewer events after a 48 to 44.1 kHz move. */
+	v->crackleRate = v->crackle * 900.0f / fs;
+	v->popRate = v->pops * 3.0f / fs;
+	v->clickRate = v->clicks * 60.0f / fs;
+	v->sizzleRate = v->sizzle * 7000.0f / fs;
+	v->prickleRate = v->prickle * 220.0f / fs;
 	v->fs = fs;
 }
 
@@ -208,14 +218,6 @@ void VinylSetParam(JamesDSPLib *jdsp, float surfacePct, float cracklePct,
 	v->wearDb = wearDb;
 
 	v->mix = vinylPct(mixPct);
-
-	/* Event probabilities per sample. Scaled by the rate so a record crackles
-	   at the same speed however fast it is being sampled. */
-	v->crackleRate = v->crackle * 900.0f / fs;
-	v->popRate = v->pops * 3.0f / fs;
-	v->clickRate = v->clicks * 60.0f / fs;
-	v->sizzleRate = v->sizzle * 7000.0f / fs;
-	v->prickleRate = v->prickle * 220.0f / fs;
 
 	vinylDesign(v, fs);
 
