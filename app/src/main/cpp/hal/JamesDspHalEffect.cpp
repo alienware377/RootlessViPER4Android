@@ -259,7 +259,11 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
         c->irBuf = nullptr;
         c->irCapacity = 0;
         c->irPartsSeen = 0;
-        if (channels <= 0 || channels > 2 || parts <= 0 ||
+        /* 1, 2 or 4 channels: the impulse response toolbox emits 4 for a
+           true-stereo file and the convolver has a 4-channel path for it.
+           Refusing 4 here made those files silently never load in root mode
+           while they worked rootless. */
+        if (!(channels == 1 || channels == 2 || channels == 4) || parts <= 0 ||
             (long long)parts * channels * 4096 > (64 << 20))
         {
             LOGE("impulse geometry rejected (%d ch, %d parts)", channels, parts);
