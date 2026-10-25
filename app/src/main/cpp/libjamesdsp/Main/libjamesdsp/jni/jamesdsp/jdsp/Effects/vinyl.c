@@ -281,6 +281,15 @@ void VinylProcess(JamesDSPLib *jdsp, size_t n)
 		v->clickEnv *= v->clickDecay;
 		v->sizzleEnv *= v->clickDecay;
 		v->prickleEnv *= v->prickleDecay;
+		/* Repeated multiplication never reaches 0: rounding parks each of
+		   these on a subnormal (popEnv on 1.3e-43, say) until the next
+		   event, and on x86 every operation on one is 90 to 250 times
+		   slower, here and in the two filters it feeds. Stop them at 0. */
+		if (fabsf(v->crackleEnv) < 1e-20f) v->crackleEnv = 0.0f;
+		if (fabsf(v->popEnv) < 1e-20f) v->popEnv = 0.0f;
+		if (fabsf(v->clickEnv) < 1e-20f) v->clickEnv = 0.0f;
+		if (fabsf(v->sizzleEnv) < 1e-20f) v->sizzleEnv = 0.0f;
+		if (fabsf(v->prickleEnv) < 1e-20f) v->prickleEnv = 0.0f;
 
 		for (int ch = 0; ch < 2; ch++)
 		{
