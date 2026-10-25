@@ -1747,15 +1747,17 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 		BassBoostSetParam(jdsp, jdsp->dbb.maxGain);
 		jdsp->ddcForceRefresh = 1;
 		DDCEnable(jdsp, jdsp->ddcEnabled);
+		/* The crossfeed and the arbitrary EQ take the lock themselves, and it is
+		   not recursive: called here they hung this thread for good, and the
+		   audio thread with it. They are flagged here and run after the
+		   unlock below. The stereo widening uses its lock-free design. */
 		jdsp->crossfeedForceRefresh = 1;
-		CrossfeedEnable(jdsp, jdsp->crossfeedEnabled);
 		jdsp->arbMagForceRefresh = 1;
-		ArbitraryResponseEqualizerEnable(jdsp, jdsp->arbitraryMagEnabled);
 		jdsp->equalizerForceRefresh = 1;
 		MultimodalEqualizerEnable(jdsp, jdsp->equalizerEnabled);
 		jdsp->compForceRefresh = 1;
 		CompressorEnable(jdsp, jdsp->compEnabled);
-		StereoEnhancementRefresh(jdsp);
+		StereoEnhancementDesign(jdsp);
 	}
 	/* Outside the forceRefresh guard on purpose. Nothing in this app ever
 	   passes forceRefresh, so anything inside that branch is never redesigned -
@@ -1800,6 +1802,11 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	CompressorEnable(jdsp, jdsp->compEnabled);
 	jdsp->compForceRefresh = 0;
 	jdsp_unlock(jdsp);
+	if (forceRefresh)
+	{
+		CrossfeedEnable(jdsp, jdsp->crossfeedEnabled);
+		ArbitraryResponseEqualizerEnable(jdsp, jdsp->arbitraryMagEnabled);
+	}
 }
 void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp)
 {
