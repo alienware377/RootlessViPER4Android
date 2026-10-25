@@ -396,6 +396,7 @@ static const int jdspDefaultChain[] =
 void JamesDSPResetChainOrder(JamesDSPLib *jdsp)
 {
 	char seen[JDSP_EFX_COUNT];
+	int tmp[JDSP_EFX_MAX];
 	memset(seen, 0, sizeof(seen));
 	int count = (int)(sizeof(jdspDefaultChain) / sizeof(jdspDefaultChain[0]));
 	if (count > JDSP_EFX_MAX)
@@ -407,7 +408,7 @@ void JamesDSPResetChainOrder(JamesDSPLib *jdsp)
 		if (id < 0 || id >= JDSP_EFX_COUNT || seen[id])
 			continue;
 		seen[id] = 1;
-		jdsp->chainOrder[written++] = id;
+		tmp[written++] = id;
 	}
 	/* Anything the list above forgot is appended, exactly as a saved order is
 	   completed. The same reasoning was already written down for saved orders
@@ -423,9 +424,15 @@ void JamesDSPResetChainOrder(JamesDSPLib *jdsp)
 	for (int id = 0; id < JDSP_EFX_COUNT && written < JDSP_EFX_MAX; id++)
 	{
 		if (!seen[id])
-			jdsp->chainOrder[written++] = id;
+			tmp[written++] = id;
 	}
+	/* Built aside and published under the lock: the audio thread walks this
+	   list once per block, and rewriting it in place could skip an effect
+	   (the maximiser, letting a peak through) or run one twice in a block. */
+	jdsp_lock(jdsp);
+	memcpy(jdsp->chainOrder, tmp, written * sizeof(int));
 	jdsp->chainCount = written;
+	jdsp_unlock(jdsp);
 }
 
 void JamesDSPSetChainOrder(JamesDSPLib *jdsp, const int *order, int count)
@@ -438,6 +445,7 @@ void JamesDSPSetChainOrder(JamesDSPLib *jdsp, const int *order, int count)
 	if (count > JDSP_EFX_MAX)
 		count = JDSP_EFX_MAX;
 	char seen[JDSP_EFX_COUNT];
+	int tmp[JDSP_EFX_MAX];
 	memset(seen, 0, sizeof(seen));
 	int written = 0;
 	for (int i = 0; i < count && written < JDSP_EFX_MAX; i++)
@@ -448,7 +456,7 @@ void JamesDSPSetChainOrder(JamesDSPLib *jdsp, const int *order, int count)
 		if (seen[id])
 			continue;
 		seen[id] = 1;
-		jdsp->chainOrder[written++] = id;
+		tmp[written++] = id;
 	}
 	// Anything the caller left out is appended in declaration order, so the
 	// chain is always complete.
@@ -463,14 +471,17 @@ void JamesDSPSetChainOrder(JamesDSPLib *jdsp, const int *order, int count)
 	for (int id = 0; id < JDSP_EFX_COUNT && written < JDSP_EFX_MAX; id++)
 	{
 		if (!seen[id])
-			jdsp->chainOrder[written++] = id;
+			tmp[written++] = id;
 	}
 	if (!written)
 	{
 		JamesDSPResetChainOrder(jdsp);
 		return;
 	}
+	jdsp_lock(jdsp);
+	memcpy(jdsp->chainOrder, tmp, written * sizeof(int));
 	jdsp->chainCount = written;
+	jdsp_unlock(jdsp);
 }
 
 // Runs a single effect if it is enabled. Convolver, DDC and Liveprog touch
@@ -656,8 +667,16 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 {
 	// Run the effects in the user-defined order
-	for (int chainIndex = 0; chainIndex < jdsp->chainCount; chainIndex++)
-		jdspDispatchEffect(jdsp, jdsp->chainOrder[chainIndex], n);
+	// A copy of the order taken under the lock, so a reorder from the settings
+	// thread cannot land in the middle of this block. The lock is released
+	// before dispatching, since the dispatch takes it again for some effects.
+	int chain[JDSP_EFX_MAX];
+	jdsp_lock(jdsp);
+	const int chainCount = jdsp->chainCount;
+	memcpy(chain, jdsp->chainOrder, chainCount * sizeof(int));
+	jdsp_unlock(jdsp);
+	for (int chainIndex = 0; chainIndex < chainCount; chainIndex++)
+		jdspDispatchEffect(jdsp, chain[chainIndex], n);
 	// Output
 	for (size_t i = 0; i < n; i++)
 	{
@@ -747,8 +766,13 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 {
 	// Run the effects in the user-defined order
-	for (int chainIndex = 0; chainIndex < jdsp->chainCount; chainIndex++)
-		jdspDispatchEffect(jdsp, jdsp->chainOrder[chainIndex], n);
+	int chain[JDSP_EFX_MAX];
+	jdsp_lock(jdsp);
+	const int chainCount = jdsp->chainCount;
+	memcpy(chain, jdsp->chainOrder, chainCount * sizeof(int));
+	jdsp_unlock(jdsp);
+	for (int chainIndex = 0; chainIndex < chainCount; chainIndex++)
+		jdspDispatchEffect(jdsp, chain[chainIndex], n);
 	// Output
 	for (size_t i = 0; i < n; i++)
 	{
