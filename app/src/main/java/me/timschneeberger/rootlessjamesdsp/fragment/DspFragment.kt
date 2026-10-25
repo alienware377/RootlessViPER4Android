@@ -558,7 +558,12 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         val occupied = LiveprogSlots.read(requireContext())
         ids.forEachIndexed { index, id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
-            container?.isVisible = occupied[index + 1].isNotBlank()
+            // A filled slot shows its card, unless the user hid that card in the
+            // layout editor: this ran on every resume and slot change and used
+            // to bring a hidden card straight back. Edit mode shows everything.
+            val userHidden = layoutManager?.isHidden(resources.getResourceEntryName(id)) == true
+            container?.isVisible = occupied[index + 1].isNotBlank() &&
+                (layoutManager?.editMode == true || !userHidden)
         }
         if (!rebuild) return
         // The picker wrote these namespaces directly, so the existing preference
