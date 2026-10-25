@@ -66,6 +66,7 @@ tools/raterefresh
 tools/lpunlock
 tools/hal
 tools/limlatch
+tools/sterenh
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
