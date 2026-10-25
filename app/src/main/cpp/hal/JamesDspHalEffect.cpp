@@ -347,9 +347,13 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
             }
             else
             {
+                /* The parser returns 1 when the script compiled, 0 when it has
+                   no @init, and negative for the other errors. This used to
+                   test for 0, so every valid script was refused at enable and
+                   only a script with nothing compiled was let through. */
                 const int rc = LiveProgStringParser(&c->dsp, c->stringBuf);
-                c->haveLiveprog = rc == 0;
-                if (rc != 0) LOGE("liveprog rejected the script (%d)", rc);
+                c->haveLiveprog = rc > 0;
+                if (rc <= 0) LOGE("liveprog rejected the script (%d)", rc);
             }
             free(c->stringBuf);
             c->stringBuf = nullptr;
@@ -560,8 +564,13 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
            than passing them to the engine keeps that round trip honest. */
         if (id >= 25000 && id <= 25003)
         {
+            /* Kept only when the payload it describes actually loaded. The
+               app sends the hash straight after the payload whether or not it
+               took, and next time skips the payload when the hash matches, so
+               keeping it for a rejected payload meant never trying again. */
+            const bool loaded[4] = { c->haveGraphicEq, c->haveDdc, c->haveLiveprog, c->haveIr };
             if (p->vsize >= sizeof(int32_t))
-                c->hashSlot[id - 25000] = *(const int32_t *)val;
+                c->hashSlot[id - 25000] = loaded[id - 25000] ? *(const int32_t *)val : 0;
             if (pReplyData && replySize && *replySize == sizeof(int))
                 *(int *)pReplyData = 0;
             return 0;
