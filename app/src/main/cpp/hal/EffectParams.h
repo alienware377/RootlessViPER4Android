@@ -24,16 +24,20 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     switch (id)
     {
     /* --- enable flags --------------------------------------------------- */
-    case 1200: if (on) CompressorEnable(d, 1); else CompressorEnable(d, 0); break;
+    /* XxxEnable(d, 0) only refreshes and never clears the flag, so the off
+       branches have to call the Disable functions, as the rootless wrapper
+       does. 1200, 1202, 1208 and 1212 used to call Enable(d, 0) and could
+       never be switched off in root mode. */
+    case 1200: if (on) CompressorEnable(d, 1); else CompressorDisable(d); break;
     case 1201: if (on) BassBoostEnable(d); else BassBoostDisable(d); break;
-    case 1202: if (on) MultimodalEqualizerEnable(d, 1); else MultimodalEqualizerEnable(d, 0); break;
+    case 1202: if (on) MultimodalEqualizerEnable(d, 1); else MultimodalEqualizerDisable(d); break;
     case 1203: if (on) ReverbEnable(d); else ReverbDisable(d); break;
     case 1204: if (on) StereoEnhancementEnable(d); else StereoEnhancementDisable(d); break;
     case 1205: if (on) Convolver1DEnable(d); else Convolver1DDisable(d); break;
     case 1206: if (on) VacuumTubeEnable(d); else VacuumTubeDisable(d); break;
-    case 1208: if (on) CrossfeedEnable(d, 1); else CrossfeedEnable(d, 0); break;
+    case 1208: if (on) CrossfeedEnable(d, 1); else CrossfeedDisable(d); break;
     case 1210: if (on) ArbitraryResponseEqualizerEnable(d, 1); else ArbitraryResponseEqualizerDisable(d); break;
-    case 1212: DDCEnable(d, on ? 1 : 0); break;
+    case 1212: if (on) DDCEnable(d, 1); else DDCDisable(d); break;
     case 1213: if (on) LiveProgEnable(d); else LiveProgDisable(d); break;
 
     /* --- values --------------------------------------------------------- */
