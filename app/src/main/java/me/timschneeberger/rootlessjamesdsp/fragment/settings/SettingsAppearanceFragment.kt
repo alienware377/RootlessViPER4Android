@@ -36,8 +36,11 @@ class SettingsAppearanceFragment : SettingsBaseFragment() {
         }
         appTheme?.entries = appThemes
 
-        themeMode?.setOnPreferenceChangeListener { _, _ ->
-            updateViewStates()
+        // The listener runs before the new value is stored, so it has to use
+        // the value it is handed. Reading the stored one showed or hid Pure
+        // black for the previous theme mode.
+        themeMode?.setOnPreferenceChangeListener { _, newValue ->
+            updateViewStates(newValue as? String)
             true
         }
         updateViewStates()
@@ -54,8 +57,8 @@ class SettingsAppearanceFragment : SettingsBaseFragment() {
         super.onSaveInstanceState(outState)
     }
 
-    private fun updateViewStates(){
-        amoledMode?.isVisible = themeMode?.value?.toIntOrNull()?.let { ThemeMode.fromInt(it) } != ThemeMode.Light
+    private fun updateViewStates(mode: String? = themeMode?.value) {
+        amoledMode?.isVisible = mode?.toIntOrNull()?.let { ThemeMode.fromInt(it) } != ThemeMode.Light
     }
 
     companion object {
