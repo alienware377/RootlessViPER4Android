@@ -1091,8 +1091,9 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLiveprogSlot
     int ret = LiveProgStringParserSlot(dsp, slot, (char*)nativeString);
     env->ReleaseStringUTFChars(liveprogContent, nativeString);
 
-    // Workaround due to library bug (mirrors setLiveprog)
-    jdsp_unlock(dsp);
+    // No unlock here: the parser balances its own lock on every return path.
+    // A second unlock released the lock from under whichever thread had taken
+    // it next, usually the audio thread mid-effect (see setLiveprog).
 
     if (ret <= 0)
     {
@@ -1128,8 +1129,12 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLiveprog(JNI
     int ret = LiveProgStringParser(dsp, (char*)nativeString); // Ignore constness, libjamesdsp does not modify it
     env->ReleaseStringUTFChars(liveprogContent, nativeString);
 
-    // Workaround due to library bug
-    jdsp_unlock(dsp);
+    // There used to be a "workaround" jdsp_unlock here, for an upstream parser
+    // that returned with the lock held. This tree's parser unlocks on every
+    // path, so that was a second unlock of a mutex this thread no longer held.
+    // The mutex is a plain one with no owner check, so it silently released
+    // the lock of whichever thread took it next, usually the audio thread
+    // inside a locked effect, on every script load.
 
     const char* errorString = NSEEL_code_getcodeerror(dsp->eel.vm);
     if(errorString != nullptr)
