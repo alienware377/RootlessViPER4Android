@@ -64,12 +64,35 @@ static void arbKeepFilters(JamesDSPLib *jdsp, const float *left, const float *ri
 	memcpy(jdsp->arbMag.filterR, right, len * sizeof(float));
 }
 
+/* Puts new filters into the convolvers. A refresh rewrites the loaded
+   segments in place, which is only right while the filter needs the same
+   number of segments as the one loaded. The phase switch changes the length
+   (8192 taps minimum phase, 16383 linear) without reloading anything, and a
+   refresh across it either read far past the end of an 8192-tap filter or
+   cut a linear one in half. So when the count differs, load in full, under
+   the lock, the same way the deferred refresh in Enable does. */
+static void arbLoadFilters(JamesDSPLib *jdsp, const float *left, const float *right, unsigned int len)
+{
+	const unsigned int bs = jdsp->arbMag.instance.convState._blockSize;
+	if (bs && (len + bs - 1) / bs == jdsp->arbMag.instance.convState._segCount)
+	{
+		FFTConvolver2x2RefreshImpulseResponse(&jdsp->arbMag.instance.convState, &jdsp->arbMag.conv, left, right, len);
+		return;
+	}
+	jdsp_lock(jdsp);
+	FFTConvolver2x2Free(&jdsp->arbMag.instance.convState);
+	FFTConvolver2x2Free(&jdsp->arbMag.conv);
+	FFTConvolver2x2LoadImpulseResponse(&jdsp->arbMag.instance.convState, (unsigned int)jdsp->blockSize, left, right, len);
+	FFTConvolver2x2LoadImpulseResponse(&jdsp->arbMag.conv, (unsigned int)jdsp->blockSize, left, right, len);
+	jdsp_unlock(jdsp);
+}
+
 void ArbitraryResponseEqualizerStringParser(JamesDSPLib *jdsp, char *stringEq)
 {
 	ArbitraryEqString2SortedNodes(&jdsp->arbMag.instance.coeffGen, stringEq);
 	float *eqFil = jdsp->arbMag.instance.coeffGen.GetFilter(&jdsp->arbMag.instance.coeffGen, (float)jdsp->fs);
 	arbKeepFilters(jdsp, eqFil, eqFil);
-	FFTConvolver2x2RefreshImpulseResponse(&jdsp->arbMag.instance.convState, &jdsp->arbMag.conv, eqFil, eqFil, jdsp->arbMag.instance.filterLen);
+	arbLoadFilters(jdsp, eqFil, eqFil, jdsp->arbMag.instance.filterLen);
 }
 
 /* One curve per ear.
@@ -98,7 +121,7 @@ void ArbitraryResponseEqualizerStringParserStereo(JamesDSPLib *jdsp, char *strin
 	float *right = jdsp->arbMag.instance.coeffGen.GetFilter(&jdsp->arbMag.instance.coeffGen, (float)jdsp->fs);
 
 	arbKeepFilters(jdsp, left, right);
-	FFTConvolver2x2RefreshImpulseResponse(&jdsp->arbMag.instance.convState, &jdsp->arbMag.conv, left, right, len);
+	arbLoadFilters(jdsp, left, right, len);
 	free(left);
 }
 void ArbitraryResponseEqualizerEnable(JamesDSPLib *jdsp, char enable)
