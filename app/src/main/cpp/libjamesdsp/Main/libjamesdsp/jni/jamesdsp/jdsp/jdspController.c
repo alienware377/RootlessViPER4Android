@@ -1769,6 +1769,21 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	BalanceRefresh(jdsp);
 	PitchShiftRefresh(jdsp);
 	VReverbRefresh(jdsp);
+	/* Two of the upstream effects that the forceRefresh branch above would
+	   redo, done here instead, through their lock-free paths. A DDC file
+	   carries one coefficient set per rate and the DDC kept the one it picked
+	   at load, and sending the same file again returns early because the text
+	   matches, so the correction stayed about 9 % off for the session. The
+	   compander keeps time constants worked out from the rate until its
+	   settings change. */
+	if (jdsp->vdcFl.oldFile)
+	{
+		jdsp->ddcForceRefresh = 1;
+		DDCEnable(jdsp, jdsp->ddcEnabled);
+	}
+	jdsp->compForceRefresh = 1;
+	CompressorEnable(jdsp, jdsp->compEnabled);
+	jdsp->compForceRefresh = 0;
 	jdsp_unlock(jdsp);
 }
 void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp)

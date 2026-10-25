@@ -62,6 +62,7 @@ tools/xfrace
 tools/comprace
 tools/echofb
 tools/comptfres
+tools/raterefresh
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
