@@ -1629,6 +1629,14 @@ void CompressorDisable(JamesDSPLib *jdsp)
 void CompressorSetParam(JamesDSPLib *jdsp, float fgt_facT, int granularity, int tfresolution, char forceRefresh)
 {
 	FFTCompander *cm = (FFTCompander *)(&jdsp->comp);
+	// 0 to 3 are the only transforms there are. Init sets the transform's
+	// function pointer only for 0, 1 and 2, and anything below 3 is run
+	// through it, so -1 (which the HAL's id 115 accepts from any app) jumped
+	// through a null pointer; 4 and up ran on unset coefficients.
+	if (tfresolution < 0)
+		tfresolution = 0;
+	if (tfresolution > 3)
+		tfresolution = 3;
 	if ((fgt_facT != cm->fgt_facT || tfresolution != cm->tfresolution || granularity != cm->granularity) || forceRefresh)
 	{
 		FFTCompanderInit(&jdsp->comp, jdsp->fs, tfresolution, 3, 1.0);
