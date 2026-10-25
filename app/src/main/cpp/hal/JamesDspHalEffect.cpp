@@ -580,6 +580,15 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
             return 0;
         }
 
+        /* The linear phase switch rebuilds the GraphicEQ's coefficient
+           generator, which then needs the curve sent again. The app sends it
+           only when the curve's hash differs from the one stored here, and
+           the switch is not part of the curve, so the curve was never resent
+           and the loaded filter stayed in the old phase. Forget the hash when
+           the phase actually changes. */
+        if (id == 26011 && (on ? 1 : 0) != c->dsp.arbMag.linearPhase)
+            c->hashSlot[0] = 0;
+
         /* Fork effects arrive as one float array per effect rather than an id
            per value, so hand the payload through as well. */
         LOGD("SET_PARAM id=%d vsize=%u short=%d", id, p->vsize, sv);
