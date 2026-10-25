@@ -448,6 +448,11 @@ void MultibandDistProcess(JamesDSPLib *jdsp, size_t n)
 		for (int ch = 0; ch < 2; ch++)
 		{
 			float x = in[ch];
+			// Keep a NaN or Inf out of the state below in the first place. The
+			// guard at the end could not clear all of it: the oversampler's
+			// filters held it, so the guard then fired on every sample and the
+			// channel stayed silent, dry part included, until a toggle.
+			if (!isfinite(x)) x = 0.0f;
 
 			// 1. Band select. With no bands the whole signal goes in, which
 			//    is the sensible reading of "no range chosen".
@@ -548,6 +553,12 @@ void MultibandDistProcess(JamesDSPLib *jdsp, size_t n)
 				for (int k = 0; k < MBD_MAX_BANDS; k++)
 					m->z1[ch][k] = m->z2[ch][k] = 0.0f;
 				if (chBuf[ch]) memset(chBuf[ch], 0, MBD_CHORUS_BUFLEN * sizeof(float));
+				// and the oversampler's filters and the crusher's hold, which
+				// otherwise kept the bad value and tripped this on every sample
+				memset(&m->smpUp[ch].lpfU, 0, sizeof(m->smpUp[ch].lpfU));
+				memset(&m->smpDown[ch].lpfD, 0, sizeof(m->smpDown[ch].lpfD));
+				m->shHold[ch] = 0.0f;
+				m->shPhase[ch] = 0.0f;
 			}
 		}
 

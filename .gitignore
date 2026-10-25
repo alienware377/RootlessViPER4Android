@@ -69,6 +69,7 @@ tools/limlatch
 tools/sterenh
 tools/dbbnan
 tools/vrevnan
+tools/mbdnan
 # x86_64 builds of any harness, for running on an emulator
 tools/*_x86
 
