@@ -484,7 +484,7 @@ int FFTConvolver1x1LoadImpulseResponse(FFTConvolver1x1 *conv, unsigned int block
 	{
 		float* segmentRe = (float*)malloc(conv->_fftComplexSize * sizeof(float));
 		float* segmentIm = (float*)malloc(conv->_fftComplexSize * sizeof(float));
-		const unsigned int remaining = irLen - (i * conv->_blockSize);
+		const unsigned int remaining = i * conv->_blockSize >= irLen ? 0 : irLen - (i * conv->_blockSize); // zero, not a wrap, past the end
 		const unsigned int sizeCopy = (remaining >= conv->_blockSize) ? conv->_blockSize : remaining;
 		for (unsigned int j = 0; j < sizeCopy; j++)
 			conv->_fftBuffer[conv->bit[j]] = ir[i*conv->_blockSize + j];
@@ -532,7 +532,7 @@ int FFTConvolver1x1RefreshImpulseResponse(FFTConvolver1x1 *conv, unsigned int bl
 	{
 		float* segmentRe = conv->_segmentsIRRe[i];
 		float* segmentIm = conv->_segmentsIRIm[i];
-		const unsigned int remaining = irLen - (i * conv->_blockSize);
+		const unsigned int remaining = i * conv->_blockSize >= irLen ? 0 : irLen - (i * conv->_blockSize); // zero, not a wrap, past the end
 		const unsigned int sizeCopy = (remaining >= conv->_blockSize) ? conv->_blockSize : remaining;
 		for (unsigned int j = 0; j < sizeCopy; j++)
 			conv->_fftBuffer[conv->bit[j]] = ir[i*conv->_blockSize + j];
@@ -914,7 +914,10 @@ void FFTConvolver2x2RefreshImpulseResponse(FFTConvolver2x2 *conv1, FFTConvolver2
 		conv2->_segmentsLLIRRe[1];
 		float* segmentLLRe = conv2->_segmentsLLIRRe[i];
 		float* segmentLLIm = conv2->_segmentsLLIRIm[i];
-		unsigned int remaining = irLen - (i * conv1->_blockSize);
+		// A segment wholly past the end of the filter is zeroed. Unsigned, this
+		// subtraction used to wrap to a huge value there and copy a full
+		// segment from past the end of irL / irR.
+		unsigned int remaining = i * conv1->_blockSize >= irLen ? 0 : irLen - (i * conv1->_blockSize);
 		unsigned int sizeCopy = (remaining >= conv1->_blockSize) ? conv1->_blockSize : remaining;
 		for (j = 0; j < sizeCopy; j++)
 			conv1->_fftBuffer[0][conv1->bit[j]] = irL[i*conv1->_blockSize + j];
@@ -932,7 +935,7 @@ void FFTConvolver2x2RefreshImpulseResponse(FFTConvolver2x2 *conv1, FFTConvolver2
 		//
 		float* segmentRRRe = conv2->_segmentsRRIRRe[i];
 		float* segmentRRIm = conv2->_segmentsRRIRIm[i];
-		remaining = irLen - (i * conv1->_blockSize);
+		remaining = i * conv1->_blockSize >= irLen ? 0 : irLen - (i * conv1->_blockSize);
 		sizeCopy = (remaining >= conv1->_blockSize) ? conv1->_blockSize : remaining;
 		for (j = 0; j < sizeCopy; j++)
 			conv1->_fftBuffer[0][conv1->bit[j]] = irR[i*conv1->_blockSize + j];
