@@ -31,8 +31,13 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         val oldHandle = handle
         handle = 0
 
-        // Make sure ongoing async calls to native have enough time to finish
+        // Free only once no sync is still inside the engine. A fixed 100 ms
+        // used to be the only wait, and syncs were never even cancelled, so a
+        // long impulse response load or a Liveprog compile still running then
+        // returned into a freed engine (and wrote to it). The 100 ms stays for
+        // a process call that started before the handle was cleared.
         Timer().schedule(100) {
+            cancelAndAwaitSyncs()
             JamesDspWrapper.free(oldHandle)
             Timber.d("Handle $oldHandle has been freed")
         }
