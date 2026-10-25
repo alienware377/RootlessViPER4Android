@@ -501,9 +501,12 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         layoutManager?.setHeadersVisible(!on)
         V4aMode.hiddenCardIds.forEach { id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
+            // Only ever hide here. With the mode off this used to set every
+            // hidden container visible again on each resume, undoing the
+            // user's own hides from the layout editor and an active search.
+            // Turning the mode off recreates the activity, so there is never
+            // anything of ours to undo.
             if (on) container?.isVisible = false
-            else if (container?.isVisible == false && !deferredCards.any { it.viewId == id })
-                container.isVisible = true
         }
         if (on) deferredCards.removeAll { it.viewId in V4aMode.hiddenCardIds }
     }
