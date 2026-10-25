@@ -538,7 +538,12 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 		break;
 	}
 	case JDSP_EFX_CROSSFEED:
+		// Locked like the convolver: CrossfeedEnable frees and rebuilds these
+		// convolvers from the settings thread, and a block running through
+		// them meanwhile read freed memory or a null pointer.
+		jdsp_lock(jdsp);
 		if (jdsp->crossfeedEnabled) CrossfeedProcess(jdsp, n);
+		jdsp_unlock(jdsp);
 		break;
 	case JDSP_EFX_CURE:
 		if (jdsp->cureEnabled) CureProcess(jdsp, n);
@@ -1715,6 +1720,10 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 		jdsp->fs = jdsp->trueSampleRate;
 	}
 	JamesDSPRefreshBlob(jdsp, jdsp->fs);
+	// The crossfeed's HRTF blobs were just resampled, so its convolvers need
+	// building again the next time it is enabled. Enable used to rebuild every
+	// time whether needed or not, which covered this by accident.
+	jdsp->crossfeedForceRefresh = 1;
 	if (forceRefresh)
 	{
 		BassBoostSetParam(jdsp, jdsp->dbb.maxGain);
