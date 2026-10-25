@@ -192,6 +192,13 @@ void MaximizerProcess(JamesDSPLib *jdsp, size_t n)
 	{
 		float in[2] = { jdsp->tmpBuffer[0][i] * m->inGain,
 		                jdsp->tmpBuffer[1][i] * m->inGain };
+		// A NaN or Inf here stuck in the true-peak oversampler's filter for
+		// good. Its upsampled values were NaN from then on, no comparison
+		// with them is ever true, and true-peak detection silently fell back
+		// to sample peaks, letting inter-sample overs through. The guard at
+		// the end only resets the gain, so keep it out here.
+		if (!isfinite(in[0])) in[0] = 0.0f;
+		if (!isfinite(in[1])) in[1] = 0.0f;
 		float gain[2];
 
 		for (int ch = 0; ch < 2; ch++)
