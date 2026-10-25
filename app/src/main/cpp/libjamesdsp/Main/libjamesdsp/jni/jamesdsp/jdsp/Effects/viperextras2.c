@@ -858,6 +858,15 @@ void VReverbProcess(JamesDSPLib *jdsp, size_t n)
 		return;
 	if (!v->combMem)
 		return;
+	/* A NaN or Inf in stays in the recirculating state of every model that
+	   lacks a guard on its loop: classic put out NaN, dry signal included,
+	   and plate and the smooth models went silent, until the card was
+	   switched off and on (and for classic not even then). Keep it out. */
+	for (i = 0; i < n; i++)
+	{
+		if (!isfinite(jdsp->tmpBuffer[0][i])) jdsp->tmpBuffer[0][i] = 0.0f;
+		if (!isfinite(jdsp->tmpBuffer[1][i])) jdsp->tmpBuffer[1][i] = 0.0f;
+	}
 
 	if (v->model == 0)
 	{
@@ -1003,6 +1012,12 @@ void VReverbEnable(JamesDSPLib *jdsp)
 		}
 		memset(rv->combMem, 0,
 			((size_t)2 * 4 * VREV_COMBLEN + (size_t)2 * 2 * VREV_APLEN) * sizeof(float));
+		/* The classic combs' damping state and positions live outside
+		   combMem and were never cleared, so a bad value there outlived
+		   switching the card off and on. */
+		memset(rv->cflt, 0, sizeof(rv->cflt));
+		memset(rv->cidx, 0, sizeof(rv->cidx));
+		memset(rv->aidx, 0, sizeof(rv->aidx));
 
 		/* Everything else is sized for one rate. Buffers left from another
 		   rate are replaced, never reused. */
