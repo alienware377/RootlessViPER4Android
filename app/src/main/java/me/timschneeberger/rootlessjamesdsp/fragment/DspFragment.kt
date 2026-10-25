@@ -474,6 +474,11 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
                 if (it.editMode) it.exitEditMode()
                 it.reload()
             }
+            // The layout pass shows every card the user has not hidden, which
+            // includes empty Liveprog slots and, in V4A-only mode, the cards
+            // and headings that mode hides. Put those rules back (in V4A mode
+            // this goes on to applyV4aVisibility).
+            applyLiveprogSlotVisibility()
         }
     }
 
@@ -615,6 +620,9 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             )
             binding.searchInput.isEnabled = !editing
             binding.chainOrderButton.isVisible = editing
+            // Leaving the editor re-applies the plain layout, which shows empty
+            // Liveprog slots and V4A-hidden cards; hide them again.
+            if (!editing) applyLiveprogSlotVisibility()
             if (editing) {
                 Snackbar.make(binding.root, R.string.effect_edit_hint, Snackbar.LENGTH_LONG).show()
             }
