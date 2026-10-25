@@ -79,6 +79,20 @@ void EchoDelaySetParam(JamesDSPLib *jdsp, float inputLevel, float timeMs,
 	e->svfK = 1.0f / q;
 	e->filterType = filterType;
 	EchoDelayUpdateFilter(e, cutoffHz);
+	// The filter sits inside the feedback loop and a resonant one has a peak
+	// gain above 1: q for the band pass, q / sqrt(1 - 1/(4 q^2)) for the low
+	// and high pass once q passes 0.707. Times a feedback of up to 0.98 that
+	// went past 1, and with distortion off nothing else bounded the loop, so
+	// the echoes grew until they overflowed. Cap the feedback so the loop
+	// gain at the peak stays at 0.98. Settings that were stable are below the
+	// cap and sound exactly as before.
+	float peak = 1.0f;
+	if (filterType == 2)
+		peak = q;
+	else if (filterType != 3 && q > 0.7072f)
+		peak = q / sqrtf(1.0f - 1.0f / (4.0f * q * q));
+	if (peak > 1.0f && e->feedback * peak > 0.98f)
+		e->feedback = 0.98f / peak;
 
 	float sr = smpRatePct * 0.01f;
 	if (sr < 0.002f) sr = 0.002f;
@@ -283,8 +297,16 @@ void EchoDelayProcess(JamesDSPLib *jdsp, size_t n)
 
 		float wrL = inL * e->inputLevel + fbL * e->feedback;
 		float wrR = inR * e->inputLevel + fbR * e->feedback;
-		if (!isfinite(wrL)) wrL = 0.0f;
-		if (!isfinite(wrR)) wrR = 0.0f;
+		// A non-finite sample here most likely came out of the filter, and its
+		// state would hold on to it for good, leaving the echo silent until it
+		// was switched off and on. Clear that state with it, both channels,
+		// since ping-pong feeds each one's filter into the other's line.
+		if (!isfinite(wrL) || !isfinite(wrR))
+		{
+			if (!isfinite(wrL)) wrL = 0.0f;
+			if (!isfinite(wrR)) wrR = 0.0f;
+			e->svfIc1[0] = e->svfIc2[0] = e->svfIc1[1] = e->svfIc2[1] = 0.0f;
+		}
 		e->bufL[w] = wrL;
 		e->bufR[w] = wrR;
 
