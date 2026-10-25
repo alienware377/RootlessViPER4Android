@@ -42,6 +42,11 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
 
     /* --- values --------------------------------------------------------- */
     case 112: BassBoostSetParam(d, (float)sv); break;                 /* max gain, dB */
+    /* The same gain in hundredths of a dB. 112 carries whole dB only, so a
+       continuous slider set to 7.4 dB gave 7 dB in root mode and 7.4 dB
+       rootless. The app sends 112 first and then this, so an older module
+       that ignores this id still gets the whole-dB value. */
+    case 26200: BassBoostSetParam(d, (float)sv / 100.0f); break;
     case 128: Reverb_SetParam(d, sv); break;                          /* preset index */
     case 137: StereoEnhancementSetParam(d, (float)sv / 100.0f); break; /* width, sent x100 */
     case 150: VacuumTubeSetGain(d, (double)sv / 1000.0); break;       /* sent x1000 */
