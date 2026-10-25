@@ -1451,6 +1451,7 @@ extern void ReverbProcess(JamesDSPLib *jdsp, size_t n);
 extern void StereoEnhancementDestructor(JamesDSPLib *jdsp);
 extern void StereoEnhancementConstructor(JamesDSPLib *jdsp);
 extern void StereoEnhancementRefresh(JamesDSPLib *jdsp);
+extern void StereoEnhancementDesign(JamesDSPLib *jdsp); /* lock already held */
 extern void StereoEnhancementSetParam(JamesDSPLib *jdsp, float mix);
 extern void StereoEnhancementEnable(JamesDSPLib *jdsp);
 extern void StereoEnhancementDisable(JamesDSPLib *jdsp);

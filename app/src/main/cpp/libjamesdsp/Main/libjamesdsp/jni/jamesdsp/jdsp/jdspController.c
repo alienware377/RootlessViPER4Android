@@ -1781,6 +1781,9 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	BalanceRefresh(jdsp);
 	PitchShiftRefresh(jdsp);
 	VReverbRefresh(jdsp);
+	// The stereo widening's band split and envelope times follow the rate too.
+	// Its own Refresh takes the lock, so the design is called directly.
+	StereoEnhancementDesign(jdsp);
 	/* Two of the upstream effects that the forceRefresh branch above would
 	   redo, done here instead, through their lock-free paths. A DDC file
 	   carries one coefficient set per rate and the DDC kept the one it picked
