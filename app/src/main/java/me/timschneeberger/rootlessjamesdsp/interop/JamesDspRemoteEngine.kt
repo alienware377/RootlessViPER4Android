@@ -188,10 +188,10 @@ class JamesDspRemoteEngine(
             if (truePeak) 1f else 0f, stereoLink, oversample.toFloat(),
             clipShape.toFloat()))
 
-    // The legacy AudioEffect parameter path has no slot for an arbitrary
-    // array, and the plugin build has no multiband distortion behind it, so
-    // these succeed without doing anything rather than reporting a failure
-    // the user cannot act on.
+    // Not wired up in root mode yet: the HAL library does link
+    // multibandDist.c (it is built from the same sources as the app), but
+    // EffectParams.h has no id for it, so these succeed without doing
+    // anything rather than reporting a failure the user cannot act on.
     /**
      * Held until the switch arrives. The system effect takes one array per
      * effect, so the bands and the mix travel together rather than as two
@@ -277,15 +277,18 @@ class JamesDspRemoteEngine(
     }
 
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
-        // Spectrum extension is unsupported in root/plugin mode (remote engine)
-        return true
+        // 26022 / 26122 in the HAL. This used to return true and send nothing,
+        // so the card did nothing in root mode while showing as working.
+        return sendForkEffect(PARAM_SPECTRUM_EXT, enable, floatArrayOf(barkFreq, strength))
     }
 
     override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {
-        // Limiter mode is unsupported in root/plugin mode (remote engine)
+        // The mode goes as a fourth value. It used to be dropped, so root mode
+        // ignored the limiter choice, V4A-only mode's pinned mode 3 included.
+        // A module from before this ignores the fourth value.
         return effect.setParameterFloatArray(
             1500,
-            floatArrayOf(threshold, release, postGain)
+            floatArrayOf(threshold, release, postGain, limiterMode.toFloat())
         ) == AudioEffect.SUCCESS
     }
 
@@ -527,6 +530,7 @@ class JamesDspRemoteEngine(
         private const val PARAM_MAXIMIZER = PARAM_FORK_BASE + 19
         private const val PARAM_VINYL = PARAM_FORK_BASE + 20
         private const val PARAM_BALANCE = PARAM_FORK_BASE + 21
+        private const val PARAM_SPECTRUM_EXT = PARAM_FORK_BASE + 22
         /** Enable flags live one hundred above their value id. */
         private const val PARAM_FORK_ENABLE_OFFSET = 100
 

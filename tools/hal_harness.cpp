@@ -326,6 +326,21 @@ int main()
 		EffectRelease(h);
 	}
 
+	// ---- 10: cards the remote engine used to drop ------------------------
+	printf("\n[10] limiter mode and spectrum extension, as the remote engine sends them\n");
+	{
+		create(); config(48000);
+		setFloats(1500, { -0.5f, 60.0f, 0.0f, 3.0f });
+		snprintf(d, sizeof d, "limiter.mode %d", C()->dsp.limiter.mode);
+		check("1500 carries the limiter mode", C()->dsp.limiter.mode == 3, d);
+		setFloats(26022, { 7600.0f, 30.0f }); setShort(26122, 1);
+		snprintf(d, sizeof d, "spectrumExtEnabled %d", C()->dsp.spectrumExtEnabled);
+		check("26022 / 26122 switch spectrum extension on", C()->dsp.spectrumExtEnabled == 1, d);
+		setShort(26122, 0);
+		check("26122 switches it off again", C()->dsp.spectrumExtEnabled == 0, "");
+		EffectRelease(h);
+	}
+
 	printf("\n%d failure(s)\n", failures);
 	return failures ? 1 : 0;
 }

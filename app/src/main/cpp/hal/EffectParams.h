@@ -181,6 +181,14 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26121: if (on) BalanceEnable(d); else BalanceDisable(d); break;
 
+    /* Spectrum extension: bark frequency, strength in percent. Linked in all
+       along, like the maximiser, but the remote engine had no id for it. */
+    case 26022:
+        if (fn >= 2)
+            SpectrumExtensionSetParam(d, fv[0], fv[1]);
+        break;
+    case 26122: if (on) SpectrumExtensionEnable(d); else SpectrumExtensionDisable(d); break;
+
     /* The maximiser. Present in this build all along - the HAL library is
        compiled from the same source glob as the app's, so maximizer.c has
        always been linked in here - but with no case to reach it, and a sender
@@ -236,6 +244,10 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
             if (postGain < -15.0) postGain = -15.0;
             JLimiterSetCoefficients(d, threshold, release);
             JamesDSPSetPostGain(d, postGain);
+            /* A fourth value is the limiter mode (V4A-only mode pins 3, the
+               faithful SoftwareLimiter). Older apps send three. */
+            if (fn >= 4)
+                JLimiterSetMode(d, (int)(fv[3] + 0.5f));
         }
         break;
 
