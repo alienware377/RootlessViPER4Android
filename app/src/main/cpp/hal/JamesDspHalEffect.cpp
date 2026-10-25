@@ -346,8 +346,13 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
             }
             else if (id == 10009)
             {
-                DDCStringParser(&c->dsp, c->stringBuf);
-                c->haveDdc = true;
+                /* -1 when the file did not parse, and the old filter has been
+                   freed by then; 0 when it is the file already loaded. Marking
+                   a refused file as loaded kept its hash, so the app never
+                   sent a corrected one. */
+                const int rc = DDCStringParser(&c->dsp, c->stringBuf);
+                c->haveDdc = rc >= 0;
+                if (rc < 0) LOGE("DDC rejected the file");
             }
             else
             {

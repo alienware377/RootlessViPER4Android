@@ -191,6 +191,11 @@ int main()
 		charBuffer(12001, 10010, "@init\ng=0.5;\n"); setInt(25002, 999);
 		snprintf(d, sizeof d, "haveLiveprog=%d hash read back=%d", (int)C()->haveLiveprog, getInt(30002));
 		check("rejected script is not marked loaded or hashed", !C()->haveLiveprog && getInt(30002) != 999, d);
+		// the same for a DDC file the parser refuses (fewer than five numbers),
+		// sent after the valid one from [1]
+		charBuffer(12001, 10009, "SR_44100:1,2,3\nSR_48000:1,2,3\n"); setInt(25001, 777);
+		snprintf(d, sizeof d, "haveDdc=%d hash read back=%d", (int)C()->haveDdc, getInt(30001));
+		check("rejected DDC file is not marked loaded or hashed", !C()->haveDdc && getInt(30001) != 777, d);
 	}
 	EffectRelease(h);
 
