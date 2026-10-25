@@ -47,10 +47,25 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48)
 	char *fs48 = strstr(DDCString, "SR_48000");
 	if (!fs44_1 || !fs48)
 		return 0;
-	int numberCount = (countChars(fs48, ',') + 1);
+	// Each section ends where the other one starts, or at the end of the
+	// string. The parse loops below stop there, so a section with too few
+	// numbers can neither take the digits out of the next "SR_" label nor
+	// read past the terminator. The count used to run from SR_48000 to the
+	// end of the string, which counted both sections when SR_48000 came
+	// first.
+	char *end = DDCString + strlen(DDCString);
+	char *end441 = fs48 > fs44_1 ? fs48 : end;
+	char *end48 = fs44_1 > fs48 ? fs44_1 : end;
+	int numberCount = 1;
+	for (char *c = fs48; c < end48; c++)
+		numberCount += *c == ',';
 	int sosCount = numberCount / 5;
 	if (!sosCount)
 		return 0;
+	// Parse exactly sosCount * 5 numbers per section. The loops used to run
+	// to numberCount, so a count that was not a multiple of 5 (a trailing
+	// comma, a sixth number on a line) wrote one element past each array.
+	int limit = sosCount * 5;
 	DirectForm2 *df441 = (DirectForm2*)malloc(sosCount * sizeof(DirectForm2));
 	DirectForm2 *df48 = (DirectForm2*)malloc(sosCount * sizeof(DirectForm2));
 	memset(df441, 0, sosCount * sizeof(DirectForm2));
@@ -60,7 +75,7 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48)
 	int counter = 0;
 	int b0b1b2a1a2 = 0;
 	char *startingPoint = fs44_1 + 9;
-	while (counter < numberCount)
+	while (counter < limit && startingPoint < end441)
 	{
 		if (get_doubleVDC(startingPoint, &number))
 		{
@@ -86,11 +101,17 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48)
 		else
 			startingPoint++;
 	}
+	if (counter < limit) // the 44.1 kHz section ran out of numbers
+	{
+		free(df441);
+		free(df48);
+		return 0;
+	}
 	i = 0;
 	counter = 0;
 	b0b1b2a1a2 = 0;
 	startingPoint = fs48 + 9;
-	while (counter < numberCount)
+	while (counter < limit && startingPoint < end48)
 	{
 		if (get_doubleVDC(startingPoint, &number))
 		{
@@ -115,6 +136,12 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48)
 		}
 		else
 			startingPoint++;
+	}
+	if (counter < limit) // and the same for the 48 kHz section
+	{
+		free(df441);
+		free(df48);
+		return 0;
 	}
 	*ptrdf441 = df441;
 	*ptrdf48 = df48;
