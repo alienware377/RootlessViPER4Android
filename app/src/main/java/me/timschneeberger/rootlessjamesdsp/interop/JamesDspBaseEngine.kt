@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import me.timschneeberger.rootlessjamesdsp.R
@@ -40,6 +41,16 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         Timber.d("Closing engine")
         reportSampleRate(0f)
         syncScope.cancel()
+    }
+
+    /**
+     * Stops any further sync and blocks until one already running has left
+     * native code. Cancelling the scope alone does not stop a JNI call that is
+     * already in progress, and every sync holds the mutex for its whole run.
+     */
+    protected fun cancelAndAwaitSyncs() {
+        syncScope.cancel()
+        runBlocking { syncMutex.withLock { } }
     }
 
     open fun syncWithPreferences(forceUpdateNamespaces: Array<String>? = null) {
