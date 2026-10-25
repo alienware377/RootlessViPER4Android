@@ -325,6 +325,14 @@ static void DBBParam(DBB *dbb, double fs, float maxG)
 }
 static void DBBProcess(DBB *dbb, float *x1, float *x2, float *y1, float *y2, size_t n)
 {
+	// A NaN or Inf in would turn the analysis, the smoothed boost and both
+	// filters' states NaN, and nothing ever resets them: the bass boost then
+	// put out NaN for the life of the engine. Keep it out.
+	for (size_t i = 0; i < n; i++)
+	{
+		if (!isfinite(x1[i])) x1[i] = 0.0f;
+		if (!isfinite(x2[i])) x2[i] = 0.0f;
+	}
 	int pos = dbb->downsamplerPos;
 	for (size_t framePos = 0; framePos < n; framePos++)
 	{
