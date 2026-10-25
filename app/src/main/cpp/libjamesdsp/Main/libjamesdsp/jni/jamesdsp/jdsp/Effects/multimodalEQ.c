@@ -146,6 +146,10 @@ double reverseProjectX(double pos, double MIN_FREQ, double MAX_FREQ)
 }
 void MultimodalEqualizerAxisInterpolation(JamesDSPLib *jdsp, int interpolationMode, int operatingMode, double *freqAx, double *gaindB)
 {
+	/* Under the lock for the whole update: it rewrites the convolver's
+	   segments and the IIR coefficients that the audio thread runs, and the
+	   audio thread also rebuilds the convolver on a block size change. */
+	jdsp_lock(jdsp);
 	memcpy(jdsp->mEQ.freq + 1, freqAx, NUMPTS * sizeof(double));
 	memcpy(jdsp->mEQ.gain + 1, gaindB, NUMPTS * sizeof(double));
 	for (int i = 0; i < NUMPTS; i++)
@@ -230,11 +234,15 @@ void MultimodalEqualizerAxisInterpolation(JamesDSPLib *jdsp, int interpolationMo
 	}
 	jdsp->mEQ.operatingMode = operatingMode;
 	jdsp->mEQ.currentInterpolationMode = interpolationMode;
+	jdsp_unlock(jdsp);
 }
 void MultimodalEqualizerEnable(JamesDSPLib *jdsp, char enable)
 {
 	if (jdsp->equalizerForceRefresh)
 	{
+		/* Locked like the arbitrary EQ's refresh: this frees and reloads the
+		   convolver the chain runs and the settings thread refreshes. */
+		jdsp_lock(jdsp);
 		float *eqFil;
 		if (!jdsp->mEQ.currentInterpolationMode)
 		{
@@ -251,6 +259,7 @@ void MultimodalEqualizerEnable(JamesDSPLib *jdsp, char enable)
 		FFTConvolver2x2LoadImpulseResponse(&jdsp->mEQ.instance.convState, (unsigned int)jdsp->blockSize, eqFil, eqFil, jdsp->mEQ.instance.filterLen);
 		FFTConvolver2x2LoadImpulseResponse(&jdsp->mEQ.conv, (unsigned int)jdsp->blockSize, eqFil, eqFil, jdsp->mEQ.instance.filterLen);
 		jdsp->equalizerForceRefresh = 0;
+		jdsp_unlock(jdsp);
 	}
 	if (enable)
 		jdsp->equalizerEnabled = 1;
