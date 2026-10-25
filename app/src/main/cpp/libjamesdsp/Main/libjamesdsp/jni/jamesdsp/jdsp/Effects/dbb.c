@@ -305,6 +305,11 @@ static void DBBParam(DBB *dbb, double fs, float maxG)
 	dbb->maxGain = maxG;
 	int factor = (int)round(fs / targetFS);
 	oversample_makeSmp(&dbb->downsampler, factor);
+	// The factor is 96 at 48 kHz and 88 at 44.1 kHz. If the rate moved and
+	// the write position was already past the new factor, it never wrapped
+	// again and ran off the end of originalBuf, so start the decimator over.
+	dbb->downsamplerPos = 0;
+	memset(dbb->originalBuf, 0, sizeof(dbb->originalBuf));
 	double trueTargetFs = fs / factor;
 	dbb->fs = fs;
 	for (int i = 0; i < 9; i++)
@@ -325,7 +330,8 @@ static void DBBProcess(DBB *dbb, float *x1, float *x2, float *y1, float *y2, siz
 	{
 		dbb->originalBuf[pos] = (x1[framePos] + x2[framePos]) * 0.5f;
 		pos++;
-		if (pos == dbb->downsampler.factor)
+		// >= rather than ==, so a position past the factor can never escape
+		if (pos >= dbb->downsampler.factor)
 		{
 			dbb->delayLine[15] = dbb->delayLine[14];
 			dbb->delayLine[14] = dbb->delayLine[13];
