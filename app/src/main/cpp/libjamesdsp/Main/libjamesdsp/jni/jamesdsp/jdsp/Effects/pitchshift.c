@@ -322,7 +322,15 @@ static void pvFrame(PitchShift *p, int c, float ratio, float fs)
 			   ratio 1.0, where the two happen to coincide. */
 			p->pvSumPhase[c][k] = p->pvLastPhase[c][p->pvSrcBin[k]];
 		else
-			p->pvSumPhase[c][k] += d;
+		{
+			/* Wrapped to +-pi every hop. Left to grow, held material (where no
+			   transient re-anchors it) took it to 1.8e7 rad in two minutes,
+			   where one float step is a whole radian: each hop's advance then
+			   rounded the same wrong way, the bins drifted off pitch on their
+			   own, and after about 15 minutes the high partials were noise. */
+			const float s = p->pvSumPhase[c][k] + d;
+			p->pvSumPhase[c][k] = s - 6.283185307f * rintf(s * 0.159154943f);
+		}
 		const float ph = p->pvSumPhase[c][k];
 		re[k] = p->pvSynMag[k] * cosf(ph);
 		im[k] = p->pvSynMag[k] * sinf(ph);
