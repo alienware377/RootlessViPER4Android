@@ -991,9 +991,13 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setCrossfeed(JN
     DECLARE_DSP_B
     if(mode == 99)
     {
+        // Locked for the same reason as CrossfeedChangeMode: the audio thread
+        // reads the mode and this BS2B state while a block runs.
+        jdsp_lock(dsp);
         memset(&dsp->advXF.bs2b, 0, sizeof(dsp->advXF.bs2b));
         BS2BInit(&dsp->advXF.bs2b[1], (unsigned int)dsp->fs, ((unsigned int)customFcut | ((unsigned int)customFeed << 16)));
         dsp->advXF.mode = 1;
+        jdsp_unlock(dsp);
     }
     else
     {
