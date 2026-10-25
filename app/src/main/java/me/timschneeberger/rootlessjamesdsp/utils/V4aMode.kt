@@ -144,6 +144,36 @@ object V4aMode {
     }
 
     /**
+     * Called after something wrote the effect settings wholesale: a preset, a
+     * device profile switching in its preset, a backup restore. Those copy the
+     * dsp_*.xml files straight over the live ones, so with the mode on they
+     * switched non-V4A effects back on, and those effects then ran with their
+     * cards hidden and no way to switch them off short of leaving the mode.
+     * Switch them off again and add them to the record, so leaving the mode
+     * later brings them back with the rest of what was on before.
+     */
+    fun parkNonV4aEffectsAfterLoad(ctx: Context) {
+        if (!isOn(ctx)) return
+        val appPrefs = ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
+        val record = (appPrefs.getString(SAVED_STATES, null) ?: "")
+            .split(";").filter { it.isNotBlank() }.toMutableSet()
+        var parked = 0
+        nonV4a(ctx).forEach { (namespace, keyRes) ->
+            val key = ctx.getString(keyRes)
+            val prefs = ctx.getSharedPreferences(namespace, Context.MODE_MULTI_PROCESS)
+            if (prefs.getBoolean(key, false)) {
+                record.add(namespace)
+                parked++
+                // commit, not apply: the sync this load triggers reads it next
+                prefs.edit().putBoolean(key, false).commit()
+            }
+        }
+        if (parked > 0)
+            appPrefs.edit().putString(SAVED_STATES, record.joinToString(";")).apply()
+        Timber.d("parkNonV4aEffectsAfterLoad: parked $parked effect(s) the load switched on")
+    }
+
+    /**
      * Puts back whatever was on before the mode was switched on.
      *
      * Absent record means the mode was never turned on by this build, in which
