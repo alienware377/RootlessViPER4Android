@@ -598,6 +598,18 @@ void VReverbSetParam(JamesDSPLib *jdsp, int model, float roomPct, float dampPct,
 	v->pRaw[3] = predelayMs; v->pRaw[4] = decayPct; v->pRaw[5] = diffusionPct;
 	v->pRaw[6] = modPct;   v->pRaw[7] = bassPct;    v->pRaw[8] = erPct;
 	v->pRaw[9] = wetPct;   v->pRaw[10] = dryPct;
+	/* Hold every value to the card's own slider range. The buffers are sized
+	   for those ranges: a modulation far above 100 % swung the smooth models'
+	   read more than a whole line away, and a room size below 0 turned the
+	   early reflection taps negative, both reading far outside their
+	   buffers. In root mode any app can send these, not only the card. The
+	   test is written so a NaN lands on the low end too. */
+	for (int k = 0; k < 11; k++)
+	{
+		const float hi = k == 3 ? 200.0f : 100.0f;
+		if (!(v->pRaw[k] >= 0.0f)) v->pRaw[k] = 0.0f;
+		if (v->pRaw[k] > hi) v->pRaw[k] = hi;
+	}
 	vrApply(jdsp);
 	jdsp_unlock(jdsp);
 }
@@ -920,6 +932,9 @@ void VReverbProcess(JamesDSPLib *jdsp, size_t n)
 				int bl = (int)(vsErL[k] * span), br = (int)(vsErR[k] * span);
 				if (bl >= v->erLen) bl = v->erLen - 1;
 				if (br >= v->erLen) br = v->erLen - 1;
+				/* and from below, or a negative tap reads past the end */
+				if (bl < 0) bl = 0;
+				if (br < 0) br = 0;
 				int pl = v->erIdx - bl, pr = v->erIdx - br;
 				if (pl < 0) pl += v->erLen;
 				if (pr < 0) pr += v->erLen;
