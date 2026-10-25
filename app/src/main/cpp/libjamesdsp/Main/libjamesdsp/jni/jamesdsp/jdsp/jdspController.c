@@ -181,13 +181,20 @@ int selectConvPartitions(JamesDSPLib *jdsp, unsigned int impulseLengthActual, un
 	int mflen_best = 256;
 	int num_s, num_m;
 	int latency = jdsp->blockSize;
-	int type_best, begin_m, end_m;
+	// Starts as the single-segment type, so a loop that never runs, or a
+	// prediction that is NaN or huge, cannot return an uninitialised value.
+	int type_best = 1, begin_m, end_m;
 	int s = (int)log2(latency) - 6;
 	if (s < 0)
 	{
 		printf("Latency must not smaller than 64\n");
 		return 1;
 	}
+	// The benchmark tables have MAX_BENCHMARK entries, for blocks of 64 up to
+	// 32768. A 65536-frame block, which the HAL lets through, gave s = 10 and
+	// read one past both tables. Use the largest entry for anything bigger.
+	if (s > MAX_BENCHMARK - 1)
+		s = MAX_BENCHMARK - 1;
 	double cpu_load;
 	double cpu_load_best = 1e12;
 	// performance prediction with 2 segment lengths
