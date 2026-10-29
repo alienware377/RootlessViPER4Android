@@ -40,12 +40,13 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
     /**
      * @exception Exception if preset cannot be loaded
      */
-    fun load(): PresetMetadata {
+    fun load(openFoldedGroups: Boolean = true): PresetMetadata {
         val file = file()
         Timber.d("Loading preset from ${file.path}")
         return load(
             ctx,
-            FileInputStream(file)
+            FileInputStream(file),
+            openFoldedGroups
         )
     }
 
@@ -117,6 +118,8 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
         private const val LAYOUT_PREFS = "effect_layout"
         private const val LAYOUT_KEY_HIDDEN = "hidden"
         private const val LAYOUT_KEY_FOLDED = "folded"
+        // A file of its own, so the list never travels in a preset or backup
+        private const val LAYOUT_PENDING_PREFS = "effect_layout_pending"
         private const val LAYOUT_KEY_UNFOLD_PENDING = "unfold_pending"
 
         const val META_VERSION = "version"
@@ -139,9 +142,13 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
         fun validate(inputStream: InputStream) = Tar.Reader(inputStream, ::isKnownEntry).validate()
 
         /**
+         * @param openFoldedGroups whether a folded group on the effects screen
+         *        opens when the preset switches on a card inside it. Device
+         *        profiles pass false: they load on their own whenever the
+         *        output changes, and would keep opening groups the user folded.
          * @exception Exception if preset cannot be loaded
          */
-        fun load(ctx: Context, stream: InputStream): PresetMetadata {
+        fun load(ctx: Context, stream: InputStream, openFoldedGroups: Boolean = true): PresetMetadata {
             Timber.d("Loading preset from stream")
 
             val targetFolder = File(ctx.cacheDir, "preset")
@@ -191,7 +198,7 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
                 Timber.d("Copying to ${target.absolutePath}")
             }
 
-            revealCardsUsedBy(ctx, files)
+            revealCardsUsedBy(ctx, files, openFoldedGroups)
 
             if (files.any { it.name == FILE_LIVEPROG }) {
                 findLiveprogScriptPath(ctx)?.let {
@@ -245,7 +252,7 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
          * it applies the layout (straight after the preset-loaded broadcast,
          * or at the next start).
          */
-        private fun revealCardsUsedBy(ctx: Context, files: Array<File>) {
+        private fun revealCardsUsedBy(ctx: Context, files: Array<File>, openFoldedGroups: Boolean) {
             val reveal = files.mapNotNull { f ->
                 val key = EffectCards.cardKeyForPrefFile(f.name) ?: return@mapNotNull null
                 val enabled = runCatching { EffectCards.declaresEffectEnabled(f.readText()) }
@@ -256,8 +263,9 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
 
             @Suppress("DEPRECATION")
             val prefs = ctx.getSharedPreferences(LAYOUT_PREFS, Context.MODE_MULTI_PROCESS)
-            if (!prefs.getStringSet(LAYOUT_KEY_FOLDED, null).isNullOrEmpty()) {
-                prefs.edit().putStringSet(LAYOUT_KEY_UNFOLD_PENDING, HashSet(reveal)).commit()
+            if (openFoldedGroups && !prefs.getStringSet(LAYOUT_KEY_FOLDED, null).isNullOrEmpty()) {
+                ctx.getSharedPreferences(LAYOUT_PENDING_PREFS, Context.MODE_PRIVATE)
+                    .edit().putStringSet(LAYOUT_KEY_UNFOLD_PENDING, HashSet(reveal)).commit()
             }
             val hidden = HashSet(prefs.getStringSet(LAYOUT_KEY_HIDDEN, emptySet()) ?: emptySet())
             val revealed = hidden.intersect(reveal)

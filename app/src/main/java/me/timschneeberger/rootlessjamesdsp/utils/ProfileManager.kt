@@ -126,7 +126,7 @@ class ProfileManager : BroadcastReceiver(), RoutingObserver.RoutingChangedCallba
                             Preset(
                                 FILE_PROFILE_PRESET,
                                 destDir
-                            ).load()
+                            ).load(openFoldedGroups = false)
                         } catch (ex: FileNotFoundException) {
                             Timber.e("Illegal state: preset does not exist")
                             Timber.i(ex)
@@ -160,7 +160,9 @@ class ProfileManager : BroadcastReceiver(), RoutingObserver.RoutingChangedCallba
     private fun load(profile: Profile) {
         getProfileDirectory(profile.id).apply { mkdirs() }.let { srcDir ->
             try {
-                Preset(FILE_PROFILE_PRESET, srcDir).load()
+                // A profile changes effect settings, not how the effects
+                // screen is folded, so it leaves folded groups alone.
+                Preset(FILE_PROFILE_PRESET, srcDir).load(openFoldedGroups = false)
             }
             catch (ex: FileNotFoundException) {
                 Timber.w("load: preset does not exist yet")
