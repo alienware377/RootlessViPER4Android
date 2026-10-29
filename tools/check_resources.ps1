@@ -217,6 +217,32 @@ elseif ($effects -ne $cards) {
 }
 else { Note "V4A-only mode: $effects effects, $cards hidden cards, matched" }
 
+# ---- garbled text: UTF-8 read back as Windows-1252 -------------------------
+#
+# Text that passes through a PowerShell 5.1 string on its way to a file comes
+# back with every non-ASCII character turned into two or three Latin ones: a
+# wavy dash becomes the three characters a-tilde, euro sign, degree sign, which
+# is exactly what the V4A section header showed on screen. Nothing else
+# catches it, because the result is still perfectly valid UTF-8 and the build
+# is happy with it. The pattern is a lead byte of a multi-byte UTF-8 character
+# as Windows-1252 shows it (A-circumflex, A-tilde, a-circumflex, a-tilde),
+# followed by a continuation byte as Windows-1252 shows it. Written with \u
+# escapes so this script stays plain ASCII.
+$garble = '[\u00C2\u00C3\u00E2\u00E3][\u0080-\u00BF\u20AC\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u017D\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u017E\u0178]'
+$garbled = 0
+Get-ChildItem "$root\app\src\main" -Recurse -File -Include *.xml, *.kt, *.java |
+    ForEach-Object {
+        $lines = [System.IO.File]::ReadAllLines($_.FullName, [System.Text.Encoding]::UTF8)
+        for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -match $garble) {
+                $rel = $_.FullName.Substring($root.Length + 1)
+                Fail "garbled text at ${rel}:$($i + 1)"
+                $garbled++
+            }
+        }
+    }
+if (-not $garbled) { Note "no garbled UTF-8 in app sources and resources" }
+
 # ---- report ----------------------------------------------------------------
 
 Write-Host ""
