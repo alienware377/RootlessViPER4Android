@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.TextViewCompat
+import android.view.Choreographer
 import android.view.DragEvent
 import android.view.Gravity
 import android.view.View
@@ -14,9 +15,11 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import me.timschneeberger.rootlessjamesdsp.R
 
 /**
@@ -290,6 +293,13 @@ class EffectLayoutManager(
 
     /** Applies the saved order and visibility to the container. */
     fun applyLayout() {
+        // Re-ordering the views under a card that is being dragged would throw
+        // it back to where it started; the drop puts the new order in place
+        // and then this runs.
+        if (dragging != null) {
+            applyAfterDrag = true
+            return
+        }
         ensureGroupViews()
         val order = storedOrder()
         if (order == null) {
@@ -407,6 +417,10 @@ class EffectLayoutManager(
     fun exitEditMode() {
         if (!editMode) return
         editMode = false
+        // Can happen mid-drag (a preset loading). The drag listener is about
+        // to go, so its end event would never arrive to stop the scrolling.
+        stopEdgeScroll()
+        applyAfterDrag = false
 
         items.forEach { item ->
             val view = viewFor(item) ?: return@forEach
@@ -536,41 +550,204 @@ class EffectLayoutManager(
     private fun beginDrag(view: View) {
         view.alpha = 0.65f
         view.animate().scaleX(1.04f).scaleY(1.04f).setDuration(120).start()
-        ViewCompat.startDragAndDrop(view, null, View.DragShadowBuilder(view), view, 0)
+        if (!ViewCompat.startDragAndDrop(view, null, View.DragShadowBuilder(view), view, 0)) {
+            // The system refused the drag, so no end event will ever come to
+            // put the card back to normal.
+            view.alpha = 1f
+            view.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+        }
     }
 
     private val dragListener = View.OnDragListener { _, event ->
         val dragged = event.localState as? View ?: return@OnDragListener false
         when (event.action) {
-            DragEvent.ACTION_DRAG_LOCATION -> {
-                val target = movableChildUnder(event.y, dragged)
-                if (target != null) {
-                    val to = container.indexOfChild(target)
-                    val from = container.indexOfChild(dragged)
-                    if (to >= 0 && from >= 0 && to != from) {
-                        container.removeView(dragged)
-                        container.addView(dragged, to)
-                    }
-                }
+            DragEvent.ACTION_DRAG_STARTED -> {
+                startEdgeScroll(dragged)
                 true
             }
+            DragEvent.ACTION_DRAG_LOCATION -> {
+                val offset = containerOffset()
+                if (offset != null && scroller != null) {
+                    // Kept in screen terms rather than list terms, because the
+                    // list moves under a finger that is held still.
+                    fingerY = event.y + offset - scroller.scrollY
+                }
+                moveDraggedTo(event.y, dragged)
+                updateEdgeScroll()
+                true
+            }
+            // Nothing new on purpose for ACTION_DRAG_EXITED: the finger went
+            // off the list, usually past the edge it was scrolling towards, so
+            // the last position is kept and the list carries on at that speed
+            // until the finger comes back or lets go.
             DragEvent.ACTION_DROP, DragEvent.ACTION_DRAG_ENDED -> {
+                stopEdgeScroll()
                 dragged.alpha = 1f
                 dragged.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
                 saveOrderFromContainer()
+                if (applyAfterDrag) {
+                    applyAfterDrag = false
+                    applyLayout()
+                }
                 true
             }
             else -> true
         }
     }
 
+    /** Moves the dragged card to the slot under [y], in container coordinates. */
+    private fun moveDraggedTo(y: Float, dragged: View) {
+        val target = movableChildUnder(y, dragged) ?: return
+        val to = container.indexOfChild(target)
+        val from = container.indexOfChild(dragged)
+        if (to < 0 || from < 0 || to == from) return
+        // Only once the finger is past the middle of the card it is moving
+        // over. Swapping on the first pixel made a tall card and a short one
+        // trade places back and forth, because after the swap the finger was
+        // still over the card that had just moved; with the list scrolling on
+        // its own every frame that would have turned into a flicker.
+        val middle = target.top + target.height / 2f
+        if (to > from && y < middle) return
+        if (to < from && y > middle) return
+        container.removeView(dragged)
+        container.addView(dragged, to)
+    }
+
     private fun movableChildUnder(y: Float, exclude: View): View? {
         for (i in 0 until container.childCount) {
             val child = container.getChildAt(i)
             if (child === exclude || itemForView(child) == null) continue
+            // A hidden card keeps the position it had when last laid out.
+            if (child.visibility != View.VISIBLE) continue
             if (y >= child.top && y <= child.bottom) return child
         }
         return null
+    }
+
+    // ------------------------------------------------- scrolling while dragging
+
+    /**
+     * The scroll view the cards sit in.
+     *
+     * The system drag does not scroll anything by itself, so without this a
+     * card could never be carried past what fits on the screen.
+     */
+    private val scroller: ViewGroup? = run {
+        var parent = container.parent
+        while (parent != null) {
+            if (parent is NestedScrollView || parent is ScrollView) return@run parent as ViewGroup
+            parent = parent.parent
+        }
+        null
+    }
+
+    /**
+     * How much of the bottom of the scroll view is covered by something pinned
+     * over it, such as the bottom bar and the power button. Supplied by the
+     * screen that owns them; without it the bottom edge is the scroll view's.
+     */
+    var bottomCover: (() -> Int)? = null
+
+    /** Last finger position, relative to the top of the scroll view. */
+    private var fingerY = Float.NaN
+    private var dragging: View? = null
+    private var usableTop = 0f
+    private var usableBottom = 0f
+    private var zone = 0f
+    private var maxSpeed = 0f
+    private var lastFrameNanos = 0L
+    private var scrollCarry = 0f
+    private var frameQueued = false
+
+    /** Set when the layout was asked to re-apply mid-drag; done on drop instead. */
+    private var applyAfterDrag = false
+
+    private val frameCallback = Choreographer.FrameCallback { now -> onScrollFrame(now) }
+
+    /** The container's top, measured inside the scroll view's content. */
+    private fun containerOffset(): Int? {
+        val root = scroller ?: return null
+        var offset = 0
+        var view: View = container
+        while (view !== root) {
+            offset += view.top
+            view = view.parent as? View ?: return null
+        }
+        return offset
+    }
+
+    private fun startEdgeScroll(dragged: View) {
+        stopEdgeScroll()
+        dragging = dragged
+        val root = scroller ?: return
+        // Measured once per drag. The covered part changes only with the
+        // window, not while a finger is down.
+        val cover = (bottomCover?.invoke() ?: 0).coerceIn(0, root.height)
+        usableTop = root.paddingTop.toFloat()
+        usableBottom = (root.height - cover).toFloat()
+        val density = context.resources.displayMetrics.density
+        zone = EdgeAutoScroll.zoneSize(usableBottom - usableTop, MIN_EDGE_ZONE_DP * density)
+        maxSpeed = MAX_SCROLL_DP_PER_SECOND * density
+    }
+
+    private fun currentVelocity(): Float =
+        EdgeAutoScroll.velocity(fingerY, usableTop, usableBottom, zone, maxSpeed)
+
+    private fun updateEdgeScroll() {
+        val root = scroller ?: return
+        if (dragging == null) return
+        val velocity = currentVelocity()
+        if (velocity == 0f || !root.canScrollVertically(if (velocity < 0) -1 else 1)) {
+            haltFrames()
+            return
+        }
+        if (!frameQueued) {
+            frameQueued = true
+            Choreographer.getInstance().postFrameCallback(frameCallback)
+        }
+    }
+
+    private fun onScrollFrame(now: Long) {
+        frameQueued = false
+        val root = scroller ?: return
+        val dragged = dragging ?: return
+        val velocity = currentVelocity()
+        val direction = if (velocity < 0) -1 else 1
+        if (velocity == 0f || !root.canScrollVertically(direction)) {
+            haltFrames()
+            return
+        }
+        // Time based, so a 120 Hz screen does not scroll twice as fast. The
+        // first frame and any long stall count as one ordinary frame.
+        val seconds = if (lastFrameNanos == 0L) 1f / 60f
+            else ((now - lastFrameNanos) / 1_000_000_000f).coerceIn(0f, 1f / 20f)
+        lastFrameNanos = now
+        scrollCarry += velocity * seconds
+        val step = scrollCarry.toInt()
+        scrollCarry -= step
+        if (step != 0) root.scrollBy(0, step)
+
+        // The finger has not moved but the cards under it have, so work out
+        // the drop slot again from where the finger now is in the list.
+        val offset = containerOffset()
+        if (offset != null) moveDraggedTo(fingerY - offset + root.scrollY, dragged)
+
+        frameQueued = true
+        Choreographer.getInstance().postFrameCallback(frameCallback)
+    }
+
+    /** Stops the frame loop but keeps the drag going. */
+    private fun haltFrames() {
+        if (frameQueued) Choreographer.getInstance().removeFrameCallback(frameCallback)
+        frameQueued = false
+        lastFrameNanos = 0L
+        scrollCarry = 0f
+    }
+
+    private fun stopEdgeScroll() {
+        haltFrames()
+        dragging = null
+        fingerY = Float.NaN
     }
 
     /** True when the card is currently hidden by the user. */
@@ -591,5 +768,10 @@ class EffectLayoutManager(
         private const val KEY_NAME_PREFIX = "name_"
         private const val KEY_SCHEMA = "schema"
         private const val SCHEMA_VERSION = 2
+
+        /** Smallest edge zone that drags the list along, roughly a fingertip. */
+        private const val MIN_EDGE_ZONE_DP = 64f
+        /** Top speed with the finger right at the edge. */
+        private const val MAX_SCROLL_DP_PER_SECOND = 1400f
     }
 }
