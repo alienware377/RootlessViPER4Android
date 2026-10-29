@@ -60,6 +60,17 @@ object GroupFolds {
         membersOf(order, headers, header).none { it in cards }
     }
 
+    /**
+     * The headings that end a group when folding.
+     *
+     * A heading that is not on screen does not split anything, so the cards
+     * below it belong to the group above, which is how they look. With no
+     * heading on screen at all (V4A-only mode) nothing can fold, and the
+     * groups are kept as they will be once the headings come back.
+     */
+    fun boundaries(all: Set<String>, onShow: Set<String>): Set<String> =
+        onShow.ifEmpty { all }
+
     /** The folded set with [header] flipped. */
     fun toggled(folded: Set<String>, header: String): Set<String> =
         if (header in folded) folded - header else folded + header
