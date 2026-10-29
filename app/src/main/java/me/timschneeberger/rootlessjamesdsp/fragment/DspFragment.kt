@@ -47,6 +47,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     override fun onResume() {
         super.onResume()
         applyV4aVisibility()
+        padForBottomChrome()
         requireContext().registerLocalReceiver(
             slotsChangedReceiver,
             android.content.IntentFilter(Constants.ACTION_LIVEPROG_SLOTS_CHANGED)
@@ -506,7 +507,6 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) {
             binding.v4aSectionHeader.isVisible = false
             hideDeviceProfileCard()
-            padForFooter()
         }
         // The original V4A had one fixed list: no search, no reordering, no
         // groups. Hide that whole toolbar while the mode is on.
@@ -530,18 +530,34 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
      * copy in the scrolling list is removed to avoid two live instances.
      */
     /**
-     * Keeps the end of the list clear of the persistent footer. Applied to the
-     * scrolling parent with clipToPadding off, so newly added groups and cards
-     * dragged to the bottom stay reachable instead of hiding underneath it.
+     * Keeps the end of the list clear of whatever is pinned to the bottom of
+     * the screen: the bottom bar and the power button cradled in it, or the
+     * classic layout's footer. Without this the last rows sat underneath them
+     * with no way to scroll further, so a newly added group, which always goes
+     * to the end, could be neither renamed nor dragged.
+     *
+     * Measured rather than assumed, from the top edge of the highest visible
+     * piece of bottom chrome, because the power button rises above the bar and
+     * the classic footer sizes to its content. The padding goes on the scroll
+     * view itself with clipToPadding off, so the list still scrolls behind the
+     * bar and only its end stops above it.
      */
-    private fun padForFooter() {
-        val footer = activity?.findViewById<View>(R.id.classic_footer) ?: return
-        val scroll = binding.root.parent as? ViewGroup ?: return
-        footer.post {
-            val h = footer.height.takeIf { it > 0 } ?: return@post
+    private fun padForBottomChrome() {
+        val act = activity ?: return
+        val scroll = binding.root as? ViewGroup ?: return
+        val chrome = listOf(R.id.classic_footer, R.id.bar, R.id.power_toggle)
+            .mapNotNull { act.findViewById<View>(it) }
+        scroll.post {
+            if (!isAdded) return@post
+            val tops = chrome.filter { it.isVisible && it.height > 0 }
+                .map { IntArray(2).also(it::getLocationOnScreen)[1] }
+            val chromeTop = tops.minOrNull() ?: return@post
+            val loc = IntArray(2).also(scroll::getLocationOnScreen)
+            val covered = loc[1] + scroll.height - chromeTop
+            if (covered <= 0) return@post
             scroll.clipToPadding = false
             scroll.setPadding(scroll.paddingLeft, scroll.paddingTop,
-                scroll.paddingRight, h)
+                scroll.paddingRight, covered)
         }
     }
 
