@@ -353,13 +353,17 @@ class EffectLayoutManager(
             // The editor shows every card so they can all be moved; the
             // chevron only shows how the group will look afterwards. Not
             // clickable, so a long press on it still starts dragging the group.
+            // A tap on it lands on the heading, which opens the rename box, so
+            // a screen reader should not offer it as a fold button here.
             chevron.setOnClickListener(null)
             chevron.isClickable = false
             chevron.isFocusable = false
+            chevron.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             chevron.alpha = 0.5f
         } else {
             chevron.setOnClickListener { setFolded(item, !isFolded(item.key)) }
             chevron.isFocusable = true
+            chevron.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
             chevron.alpha = 1f
         }
     }
