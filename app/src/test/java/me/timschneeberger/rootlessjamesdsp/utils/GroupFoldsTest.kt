@@ -43,6 +43,28 @@ class GroupFoldsTest {
     }
 
     @Test
+    fun `a heading that is not on show does not end the group above it`() {
+        val order = listOf(
+            "group_custom_1", "card_ddc",
+            "group_v4a", "card_agc",
+            "group_custom_2", "card_eq",
+        )
+        val all = setOf("group_custom_1", "group_v4a", "group_custom_2")
+        // Classic layout: no V4A heading, so its cards sit under the group above
+        val classic = GroupFolds.boundaries(all, all - "group_v4a")
+        assertEquals(
+            setOf("card_ddc", "group_v4a", "card_agc"),
+            GroupFolds.foldedAway(order, classic, setOf("group_custom_1"))
+        )
+        assertEquals(
+            setOf("group_custom_1"),
+            GroupFolds.unfoldFor(order, classic, setOf("group_custom_1", "group_custom_2"), setOf("card_eq"))
+        )
+        // V4A-only mode: no heading on show, so the groups stay as they will come back
+        assertEquals(all, GroupFolds.boundaries(all, emptySet()))
+    }
+
+    @Test
     fun `a fold left behind by a deleted group hides nothing`() {
         val headersAfterDelete = setOf("group_v4a")
         val orderAfterDelete = order - "group_custom_1"
