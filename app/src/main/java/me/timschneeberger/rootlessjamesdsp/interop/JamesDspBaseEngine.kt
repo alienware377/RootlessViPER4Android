@@ -984,7 +984,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
 }
 
-// x1, x2, y1, y2, sideGainX, sideGainY â€” from the ViperFX DynamicBass presets
+// x1, x2, y1, y2, sideGainX, sideGainY: from the ViperFX DynamicBass presets
 internal val vdynBassPresets = arrayOf(
     floatArrayOf(140f,6200f,40f,60f,10f,80f),
     floatArrayOf(180f,5800f,55f,80f,10f,70f),

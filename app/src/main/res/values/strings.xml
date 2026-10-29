@@ -331,7 +331,7 @@
     <string name="effect_edit_hint">Drag cards to reorder - tap the eye to hide - move a card past a group heading to change its group</string>
     <string name="effect_search_hint">Search effects</string>
     <string name="effect_search_empty">No effects match your search</string>
-    <string name="v4a_section_header">ã€° ViPER4Android effects ã€°</string>
+    <string name="v4a_section_header">〰 ViPER4Android effects 〰</string>
     <string name="fetcomp_enable">FET compressor</string>
     <string name="fetcomp_info">A fast, punchy studio-style compressor (like classic FET hardware): it tames peaks above the threshold so you can raise overall loudness. Lower threshold + higher ratio = more squeeze.</string>
     <string name="fetcomp_threshold">Threshold</string>
