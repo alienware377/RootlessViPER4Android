@@ -49,6 +49,12 @@ class EffectLayoutManager(
     )
 
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    /**
+     * Cards a preset just switched on, waiting for [consumePendingUnfolds].
+     * Kept out of [prefs] because that file is copied into every preset and
+     * backup, and an old list coming back with one would open groups later.
+     */
+    private val pendingPrefs = context.getSharedPreferences(PENDING_PREFS, Context.MODE_PRIVATE)
     private val editRows = HashMap<String, View>()
 
     var editMode = false
@@ -302,15 +308,14 @@ class EffectLayoutManager(
      * knows which group a card is in when the order was never customised.
      */
     private fun consumePendingUnfolds() {
-        val pending = prefs.getStringSet(KEY_UNFOLD_PENDING, null) ?: return
+        val pending = pendingPrefs.getStringSet(KEY_UNFOLD_PENDING, null) ?: return
+        pendingPrefs.edit().remove(KEY_UNFOLD_PENDING).apply()
         val folded = foldedKeys()
         val opened = GroupFolds.unfoldFor(containerOrder(), headerKeys(), folded, pending)
-        val editor = prefs.edit().remove(KEY_UNFOLD_PENDING)
         if (opened != folded) {
             Timber.d("Preset opened folded groups: ${folded - opened}")
-            editor.putStringSet(KEY_FOLDED, HashSet(opened))
+            prefs.edit().putStringSet(KEY_FOLDED, HashSet(opened)).apply()
         }
-        editor.apply()
     }
 
     /** Points the chevron the right way and wires it for the current mode. */
@@ -915,7 +920,9 @@ class EffectLayoutManager(
         private const val KEY_NAME_PREFIX = "name_"
         private const val KEY_FOLDED = "folded"
         // Cards a preset just switched on, left by Preset.load for
-        // consumePendingUnfolds. Both names are repeated in Preset.
+        // consumePendingUnfolds in a file of their own. Both names are
+        // repeated in Preset.
+        private const val PENDING_PREFS = "effect_layout_pending"
         private const val KEY_UNFOLD_PENDING = "unfold_pending"
         private const val KEY_SCHEMA = "schema"
         private const val SCHEMA_VERSION = 2
