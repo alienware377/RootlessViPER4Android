@@ -257,8 +257,12 @@ class EffectLayoutManager(
     }
 
     /** The cards that belong to a header: everything until the next header. */
-    private fun membersOf(headerKey: String, order: List<String> = containerOrder()): List<Item> =
-        GroupFolds.membersOf(order, headerKeys(), headerKey)
+    private fun membersOf(
+        headerKey: String,
+        order: List<String> = containerOrder(),
+        boundaries: Set<String> = headerKeys(),
+    ): List<Item> =
+        GroupFolds.membersOf(order, boundaries, headerKey)
             .mapNotNull { key -> items.firstOrNull { it.key == key } }
 
     // ---------------------------------------------------------------- folding
@@ -291,7 +295,18 @@ class EffectLayoutManager(
         val folded = foldedKeys()
         if (folded.isEmpty()) return emptySet()
         val foldable = items.filter { it.isHeader && canFold(it) }.mapTo(HashSet()) { it.key }
-        return GroupFolds.foldedAway(containerOrder(), headerKeys(), folded) { it in foldable }
+        return GroupFolds.foldedAway(containerOrder(), foldBoundaries(), folded) { it in foldable }
+    }
+
+    /**
+     * The headings that end a group when folding. One that is not on show
+     * (the ViPER4Android heading in the classic layout) does not: its cards
+     * then sit right under the group above it, so folding that group has to
+     * take them too.
+     */
+    private fun foldBoundaries(): Set<String> {
+        val onShow = items.filter { it.isHeader && canFold(it) }.mapTo(HashSet()) { it.key }
+        return GroupFolds.boundaries(headerKeys(), onShow)
     }
 
     fun setFolded(item: Item, folded: Boolean) {
@@ -311,7 +326,7 @@ class EffectLayoutManager(
         val pending = pendingPrefs.getStringSet(KEY_UNFOLD_PENDING, null) ?: return
         pendingPrefs.edit().remove(KEY_UNFOLD_PENDING).apply()
         val folded = foldedKeys()
-        val opened = GroupFolds.unfoldFor(containerOrder(), headerKeys(), folded, pending)
+        val opened = GroupFolds.unfoldFor(containerOrder(), foldBoundaries(), folded, pending)
         if (opened != folded) {
             Timber.d("Preset opened folded groups: ${folded - opened}")
             prefs.edit().putStringSet(KEY_FOLDED, HashSet(opened)).apply()
@@ -325,7 +340,7 @@ class EffectLayoutManager(
         val folded = isFolded(item.key)
         // Nothing to fold in an empty group, unless it was folded before it
         // emptied, in which case the chevron is the way to open it again.
-        val hasCards = membersOf(item.key, order ?: containerOrder()).isNotEmpty()
+        val hasCards = membersOf(item.key, order ?: containerOrder(), foldBoundaries()).isNotEmpty()
         chevron.isVisible = canFold(item) && (hasCards || folded)
         chevron.setImageResource(
             if (folded) R.drawable.ic_baseline_keyboard_arrow_down_24dp
