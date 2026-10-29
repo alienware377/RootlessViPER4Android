@@ -61,6 +61,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
     override fun onPause() {
         super.onPause()
+        layoutManager?.pauseEdgeScroll()
         requireContext().unregisterLocalReceiver(slotsChangedReceiver)
         requireContext().unregisterLocalReceiver(presetLoadedReceiver)
     }
