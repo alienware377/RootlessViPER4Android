@@ -324,6 +324,8 @@
     <string name="effect_group_rename">Rename group</string>
     <string name="effect_group_delete">Delete group</string>
     <string name="effect_group_header_editing">%1$s  (tap to rename)</string>
+    <string name="effect_group_fold">Fold this group</string>
+    <string name="effect_group_unfold">Unfold this group</string>
     <string name="effect_reset_layout">Reset layout</string>
     <string name="effect_reset_layout_confirm">Restore the default effect order and show all hidden effects?</string>
     <string name="effect_edit_layout">Customize layout</string>

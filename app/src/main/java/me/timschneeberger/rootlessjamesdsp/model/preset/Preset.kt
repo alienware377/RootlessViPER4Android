@@ -116,6 +116,8 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
         // from the hidden set without depending on the view layer.
         private const val LAYOUT_PREFS = "effect_layout"
         private const val LAYOUT_KEY_HIDDEN = "hidden"
+        private const val LAYOUT_KEY_FOLDED = "folded"
+        private const val LAYOUT_KEY_UNFOLD_PENDING = "unfold_pending"
 
         const val META_VERSION = "version"
         const val META_APP_VERSION = "app_version"
@@ -235,6 +237,13 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
          * would then apply with nothing on screen to show for it. So the hidden
          * set - and only the hidden set - gives way to the preset. Order,
          * groups and group names are left exactly as they were.
+         *
+         * A folded group hides its cards the same way, so it is opened too
+         * when the preset switches on a card inside it. Which group a card is
+         * in depends on the card order, which only the layout screen knows
+         * for certain, so the cards are left for it to act on the next time
+         * it applies the layout (straight after the preset-loaded broadcast,
+         * or at the next start).
          */
         private fun revealCardsUsedBy(ctx: Context, files: Array<File>) {
             val reveal = files.mapNotNull { f ->
@@ -247,6 +256,9 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
 
             @Suppress("DEPRECATION")
             val prefs = ctx.getSharedPreferences(LAYOUT_PREFS, Context.MODE_MULTI_PROCESS)
+            if (!prefs.getStringSet(LAYOUT_KEY_FOLDED, null).isNullOrEmpty()) {
+                prefs.edit().putStringSet(LAYOUT_KEY_UNFOLD_PENDING, HashSet(reveal)).commit()
+            }
             val hidden = HashSet(prefs.getStringSet(LAYOUT_KEY_HIDDEN, emptySet()) ?: emptySet())
             val revealed = hidden.intersect(reveal)
             if (revealed.isEmpty()) return

@@ -376,15 +376,40 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </com.google.android.material.card.MaterialCardView>
-        <TextView
+        <!-- Same shape as the group headings EffectLayoutManager builds: the
+             tags are how it finds the name and the fold chevron, and the
+             blank on the left keeps the name centred. -->
+        <LinearLayout
             android:id="@+id/v4a_section_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="20dp"
-            android:paddingBottom="8dp"
-            android:gravity="center"
-            android:text="@string/v4a_section_header"
-            android:textAppearance="?attr/textAppearanceTitleMedium" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp"
+            android:tag="effect_group_header">
+
+            <Space
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:tag="effect_group_header_title"
+                android:text="@string/v4a_section_header"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+            <ImageButton
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/effect_group_fold"
+                android:src="@drawable/ic_baseline_keyboard_arrow_up_24dp"
+                android:tag="effect_group_header_fold"
+                android:visibility="gone" />
+        </LinearLayout>
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
