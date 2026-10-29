@@ -842,6 +842,13 @@ class EffectLayoutManager(
         frameQueued = false
         val root = scroller ?: return
         val dragged = dragging ?: return
+        // The screen can go away mid-drag (the activity being recreated, for
+        // one) without the end of the drag ever reaching this list, and the
+        // loop would go on scrolling a list nobody can see.
+        if (!root.isAttachedToWindow) {
+            stopEdgeScroll()
+            return
+        }
         val velocity = currentVelocity()
         val direction = if (velocity < 0) -1 else 1
         if (velocity == 0f || !root.canScrollVertically(direction)) {
@@ -866,6 +873,12 @@ class EffectLayoutManager(
         frameQueued = true
         Choreographer.getInstance().postFrameCallback(frameCallback)
     }
+
+    /**
+     * Stops the scrolling while the screen is paused mid-drag. The drag goes
+     * on, and the next move of the finger starts the scrolling again.
+     */
+    fun pauseEdgeScroll() = haltFrames()
 
     /** Stops the frame loop but keeps the drag going. */
     private fun haltFrames() {
