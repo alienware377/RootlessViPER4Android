@@ -124,10 +124,10 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - ~~**Exciter**~~ — four ranges, each with its own amount, and five characters: three symmetrical ones that add odd harmonics and two lopsided ones that add even harmonics, which is the difference between a transistor sound and a valve one. The older two-band Bass exciter card is left in place so existing setups keep working
 - ~~**Vintage tape**~~ — wow and flutter as a genuinely modulated delay rather than a phase trick, gentle tape saturation, a bias control that runs the right way round (down is brighter and grittier, up is duller), and the head bump that makes tape masters sound weightier
 - ~~**Rooted mode**~~ — a Magisk module carrying this fork's own engine as a system-wide audio effect, so rooted devices run these effects rather than the stock JamesDSP set. Ships as **RootfulViPER4Android**, a separate app that installs alongside the rootless one. Legacy effect HAL, so Android 14 and below
-- ~~**Per-channel parametric EQ**~~ *(next release)*: each band can act on the left ear, the right ear or both, for correcting a pair of earphones whose sides do not match. Imports and exports EqualizerAPO's `Channel:` lines ([#9](https://github.com/alienware377/RootlessViPER4Android/issues/9))
-- ~~**Choose which apps are processed**~~ *(next release)*: the app list can name the apps to process instead of the ones to skip ([#10](https://github.com/alienware377/RootlessViPER4Android/issues/10))
-- ~~**Remember effect on/off states**~~ *(next release)* across a ViPER4Android-only mode round trip: switching the mode off now puts back exactly the effects that were on before
-- ~~**Smooth Concert hall and Room**~~ *(next release)*: rebuilt versions of the two reverbs that sounded metallic, with a dense tail and no repeating echoes. The originals stay, so existing presets sound the same ([#6](https://github.com/alienware377/RootlessViPER4Android/issues/6))
+- ~~**Per-channel parametric EQ**~~ *(v4.4.0)*: each band can act on the left ear, the right ear or both, for correcting a pair of earphones whose sides do not match. Imports and exports EqualizerAPO's `Channel:` lines ([#9](https://github.com/alienware377/RootlessViPER4Android/issues/9))
+- ~~**Choose which apps are processed**~~ *(v4.4.0)*: the app list can name the apps to process instead of the ones to skip ([#10](https://github.com/alienware377/RootlessViPER4Android/issues/10))
+- ~~**Remember effect on/off states**~~ *(v4.4.0)* across a ViPER4Android-only mode round trip: switching the mode off now puts back exactly the effects that were on before
+- ~~**Smooth Concert hall and Room**~~ *(v4.4.0)*: rebuilt versions of the two reverbs that sounded metallic, with a dense tail and no repeating echoes. The originals stay, so existing presets sound the same ([#6](https://github.com/alienware377/RootlessViPER4Android/issues/6))
 
 ### 🔜 Planned
 
