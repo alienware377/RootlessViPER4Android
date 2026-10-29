@@ -543,22 +543,31 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
      * bar and only its end stops above it.
      */
     private fun padForBottomChrome() {
-        val act = activity ?: return
         val scroll = binding.root as? ViewGroup ?: return
-        val chrome = listOf(R.id.classic_footer, R.id.bar, R.id.power_toggle)
-            .mapNotNull { act.findViewById<View>(it) }
         scroll.post {
             if (!isAdded) return@post
-            val tops = chrome.filter { it.isVisible && it.height > 0 }
-                .map { IntArray(2).also(it::getLocationOnScreen)[1] }
-            val chromeTop = tops.minOrNull() ?: return@post
-            val loc = IntArray(2).also(scroll::getLocationOnScreen)
-            val covered = loc[1] + scroll.height - chromeTop
+            val covered = bottomChromeCover()
             if (covered <= 0) return@post
             scroll.clipToPadding = false
             scroll.setPadding(scroll.paddingLeft, scroll.paddingTop,
                 scroll.paddingRight, covered)
         }
+    }
+
+    /**
+     * How many pixels at the bottom of the list sit under the bottom chrome
+     * right now, or 0 if none of it overlaps. Needs a laid out screen.
+     */
+    private fun bottomChromeCover(): Int {
+        val act = activity ?: return 0
+        val scroll = binding.root
+        val tops = listOf(R.id.classic_footer, R.id.bar, R.id.power_toggle)
+            .mapNotNull { act.findViewById<View>(it) }
+            .filter { it.isVisible && it.height > 0 }
+            .map { IntArray(2).also(it::getLocationOnScreen)[1] }
+        val chromeTop = tops.minOrNull() ?: return 0
+        val loc = IntArray(2).also(scroll::getLocationOnScreen)
+        return (loc[1] + scroll.height - chromeTop).coerceAtLeast(0)
     }
 
     private fun hideDeviceProfileCard() {
@@ -637,6 +646,9 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
         val manager = EffectLayoutManager(requireContext(), binding.cardContainer, entries)
         layoutManager = manager
+        // Dragging a card into the bottom edge scrolls the list, and that edge
+        // is the top of the bar and power button, which cover the list.
+        manager.bottomCover = { if (isAdded) bottomChromeCover() else 0 }
         manager.applyLayout()
 
         manager.onEditModeChanged = { editing ->
