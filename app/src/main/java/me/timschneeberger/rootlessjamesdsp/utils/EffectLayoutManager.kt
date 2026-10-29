@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.TextViewCompat
 import android.view.Choreographer
 import android.view.DragEvent
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -114,12 +115,19 @@ class EffectLayoutManager(
 
     /** The order the cards currently sit in inside the container. */
     private fun containerOrder(): List<String> {
+        // One lookup per item rather than one per item per child: this now
+        // also runs whenever a group is folded or the search is cleared.
+        val byView = java.util.IdentityHashMap<View, Item>()
+        items.forEach { item -> viewFor(item)?.let { byView[it] = item } }
         val keys = ArrayList<String>()
         for (i in 0 until container.childCount) {
-            itemForView(container.getChildAt(i))?.let { keys.add(it.key) }
+            byView[container.getChildAt(i)]?.let { keys.add(it.key) }
         }
         return keys
     }
+
+    private fun headerKeys(): Set<String> =
+        items.filter { it.isHeader }.mapTo(HashSet()) { it.key }
 
     /**
      * Returns the user's saved order, or null if they've never customised the
@@ -174,7 +182,7 @@ class EffectLayoutManager(
         prefs.getString(KEY_NAME_PREFIX + item.key, null)
             ?: storedGroups().firstOrNull { it.first == item.key }?.second
             ?: item.titleRes.takeIf { it != 0 }?.let(context::getString)
-            ?: (viewFor(item) as? TextView)?.text?.toString()
+            ?: viewFor(item)?.let(::headerTitle)?.text?.toString()
             ?: item.key
 
     /** Hides or shows every group heading (used by V4A-only mode). */
@@ -184,21 +192,49 @@ class EffectLayoutManager(
         }
     }
 
-    private fun makeHeaderView(text: String): TextView =
-        TextView(context).apply {
+    /**
+     * A group heading: its name in the middle and a fold chevron on the right,
+     * with a blank of the same width on the left so the name stays centred.
+     * Built to match the ViPER4Android heading declared in fragment_dsp.xml.
+     */
+    private fun makeHeaderView(text: String): LinearLayout =
+        LinearLayout(context).apply {
             id = View.generateViewId()
             tag = TAG_HEADER
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            gravity = Gravity.CENTER
-            setPadding(0, dp(20), 0, dp(8))
-            this.text = text
-            TextViewCompat.setTextAppearance(
-                this, com.google.android.material.R.style.TextAppearance_Material3_TitleMedium
-            )
+            setPadding(0, dp(8), 0, 0)
+            addView(View(context), LinearLayout.LayoutParams(dp(48), dp(48)))
+            addView(TextView(context).apply {
+                tag = TAG_HEADER_TITLE
+                gravity = Gravity.CENTER
+                this.text = text
+                TextViewCompat.setTextAppearance(
+                    this, com.google.android.material.R.style.TextAppearance_Material3_TitleMedium
+                )
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(ImageButton(context).apply {
+                tag = TAG_HEADER_FOLD
+                val ripple = TypedValue()
+                context.theme.resolveAttribute(
+                    android.R.attr.selectableItemBackgroundBorderless, ripple, true
+                )
+                setBackgroundResource(ripple.resourceId)
+                setImageResource(R.drawable.ic_baseline_keyboard_arrow_up_24dp)
+                isVisible = false
+            }, LinearLayout.LayoutParams(dp(48), dp(48)))
         }
+
+    /** The name part of a heading. */
+    private fun headerTitle(view: View): TextView? =
+        view as? TextView ?: view.findViewWithTag(TAG_HEADER_TITLE)
+
+    private fun headerChevron(view: View): ImageButton? =
+        view.findViewWithTag(TAG_HEADER_FOLD)
 
     /** Creates views for any custom groups that don't have one yet. */
     private fun ensureGroupViews() {
@@ -210,22 +246,106 @@ class EffectLayoutManager(
         }
         // Refresh titles (renames) on every apply
         items.filter { it.isHeader }.forEach { item ->
-            (viewFor(item) as? TextView)?.text = groupName(item)
+            viewFor(item)?.let(::headerTitle)?.text = groupName(item)
         }
     }
 
     /** The cards that belong to a header: everything until the next header. */
-    private fun membersOf(headerKey: String): List<Item> {
-        val order = containerOrder()
-        val start = order.indexOf(headerKey)
-        if (start < 0) return emptyList()
-        val members = ArrayList<Item>()
-        for (i in start + 1 until order.size) {
-            val item = items.firstOrNull { it.key == order[i] } ?: continue
-            if (item.isHeader) break
-            members.add(item)
+    private fun membersOf(headerKey: String, order: List<String> = containerOrder()): List<Item> =
+        GroupFolds.membersOf(order, headerKeys(), headerKey)
+            .mapNotNull { key -> items.firstOrNull { it.key == key } }
+
+    // ---------------------------------------------------------------- folding
+
+    /**
+     * Whether a heading's fold may hide anything right now. Supplied by the
+     * screen, which knows when a heading is not on show (V4A-only mode hides
+     * every heading, the classic layout drops the ViPER4Android one). A fold
+     * under a heading nobody can see would leave its cards unreachable, so it
+     * is ignored, not cleared, and comes back when the heading does.
+     */
+    var canFold: (Item) -> Boolean = { true }
+
+    /** Called after a fold changes what is on screen, so the screen can re-apply its own rules. */
+    var onFoldChanged: (() -> Unit)? = null
+
+    private fun foldedKeys(): Set<String> =
+        HashSet(prefs.getStringSet(KEY_FOLDED, emptySet()) ?: emptySet())
+
+    fun isFolded(key: String) = foldedKeys().contains(key)
+
+    /**
+     * Cards that are out of sight because their group is folded.
+     *
+     * Empty in the layout editor, which always shows every card so any of
+     * them can still be moved.
+     */
+    fun foldedAwayKeys(): Set<String> {
+        if (editMode) return emptySet()
+        val folded = foldedKeys()
+        if (folded.isEmpty()) return emptySet()
+        val foldable = items.filter { it.isHeader && canFold(it) }.mapTo(HashSet()) { it.key }
+        return GroupFolds.foldedAway(containerOrder(), headerKeys(), folded) { it in foldable }
+    }
+
+    fun setFolded(item: Item, folded: Boolean) {
+        if (!item.isHeader || isFolded(item.key) == folded) return
+        val next = if (folded) foldedKeys() + item.key else foldedKeys() - item.key
+        prefs.edit().putStringSet(KEY_FOLDED, HashSet(next)).apply()
+        applyVisibility()
+        onFoldChanged?.invoke()
+    }
+
+    /**
+     * Opens any folded group holding a card a preset just switched on. The
+     * preset leaves the list of those cards behind, because only this class
+     * knows which group a card is in when the order was never customised.
+     */
+    private fun consumePendingUnfolds() {
+        val pending = prefs.getStringSet(KEY_UNFOLD_PENDING, null) ?: return
+        val folded = foldedKeys()
+        val opened = GroupFolds.unfoldFor(containerOrder(), headerKeys(), folded, pending)
+        val editor = prefs.edit().remove(KEY_UNFOLD_PENDING)
+        if (opened != folded) {
+            Timber.d("Preset opened folded groups: ${folded - opened}")
+            editor.putStringSet(KEY_FOLDED, HashSet(opened))
         }
-        return members
+        editor.apply()
+    }
+
+    /** Points the chevron the right way and wires it for the current mode. */
+    private fun refreshHeader(item: Item, order: List<String>? = null) {
+        val view = viewFor(item) ?: return
+        val chevron = headerChevron(view) ?: return
+        val folded = isFolded(item.key)
+        // Nothing to fold in an empty group, unless it was folded before it
+        // emptied, in which case the chevron is the way to open it again.
+        val hasCards = membersOf(item.key, order ?: containerOrder()).isNotEmpty()
+        chevron.isVisible = canFold(item) && (hasCards || folded)
+        chevron.setImageResource(
+            if (folded) R.drawable.ic_baseline_keyboard_arrow_down_24dp
+            else R.drawable.ic_baseline_keyboard_arrow_up_24dp
+        )
+        chevron.contentDescription = context.getString(
+            if (folded) R.string.effect_group_unfold else R.string.effect_group_fold
+        )
+        if (editMode) {
+            // The editor shows every card so they can all be moved; the
+            // chevron only shows how the group will look afterwards. Not
+            // clickable, so a long press on it still starts dragging the group.
+            chevron.setOnClickListener(null)
+            chevron.isClickable = false
+            chevron.isFocusable = false
+            chevron.alpha = 0.5f
+        } else {
+            chevron.setOnClickListener { setFolded(item, !isFolded(item.key)) }
+            chevron.isFocusable = true
+            chevron.alpha = 1f
+        }
+    }
+
+    private fun refreshHeaders(order: List<String> = containerOrder()) {
+        items.filter { it.isHeader }.forEach { refreshHeader(it, order) }
     }
 
     fun addGroup(name: String) {
@@ -257,7 +377,12 @@ class EffectLayoutManager(
         // Only user-created groups can be removed; cards fall into the group above.
         if (!item.key.startsWith("group_custom_")) return
         saveGroups(storedGroups().filterNot { it.first == item.key })
-        prefs.edit().remove(KEY_NAME_PREFIX + item.key).apply()
+        // Its fold goes with it. Keys are never reused, so a stale entry would
+        // do no harm, but it would sit in every preset and backup for good.
+        prefs.edit()
+            .remove(KEY_NAME_PREFIX + item.key)
+            .putStringSet(KEY_FOLDED, HashSet(GroupFolds.forget(foldedKeys(), item.key)))
+            .apply()
         viewFor(item)?.let { container.removeView(it) }
         items.removeAll { it.key == item.key }
         saveOrderFromContainer()
@@ -276,7 +401,7 @@ class EffectLayoutManager(
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) {
                     renameGroup(item, name)
-                    (viewFor(item) as? TextView)?.text = name
+                    viewFor(item)?.let(::headerTitle)?.text = name
                     editRows[item.key]?.let { row ->
                         ((row as LinearLayout).getChildAt(1) as? TextView)?.text = name
                     }
@@ -301,12 +426,13 @@ class EffectLayoutManager(
             return
         }
         ensureGroupViews()
-        val order = storedOrder()
-        if (order == null) {
-            // Untouched layout: keep the declared order as-is
-            applyVisibility()
-            return
-        }
+        // Null for an untouched layout, which keeps the declared order as-is
+        storedOrder()?.let(::reorder)
+        consumePendingUnfolds()
+        applyVisibility()
+    }
+
+    private fun reorder(order: List<String>) {
         val ordered = order.mapNotNull { key ->
             items.firstOrNull { it.key == key }?.let { item -> viewFor(item) }
         }
@@ -329,19 +455,23 @@ class EffectLayoutManager(
             container.addView(view, index.coerceAtMost(container.childCount))
             index++
         }
-
-        applyVisibility()
     }
 
     private fun applyVisibility() {
+        val order = containerOrder()
         val hidden = HashSet(hiddenKeys())
         // A hidden group takes its cards with it
         items.filter { it.isHeader && hidden.contains(it.key) }.forEach { header ->
-            membersOf(header.key).forEach { hidden.add(it.key) }
+            membersOf(header.key, order).forEach { hidden.add(it.key) }
         }
+        // And a folded one puts them out of sight while its heading stays.
+        // This only ever adds to the hidden cards, so a card the user hid
+        // stays hidden when its group is opened again.
+        hidden.addAll(foldedAwayKeys())
         items.forEach { item ->
             viewFor(item)?.isVisible = editMode || !hidden.contains(item.key)
         }
+        refreshHeaders(order)
     }
 
     private fun saveOrderFromContainer() {
@@ -443,12 +573,14 @@ class EffectLayoutManager(
     /** Replaces the card's content with a compact one-line editing row. */
     private fun collapseCard(view: View, item: Item, isHidden: Boolean) {
         if (item.isHeader) {
-            // Headers aren't containers - show the editing affordances inline
-            (view as? TextView)?.let { header ->
-                header.text = context.getString(R.string.effect_group_header_editing, groupName(item))
-                header.setOnClickListener { promptRename(item) }
-                header.alpha = if (isHidden) 0.45f else 1f
-            }
+            // Headers aren't containers - show the editing affordances inline.
+            // The tap goes on the whole heading rather than the name inside
+            // it, so a long press anywhere on it still reaches the drag.
+            headerTitle(view)?.text =
+                context.getString(R.string.effect_group_header_editing, groupName(item))
+            view.setOnClickListener { promptRename(item) }
+            view.alpha = if (isHidden) 0.45f else 1f
+            refreshHeader(item)
             return
         }
 
@@ -538,12 +670,11 @@ class EffectLayoutManager(
         if (!item.isHeader) {
             container.findViewById<View>(item.viewId)?.isVisible = true
         } else {
-            (view as? TextView)?.let {
-                it.alpha = 1f
-                it.text = groupName(item)
-                it.setOnClickListener(null)
-                it.isClickable = false
-            }
+            view.alpha = 1f
+            headerTitle(view)?.text = groupName(item)
+            view.setOnClickListener(null)
+            view.isClickable = false
+            refreshHeader(item)
         }
     }
 
@@ -754,18 +885,25 @@ class EffectLayoutManager(
     fun isHidden(key: String) = hiddenKeys().contains(key)
 
     fun resetLayout() {
-        prefs.edit().remove(KEY_ORDER).remove(KEY_HIDDEN).apply()
+        prefs.edit().remove(KEY_ORDER).remove(KEY_HIDDEN).remove(KEY_FOLDED).apply()
         applyLayout()
     }
 
     companion object {
         private const val TAG_HEADER = "effect_group_header"
+        // Also set on the ViPER4Android heading in fragment_dsp.xml
+        private const val TAG_HEADER_TITLE = "effect_group_header_title"
+        private const val TAG_HEADER_FOLD = "effect_group_header_fold"
 
         private const val PREFS = "effect_layout"
         private const val KEY_ORDER = "order"
         private const val KEY_HIDDEN = "hidden"
         private const val KEY_GROUPS = "groups"
         private const val KEY_NAME_PREFIX = "name_"
+        private const val KEY_FOLDED = "folded"
+        // Cards a preset just switched on, left by Preset.load for
+        // consumePendingUnfolds. Both names are repeated in Preset.
+        private const val KEY_UNFOLD_PENDING = "unfold_pending"
         private const val KEY_SCHEMA = "schema"
         private const val SCHEMA_VERSION = 2
 

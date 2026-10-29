@@ -214,6 +214,9 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     }
 
     companion object {
+        /** Layout key of the ViPER4Android effects heading. */
+        private const val GROUP_V4A = "group_v4a"
+
         fun newInstance(): DspFragment {
             return DspFragment()
         }
@@ -270,17 +273,20 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         val q = query.trim().lowercase(Locale.getDefault())
         val searching = q.isNotEmpty()
         var matches = 0
+        // A search looks inside folded groups too; clearing it folds them again.
+        val foldedAway = if (searching) emptySet()
+            else layoutManager?.foldedAwayKeys() ?: emptySet()
 
         searchableCards.forEach { entry ->
             val card = binding.root.findViewById<View>(entry.cardId)?.parent as? View
             if (card != null) {
                 val title = getString(entry.titleRes).lowercase(Locale.getDefault())
-                val userHidden = layoutManager?.isHidden(
-                    resources.getResourceEntryName(entry.cardId)
-                ) == true
+                val key = resources.getResourceEntryName(entry.cardId)
+                val userHidden = layoutManager?.isHidden(key) == true
                 val v4aHidden = V4aMode.isOn(requireContext()) &&
                         entry.cardId in V4aMode.hiddenCardIds
-                val visible = !userHidden && !v4aHidden && (!searching || title.contains(q))
+                val visible = !userHidden && !v4aHidden &&
+                        (if (searching) title.contains(q) else key !in foldedAway)
                 card.isVisible = visible
                 if (visible && searching) matches++
             }
@@ -595,14 +601,17 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             R.xml.dsp_liveprog4_preferences
         )
         val occupied = LiveprogSlots.read(requireContext())
+        val foldedAway = layoutManager?.foldedAwayKeys() ?: emptySet()
         ids.forEachIndexed { index, id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
             // A filled slot shows its card, unless the user hid that card in the
             // layout editor: this ran on every resume and slot change and used
             // to bring a hidden card straight back. Edit mode shows everything.
-            val userHidden = layoutManager?.isHidden(resources.getResourceEntryName(id)) == true
+            // The same goes for a card in a folded group (empty in edit mode).
+            val key = resources.getResourceEntryName(id)
+            val userHidden = layoutManager?.isHidden(key) == true
             container?.isVisible = occupied[index + 1].isNotBlank() &&
-                (layoutManager?.editMode == true || !userHidden)
+                (layoutManager?.editMode == true || (!userHidden && key !in foldedAway))
         }
         if (!rebuild) return
         // The picker wrote these namespaces directly, so the existing preference
@@ -633,7 +642,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         val entries = ArrayList<EffectLayoutManager.Item>()
         entries.add(
             EffectLayoutManager.Item(
-                "group_v4a", R.id.v4a_section_header, R.string.v4a_section_header, isHeader = true
+                GROUP_V4A, R.id.v4a_section_header, R.string.v4a_section_header, isHeader = true
             )
         )
         searchableCards.forEach { card ->
@@ -649,6 +658,20 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // Dragging a card into the bottom edge scrolls the list, and that edge
         // is the top of the bar and power button, which cover the list.
         manager.bottomCover = { if (isAdded) bottomChromeCover() else 0 }
+        // A folded group needs its heading on screen to be opened again.
+        // V4A-only mode hides every heading and the classic layout drops the
+        // ViPER4Android one, so their folds are left alone there and the
+        // cards show as if the group were open.
+        manager.canFold = { item ->
+            isAdded && !V4aMode.isOn(requireContext()) && !(item.key == GROUP_V4A &&
+                me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext()))
+        }
+        // Opening a group shows every card in it that the user has not hidden,
+        // which includes empty Liveprog slots; the search pass puts the
+        // screen's own rules back (and keeps an active search's results).
+        manager.onFoldChanged = {
+            if (isAdded) applyEffectSearch(binding.searchInput.text?.toString() ?: "")
+        }
         manager.applyLayout()
 
         manager.onEditModeChanged = { editing ->
