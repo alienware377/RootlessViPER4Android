@@ -49,9 +49,13 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   `include/boost/math/interpolators/pchip.hpp` and
   `include/boost/math/interpolators/makima.hpp`
 - **Files:** `generalDSP/interpolation.c`, a C port of those headers, and its
-  declarations in `generalDSP/interpolation.h`.
+  declarations in `generalDSP/interpolation.h`; also
+  `app/src/main/java/me/timschneeberger/rootlessjamesdsp/globalfx/HermiteCurve.kt`,
+  a Kotlin port of the PCHIP and makima parts of that C file, which carries
+  the same notice.
 - **Used by:** the Multimodal equalizer, the Dynamic range compander and the
-  impulse response toolbox in `app/src/main/cpp/libjdspimptoolbox/`.
+  impulse response toolbox in `app/src/main/cpp/libjdspimptoolbox/`; the
+  Kotlin port draws the Multimodal equalizer's curve for global mode.
 - **Also in the tree, not built into the app:**
   `app/src/main/cpp/libjamesdsp/Main/DSPManager/jni/main/interpolation.c`.
 
