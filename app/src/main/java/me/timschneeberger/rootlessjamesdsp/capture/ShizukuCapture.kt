@@ -22,9 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 object ShizukuCapture : KoinComponent {
     private val preferences: Preferences.App by inject()
 
-    /** Whether the user picked the Shizuku method at all. */
-    fun isSelected(): Boolean =
-        isRootless() && preferences.get<Boolean>(R.string.key_capture_shizuku)
+    /** Whether the Shizuku method is picked and can apply on this phone at all. */
+    fun isSelected(): Boolean = ShizukuCapturePolicy.isSelected(
+        settingOn = preferences.get<Boolean>(R.string.key_capture_shizuku),
+        isRootless = isRootless(),
+        sdkInt = Build.VERSION.SDK_INT,
+    )
 
     fun fallbackAllowed(): Boolean =
         preferences.get<Boolean>(R.string.key_capture_shizuku_fallback)

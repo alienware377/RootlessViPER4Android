@@ -32,6 +32,16 @@ object ShizukuCapturePolicy {
         RunningAsRoot,
     }
 
+    /**
+     * Whether the Shizuku method is in use. The switch is greyed out below
+     * Android 13, but a setting carried over from a newer phone (a restored
+     * backup) can still be on there. It is ignored then, rather than giving
+     * every start a failure toast, or with fallback off, keeping processing
+     * off for good behind a switch the user cannot reach to turn off.
+     */
+    fun isSelected(settingOn: Boolean, isRootless: Boolean, sdkInt: Int): Boolean =
+        settingOn && isRootless && sdkInt >= MIN_SDK
+
     fun state(
         selected: Boolean,
         isRootless: Boolean,
