@@ -15,8 +15,8 @@
 // one is known to be able to see the fault it is there for. Build with one of
 // -DBROKEN_NOSCALE, -DBROKEN_LATENCY, -DBROKEN_FIFO, -DBROKEN_NOCLIP,
 // -DBROKEN_SIGN, -DBROKEN_NOSMOOTH, -DBROKEN_NOTONAL, -DBROKEN_BROADBAND,
-// -DBROKEN_RESET, -DBROKEN_NOFADE, -DBROKEN_NOSCRUB, -DBROKEN_NOREFRESH or
-// -DBROKEN_NOPERSIST
+// -DBROKEN_RESET, -DBROKEN_NOFADE, -DBROKEN_NOSCRUB, -DBROKEN_NOREFRESH,
+// -DBROKEN_NOPERSIST, -DBROKEN_MSMIX or -DBROKEN_MSSWAP
 // (the defines reach the engine file too) and the named check fails. The FFT
 // check has its own: -DBROKEN_FHT_NOSCALE.
 //
@@ -942,6 +942,63 @@ static void testOnset(void)
 
 /* Where the tone gate's measure sits for noise and for steady tones: the
    thresholds in spectralShaper.c come from these numbers. */
+/* Centre only and edges only. Every other test runs both channels as they
+   arrive, so a right channel rebuilt wrongly in these two modes, or the cut put
+   on the wrong half, passed everything above. Here the centre and the edges
+   carry different pink noise, one of them with a +12 dB peak at 5 kHz. The mode
+   aimed at the peaky half has to cut it, and the other half has to come out as
+   it went in, delayed, to the last bit. */
+static void testMidSide(void)
+{
+	printf("\n[16] centre only and edges only (BROKEN_MSMIX, BROKEN_MSSWAP)\n");
+	const float fs = 48000;
+	const int n = 48000 * 6, st = 48000 * 2, len = 48000 * 4;
+	const double binHz = fs / WN;
+	static float mid[MAXS], side[MAXS];
+	for (int c = 0; c < 2; c++)
+	{
+		const int ms = c ? MS_MODE_SIDE : MS_MODE_MID;
+		const char *name = c ? "edges only" : "centre only";
+		/* The peaky half is the one the mode works on. */
+		makePeaky(fs, n, 5000, 4, 0.05, 160 + c);
+		float *peaky = c ? side : mid, *plain = c ? mid : side;
+		memcpy(peaky, inL, sizeof(float) * n);
+		/* Plain pink for the other half, not the filtered right channel. */
+		seed(170 + c);
+		pink(plain, n, 0.05);
+		for (int i = 0; i < n; i++)
+		{
+			inL[i] = mid[i] + side[i];
+			inR[i] = mid[i] - side[i];
+		}
+		setupAt(fs, 6, 60, 2000, 10000, 50, SHAPER_FOCUS_BALANCED, 0, 0, ms);
+		run(inL, inR, outL, outR, n, 480);
+		const int lat = SpectralShaperLatency(&g_lib);
+		/* Back to centre and edges, in place. */
+		for (int i = 0; i < n; i++)
+		{
+			const float l = outL[i], r = outR[i];
+			outL[i] = 0.5f * (l + r);
+			outR[i] = 0.5f * (l - r);
+		}
+		const float *oPeaky = c ? outR : outL, *oPlain = c ? outL : outR;
+		const double red = -bandChange(peaky, oPeaky, st, len - lat, lat,
+			5000 - 1.5 * binHz, 5000 + 1.5 * binHz, fs);
+		char what[96];
+		snprintf(what, sizeof what, "%s: cut at the peak in its own half, dB", name);
+		check(what, red, SHAPER_A6_LO, 7.5);
+		double e = 0, s = 0;
+		for (int i = st; i < st + len; i++)
+		{
+			const double d = (double)oPlain[i] - plain[i - lat];
+			e += d * d;
+			s += (double)plain[i - lat] * plain[i - lat];
+		}
+		snprintf(what, sizeof what, "%s: the other half against its input, dB", name);
+		check(what, dB(e / s), -400, -100);
+	}
+}
+
 static void testGateCalibration(void)
 {
 	printf("\n[info] tone gate calibration (smoothed unpredictability, per bin per frame)\n");
@@ -1005,6 +1062,7 @@ int main(int argc, char **argv)
 	if (!only || only == 13) testSpeed();
 	if (!only || only == 14) testOnset();
 	if (!only || only == 15) testGateCalibration();
+	if (!only || only == 16) testMidSide();
 	printf("\n%s (%d failure%s)\n", failures ? "FAILURES PRESENT" : "all checks passed",
 		failures, failures == 1 ? "" : "s");
 	return failures ? 1 : 0;
