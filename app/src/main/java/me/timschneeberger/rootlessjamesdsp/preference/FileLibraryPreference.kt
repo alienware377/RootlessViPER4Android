@@ -137,7 +137,8 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
         return (isIrs() && hasIrsExtension(it)) ||
                 (isVdc() && hasVdcExtension(it)) ||
                 (isLiveprog() && hasLiveprogExtension(it)) ||
-                (isPreset() && hasPresetExtension(it))
+                (isPreset() && hasPresetExtension(it)) ||
+                (isSofa() && hasSofaExtension(it))
     }
 
     fun hasValidContent(stream: InputStream): Boolean {
@@ -159,13 +160,19 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
     fun isPreset(): Boolean {
         return type.lowercase() == "presets"
     }
+    fun isSofa(): Boolean {
+        return type.lowercase() == "sofa"
+    }
 
     companion object {
         val types = mapOf(
             "Convolver" to listOf(".flac", ".wav", ".irs"),
             "Liveprog" to listOf(".eel"),
             "DDC" to listOf(".vdc"),
-            "Presets" to listOf(".tar")
+            "Presets" to listOf(".tar"),
+            // Head measurements for the Binaural upmix. Kept in the library so
+            // backups carry them; presets store only the file's name.
+            "Sofa" to listOf(".sofa")
         )
 
         fun hasIrsExtension(it: String): Boolean {
@@ -179,6 +186,9 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
         }
         fun hasPresetExtension(it: String): Boolean {
             return types["Presets"]!!.any { ext -> it.endsWith(ext) }
+        }
+        fun hasSofaExtension(it: String): Boolean {
+            return types["Sofa"]!!.any { ext -> it.lowercase().endsWith(ext) }
         }
 
 

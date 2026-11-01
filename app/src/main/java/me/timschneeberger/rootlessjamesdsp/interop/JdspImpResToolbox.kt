@@ -51,6 +51,19 @@ object JdspImpResToolbox {
         response: FloatArray,
     )
 
+    /**
+     * Resamples [count] responses of [frames] samples each, one after the
+     * other in [input], from [fromRate] to [toRate]. Null if the sizes are
+     * out of range.
+     */
+    external fun ResampleResponses(
+        input: FloatArray,
+        count: Int,
+        frames: Int,
+        fromRate: Int,
+        toRate: Int
+    ): FloatArray?
+
     init {
         System.loadLibrary("jdspimprestoolbox")
     }

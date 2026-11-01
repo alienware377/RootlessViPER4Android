@@ -51,6 +51,7 @@ object Constants {
     const val PREF_VINYL = "dsp_vinyl"
     const val PREF_BALANCE = "dsp_balance"
     const val PREF_SHAPER = "dsp_shaper"
+    const val PREF_BINAURAL = "dsp_binaural"
     const val PREF_CHAIN_ORDER = "dsp_chain_order"
     const val PREF_FILELIBRARY = "dsp_filelibrary"
     // Deliberately not "dsp_": presets copy every dsp_* file wholesale, and
@@ -75,6 +76,8 @@ object Constants {
     // Intent actions
     const val ACTION_PREFERENCES_UPDATED = BuildConfig.APPLICATION_ID + ".action.preferences.UPDATED"
     const val ACTION_SAMPLE_RATE_UPDATED = BuildConfig.APPLICATION_ID + ".action.sample_rate.UPDATED"
+    /** A head set for the Binaural upmix finished preparing, or failed to. */
+    const val ACTION_BINAURAL_SET_READY = BuildConfig.APPLICATION_ID + ".action.binaural.SET_READY"
     const val ACTION_PRESET_LOADED = BuildConfig.APPLICATION_ID + ".action.preset.LOADED"
     const val ACTION_GRAPHIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.CHANGED"
     /** The graphic EQ was switched on from outside its card (Match EQ); the card should show it. */

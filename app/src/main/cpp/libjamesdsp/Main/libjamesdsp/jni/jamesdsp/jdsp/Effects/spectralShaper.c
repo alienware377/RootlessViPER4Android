@@ -34,9 +34,9 @@
  *     the card has a switch to catch steady tones as well.
  *
  * The only parts reused from the engine are its real FHT codelets (DFT1024,
- * DFT2048, DFT4096). The two small tables they need are built here with the
- * same maths as LLbitReversalTbl and fhtsinHalfTblFloat, so the native harness
- * can link this file without the filter design library.
+ * DFT2048, DFT4096). The two small tables they need are built by stftCommon.h
+ * with the same maths as LLbitReversalTbl and fhtsinHalfTblFloat, so the native
+ * harness can link this file without the filter design library.
  *
  * Buffering is sample by sample: every input sample is pushed into a ring of N,
  * a frame runs every R pushes, and one output sample is popped per input
@@ -50,6 +50,7 @@
 #include <string.h>
 #include "../jdsp_header.h"
 #include "eel2/numericSys/codelet.h"
+#include "stftCommon.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -282,17 +283,10 @@ static int shPrepare(SpectralShaper *s, float fs)
 	if (N == 1024) s->fft = DFT1024;
 	else if (N == 2048) s->fft = DFT2048;
 	else s->fft = DFT4096;
-	int bits = 0;
-	while ((1 << bits) < N) bits++;
-	for (int i = 0; i < N; i++)
-	{
-		unsigned r = 0, v = (unsigned)i;
-		for (int b = 0; b < bits; b++) { r = (r << 1) | (v & 1u); v >>= 1; }
-		s->bitRev[i] = r;
-		/* Periodic Hann, which is what makes the overlap sum exactly 1.5. */
-		s->win[i] = (float)(0.5 - 0.5 * cos(2.0 * M_PI * (double)i / (double)N));
-		s->sinTab[i] = (float)sin(2.0 * M_PI * (double)i / (double)N);
-	}
+	stftBitRevTable(s->bitRev, N);
+	/* Periodic Hann, which is what makes the overlap sum exactly 1.5. */
+	stftHannPeriodic(s->win, N);
+	stftSinTable(s->sinTab, N);
 	/* Running sum of the 1 / k weights; bin 0 is never averaged. */
 	s->prefixW[0] = 0.0;
 	s->prefixW[1] = 0.0;
@@ -578,17 +572,9 @@ static void shFrame(SpectralShaper *s)
 			B[kk] *= gB;
 		}
 	}
-	/* The inverse wants bit-reversed input. Bit reversal is an involution, so
-	   swapping each pair once permutes the whole buffer in place. */
-	for (int i = 0; i < N; i++)
-	{
-		const unsigned j = br[i];
-		if (j > (unsigned)i)
-		{
-			float t = A[i]; A[i] = A[j]; A[j] = t;
-			t = B[i]; B[i] = B[j]; B[j] = t;
-		}
-	}
+	/* The inverse wants bit-reversed input. */
+	stftBitRevPermute(A, br, N);
+	stftBitRevPermute(B, br, N);
 	s->fft(A, s->sinTab);
 	s->fft(B, s->sinTab);
 

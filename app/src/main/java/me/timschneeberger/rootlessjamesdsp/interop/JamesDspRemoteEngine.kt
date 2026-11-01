@@ -33,11 +33,14 @@ class JamesDspRemoteEngine(
 ) : JamesDspBaseEngine(context, callbacks) {
 
     private var convolverSampleRate = 0
+    /** Rate the head set on the effect was made for; 0 while none is. */
+    private var binauralSampleRate = 0
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                Constants.ACTION_SAMPLE_RATE_UPDATED -> syncWithPreferences(arrayOf(Constants.PREF_CONVOLVER))
+                Constants.ACTION_SAMPLE_RATE_UPDATED -> syncWithPreferences(arrayOf(Constants.PREF_CONVOLVER, Constants.PREF_BINAURAL))
+                Constants.ACTION_BINAURAL_SET_READY -> syncWithPreferences(arrayOf(Constants.PREF_BINAURAL))
                 Constants.ACTION_PREFERENCES_UPDATED -> syncWithPreferences()
                 Constants.ACTION_SERVICE_RELOAD_LIVEPROG -> syncWithPreferences(arrayOf(Constants.PREF_LIVEPROG, Constants.PREF_LIVEPROG2, Constants.PREF_LIVEPROG3, Constants.PREF_LIVEPROG4))
                 Constants.ACTION_SERVICE_HARD_REBOOT_CORE -> rebootEngine()
@@ -65,6 +68,7 @@ class JamesDspRemoteEngine(
         val filter = IntentFilter()
         filter.addAction(Constants.ACTION_PREFERENCES_UPDATED)
         filter.addAction(Constants.ACTION_SAMPLE_RATE_UPDATED)
+        filter.addAction(Constants.ACTION_BINAURAL_SET_READY)
         filter.addAction(Constants.ACTION_SERVICE_RELOAD_LIVEPROG)
         filter.addAction(Constants.ACTION_SERVICE_HARD_REBOOT_CORE)
         filter.addAction(Constants.ACTION_SERVICE_SOFT_REBOOT_CORE)
@@ -210,6 +214,31 @@ class JamesDspRemoteEngine(
             amount, sensitivity, lowHz, highHz, speed, focus.toFloat(),
             if (catchTones) 1f else 0f, if (listen) 1f else 0f, msMode.toFloat()
         ))
+
+    override fun setBinauralInternal(
+        enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float,
+        set: me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSets.ForRate?,
+    ): Boolean {
+        if (enable && set != null) {
+            binauralSampleRate = set.fs
+            val prev = this.binauralHash
+            Timber.i("Binaural set hash before: $prev, current: ${set.hash}")
+            if (prev != set.hash) {
+                // Its own ids and buffer, so an impulse response and a head set
+                // being sent at the same time cannot overwrite each other.
+                effect.setParameterImpulseResponseBuffer(
+                    PARAM_HRIR_PART, PARAM_HRIR_COMMIT, set.hrir, 0,
+                    infoParameter = PARAM_HRIR_INFO,
+                    info = intArrayOf(set.hrir.size, me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSpeakers.COUNT,
+                        set.taps, set.fs, set.cOff, partitionsFor(set.hrir.size)))
+                effect.setParameter(PARAM_HRIR_HASH, set.hash)
+            }
+        } else {
+            binauralSampleRate = 0
+        }
+        // The effect refuses the switch until a set has arrived.
+        return sendForkEffect(PARAM_BINAURAL, enable && set != null, floatArrayOf(amount, width, surround, height, room))
+    }
 
     override fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean =
         sendForkEffect(PARAM_VINYL, enable, floatArrayOf(
@@ -412,6 +441,12 @@ class JamesDspRemoteEngine(
 
     fun reloadConvolverIfSampleRateChanged() {
         val currentSampleRate = sampleRate.toInt()
+        // The head set of the Binaural upmix is made for one rate too; the
+        // effect plays nothing with a set for another rate until it is resent.
+        if (currentSampleRate > 0 && binauralSampleRate > 0 && currentSampleRate != binauralSampleRate) {
+            Timber.i("Binaural set rate changed from ${binauralSampleRate}Hz to ${currentSampleRate}Hz")
+            syncWithPreferences(arrayOf(Constants.PREF_BINAURAL))
+        }
         if (currentSampleRate > 0 && currentSampleRate != convolverSampleRate) {
             Timber.i(
                 "Convolver sample rate changed from ${convolverSampleRate}Hz to ${currentSampleRate}Hz"
@@ -495,6 +530,8 @@ class JamesDspRemoteEngine(
         get() = effect.getParameterInt(30002) ?: -1
     val convolverHash: Int
         get() = effect.getParameterInt(30003) ?: -1
+    val binauralHash: Int
+        get() = effect.getParameterInt(30004) ?: -1
 
     enum class PluginState {
         Unavailable,
@@ -538,6 +575,13 @@ class JamesDspRemoteEngine(
         private const val PARAM_BALANCE = PARAM_FORK_BASE + 21
         private const val PARAM_SPECTRUM_EXT = PARAM_FORK_BASE + 22
         private const val PARAM_SHAPER = PARAM_FORK_BASE + 23
+        private const val PARAM_BINAURAL = PARAM_FORK_BASE + 24
+        /** The head set's payload: geometry, 4096-float parts, commit, hash. */
+        private const val PARAM_HRIR_INFO = 9997
+        private const val PARAM_HRIR_PART = 12002
+        private const val PARAM_HRIR_COMMIT = 10011
+        private const val PARAM_HRIR_HASH = 25004
+        private fun partitionsFor(floats: Int) = (floats + 4095) / 4096
         /** Enable flags live one hundred above their value id. */
         private const val PARAM_FORK_ENABLE_OFFSET = 100
 

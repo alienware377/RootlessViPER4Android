@@ -35,6 +35,7 @@ object EffectCards {
         Constants.PREF_MAXIMIZER to "card_maxr",
         Constants.PREF_DYNAMICEQ to "card_dyneq",
         Constants.PREF_SHAPER to "card_shaper",
+        Constants.PREF_BINAURAL to "card_binaural",
         Constants.PREF_IMAGING to "card_imaging",
         Constants.PREF_TRANSIENT to "card_transient",
         Constants.PREF_LOWEND to "card_lowend",

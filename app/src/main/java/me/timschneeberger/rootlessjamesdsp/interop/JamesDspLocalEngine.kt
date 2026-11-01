@@ -166,6 +166,25 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         JamesDspWrapper.setSpectralShaper(handle, enable, amount, sensitivity, lowHz, highHz, speed, focus, catchTones, listen, msMode)
 
+    /** Hash of the head set last handed to this engine, so it is sent once. */
+    private var binauralHash = 0
+
+    override fun setBinauralInternal(
+        enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float,
+        set: me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSets.ForRate?,
+    ): Boolean {
+        if (enable && set != null && set.hash != binauralHash) {
+            if (!JamesDspWrapper.setBinauralHrir(handle, set.hrir,
+                    me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSpeakers.COUNT, set.taps, set.fs, set.cOff)) {
+                Timber.e("setBinaural: the engine refused the head set")
+                JamesDspWrapper.setBinaural(handle, false, amount, width, surround, height, room)
+                return false
+            }
+            binauralHash = set.hash
+        }
+        return JamesDspWrapper.setBinaural(handle, enable && set != null, amount, width, surround, height, room)
+    }
+
     override fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean =
         JamesDspWrapper.setVinyl(handle, enable, surface, crackle, crackleSize, pops, clicks, sizzle, hiss, prickle, rumble, wear, follow, mix)
 

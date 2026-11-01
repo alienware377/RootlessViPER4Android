@@ -155,6 +155,22 @@
             android:data="https://github.com/jaakkopasanen/AutoEq" />
     </Preference>
     <Preference
+        android:title="libmysofa"
+        android:summary="Christian Hoene, Symonics GmbH: reading SOFA head measurement files for the Binaural upmix (BSD 3-clause). Used in a separate, locked-down helper process"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/hoene/libmysofa" />
+    </Preference>
+    <Preference
+        android:title="MIT KEMAR head measurements"
+        android:summary="Bill Gardner and Keith Martin, MIT Media Lab: the built-in head of the Binaural upmix. Gardner and Martin (1995), HRTF measurements of a KEMAR, J. Acoust. Soc. Am. 97(6), 3907 to 3908. SOFA conversion by the Acoustics Research Institute, Austrian Academy of Sciences"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://sound.media.mit.edu/resources/KEMAR.html" />
+    </Preference>
+    <Preference
         android:title="Third-party licence texts"
         android:summary="Full copyright notices and licence texts for the components above"
         app:iconSpaceReserved="false">
