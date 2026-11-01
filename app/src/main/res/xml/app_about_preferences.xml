@@ -123,6 +123,14 @@
             android:data="https://blogs.zynaptiq.com/bernsee/pitch-shifting-using-the-ft/" />
     </Preference>
     <Preference
+        android:title="Signalsmith Stretch"
+        android:summary="Geraint Luff / Signalsmith Audio: pitch shifting behind the Signalsmith methods of the Pitch shifter, with its Signalsmith Linear FFT library (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/Signalsmith-Audio/signalsmith-stretch" />
+    </Preference>
+    <Preference
         android:title="libsamplerate"
         android:summary="Erik de Castro Lopo: sample rate conversion for impulse responses and Live programmable DSP (BSD 2-clause)"
         app:iconSpaceReserved="false">
