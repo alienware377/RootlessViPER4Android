@@ -434,6 +434,13 @@ int main(int argc, char** argv) {
     AidlSide aidl;
     check("createEffect gives an effect, reachable over binder", createRemote(aidl) != nullptr);
     if (!aidl.remote) return 1;
+    // The plugin carries its own copy of the IEffect binder class, as any
+    // NDK-built plugin must, so another copy of the interface code (the
+    // factory's, or audioserver's after a round trip) sees a proxy rather
+    // than the object. Recorded here because the factory's destroyEffect
+    // looks effects up by that object; see DESIGN.md.
+    check("a different copy of the interface code gets a proxy, not the object",
+          aidl.remote.get() != aidl.effect.get());
     std::string hash;
     aidl.remote->getInterfaceHash(&hash);
     snprintf(d, sizeof d, "V%d %s", aidl.version, hash.c_str());
