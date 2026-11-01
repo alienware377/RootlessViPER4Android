@@ -6,12 +6,14 @@ import android.content.Context
 import android.content.Intent
 import android.media.audiofx.AudioEffect
 import me.timschneeberger.rootlessjamesdsp.BuildConfig
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalPower
 import me.timschneeberger.rootlessjamesdsp.service.RootAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatabase
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.isPlugin
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
+import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import timber.log.Timber
 
 class SessionReceiver : BroadcastReceiver() {
@@ -38,6 +40,8 @@ class SessionReceiver : BroadcastReceiver() {
                     putExtras(intent)
                 }
         )
+
+        if(isRootless()) GlobalPower.onSessionBroadcast(context, intent)
 
         if(isRoot()) {
             Intent(context, RootAudioProcessorService::class.java)

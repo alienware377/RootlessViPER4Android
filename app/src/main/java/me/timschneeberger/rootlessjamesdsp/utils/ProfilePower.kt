@@ -8,6 +8,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import me.timschneeberger.rootlessjamesdsp.MainApplication
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalMode
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalPower
 import me.timschneeberger.rootlessjamesdsp.service.BaseAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.service.RootlessAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.EngineUtils.toggleEnginePower
@@ -49,7 +51,7 @@ object ProfilePower : KoinComponent {
 
     /** Can processing be switched back on with nobody there to tap a dialog? */
     fun canRestartSilently(context: Context): Boolean =
-        !isRootless() ||
+        !isRootless() || GlobalMode.isOn(context) ||
             (SdkCheck.isQ && context.hasProjectMediaAppOp() && Settings.canDrawOverlays(context))
 
     private fun offIds(): Set<String> = try {
@@ -76,6 +78,8 @@ object ProfilePower : KoinComponent {
                 context.toggleEnginePower(on)
             return
         }
+
+        if (GlobalPower.applyProfilePower(context, on)) return
 
         val running = BaseAudioProcessorService.activeServices > 0
         if (!on && running) {

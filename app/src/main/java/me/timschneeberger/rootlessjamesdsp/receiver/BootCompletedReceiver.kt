@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Settings
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.activity.EngineLauncherActivity
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalPower
 import me.timschneeberger.rootlessjamesdsp.service.RootAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.PermissionExtensions.hasProjectMediaAppOp
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
@@ -25,6 +26,8 @@ class BootCompletedReceiver : BroadcastReceiver(), KoinComponent {
             return
 
         if(isRootless()) {
+            if (GlobalPower.onBoot(context, preferences.get<Boolean>(R.string.key_autostart_prompt_at_boot)))
+                return
             if (!preferences.get<Boolean>(R.string.key_autostart_prompt_at_boot))
                 return
 

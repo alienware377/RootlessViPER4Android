@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Global mode: settings -->
+    <string name="global_mode_header">Global mode (experimental)</string>
+    <string name="global_mode_header_summary">Use Android\'s built-in effects instead of recording the sound</string>
+    <string name="global_mode_switch">Global mode</string>
+    <string name="global_mode_switch_summary">No recording permission, and it works with apps that block recording. Only the equalizers, bass, compressor and limiter work. May not work on every phone.</string>
+    <string name="global_mode_unavailable">This phone does not offer the built-in effect global mode needs</string>
+    <string name="global_mode_info">Normally this app records what your phone plays, changes it, and plays it back. That needs the screen recording permission, and some apps (Spotify, for one) refuse to be recorded.\n\nGlobal mode does not record anything. It sets up Android\'s own sound effect, the one music players use for their equalizers, and fills it with your settings. So it works with every app, with no recording prompt.\n\nThe catch: Android\'s effect can only do equalizing, a compressor and a limiter. The Multiband, Graphic (including AutoEq and Match EQ) and Parametric EQ, Bass boost, FET compressor, Maximiser, Output control and Balance carry over. Every other card is greyed out while global mode is on, and keeps its settings for when you switch back.\n\nIt adds a small delay (about 40 ms) and some phones handle it better than others. The check screen shows what Android did with it.</string>
+    <string name="global_target">What to change</string>
+    <string name="global_target_all">All sound</string>
+    <string name="global_target_apps">Each app separately</string>
+    <string name="global_target_info">All sound covers whatever plays through the phone\'s main music output, including apps that never say they are playing. Each app separately only reaches apps that announce themselves to equalizers (Poweramp, Neutron, Musicolet, VLC and others) or that the app spots while they play, but suits phones where All sound does nothing.</string>
+    <string name="global_precision">Precision</string>
+    <string name="global_precision_20">Low delay (about 20 ms)</string>
+    <string name="global_precision_40">Normal (about 40 ms delay)</string>
+    <string name="global_precision_80">Fine bass (about 85 ms delay, video may lag)</string>
+    <string-array name="global_target_entries">
+        <item>@string/global_target_all</item>
+        <item>@string/global_target_apps</item>
+    </string-array>
+    <string-array name="global_precision_entries">
+        <item>@string/global_precision_20</item>
+        <item>@string/global_precision_40</item>
+        <item>@string/global_precision_80</item>
+    </string-array>
+    <string name="global_auto_preamp">Prevent clipping</string>
+    <string name="global_auto_preamp_summary">Turns everything down by the biggest boost on your EQ, so boosted sounds cannot distort</string>
+    <string name="global_check">Check global mode</string>
+    <string name="global_check_summary">See whether Android accepted the effect, and copy a report</string>
+    <string name="global_mode_capture_running">Recording mode was running, so it has been stopped first</string>
+
+    <!-- Global mode: cards -->
+    <string name="global_card_needs_capture">Needs recording mode. Off while global mode is on, your settings are kept.</string>
+    <string name="global_card_partial">Global mode uses Android\'s equalizer here, so some rows have no effect</string>
+    <string name="global_card_bass_note">Global mode uses a fixed bass shelf instead</string>
+    <string name="global_notice_title">Global mode is on</string>
+    <string name="global_notice_body">Only the equalizers, bass, compressor and limiter work. Tap to check it is running.</string>
+    <string name="global_chain_order_note">In global mode Android sets the order: gain, equalizers, compressor, maximiser, limiter. Your saved order comes back when you switch global mode off.</string>
+
+    <!-- Global mode: service and notifications -->
+    <string name="global_notification_title">Global mode is on</string>
+    <string name="global_notification_text">Your equalizer settings are applied through Android</string>
+    <string name="global_start_failed_title">Global mode could not start</string>
+    <string name="global_start_failed_text">Android refused the effect: %1$s. Open the check screen for details.</string>
+    <string name="global_taken_over_title">Another app took over the sound effect</string>
+    <string name="global_taken_over_text">Global mode stopped changing the sound. Tap Take back to try again.</string>
+    <string name="global_take_back">Take back</string>
+    <string name="global_resume_title">Global mode was stopped</string>
+    <string name="global_resume_text">Tap to turn it back on</string>
+
+    <!-- Global mode: check screen -->
+    <string name="global_check_title">Global mode check</string>
+    <string name="global_check_copy">Copy report</string>
+    <string name="global_check_refresh">Refresh</string>
+    <string name="global_check_battery">Battery settings</string>
+    <string name="global_check_copied">Report copied</string>
+    <string name="global_check_loading">Reading the system state…</string>
+</resources>

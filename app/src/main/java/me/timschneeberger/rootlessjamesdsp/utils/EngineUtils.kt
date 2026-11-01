@@ -5,8 +5,8 @@ import android.content.Intent
 import android.os.Build
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.activity.EngineLauncherActivity
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalPower
 import me.timschneeberger.rootlessjamesdsp.service.BaseAudioProcessorService
-import me.timschneeberger.rootlessjamesdsp.service.RootlessAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -36,7 +36,7 @@ object EngineUtils : KoinComponent {
         sdkAbove(Build.VERSION_CODES.Q) {
             // Rootless
             if (!isOn)
-                RootlessAudioProcessorService.stop(this)
+                GlobalPower.stopRootless(this)
             else
                 launchService(activityStarter)
         }

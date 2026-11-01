@@ -8,7 +8,7 @@
 # locked - and two of these are invisible on a device anyway, since a phone that
 # already has preferences written can never show a wrong default.
 #
-# The four checks:
+# The checks:
 #
 #   1. Every list control's entries and entryValues arrays exist and are the
 #      same length. Android silently pairs them up to the shorter of the two, so
@@ -216,6 +216,27 @@ elseif ($effects -ne $cards) {
     Fail "V4aMode: $effects effects are switched off but only $cards cards are hidden, so some cards stay on screen with their engine off"
 }
 else { Note "V4A-only mode: $effects effects, $cards hidden cards, matched" }
+
+# ---- global mode: every card has a decision --------------------------------
+#
+# Global mode greys out the cards Android's own effect cannot do. A card that
+# is missing from its list counts as "cannot", which is safe, but it also means
+# nobody decided, and a card that could work stays greyed for no reason. The
+# unit test GlobalCardsTest says the same; this catches it without a build.
+$gc = Get-Content "$root\app\src\main\java\me\timschneeberger\rootlessjamesdsp\globalfx\GlobalCards.kt" -Raw
+$gcSet = @{}
+if ($gc -match '(?s)val support: Map<String, Support> = mapOf\((.*?)\n    \)') {
+    [regex]::Matches($Matches[1], 'Constants\.(PREF_[A-Z0-9]+)\s+to\s+Support\.') |
+        ForEach-Object { $gcSet[$_.Groups[1].Value] = $true }
+}
+if ($gcSet.Count -lt 1) {
+    Fail "GlobalCards: could not read its support list"
+}
+else {
+    $unclassified = @($ecMap.Keys | Where-Object { -not $gcSet.ContainsKey($_) })
+    if ($unclassified.Count) { Fail ("GlobalCards: no global mode decision for " + ($unclassified -join ', ')) }
+    else { Note "global mode: all $($ecMap.Count) cards classified" }
+}
 
 # ---- garbled text: UTF-8 read back as Windows-1252 -------------------------
 #
