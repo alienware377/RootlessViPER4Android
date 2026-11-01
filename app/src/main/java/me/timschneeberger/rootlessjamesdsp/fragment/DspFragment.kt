@@ -46,6 +46,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
     override fun onResume() {
         super.onResume()
+        me.timschneeberger.rootlessjamesdsp.globalfx.GlobalCardUi.bindNotice(this, binding.globalModeNotice)
         applyV4aVisibility()
         padForBottomChrome()
         requireContext().registerLocalReceiver(
