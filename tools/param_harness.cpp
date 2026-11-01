@@ -257,6 +257,59 @@ int main()
 	check("26110 enables echo/delay", g_lib.echoDelayEnabled != 0);
 	sendEnable(26110, false);
 
+	// ---- spectral shaper ---------------------------------------------------
+	// The nine values JamesDspRemoteEngine.setSpectralShaper packs, then the
+	// switch one hundred above. Both must land: a missing case here would
+	// leave the card doing nothing on rooted devices with nothing reported.
+	printf("\nspectral shaper\n");
+	{
+		const float v[9] = { 9.5f, 80.0f, 3000.0f, 9000.0f, 70.0f, 2.0f, 1.0f, 1.0f, 1.0f };
+		sendFloats(26023, v, 9);
+		const SpectralShaper *s = &g_lib.shaper;
+		check("26023 sets the amount", fabsf(s->amountDb - 9.5f) < 1e-6f);
+		check("26023 sets sensitivity and range",
+			  fabsf(s->sensitivityPct - 80.0f) < 1e-6f && fabsf(s->loHz - 3000.0f) < 1e-3f &&
+			  fabsf(s->hiHz - 9000.0f) < 1e-3f && fabsf(s->speedPct - 70.0f) < 1e-6f);
+		check("26023 sets focus, tones, listen and the stereo part",
+			  s->focus == SHAPER_FOCUS_BROAD && s->catchTones == 1 && s->listen == 1 &&
+			  s->msMode == MS_MODE_MID);
+		// Too few values is ignored rather than half-applied.
+		const float shortv[3] = { 1.0f, 1.0f, 1.0f };
+		sendFloats(26023, shortv, 3);
+		check("26023 with too few values changes nothing", fabsf(s->amountDb - 9.5f) < 1e-6f);
+		// Anything an app sends is clamped.
+		const float junk[9] = { NAN, -5.0f, 100000.0f, 1.0f, 1e30f, 77.0f, 0.0f, 0.0f, -4.0f };
+		sendFloats(26023, junk, 9);
+		check("26023 clamps nonsense",
+			  s->amountDb == 6.0f && s->sensitivityPct == 0.0f && s->loHz == 8000.0f &&
+			  s->hiHz >= 1.5f * s->loHz && s->speedPct == 100.0f &&
+			  s->focus == SHAPER_FOCUS_BALANCED && s->msMode == MS_MODE_STEREO);
+		sendEnable(26123, true);
+		check("26123 switches it on", g_lib.shaperEnabled != 0 && s->mem != nullptr);
+		check("and it reports its delay", SpectralShaperLatency(&g_lib) == 1023);
+		sendEnable(26123, false);
+		// Switching off fades inside Process; with no audio running, the next
+		// off (the app sends one with every settings change) finishes it.
+		float *L = g_lib.tmpBuffer[0], *R = g_lib.tmpBuffer[1];
+		memset(L, 0, 2048 * sizeof(float)); memset(R, 0, 2048 * sizeof(float));
+		SpectralShaperProcess(&g_lib, 2048);
+		check("26123 off fades and then clears the switch", g_lib.shaperEnabled == 0);
+		sendEnable(26123, false);
+		check("and the buffers are let go", s->mem == nullptr);
+	}
+
+	// The default chain runs the shaper right after the DDC.
+	{
+		JamesDSPResetChainOrder(&g_lib);
+		int ddc = -1, sh = -1;
+		for (int i = 0; i < g_lib.chainCount; i++)
+		{
+			if (g_lib.chainOrder[i] == JDSP_EFX_DDC) ddc = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_SHAPER) sh = i;
+		}
+		check("default chain: shaper right after the DDC", ddc >= 0 && sh == ddc + 1);
+	}
+
 	// ---- an id with no mapping is tolerated, not refused --------------------
 	printf("\nunknown ids\n");
 	{

@@ -379,6 +379,9 @@ static const int jdspDefaultChain[] =
 	// Corrective EQ sits with the rest of the EQ block.
 	JDSP_EFX_DYNAMICEQ,
 	JDSP_EFX_CONVOLVER, JDSP_EFX_DDC,
+	// Tames what the EQ, exciter, convolver and DDC corrections left harsh,
+	// before width, surround and reverb spread it about.
+	JDSP_EFX_SHAPER,
 	JDSP_EFX_LIVEPROG, JDSP_EFX_LIVEPROG2, JDSP_EFX_LIVEPROG3,
 	JDSP_EFX_LIVEPROG4, JDSP_EFX_CROSSFEED, JDSP_EFX_CURE,
 	// Width before the surround effects, so they act on the intended image.
@@ -662,6 +665,12 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 	case JDSP_EFX_BALANCE:
 		jdsp_lock(jdsp);
 		if (jdsp->balanceEnabled) BalanceProcess(jdsp, n);
+		jdsp_unlock(jdsp);
+		break;
+	case JDSP_EFX_SHAPER:
+		// Locked: a rate change can swap its buffers from the settings thread.
+		jdsp_lock(jdsp);
+		if (jdsp->shaperEnabled) SpectralShaperProcess(jdsp, n);
 		jdsp_unlock(jdsp);
 		break;
 	default:
@@ -1654,6 +1663,13 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->balanceEnabled = 0;
 	// Centred, unswapped, full stereo: the identity.
 	BalanceSetParam(jdsp, 0.0f, 0, 0.0f);
+	jdsp->shaperEnabled = 0;
+	jdsp->shaper.mem = 0;
+	jdsp->shaper.N = 0;
+	// Up to 6 dB off anything 4 dB over its surroundings between 2 and 10 kHz,
+	// at a medium speed, steady tones left alone.
+	SpectralShaperSetParam(jdsp, 6.0f, 60.0f, 2000.0f, 10000.0f, 50.0f,
+		SHAPER_FOCUS_BALANCED, 0, 0, MS_MODE_STEREO);
 	jdsp->vinylEnabled = 0;
 	// A record played a lot but looked after: quiet surface, steady crackle, the
 	// occasional pop, a little rumble underneath. Deliberately short on pops and
@@ -1817,6 +1833,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	DynamicEqRefresh(jdsp);
 	VinylRefresh(jdsp);
 	BalanceRefresh(jdsp);
+	SpectralShaperRefresh(jdsp);
 	PitchShiftRefresh(jdsp);
 	VReverbRefresh(jdsp);
 	// The stereo widening's band split and envelope times follow the rate too.
@@ -1860,6 +1877,7 @@ void JamesDSPFree(JamesDSPLib *jdsp)
 {
 	JamesDSPReleaseEffectBuffers(jdsp);
 	jdsp_lock(jdsp);
+	SpectralShaperFree(jdsp);
 	StereoEnhancementDestructor(jdsp);
 	CompressorDestructor(jdsp);
 	LiveProgDestructor(jdsp);
