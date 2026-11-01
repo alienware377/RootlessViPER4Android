@@ -30,6 +30,8 @@
     <string name="key_network_autoeq_api_url" translatable="false">network_autoeq_api_url</string>
     <string name="key_session_exclude_restricted" translatable="false">session_exclude_restricted</string>
     <string name="key_blocklist_allowlist_mode" translatable="false">blocklist_allowlist_mode</string>
+    <string name="key_output_legacy_unknown_type" translatable="false">output_legacy_unknown_type</string>
+    <string name="key_output_category" translatable="false">output_category</string>
     <string name="key_session_detection_method" translatable="false">session_detection_method</string>
     <string name="key_session_continuous_polling_rate" translatable="false">session_continuous_polling_rate</string>
     <string name="key_session_continuous_polling" translatable="false">session_continuous_polling</string>

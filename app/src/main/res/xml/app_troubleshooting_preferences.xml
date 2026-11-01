@@ -49,6 +49,19 @@
     </PreferenceCategory>
 
 
+    <PreferenceCategory app:title="@string/output_header"
+        app:key="@string/key_output_category"
+        app:iconSpaceReserved="false">
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            app:key="@string/key_output_legacy_unknown_type"
+            app:title="@string/output_legacy_unknown_type"
+            app:defaultValue="@bool/default_output_legacy_unknown_type"
+            app:summaryOff="@string/output_legacy_unknown_type_off"
+            app:summaryOn="@string/output_legacy_unknown_type_on"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+
     <PreferenceCategory app:title="@string/session_detection_header"
         app:iconSpaceReserved="false">
         <ListPreference
