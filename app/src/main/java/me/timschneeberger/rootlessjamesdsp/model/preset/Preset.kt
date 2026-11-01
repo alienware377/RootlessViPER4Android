@@ -12,6 +12,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.EffectCards
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.broadcastPresetLoadEvent
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.toast
+import me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources
 import me.timschneeberger.rootlessjamesdsp.utils.storage.Tar
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -199,6 +200,11 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
             }
 
             revealCardsUsedBy(ctx, files, openFoldedGroups)
+
+            // A preset saved before the download sources moved out of
+            // dsp_filelibrary still carries them; add them to the user's own
+            // list instead of leaving them in the preset namespace.
+            LibrarySources.absorbLegacy(ctx)
 
             if (files.any { it.name == FILE_LIVEPROG }) {
                 findLiveprogScriptPath(ctx)?.let {
