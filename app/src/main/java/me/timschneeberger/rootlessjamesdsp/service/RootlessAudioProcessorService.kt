@@ -155,6 +155,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         filter.addAction(ACTION_SERVICE_RELOAD_LIVEPROG)
         filter.addAction(ACTION_SERVICE_HARD_REBOOT_CORE)
         filter.addAction(ACTION_SERVICE_SOFT_REBOOT_CORE)
+        filter.addAction(Constants.ACTION_BINAURAL_SET_READY)
         registerLocalReceiver(broadcastReceiver, filter)
 
         // Setup shared preferences
@@ -327,6 +328,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 // arrives after the settings were pushed at the 48 kHz default.
                 ACTION_SAMPLE_RATE_UPDATED -> { engine.clearCache(); engine.syncWithPreferences() }
                 ACTION_PREFERENCES_UPDATED -> engine.syncWithPreferences()
+                // A head set finished preparing in the background.
+                Constants.ACTION_BINAURAL_SET_READY -> engine.syncWithPreferences(arrayOf(Constants.PREF_BINAURAL))
                 ACTION_SERVICE_RELOAD_LIVEPROG -> engine.syncWithPreferences(arrayOf(Constants.PREF_LIVEPROG, Constants.PREF_LIVEPROG2, Constants.PREF_LIVEPROG3, Constants.PREF_LIVEPROG4))
                 ACTION_SERVICE_HARD_REBOOT_CORE -> restartRecording()
                 ACTION_SERVICE_SOFT_REBOOT_CORE -> requestAudioRecordRecreation()

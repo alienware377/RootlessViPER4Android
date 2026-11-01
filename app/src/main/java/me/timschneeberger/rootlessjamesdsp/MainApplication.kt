@@ -102,6 +102,14 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
     override fun onCreate() {
         instance = this
 
+        // The isolated helper that reads .sofa files runs this class too, with
+        // no permissions and no access to the app's files. None of the start-up
+        // below belongs there, and much of it would fail.
+        if (me.timschneeberger.rootlessjamesdsp.hrtf.SofaParserService.isIsolatedProcess()) {
+            super.onCreate()
+            return
+        }
+
         Timber.plant(DebugTree())
 
         if(BuildConfig.DEBUG) {

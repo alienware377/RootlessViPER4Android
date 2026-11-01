@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSets
 import me.timschneeberger.rootlessjamesdsp.interop.structure.EelVmVariable
 import me.timschneeberger.rootlessjamesdsp.model.ParametricEqChannel
 import me.timschneeberger.rootlessjamesdsp.model.ParametricEqBandList
@@ -20,6 +21,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.ChainOrder
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.GraphicEqCurve
+import me.timschneeberger.rootlessjamesdsp.utils.RoutingObserver
 import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import timber.log.Timber
@@ -39,8 +41,38 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     private val syncMutex = Mutex()
     protected val cache = PreferenceCache(context)
 
+    /**
+     * The Binaural upmix can switch itself off on the phone's speaker and on
+     * HDMI, so a change of output has to reach it. Registered on the main
+     * thread, where the observer delivers its callbacks.
+     */
+    private val routingCallback = object : RoutingObserver.RoutingChangedCallback {
+        override fun onRoutingDeviceChanged(device: RoutingObserver.Device?) {
+            // Nothing to do unless the card is on and set to follow the output.
+            val p = context.getSharedPreferences(Constants.PREF_BINAURAL, Context.MODE_PRIVATE)
+            if (p.getBoolean(context.getString(R.string.key_binaural_enable), false) &&
+                p.getBoolean(context.getString(R.string.key_binaural_speaker_off), true))
+                syncWithPreferences(arrayOf(Constants.PREF_BINAURAL))
+        }
+    }
+    private val routingObserver: RoutingObserver? =
+        try { org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<RoutingObserver>() } catch (_: Exception) { null }
+
+    init {
+        routingObserver?.let { obs ->
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                obs.registerOnRoutingChangeListener(routingCallback)
+            }
+        }
+    }
+
     override fun close() {
         Timber.d("Closing engine")
+        routingObserver?.let { obs ->
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                obs.unregisterOnRoutingChangeListener(routingCallback)
+            }
+        }
         reportSampleRate(0f)
         syncScope.cancel()
     }
@@ -213,6 +245,18 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val shTones = cache.get(R.string.key_shaper_tones, false)
             val shListen = cache.get(R.string.key_shaper_listen, false)
             val shMs = cache.get(R.string.key_shaper_ms_mode, "0").toInt()
+
+            cache.select(Constants.PREF_BINAURAL)
+            val binEnabled = cache.get(R.string.key_binaural_enable, false)
+            val binAmount = cache.get(R.string.key_binaural_amount, 100f)
+            val binWidth = cache.get(R.string.key_binaural_width, 40f)
+            val binSurround = cache.get(R.string.key_binaural_surround, 60f)
+            val binHeight = cache.get(R.string.key_binaural_height, 40f)
+            val binRoom = cache.get(R.string.key_binaural_room, 25f)
+            val binSource = cache.get(R.string.key_binaural_source, BinauralSets.SOURCE_BUILTIN)
+            val binFile = cache.get(R.string.key_binaural_file, "")
+            val binEvenOut = cache.get(R.string.key_binaural_even_out, true)
+            val binSpeakerOff = cache.get(R.string.key_binaural_speaker_off, true)
 
             cache.select(Constants.PREF_VINYL)
             val vnEnabled = cache.get(R.string.key_vinyl_enable, false)
@@ -480,6 +524,10 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         shEnabled, shAmount, shSensitivity, shLow, shHigh, shSpeed,
                         shFocus, shTones, shListen, shMs
                     )
+                    Constants.PREF_BINAURAL -> setBinaural(
+                        binEnabled, binAmount, binWidth, binSurround, binHeight, binRoom,
+                        binSource, binFile, binEvenOut, binSpeakerOff
+                    )
                     Constants.PREF_VINYL -> setVinyl(
                         vnEnabled, vnSurface, vnCrackle, vnCrackleSize, vnPops,
                         vnClicks, vnSizzle, vnHiss, vnPrickle, vnRumble, vnWear,
@@ -626,6 +674,48 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             setVdcInternal(enable, it.readText())
         } ?: false
     }
+
+    /**
+     * The Binaural upmix needs a head set before it can do anything. It comes
+     * from a small prepared copy; when there is none yet, the set is read in
+     * the background (in an isolated helper process) and the effect stays off
+     * until [Constants.ACTION_BINAURAL_SET_READY] brings this back here.
+     */
+    fun setBinaural(
+        enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float,
+        source: String, file: String, evenOut: Boolean, speakerOff: Boolean,
+    ): Boolean {
+        val group = routingObserver?.currentDevice?.group
+        val onSpeakers = speakerOff &&
+            (group == RoutingObserver.DeviceGroup.SPEAKER || group == RoutingObserver.DeviceGroup.HDMI)
+        if (!enable || onSpeakers)
+            return setBinauralInternal(false, amount, width, surround, height, room, null)
+        val src = BinauralSets.source(context, source, file)
+            ?: return setBinauralInternal(false, amount, width, surround, height, room, null)
+        val set = BinauralSets.cached(context, src, evenOut)
+        if (set == null) {
+            BinauralSets.request(context, src, evenOut)
+            return setBinauralInternal(false, amount, width, surround, height, room, null)
+        }
+        // Before the first stream the rate is not known yet; the engine runs
+        // at 48 kHz until then, and a rate change brings this back.
+        val rate = sampleRate.toInt().takeIf { it in 8000..384000 } ?: 48000
+        val forRate = BinauralSets.forRate(set, rate)
+        if (forRate == null) {
+            Timber.e("setBinaural: could not bring the set to $rate Hz")
+            return setBinauralInternal(false, amount, width, surround, height, room, null)
+        }
+        return setBinauralInternal(true, amount, width, surround, height, room, forRate)
+    }
+
+    /**
+     * [set] is null when switching off; otherwise it is loaded (if it is not
+     * the one already loaded) before the switch goes on.
+     */
+    protected abstract fun setBinauralInternal(
+        enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float,
+        set: BinauralSets.ForRate?,
+    ): Boolean
 
     fun setConvolver(enable: Boolean, impulseResponsePath: String, optimizationMode: Int, waveEditStr: String): Boolean
     {

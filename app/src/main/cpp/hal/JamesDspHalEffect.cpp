@@ -70,7 +70,7 @@ struct rv4a_context
     /* The app writes a checksum of each large payload it pushes (DDC,
        convolver, GraphicEQ, liveprog) and reads it back before deciding to
        push again. Storing them here is what makes that skip work. */
-    int32_t hashSlot[4];
+    int32_t hashSlot[5];
     uint32_t paramCommits;
 
     /* Payloads too big for one call arrive as a geometry header, then a run of
@@ -84,10 +84,22 @@ struct rv4a_context
     int irPartsSeen, irParts;
     int irChannels, irFrames;
 
+    /* The Binaural upmix's head set: its own buffer and ids, so a convolver
+       impulse response and a head set arriving together cannot overwrite each
+       other's partial state. */
+    float *hrirBuf;
+    size_t hrirCapacity;    /* in floats */
+    int hrirPartsSeen, hrirParts;
+    int hrirTotal, hrirTaps, hrirFs, hrirCOff;
+
     /* Whether anything was ever loaded behind each subsystem. Enabling one of
        these with an empty engine ranges from silent to a crash in the audio
        server, so the enable is refused until its payload has arrived. */
-    bool haveIr, haveGraphicEq, haveDdc, haveLiveprog;
+    bool haveIr, haveGraphicEq, haveDdc, haveLiveprog, haveHrir;
+    /* Whether the last head set sent was taken. haveHrir stays true while an
+       older set is still loaded, but the hash that follows a refused set must
+       not be kept, or the app would never send a corrected one. */
+    bool hrirLastOk;
 
     /* Only used when the server asks us to add to its buffer rather than
        overwrite it. Per context, never shared: a buffer shared between effects
@@ -333,6 +345,74 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
         }
         return true;
 
+    case 9997:      /* how much head set is coming */
+    {
+        /* total floats, speakers, taps, rate, centre offset, partitions */
+        if (vsize < 24) return true;
+        const int32_t *v = (const int32_t *)val;
+        free(c->hrirBuf);
+        c->hrirBuf = nullptr;
+        c->hrirCapacity = 0;
+        c->hrirPartsSeen = 0;
+        const int64_t total = v[0];
+        const int speakers = v[1], taps = v[2], fs = v[3], cOff = v[4], parts = v[5];
+        if (speakers != BIN_SPEAKERS || taps < 16 || taps > 1024 || fs < 8000 || fs > 384000 ||
+            cOff < 0 || cOff >= taps || total != (int64_t)speakers * 2 * taps ||
+            parts <= 0 || (int64_t)parts * 4096 < total || (int64_t)parts * 4096 > (1 << 20))
+        {
+            LOGE("head set geometry rejected (%lld floats, %d speakers, %d taps, %d Hz, %d, %d parts)",
+                 (long long)total, speakers, taps, fs, cOff, parts);
+            return true;
+        }
+        c->hrirTotal = (int)total;
+        c->hrirTaps = taps;
+        c->hrirFs = fs;
+        c->hrirCOff = cOff;
+        c->hrirParts = parts;
+        c->hrirCapacity = (size_t)4096 * parts;
+        c->hrirBuf = (float *)calloc(c->hrirCapacity, sizeof(float));
+        if (!c->hrirBuf) c->hrirCapacity = 0;
+        return true;
+    }
+    case 12002:     /* one 4096-float slice of it */
+    {
+        if (!c->hrirBuf || vsize < 4096 * sizeof(float)) return true;
+        const size_t offset = (size_t)c->hrirPartsSeen * 4096;
+        if (offset + 4096 > c->hrirCapacity)
+        {
+            LOGE("head set partition %d past the end", c->hrirPartsSeen);
+            return true;
+        }
+        memcpy(c->hrirBuf + offset, val, 4096 * sizeof(float));
+        c->hrirPartsSeen++;
+        return true;
+    }
+    case 10011:     /* commit: head set */
+        if (c->hrirBuf)
+        {
+            c->hrirLastOk = false;
+            if (c->hrirPartsSeen != c->hrirParts)
+            {
+                LOGE("head set committed with %d of %d partitions, discarding",
+                     c->hrirPartsSeen, c->hrirParts);
+            }
+            else
+            {
+                /* The engine checks every value (finite, under 100) and keeps
+                   the set it had if this one is refused. */
+                const int rc = BinauralUpmixLoadHrir(&c->dsp, c->hrirBuf, BIN_SPEAKERS,
+                    c->hrirTaps, (float)c->hrirFs, c->hrirCOff);
+                if (rc == 0) c->haveHrir = c->hrirLastOk = true;
+                LOGI("head set load %s (%d taps at %d Hz)", rc == 0 ? "ok" : "refused",
+                     c->hrirTaps, c->hrirFs);
+            }
+            free(c->hrirBuf);
+            c->hrirBuf = nullptr;
+            c->hrirCapacity = 0;
+            c->hrirPartsSeen = 0;
+        }
+        return true;
+
     case 10006:     /* commit: GraphicEQ / AutoEq curve */
     case 10009:     /* commit: DDC */
     case 10010:     /* commit: liveprog script */
@@ -556,7 +636,8 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
            enables these from saved preferences on every sync, which can easily
            run before - or without - the payload ever arriving. */
         if ((id == 1205 && !c->haveIr) || (id == 1210 && !c->haveGraphicEq) ||
-            (id == 1212 && !c->haveDdc) || (id == 1213 && !c->haveLiveprog))
+            (id == 1212 && !c->haveDdc) || (id == 1213 && !c->haveLiveprog) ||
+            (id == 26124 && !c->haveHrir))
         {
             if (on)
             {
@@ -571,13 +652,13 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
            writes one after pushing a payload and reads it back next time to
            decide whether the push can be skipped. Storing them here rather
            than passing them to the engine keeps that round trip honest. */
-        if (id >= 25000 && id <= 25003)
+        if (id >= 25000 && id <= 25004)
         {
             /* Kept only when the payload it describes actually loaded. The
                app sends the hash straight after the payload whether or not it
                took, and next time skips the payload when the hash matches, so
                keeping it for a rejected payload meant never trying again. */
-            const bool loaded[4] = { c->haveGraphicEq, c->haveDdc, c->haveLiveprog, c->haveIr };
+            const bool loaded[5] = { c->haveGraphicEq, c->haveDdc, c->haveLiveprog, c->haveIr, c->hrirLastOk };
             if (p->vsize >= sizeof(int32_t))
                 c->hashSlot[id - 25000] = loaded[id - 25000] ? *(const int32_t *)val : 0;
             if (pReplyData && replySize && *replySize == sizeof(int))
@@ -640,7 +721,8 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
         case 30000:
         case 30001:
         case 30002:
-        case 30003: data = c->hashSlot[cmd - 30000]; break;
+        case 30003:
+        case 30004: data = c->hashSlot[cmd - 30000]; break;
         default:
             LOGD("GET_PARAM %d not handled", cmd);
             return -EINVAL;
@@ -732,6 +814,7 @@ HAL_EXPORT int32_t EffectRelease(effect_handle_t handle)
        holding the partitions gathered so far. */
     free(c->stringBuf);
     free(c->irBuf);
+    free(c->hrirBuf);
     free(c->mixBuf);
     free(c);
     return 0;

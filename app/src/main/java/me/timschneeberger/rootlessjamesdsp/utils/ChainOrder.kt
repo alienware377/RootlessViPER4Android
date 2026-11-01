@@ -16,12 +16,17 @@ package me.timschneeberger.rootlessjamesdsp.utils
 object ChainOrder {
     /** JdspEffectId values, as in jdsp_header.h. */
     const val DDC = 12
+    const val STEREOWIDE = 19
     const val MAXIMIZER = 30
     const val SHAPER = 39
+    const val BINAURAL = 40
 
     /** Newer effect id to the id it follows in the default chain. */
     private val placeAfter = linkedMapOf(
         SHAPER to DDC,
+        // After the stereo widening, so it spreads the image the user set up,
+        // and before the surround effects and reverbs that then act on it.
+        BINAURAL to STEREOWIDE,
     )
 
     /**
