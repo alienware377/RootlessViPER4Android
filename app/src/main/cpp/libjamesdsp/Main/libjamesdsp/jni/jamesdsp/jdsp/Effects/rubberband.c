@@ -7,7 +7,8 @@
 // runtime and every entry point is looked up by name. If it was never
 // downloaded, or the download was removed, or the file is for the wrong
 // architecture, nothing here is reachable and the card falls back to the
-// built-in Signalsmith method, with the same formant choice. Nothing else in the engine has to know it might be missing.
+// built-in Signalsmith method, with the same formant choice. Nothing else in
+// the engine has to know it might be missing.
 //
 // The library is never dlclose()d. Removing the download deletes the file so it
 // is gone from the next launch onwards, but a mapping the audio thread may be

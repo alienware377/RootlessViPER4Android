@@ -36,7 +36,7 @@
 //
 // Signalsmith: Signalsmith Stretch, built in, through signalsmith.cpp. The
 // cleanest of the built-in methods and the slowest to answer: what comes out
-// is what went in 100ms earlier.
+// is what went in 150ms earlier.
 //
 // What ties them together is a history of the dry input that is kept whatever
 // the method. Granular reads its taps from it. Signalsmith reads its input
@@ -407,7 +407,7 @@ static void psApply(PitchShift *p, float fs, PsFresh *f, void **trash, int start
 	// treble and 25ms of latency to achieve nothing. The same argument applies
 	// to the vocoder, which would otherwise cost its own latency for no change.
 	//
-	// Except Signalsmith. Its delay is 100ms, and skipping it at exactly zero
+	// Except Signalsmith. Its delay is 150ms, and skipping it at exactly zero
 	// would take that delay away and put it back every time the slider went
 	// through the middle, which is a skip and a repeat each way. It keeps
 	// running, unshifted.
