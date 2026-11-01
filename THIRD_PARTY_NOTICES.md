@@ -139,6 +139,24 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   not in this tree, so its text is reproduced below. The per-file headers give
   the exact copyright years for each file.
 
+### AutoEq
+
+- **Author:** Jaakko Pasanen
+- **Licence:** MIT, see [the AutoEq notice](#mit-licence-autoeq)
+- **Upstream:** https://github.com/jaakkopasanen/AutoEq, as of commit
+  `7ae0f56d53074872b028649617a22bbb4232feb7`
+- **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/matcheq/`.
+  A Kotlin port, not a copy: the frequency grids, interpolation, centring,
+  target building, smoothing, slope limiting and GraphicEQ output of
+  `autoeq/frequency_response.py` and `autoeq/utils.py`, the defaults of
+  `autoeq/constants.py`, and the table of which target suits which measuring
+  rig from `dbtools/create_webapp_data.py` (file names and bass shelf amounts
+  only).
+- **Used by:** Match EQ, on the Graphic EQ screen.
+- **Data:** none is included. AutoEq's measurements and target curves are
+  downloaded at runtime from the AutoEq repository, one file at a time, only
+  when the user picks them, and stay in the app's own storage.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular
@@ -265,6 +283,34 @@ From Signalsmith Linear `LICENSE.txt`:
 MIT License
 
 Copyright (c) 2025 Signalsmith Audio
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### MIT licence (AutoEq)
+
+From AutoEq `LICENSE`:
+
+```text
+MIT License
+
+Copyright (c) 2018-2022 Jaakko Pasanen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
