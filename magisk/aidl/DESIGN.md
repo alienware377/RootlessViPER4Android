@@ -1,340 +1,137 @@
-# AIDL effect HAL — design notes
+# Root mode on AIDL effect HAL phones
 
-## Why a second module is needed
+EXPERIMENTAL. Nothing here is part of the normal `rv4a_engine` module or of a
+release. The tester guide for the first device tests lives outside the repo.
 
-The existing module ships a **legacy** effect library: a `.so` exporting
-`AELI` / `EffectCreate` / `EffectGetDescriptor`, found by the audio server
-through `audio_effects.xml`. That interface is what Android used up to 14.
+## What it is
 
-From Android 14 the effect HAL is defined in **stable AIDL**, and from 15 it is
-the only supported path on devices that ship it. The framework no longer walks
-a config into `libaudioeffect`-style plugins; it queries a **vendor HAL
-service** over binder:
+Newer phones (Android 14 and later on most vendors) run audio effects behind
+the **AIDL effect HAL**. The legacy module cannot help there: the audio server
+no longer loads legacy effect libraries itself.
 
-- `IFactory.queryEffects(type, implementation)` — enumerate
-- `IFactory.queryProcessing(type)` — what the effect applies to
-- `IFactory.createEffect(implUuid)` → `IEffect`
-- `IEffect` — open, close, command, parameter get/set, and an **FMQ** pair for
-  audio rather than a `process()` callback
-
-Two consequences worth stating plainly:
-
-1. This is **not a relocation of a file**. The legacy `.so` cannot be loaded by
-   the AIDL service at all; the engine has to be exposed behind a new
-   interface, in a process that registers with `servicemanager`.
-2. Audio no longer arrives as `audio_buffer_t` in a callback. The AIDL effect
-   reads and writes **fast message queues**, so the processing loop is ours to
-   drive.
-
-## What can be reused
-
-Everything below the interface. `hal/JamesDspHalEffect.cpp` already contains the
-parts that matter — engine init from a negotiated config, block-bounded
-processing, the parameter dispatch mapping our ids onto the engine's setters.
-That code moves largely intact; the wrapper around it changes.
-
-## Build problem to solve first
-
-The AIDL interface headers (`android.hardware.audio.effect-V*-ndk`) come from
-AOSP, not the NDK. Options, cheapest first:
-
-1. Vendor the `.aidl` files and generate the NDK backend with the `aidl`
-   compiler, pinning a version (`V2`/`V3`) and checking `queryProcessing`
-   exists, since it was added after the first release.
-2. Extract prebuilt headers from an AOSP build for the target version.
-3. Hand-write the binder marshalling — smallest dependency, largest risk, and
-   it breaks whenever the interface version moves.
-
-Option 1 is the one to try: it keeps us honest about which interface version we
-target, and the versioned `aidl_api` directory in AOSP tells us exactly what
-each version contains.
-
-## Device caveat: Pixels
-
-Reported repeatedly for Pixel 8 and 9: no `audio_effects_config.xml` present to
-patch at all, which is what other vendors' devices expose for injecting
-effects. If the file genuinely does not exist on the target device, even a
-correct AIDL implementation has nothing to register through, and the effect
-service will never load it.
-
-**Check before building for a device:**
+The vendor's effect factory (`android.hardware.audio.effect.IFactory/default`)
+still works from a config file, though. It reads `audio_effects_config.xml`,
+`dlopen`s every library listed in it and looks up three functions:
 
 ```
-adb shell ls -l /vendor/etc/audio_effects_config.xml
-adb shell ls -l /vendor/etc/audio_effects.xml
-adb shell dumpsys media.audio_flinger | head -40
-adb shell service list | grep -i audio.effect
+binder_exception_t createEffect(const AudioUuid*, std::shared_ptr<IEffect>*);
+binder_exception_t queryEffect(const AudioUuid*, Descriptor*);
+binder_exception_t destroyEffect(const std::shared_ptr<IEffect>&);
 ```
 
-The fourth line is the important one: it shows whether an AIDL effect service
-is registered and under what instance name. If there is a service but no
-config, the next question is whether that service loads anything beyond what
-the vendor built in.
+So the engine ships as such a plugin, `librv4a_aidl_v<N>.so`, and the module
+adds it to that config. Nothing replaces, proxies or restarts the factory. If
+the library fails to load, our effect is missing and every other effect works.
 
-## Field data: Pixel 9 Pro XL, Android 17
-
-```
-ls /vendor/etc/audio_effects_config.xml   -> No such file or directory
-ls /vendor/etc/audio_effects.xml          -> No such file or directory
-service list | grep audio.effect
-  -> android.hardware.audio.effect.IFactory/default
-find /system -name "*audio_effects*.xml"
-  -> /system/etc/audio_effects.xml
-```
-
-Three things follow, and they decide the design.
-
-**The AIDL effect service is running**, registered under the instance name
-`default`. So the device does host effects through the modern interface.
-
-**There is no vendor config to patch.** The AOSP reference service learns which
-libraries to load by reading `audio_effects_config.xml`; this device has none,
-so there is no file into which our effect could be declared. Adding a library
-to the filesystem would leave it unreferenced and unloaded.
-
-**The `/system/etc/audio_effects.xml` that does exist is the framework-side
-file**, not the HAL's library list. Under AIDL the framework asks the service
-via `queryEffects` and `queryProcessing` instead, so patching it registers
-nothing.
-
-## Blocker: the proxy design does not work as specified
-
-Read from AOSP's `EffectMain.cpp`, which is what the stock service runs:
-
-```cpp
-std::string serviceName = std::string() + effectFactory->descriptor + "/default";
-binder_status_t status = AServiceManager_addService(..., serviceName.c_str());
-CHECK_EQ(STATUS_OK, status);
-```
-
-The instance name is **hardcoded**. The service takes no argument for it, so the
-plan of starting the stock binary under `vendor_original` and delegating to it
-cannot work: it would register `/default` regardless, race ours for the name,
-and `CHECK_EQ` would abort whichever lost. A crash loop in the audio HAL is a
-worse outcome than not installing.
-
-The same file shows it exits if no config file is found. So the service on a
-device with no `audio_effects_config.xml` is **not** this AOSP one - it is the
-vendor's own, whose binary name and behaviour we cannot assume either.
-
-### What this rules out
-
-Proxying by re-registering the stock service under another name. That was the
-only route identified for devices with no config to patch, which is exactly the
-Pixel case this was aimed at.
-
-### What remains viable
-
-For devices that *do* ship `audio_effects_config.xml` - the majority of AIDL
-devices - no proxy is needed at all. The stock service loads libraries listed in
-that config, so shipping our effect as a library and adding an entry is both
-simpler and far safer: nothing takes over a service, and a failure means our
-effect is missing rather than the device having no effect HAL.
-
-That is the design to build next, and it serves everyone except Pixel.
-
-### Pixel
-
-**Superseded — see PIXEL-ROUTE.md.** The premise below was wrong: the config is
-not absent, it lives inside the audio APEX, which is where the service looks
-first and where nobody thought to check.
-
-Previous conclusion, kept for the reasoning: Not a packaging problem to solve with more care: there is no
-config to declare an effect in, and the one interposition point available is
-closed by a hardcoded name. Worth revisiting only with new information about how
-Google's own effect service discovers effects.
-
-## Original reasoning, kept for context: why a config patch cannot work on Pixel
-
-On vendors that ship `audio_effects_config.xml`, an AIDL module can declare
-itself in that file and be loaded by the stock service. That is the cheap path,
-and it is what other AIDL audio mods rely on.
-
-This device offers no such hook. The only remaining way in is to **become the
-service**: publish our own implementation of
-`android.hardware.audio.effect.IFactory/default`, hold a handle to the vendor
-implementation behind it, and answer:
-
-- `queryEffects` — the vendor's list plus ours
-- `queryProcessing` — the vendor's answer, unchanged
-- `createEffect` — ours for our UUID, delegated for everything else
-
-Effectively an effect proxy. It keeps every stock effect working while adding
-one, which also means a failure in our path degrades to "our effect missing"
-rather than "no audio effects at all".
-
-Costs to be honest about, since this is a large step up from the legacy module:
-
-- Only one process may hold an interface instance name, so the vendor service
-  has to be stopped and ours started in its place, via an init script the
-  module installs.
-- A new service needs an SELinux domain permitted to talk to audioserver and
-  to hold that interface. Root can add policy live, but it has to be right.
-- If our service fails to start, the device has **no** effect HAL. That is a
-  worse failure than the legacy module could produce, so the boot watchdog
-  matters more here, not less.
-
-## Order of work
-
-1. Generate the NDK backend from vendored `.aidl` files, pinned to a version.
-2. Implement `IEffect` over FMQ around the existing engine wrapper.
-3. Implement the proxying `IFactory`.
-4. Package as a separate module, refusing to install where the stock service
-   cannot be located.
-
-Vendors that *do* ship `audio_effects_config.xml` can be served by steps 1-2
-alone with a config patch, so those devices are reachable well before Pixel is.
-
-## Progress
-
-**Done**
-
-- Interfaces vendored and pinned: `android.hardware.audio.effect-V3` and
-  `android.media.audio.common.types-V3`, taken from AOSP's frozen `aidl_api`
-  snapshots (commit `1a56e38`) rather than the live tree, so they cannot shift.
-  98 files, laid out under their package paths so the include roots resolve.
-- Version settled: **V3**, whose `queryEffects` takes three parameters. V1 and
-  V2 differ, and a service built against the wrong one will not be talked to.
-- Toolchain settled: the **SDK's own `aidl`** supports `--lang=ndk`, so the
-  NDK backend can be generated without an AOSP build. This was the main
-  unknown, and it removes the worst of the three options in the notes above.
-- The interface is small: `IFactory` is four methods.
-
-- **Backend generates cleanly**: 29 sources and 87 headers, including
-  `BnFactory.h` and `BnEffect.h`, the base classes to implement. Run
-  `magisk/aidl/generate.sh`. Five further packages had to be vendored to get
-  there, each discovered by generation failing in turn: the eraser types
-  (reached through `Parameter`), the FMQ descriptors (how `IEffect` carries
-  audio), and the audio common metadata types.
-
-- **`IFactory` implemented** in `src/FactoryImpl.cpp`, proxying the vendor's.
-  The rule it follows throughout: never leave the device worse than it was.
-  Everything that is not ours is delegated verbatim; a vendor failure is logged
-  and tolerated rather than propagated, because a device with only our effect
-  is poor while a device the framework believes has no effect HAL is broken.
-  `queryProcessing` passes straight through - we add an effect, we do not
-  change routing rules.
-
-  Instance naming is settled: the init script starts the stock binary as
-  `IFactory/vendor_original` and this service as `/default`, so the delegation
-  target is explicit rather than trying to hold a handle to a service we are in
-  the middle of replacing.
-
-- **Service entry point and CMake wiring** in `src/service.cpp` and
-  `CMakeLists.txt`. Generation is clean: **488 files, zero errors**, using
-  build-tools **37**. Build-tools 34 must not be used - it does not recognise a
-  suppression annotation in `AudioChannelLayout.aidl`, reports it as an error,
-  and silently emits only part of the package, which then fails much later as
-  missing headers.
-
-**Build state (latest)**
-
-The detached build pattern works and produced a full log. Progress since:
-
-- Binder service symbols now resolve — the soname stub does its job.
-- The convolver symbols resolved once the engine glob was made recursive.
-- Still failing: `AgcProcess`, `DDCProcess` and friends are undefined at link.
-
-That last one needs a careful look rather than another guess. Those symbols live
-in `jdsp/Effects/viperextras.c`, which the recursive glob *should* already
-match, and the app build compiles the identical pattern successfully. Two
-possibilities worth separating before changing anything:
-
-1. The log read may predate the glob fix landing, in which case it is stale.
-2. Or the file compiles with an error earlier in the log and only shows up as a
-   missing symbol at link, which would mean the tail is misleading.
-
-Check the head of the log for compile failures before touching the glob again -
-the tail alone does not distinguish these.
-
-Note: `Tee-Object` writes UTF-16, which makes the log awkward to read through
-the filesystem connector. Worth switching the detached script to
-`Out-File -Encoding utf8`.
-
-**Earlier build progress**
-
-Every external dependency now resolves — interfaces, fmq, binder, native_handle
-and logging. The compiler reached our own sources and found three real faults,
-all fixed:
-
-- The effect UUIDs have the high bit set, and `AudioUuid.timeLow` is a signed
-  32-bit field, so they must be written as the signed pattern rather than
-  narrowed implicitly.
-- The effect class became a header, so the factory can construct it without a
-  second translation unit defining the same symbols.
-- The parameter hook was declared but never defined, which would have failed at
-  link time.
-
-**Worth knowing about parameters**
-
-Nothing reaches an AIDL effect from the app yet: `JamesDspRemoteEngine` drives
-the legacy `AudioEffect` API, which has no path to a binder service. So an AIDL
-build will process audio but ignore settings until that half is written. The
-hook logs whatever arrives, so the moment the app side exists it will be
-obvious.
-
-**Earlier issues, resolved**
-
-`cutils/native_handle.h` is vendored, and the full current `binder_ndk` header
-set was taken from AOSP rather than patching individual gaps, so the generator
-and the declarations come from the same platform level. The build was
-interrupted before it could be rerun, so the next step is simply:
+## The plugin
 
 ```
-magisk/aidl/generate.sh          # build-tools 37, not 34
-cmake -S magisk/aidl -B <dir> -G Ninja \
-      -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake \
-      -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-33
-cmake --build <dir>
+src/Rv4aAidlEffect.cpp   createEffect, queryEffect; the effect class
+src/LegacyBridge.cpp     calls into the legacy effect's own entry points
+aosp/<tag>/              AOSP's EffectImpl, EffectContext, EffectThread
+interfaces/              frozen AIDL snapshots (see interfaces/README.md)
+fmq/, compat/            libfmq and the platform headers the NDK lacks
 ```
 
-**For the record, the issues that were resolved**
+- **AOSP's `EffectImpl`** does the IEffect protocol: open, close, reopen,
+  commands, the state machine, the audio queues and the event flag the
+  framework wakes the effect with. It is taken unmodified from the Android
+  release that froze each version.
+- **The effect is the legacy one.** `Rv4aAidlEffect.cpp` creates a legacy
+  effect through `EffectCreate` from `app/src/main/cpp/hal/JamesDspHalEffect.cpp`
+  and forwards to its `command` and `process`. Every root mode fix (buffered
+  payloads for Liveprog, impulse responses, GraphicEQ and DDC, payload hashes,
+  the refusal to enable empty subsystems, GET_PARAM for the engine's pid and
+  rate) applies to both paths from one source. The shape follows anonymix007's
+  JamesDSP AIDL wrapper.
+- **The app needs no AIDL code.** The framework already hands a legacy
+  `setParameter` or `getParameter` to an AIDL effect as a `VendorExtension`
+  whose `DefaultExtension` holds the whole `effect_param_t`
+  (`AidlConversionEffect.cpp`); the plugin passes those bytes to the legacy
+  effect unchanged, and its reply back.
+- **One build per effect HAL version.** The factory and the plugin exchange
+  C++ objects in one process, so their layouts must match. `IFactory` is the
+  same from V1 to V4, but `Flags` (inside `Descriptor`) changed in V2 and V4
+  and `IEffect` gained `reopen()` in V2. V2 is Android 15, V3 is 16, V4 is 17.
+  A phone runs its vendor's version, which can be older than its Android.
+- **Linking.** Only `createEffect`, `queryEffect` and `destroyEffect` are
+  exported; libc++, the interface code and the legacy effect are private.
+  Runtime dependencies: libbinder_ndk, liblog, libc, libm, libdl. 16 KB
+  aligned. Strict linking. `check-elf.sh` enforces all of this.
+- **Never abort.** Configurations the engine cannot take (anything but
+  32-bit float stereo) are refused with `EX_ILLEGAL_ARGUMENT` before they reach
+  AOSP code that would abort, and the logging shim does not abort on fatal.
 
-1. `cutils/native_handle.h` — one more platform header to vendor or shim,
-   same category as the four already handled for libfmq.
+Known limit: the plugin carries its own copy of the IEffect binder class. When
+audioserver hands an effect back to the factory's `destroyEffect`, the factory
+sees a proxy rather than the object it created, cannot find it in its map, and
+keeps the closed shell of that one effect (a few hundred bytes; the engine
+itself is freed by `close()`). The same is true of any plugin that embeds its
+interface code, which every NDK-built plugin has to.
 
-2. **Binder API mismatch, the one that matters.** The code generated by
-   build-tools 37 calls into a newer `libbinder_ndk` than **NDK r27** declares:
-   `asBinderReference` is undeclared and one call has a two-argument form
-   against four supplied. The generator and the NDK are from different platform
-   levels.
+## The module (`module/`)
 
-   Three ways out, in order of preference:
+`customize.sh` installs only when everything matches; `common/aidl_common.sh`
+holds the logic, shared with the boot scripts and the host tests.
 
-   - Vendor the current `binder_ndk` headers from AOSP, as already done for
-     `binder_manager.h`. The symbols exist in `libbinder_ndk.so` on any device
-     new enough to have an AIDL effect HAL, so only declarations are missing.
-     Consistent with everything else here.
-   - Use a newer NDK whose binder headers match the generator.
-   - Generate with an older `aidl`, which means first dealing with the
-     truncation problem above - the worst option, since it trades a clear
-     compile error for silently incomplete code.
+1. An AIDL factory must be registered.
+2. The version comes from the VINTF manifests and must agree with the
+   interface library the factory has loaded. Only V2, V3, V4 are installed.
+3. Stock JamesDSP, LightningDSP, the legacy module and PIXAML must be gone
+   (same effect uuid, or a replaced factory). AML is not supported yet.
+4. The config is the one the factory reads: its own APEX first (reported, not
+   patched: that is the Pixel layout), then `/odm/etc`,
+   `/vendor/etc/audio/sku_<sku>`, `/vendor/etc`, `/system/etc`.
+5. Two lines are added, one in `<libraries>` and one in `<effects>`, with the
+   file's own line endings; every other byte is kept, and the result is
+   checked before use.
+6. Labels: `vendor_file` for the library, `vendor_configs_file` for the config.
 
-**Next**
+Boot safety (`post-fs-data.sh`, `service.sh`):
 
-- **`IEffect` implemented** in `src/EffectImpl.cpp`: all eight methods, the
-  three message queues created and sized from the negotiated frame count, and a
-  worker thread that deinterleaves, processes in engine-sized chunks and
-  reports consumed/produced back through the status queue.
+- Two boots that do not complete switch the module off (as the legacy one).
+- Before mounting: if the vendor build, the effect HAL version or the stock
+  config changed since install, or our copy or library fail a check, our
+  config is set aside for good. The device is stock whenever that file is
+  missing, because the factory then never hears of our library.
+- After boot: the factory must register within 60 s, have our library loaded
+  with the matching interface version, and keep its pid (and audioserver its
+  pid) for 15 s. For the rest of the boot, three restarts within three minutes
+  count as a crash loop. On any of these: our config is set aside, our mount
+  is taken away so the restarts stop at once, and a notification asks for a
+  reboot.
+- The manager's module description shows the last decision.
 
-**Remaining dependency: libfmq**
+## Building and testing
 
-`AidlMessageQueue` lives in `system/libfmq`, which does not ship in the NDK
-either. Same problem as the interfaces, and the same shape of answer: vendor
-it, or hand-roll the ring buffer from the grantor descriptors. Vendoring is
-preferable - the descriptor layout is not something to reimplement from
-guesswork, and getting it subtly wrong would surface as audio corruption rather
-than a clean failure.
+```
+magisk/aidl/build.sh                     # all versions, arm64-v8a and x86_64, ELF-checked
+magisk/aidl/package.sh magisk/aidl/out/libs out.zip
+tools/run_aidl_harness.sh emulator-5554  # x86_64 harness on an emulator
+bash magisk/aidl/tests/test_module.sh    # installer and boot scripts, on Linux
+```
 
-**Next**
-   ```
-   aidl --lang=ndk --structured --stability=vintf --version=3 \
-        -I magisk/aidl/interfaces/android.hardware.audio.effect-V3 \
-        -I magisk/aidl/interfaces/android.media.audio.common.types-V3 \
-        -o out/src -h out/include <effect aidl files>
-   ```
-2. Implement `IEffect` over FMQ, reusing the engine setup, block-bounded
-   processing and parameter dispatch already written in
-   `app/src/main/cpp/hal/JamesDspHalEffect.cpp`.
-3. Implement the proxying `IFactory` for devices with no config to patch.
-4. Package separately, refusing to install where the stock service is absent.
+`tools/aidl_plugin_harness.cpp` plays the factory (dlopen, queryEffect,
+createEffect in process) and audioserver (every call over a binder proxy, the
+audio queues and event flag) around the real library, and compares the output
+bit for bit with the legacy effect.
+
+## What has not been verified
+
+Everything above runs without an AIDL rooted phone. Not yet known: that a real
+vendor factory reads the config we patch and accepts our library in its linker
+namespace and SELinux domain, that the labels survive KernelSU and Magisk
+mounts, audio and parameters through the real framework, offload and
+Bluetooth paths, CPU use in the HAL process, and the watchdog on a real broken
+install. Pixel (config only inside the APEX) is a separate later step; see
+PIXEL-ROUTE.md.
+
+## History
+
+An earlier attempt here built a standalone service meant to take over
+`IFactory/default` and proxy the stock factory. AOSP's factory hardcodes that
+instance name, so the stock one could not run beside it, and its installer was
+made to refuse to install. It has been removed. Two claims from that time were
+wrong and are corrected above: `IFactory` did not change between V1 and V3,
+and the app has always been able to reach an AIDL effect through the
+framework's vendor extension conversion.
