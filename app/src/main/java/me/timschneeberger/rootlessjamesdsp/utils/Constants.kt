@@ -52,6 +52,8 @@ object Constants {
     const val PREF_BALANCE = "dsp_balance"
     const val PREF_CHAIN_ORDER = "dsp_chain_order"
     const val PREF_FILELIBRARY = "dsp_filelibrary"
+    /** Match EQ settings and curves. No card and no engine side: it writes into the graphic EQ. */
+    const val PREF_MATCHEQ = "dsp_matcheq"
     const val KEY_CHAIN_ORDER = "order"
 
     // Default string values
@@ -71,6 +73,8 @@ object Constants {
     const val ACTION_SAMPLE_RATE_UPDATED = BuildConfig.APPLICATION_ID + ".action.sample_rate.UPDATED"
     const val ACTION_PRESET_LOADED = BuildConfig.APPLICATION_ID + ".action.preset.LOADED"
     const val ACTION_GRAPHIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.CHANGED"
+    /** The graphic EQ was switched on from outside its card (Match EQ); the card should show it. */
+    const val ACTION_GRAPHIC_EQ_SWITCHED_ON = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.SWITCHED_ON"
     const val ACTION_PARAMETRIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.parametriceq.CHANGED"
     const val ACTION_SESSION_CHANGED = BuildConfig.APPLICATION_ID + ".action.session.CHANGED"
     const val ACTION_SERVICE_STARTED = BuildConfig.APPLICATION_ID + ".action.service.STARTED"

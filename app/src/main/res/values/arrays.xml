@@ -630,4 +630,26 @@
         <item>4</item>
         <item>5</item>
     </string-array>
+
+    <!-- Match EQ -->
+    <string-array name="matcheq_level_match_entries">
+        <item>@string/matcheq_level_match_average</item>
+        <item>@string/matcheq_level_match_1k</item>
+    </string-array>
+    <string-array name="matcheq_level_match_values" translatable="false">
+        <item>average</item>
+        <item>1k</item>
+    </string-array>
+    <string-array name="matcheq_smoothing_entries">
+        <item>@string/matcheq_smoothing_24</item>
+        <item>@string/matcheq_smoothing_12</item>
+        <item>@string/matcheq_smoothing_6</item>
+        <item>@string/matcheq_smoothing_3</item>
+    </string-array>
+    <string-array name="matcheq_smoothing_values" translatable="false">
+        <item>24</item>
+        <item>12</item>
+        <item>6</item>
+        <item>3</item>
+    </string-array>
 </resources>

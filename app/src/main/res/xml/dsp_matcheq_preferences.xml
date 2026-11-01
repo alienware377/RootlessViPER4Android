@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Match EQ settings. Not an effect card: this screen opens from the graphic
+    EQ and writes its result into the graphic EQ's own curve. The settings live
+    in their own dsp_ namespace so presets and device profiles carry them, the
+    measurement and target curves included, and the engine ignores the
+    namespace entirely.
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Preference
+        android:key="section_info"
+        android:title="@string/section_info_title"
+        android:summary="@string/matcheq_info"
+        android:persistent="false"
+        android:selectable="false"
+        app:iconSpaceReserved="false"/>
+
+    <PreferenceCategory
+        android:title="@string/matcheq_headphones"
+        app:iconSpaceReserved="false">
+        <Preference
+            android:key="matcheq_picked"
+            android:title="@string/matcheq_measurement"
+            android:summary="@string/matcheq_measurement_none"
+            android:persistent="false"
+            android:selectable="false"
+            app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="@string/key_matcheq_find_autoeq"
+            android:title="@string/matcheq_find_autoeq"
+            android:summary="@string/matcheq_find_autoeq_summary"
+            android:persistent="false"
+            app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="@string/key_matcheq_load_measurement"
+            android:title="@string/matcheq_load_measurement"
+            android:summary="@string/matcheq_load_measurement_summary"
+            android:persistent="false"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/matcheq_target_header"
+        app:iconSpaceReserved="false">
+        <ListPreference
+            android:key="@string/key_matcheq_target"
+            android:title="@string/matcheq_target"
+            android:defaultValue="flat"
+            app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="@string/key_matcheq_load_target"
+            android:title="@string/matcheq_load_target"
+            android:summary="@string/matcheq_load_target_summary"
+            android:persistent="false"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_matcheq_show_all_targets"
+            android:title="@string/matcheq_show_all_targets"
+            android:summary="@string/matcheq_show_all_targets_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_bass"
+            android:title="@string/matcheq_bass"
+            android:defaultValue="0"
+            app:minValue="-6" app:maxValue="15" app:unit="dB" app:precision="1"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_treble"
+            android:title="@string/matcheq_treble"
+            android:defaultValue="0"
+            app:minValue="-10" app:maxValue="10" app:unit="dB" app:precision="1"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_tilt"
+            android:title="@string/matcheq_tilt"
+            android:defaultValue="0"
+            app:minValue="-1.5" app:maxValue="1.5" app:unit="dB/oct" app:precision="1"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/matcheq_limits"
+        app:iconSpaceReserved="false">
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_max_boost"
+            android:title="@string/matcheq_max_boost"
+            android:defaultValue="6"
+            app:minValue="0" app:maxValue="12" app:unit="dB" app:precision="1"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_max_cut"
+            android:title="@string/matcheq_max_cut"
+            android:defaultValue="30"
+            app:minValue="3" app:maxValue="30" app:unit="dB" app:precision="0"
+            app:seekBarIncrement="1"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <ListPreference
+            android:key="@string/key_matcheq_level_match"
+            android:title="@string/matcheq_level_match"
+            android:defaultValue="average"
+            android:entries="@array/matcheq_level_match_entries"
+            android:entryValues="@array/matcheq_level_match_values"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"/>
+        <ListPreference
+            android:key="@string/key_matcheq_smoothing"
+            android:title="@string/matcheq_smoothing"
+            android:defaultValue="12"
+            android:entries="@array/matcheq_smoothing_entries"
+            android:entryValues="@array/matcheq_smoothing_values"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_treble_strength"
+            android:title="@string/matcheq_treble_strength"
+            android:defaultValue="100"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:seekBarIncrement="5"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_correct_from"
+            android:title="@string/matcheq_correct_from"
+            android:summary="@string/matcheq_correct_from_summary"
+            android:defaultValue="20"
+            app:minValue="20" app:maxValue="500" app:unit="Hz" app:precision="0"
+            app:seekBarIncrement="10"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_matcheq_correct_up_to"
+            android:title="@string/matcheq_correct_up_to"
+            android:summary="@string/matcheq_correct_up_to_summary"
+            android:defaultValue="20000"
+            app:minValue="1000" app:maxValue="20000" app:unit="Hz" app:precision="0"
+            app:seekBarIncrement="500"
+            app:updatesContinuously="true" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_matcheq_avoid_narrow"
+            android:title="@string/matcheq_avoid_narrow"
+            android:summary="@string/matcheq_avoid_narrow_summary"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+</PreferenceScreen>

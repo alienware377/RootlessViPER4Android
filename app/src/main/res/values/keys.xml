@@ -396,4 +396,30 @@
     <string name="key_maxr_true_peak" translatable="false">maxr_true_peak</string>
     <string name="key_maxr_stereo_link" translatable="false">maxr_stereo_link</string>
     <string name="key_maxr_oversample" translatable="false">maxr_oversample</string>
+
+    <!-- Match EQ (dsp_matcheq) -->
+    <string name="key_matcheq_measurement" translatable="false">matcheq_measurement</string>
+    <string name="key_matcheq_measurement_name" translatable="false">matcheq_measurement_name</string>
+    <string name="key_matcheq_measurement_origin" translatable="false">matcheq_measurement_origin</string>
+    <string name="key_matcheq_measurement_rig" translatable="false">matcheq_measurement_rig</string>
+    <string name="key_matcheq_measurement_estimated" translatable="false">matcheq_measurement_estimated</string>
+    <string name="key_matcheq_find_autoeq" translatable="false">matcheq_find_autoeq</string>
+    <string name="key_matcheq_load_measurement" translatable="false">matcheq_load_measurement</string>
+    <string name="key_matcheq_target" translatable="false">matcheq_target</string>
+    <string name="key_matcheq_target_curve" translatable="false">matcheq_target_curve</string>
+    <string name="key_matcheq_target_name" translatable="false">matcheq_target_name</string>
+    <string name="key_matcheq_target_file_curve" translatable="false">matcheq_target_file_curve</string>
+    <string name="key_matcheq_load_target" translatable="false">matcheq_load_target</string>
+    <string name="key_matcheq_show_all_targets" translatable="false">matcheq_show_all_targets</string>
+    <string name="key_matcheq_bass" translatable="false">matcheq_bass</string>
+    <string name="key_matcheq_treble" translatable="false">matcheq_treble</string>
+    <string name="key_matcheq_tilt" translatable="false">matcheq_tilt</string>
+    <string name="key_matcheq_max_boost" translatable="false">matcheq_max_boost</string>
+    <string name="key_matcheq_max_cut" translatable="false">matcheq_max_cut</string>
+    <string name="key_matcheq_level_match" translatable="false">matcheq_level_match</string>
+    <string name="key_matcheq_smoothing" translatable="false">matcheq_smoothing</string>
+    <string name="key_matcheq_treble_strength" translatable="false">matcheq_treble_strength</string>
+    <string name="key_matcheq_correct_from" translatable="false">matcheq_correct_from</string>
+    <string name="key_matcheq_correct_up_to" translatable="false">matcheq_correct_up_to</string>
+    <string name="key_matcheq_avoid_narrow" translatable="false">matcheq_avoid_narrow</string>
 </resources>

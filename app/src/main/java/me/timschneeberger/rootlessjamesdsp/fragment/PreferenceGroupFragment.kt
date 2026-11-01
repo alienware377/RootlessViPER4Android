@@ -79,6 +79,13 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     Timber.d("Reloading group fragment for ${this@PreferenceGroupFragment.preferenceManager.sharedPreferencesName}")
                     (requireParentFragment() as DspFragment).restartFragment(id, cloneInstance(this@PreferenceGroupFragment))
                 }
+                Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON -> {
+                    // Match EQ switched the graphic EQ on while this card was
+                    // showing it off. Without this the switch keeps showing
+                    // off, and the next tap would write off back.
+                    if (arguments?.getInt(BUNDLE_XML_RES) == R.xml.dsp_graphiceq_preferences)
+                        (preferenceScreen.getPreference(0) as? SwitchPreferenceGroup)?.setValue(true)
+                }
                 Constants.ACTION_REPORT_SAMPLE_RATE -> {
                     reportedProcessingSampleRate = intent
                         .getFloatExtra(Constants.EXTRA_SAMPLE_RATE, 0f)
@@ -253,6 +260,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         requireContext().registerLocalReceiver(receiver, IntentFilter().apply {
             addAction(Constants.ACTION_PRESET_LOADED)
             addAction(Constants.ACTION_REPORT_SAMPLE_RATE)
+            addAction(Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON)
         })
 
         // The ViPER4Android classic theme tints every effect icon purple.
