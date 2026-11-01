@@ -17,6 +17,7 @@ import me.timschneeberger.rootlessjamesdsp.session.dump.DumpManager
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showAlert
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.toast
+import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import me.timschneeberger.rootlessjamesdsp.utils.sdkAbove
 import org.koin.android.ext.android.inject
 import java.io.File
@@ -30,6 +31,9 @@ class SettingsTroubleshootingFragment : SettingsBaseFragment() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = Constants.PREF_APP
         setPreferencesFromResource(R.xml.app_troubleshooting_preferences, rootKey)
+
+        // Only the rootless build plays the processed audio itself.
+        findPreference<Preference>(getString(R.string.key_output_category))?.isVisible = isRootless()
 
         findPreference<Preference>(getString(R.string.key_troubleshooting_crashlog))?.setOnPreferenceClickListener {
             val history = java.io.File(requireContext().filesDir, "crash_history.txt")
