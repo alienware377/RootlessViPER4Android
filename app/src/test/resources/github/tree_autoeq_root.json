@@ -1,0 +1,111 @@
+{
+  "sha": "7ae0f56d53074872b028649617a22bbb4232feb7",
+  "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/7ae0f56d53074872b028649617a22bbb4232feb7",
+  "tree": [
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "66b0b8b9511d97c33b34cb6b05f06035068e9989",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/66b0b8b9511d97c33b34cb6b05f06035068e9989"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f880b3a1039971ed246c435885e959ff2cb69569",
+      "size": 1609,
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/blobs/f880b3a1039971ed246c435885e959ff2cb69569"
+    },
+    {
+      "path": "Dockerfile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "039bb9fd8e32d2d322339fbdd41bc1f0c59bf44d",
+      "size": 1029,
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/blobs/039bb9fd8e32d2d322339fbdd41bc1f0c59bf44d"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6bd650197b01da004aec3e870b010c0c0e17e1a0",
+      "size": 1076,
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/blobs/6bd650197b01da004aec3e870b010c0c0e17e1a0"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dbdbb1f8f0bf4170edd5c779a0a1280825956e4e",
+      "size": 7095,
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/blobs/dbdbb1f8f0bf4170edd5c779a0a1280825956e4e"
+    },
+    {
+      "path": "autoeq",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a49386eefe9f09e23cb9234800307464942ea50b",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/a49386eefe9f09e23cb9234800307464942ea50b"
+    },
+    {
+      "path": "dbtools",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "70947bd69a64fc2c8613af722e863802efcc81ca",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/70947bd69a64fc2c8613af722e863802efcc81ca"
+    },
+    {
+      "path": "measurements",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9872ece59b8bc9abdccbe6a0e767c17cf35422ed",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/9872ece59b8bc9abdccbe6a0e767c17cf35422ed"
+    },
+    {
+      "path": "peq.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f682734198218775048a0d590086939b3f0f40be",
+      "size": 945,
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/blobs/f682734198218775048a0d590086939b3f0f40be"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1bab5377ec01eda5757aabcf361226765f46aea3",
+      "size": 1026,
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/blobs/1bab5377ec01eda5757aabcf361226765f46aea3"
+    },
+    {
+      "path": "results",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "db8b31aace0a77d61ba0510ccc7d10c032fb265b",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/db8b31aace0a77d61ba0510ccc7d10c032fb265b"
+    },
+    {
+      "path": "targets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a3fed9f682b8e41e29ca558747eb912196cb7f86",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/a3fed9f682b8e41e29ca558747eb912196cb7f86"
+    },
+    {
+      "path": "tests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "419108ff90420c71f0d73be0ec391d07dafe3626",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/419108ff90420c71f0d73be0ec391d07dafe3626"
+    },
+    {
+      "path": "webapp",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d0b4cf29e9058f047434d220507228b16ac450f9",
+      "url": "https://api.github.com/repos/jaakkopasanen/AutoEq/git/trees/d0b4cf29e9058f047434d220507228b16ac450f9"
+    }
+  ],
+  "truncated": false
+}
