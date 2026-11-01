@@ -160,9 +160,27 @@ class ShizukuCaptureUserService(private val context: Context) : IShizukuCaptureS
         asSelf { synchronized(lock) { teardown("stopped by the app", notify = false) } }
     }
 
+    /**
+     * Shizuku never ends a helper process by itself. Unbinding with remove,
+     * or this app dying while the helper is bound with daemon off, only sends
+     * this call, and the helper has to exit on its own (Shizuku-API README,
+     * "Stop the User Service"). Without the exit every stop would leave an
+     * idle process behind.
+     *
+     * The route is dropped first. The wait for the lock is bounded so a stuck
+     * start cannot keep this process alive: if it runs out, the exit takes
+     * the route down anyway, because audioserver releases a policy as soon as
+     * the process that registered it dies.
+     */
     override fun destroy() {
         checkCaller()
-        asSelf { synchronized(lock) { teardown("Shizuku removed the capture helper", notify = true) } }
+        val cleanup = Thread({
+            synchronized(lock) { teardown("Shizuku removed the capture helper", notify = true) }
+        }, "ShizukuCaptureDestroy")
+        cleanup.start()
+        try { cleanup.join(DESTROY_WAIT_MS) } catch (_: InterruptedException) {}
+        Log.i(TAG, "capture helper exiting")
+        System.exit(0)
     }
 
     private fun startLocked(
@@ -487,6 +505,7 @@ class ShizukuCaptureUserService(private val context: Context) : IShizukuCaptureS
         private const val PER_USER_RANGE = 100000
         private const val F_SETPIPE_SZ = 1031
         private const val PIPE_SIZE = 256 * 1024
+        private const val DESTROY_WAIT_MS = 1000L
 
         private fun staticInt(cls: Class<*>, name: String, fallback: Int): Int =
             try { cls.getField(name).getInt(null) } catch (_: Throwable) { fallback }
