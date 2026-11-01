@@ -206,7 +206,7 @@
 
     <Preference
         android:title="@string/credits_viper4shizuku"
-        android:summary="TheIceJi: Shizuku capture module, the design behind Capture with Shizuku; its pipe watchdog is adapted from it (GPL-3.0)"
+        android:summary="TheIceJi: Shizuku capture module, the design behind Capture with Shizuku; its capture helper and pipe watchdog are adapted from it (GPL-3.0)"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"

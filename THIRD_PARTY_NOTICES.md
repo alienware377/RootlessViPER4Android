@@ -119,13 +119,15 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   `android/capture-shizuku/` module (read at commit `ef08faa`). Only that
   module was used. Nothing was taken from the ViPERDSP submodule, which has
   no licence.
-- **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/capture/CapturePipeWriter.kt`
-  is adapted from its `PipeWriter.kt` (the stall watchdog on the capture
-  pipe). `ShizukuCaptureUserService.kt`, `ShizukuCaptureClient.kt` and the
-  AIDL files in `app/src/main/aidl/` were written for this app but follow
-  the same design as its `CaptureUserService.kt` and `ShizukuCapture.kt`:
-  a pure loopback audio policy registered as the shell user, a recorder
-  attributed to `com.android.shell`, and the route dropped on every way out.
+- **Files:** in `app/src/main/java/me/timschneeberger/rootlessjamesdsp/capture/`,
+  `CapturePipeWriter.kt` is adapted from its `PipeWriter.kt` (the stall
+  watchdog on the capture pipe), and `ShizukuCaptureUserService.kt` is
+  adapted from its `CaptureUserService.kt` (the start and teardown
+  structure, and the recorder for the route attributed to
+  `com.android.shell`). `ShizukuCaptureClient.kt` and the AIDL files in
+  `app/src/main/aidl/` were written for this app but follow the same design
+  as its `ShizukuCapture.kt` and AIDL interface: a pure loopback audio policy
+  registered as the shell user, and the route dropped on every way out.
 - **Used by:** the "Capture with Shizuku" setting (rootless build, Android 13
   and newer).
 
