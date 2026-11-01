@@ -1,5 +1,31 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory app:title="@string/capture_method_header"
+        app:iconSpaceReserved="false">
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_capture_shizuku"
+            android:defaultValue="@bool/default_capture_shizuku"
+            android:title="@string/capture_shizuku"
+            android:summaryOff="@string/capture_shizuku_summary_off"
+            android:summaryOn="@string/capture_shizuku_summary_on"
+            app:iconSpaceReserved="false" />
+
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_capture_shizuku_fallback"
+            android:defaultValue="@bool/default_capture_shizuku_fallback"
+            android:title="@string/capture_shizuku_fallback"
+            android:summaryOff="@string/capture_shizuku_fallback_off"
+            android:summaryOn="@string/capture_shizuku_fallback_on"
+            android:dependency="@string/key_capture_shizuku"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="@string/key_capture_shizuku_info"
+            android:title="@string/capture_shizuku_info_title"
+            android:summary="@string/capture_shizuku_info_summary"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/audio_format_section_header"
         app:iconSpaceReserved="false">
         <ListPreference

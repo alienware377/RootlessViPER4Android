@@ -38,6 +38,8 @@ import kotlinx.coroutines.withContext
 import me.timschneeberger.rootlessjamesdsp.BuildConfig
 import me.timschneeberger.rootlessjamesdsp.MainApplication
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapture
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapturePolicy
 import me.timschneeberger.rootlessjamesdsp.databinding.ActivityDspMainBinding
 import me.timschneeberger.rootlessjamesdsp.databinding.ContentMainBinding
 import me.timschneeberger.rootlessjamesdsp.flavor.CrashlyticsImpl
@@ -124,6 +126,13 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Set while a Shizuku start that this screen asked for is pending, so a
+     * failure is only answered here, not also by the launcher activity when a
+     * tile tap or broadcast started it.
+     */
+    private var awaitingShizukuStart = false
+
     private var broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
@@ -132,8 +141,28 @@ class MainActivity : BaseActivity() {
                         binding.powerToggle.isToggled = false
                 }
                 Constants.ACTION_SERVICE_STARTED -> {
+                    awaitingShizukuStart = false
                     if(isRootless())
                         binding.powerToggle.isToggled = true
+                }
+                Constants.ACTION_SHIZUKU_CAPTURE_FAILED -> {
+                    // Only a failed start that this screen asked for is handled
+                    // here. A capture lost while running leaves a notification
+                    // instead of a prompt.
+                    val ours = awaitingShizukuStart
+                    awaitingShizukuStart = false
+                    if(!ours || !isRootless() || !SdkCheck.isQ ||
+                        !intent.getBooleanExtra(Constants.EXTRA_SHIZUKU_FAILURE_DURING_STARTUP, false))
+                        return
+                    val reason = intent.getStringExtra(Constants.EXTRA_SHIZUKU_FAILURE_REASON) ?: ""
+                    if (ShizukuCapture.fallbackAllowed()) {
+                        toast(getString(R.string.capture_shizuku_failed_fallback_toast, reason))
+                        requestCapturePermission(forceStandard = true)
+                    }
+                    else {
+                        toast(getString(R.string.capture_shizuku_failed_toast, reason))
+                        binding.powerToggle.isToggled = false
+                    }
                 }
             }
         }
@@ -400,6 +429,7 @@ class MainActivity : BaseActivity() {
 
         IntentFilter(Constants.ACTION_SERVICE_STOPPED).apply {
             addAction(Constants.ACTION_SERVICE_STARTED)
+            addAction(Constants.ACTION_SHIZUKU_CAPTURE_FAILED)
             addAction(Constants.ACTION_PRESET_LOADED)
             registerLocalReceiver(broadcastReceiver, this)
         }
@@ -785,7 +815,30 @@ class MainActivity : BaseActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun requestCapturePermission() {
+    fun requestCapturePermission(forceStandard: Boolean = false) {
+        // Shizuku capture, if picked, needs no prompt at all
+        if (!forceStandard && isRootless() && ShizukuCapture.isSelected()) {
+            val state = ShizukuCapture.state()
+            when (ShizukuCapturePolicy.startAction(state, ShizukuCapture.fallbackAllowed())) {
+                ShizukuCapturePolicy.StartAction.UseShizuku -> {
+                    binding.powerToggle.isToggled = true
+                    awaitingShizukuStart = true
+                    RootlessAudioProcessorService.startShizuku(this)
+                    return
+                }
+                ShizukuCapturePolicy.StartAction.FallBackToStandard ->
+                    toast(getString(R.string.capture_shizuku_failed_fallback_toast,
+                        ShizukuCapture.describe(this, state)))
+                ShizukuCapturePolicy.StartAction.GiveUp -> {
+                    toast(getString(R.string.capture_shizuku_failed_toast,
+                        ShizukuCapture.describe(this, state)))
+                    binding.powerToggle.isToggled = false
+                    return
+                }
+                ShizukuCapturePolicy.StartAction.UseStandard -> {}
+            }
+        }
+
         if(app.mediaProjectionStartIntent != null && isRootless() && !SdkCheck.isVanillaIceCream) {
             binding.powerToggle.isToggled = true
             RootlessAudioProcessorService.start(this, app.mediaProjectionStartIntent)

@@ -8,6 +8,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import me.timschneeberger.rootlessjamesdsp.MainApplication
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapture
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapturePolicy
 import me.timschneeberger.rootlessjamesdsp.service.BaseAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.service.RootlessAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.EngineUtils.toggleEnginePower
@@ -47,10 +49,16 @@ object ProfilePower : KoinComponent {
         prefs.get<Boolean>(R.string.key_device_profiles_enable) &&
             prefs.get<Boolean>(R.string.key_profile_power_follow)
 
-    /** Can processing be switched back on with nobody there to tap a dialog? */
+    /**
+     * Can processing be switched back on with nobody there to tap a dialog?
+     * Shizuku capture needs no capture prompt at all, but the launcher still
+     * has to be opened from the background, which the overlay permission allows.
+     */
     fun canRestartSilently(context: Context): Boolean =
         !isRootless() ||
-            (SdkCheck.isQ && context.hasProjectMediaAppOp() && Settings.canDrawOverlays(context))
+            (SdkCheck.isQ && Settings.canDrawOverlays(context) &&
+                (context.hasProjectMediaAppOp() ||
+                    ShizukuCapture.state() == ShizukuCapturePolicy.State.Ready))
 
     private fun offIds(): Set<String> = try {
         Json.decodeFromString<List<String>>(prefs.get<String>(R.string.key_profile_power_off)).toSet()

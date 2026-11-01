@@ -1,17 +1,22 @@
 package me.timschneeberger.rootlessjamesdsp.fragment.settings
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.preference.ListPreference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.preference.Preference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.activity.OnboardingActivity
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapture
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapturePolicy
 import me.timschneeberger.rootlessjamesdsp.interop.BenchmarkManager
 import me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
 import me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+import me.timschneeberger.rootlessjamesdsp.service.BaseAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.service.RootAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.requestIgnoreBatteryOptimizations
@@ -23,6 +28,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.isRoot
 import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import org.koin.android.ext.android.inject
+import rikka.shizuku.Shizuku
 import timber.log.Timber
 
 class SettingsAudioFormatFragment : SettingsBaseFragment() {
@@ -35,7 +41,14 @@ class SettingsAudioFormatFragment : SettingsBaseFragment() {
     private val benchmark by lazy { findPreference<MaterialSwitchPreference>(getString(R.string.key_audioformat_optimization_benchmark)) }
     private val benchmarkRefresh by lazy { findPreference<Preference>(getString(R.string.key_audioformat_optimization_refresh)) }
 
+    private val captureShizuku by lazy { findPreference<MaterialSwitchPreference>(getString(R.string.key_capture_shizuku)) }
+    private val captureShizukuInfo by lazy { findPreference<Preference>(getString(R.string.key_capture_shizuku_info)) }
+
     private val preferences: Preferences.App by inject()
+
+    private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { _, _ ->
+        activity?.runOnUiThread { explainShizukuState() }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = Constants.PREF_APP
@@ -44,6 +57,40 @@ class SettingsAudioFormatFragment : SettingsBaseFragment() {
         // Root: Hide audio format & benchmark category
         encoding?.parent?.isVisible = isRootless()
         benchmark?.parent?.isVisible = !isRoot()
+
+        // Rootless only: the capture method. Shizuku capture needs Android 13.
+        captureShizuku?.parent?.isVisible = isRootless()
+        if (isRootless() && Build.VERSION.SDK_INT < ShizukuCapturePolicy.MIN_SDK) {
+            captureShizuku?.isEnabled = false
+            captureShizuku?.summaryOff = getString(R.string.capture_shizuku_summary_unsupported)
+        }
+        captureShizuku?.setOnPreferenceChangeListener { _, newValue ->
+            if (BaseAudioProcessorService.activeServices > 0)
+                requireContext().toast(R.string.capture_shizuku_restart_toast)
+            if (newValue as Boolean) {
+                // Ask for Shizuku's permission right away rather than at the
+                // next start, where a dialog would be out of place.
+                if (ShizukuCapture.state(selected = true) == ShizukuCapturePolicy.State.NoPermission) {
+                    try {
+                        Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST)
+                    } catch (ex: Exception) {
+                        Timber.w(ex)
+                    }
+                } else {
+                    view?.post { explainShizukuState() }
+                }
+            }
+            true
+        }
+        captureShizukuInfo?.isVisible = isRootless()
+        captureShizukuInfo?.setOnPreferenceClickListener {
+            context?.showAlert(R.string.capture_shizuku_info_title, R.string.capture_shizuku_info_content)
+            true
+        }
+        if (isRootless()) {
+            try { Shizuku.addRequestPermissionResultListener(shizukuPermissionListener) }
+            catch (ex: Exception) { Timber.w(ex) }
+        }
 
         // Rootless: Hide audio processing category
         legacyMode?.parent?.isVisible = isRoot()
@@ -120,7 +167,32 @@ class SettingsAudioFormatFragment : SettingsBaseFragment() {
         }
     }
 
+    override fun onDestroy() {
+        try { Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener) }
+        catch (_: Exception) {}
+        super.onDestroy()
+    }
+
+    /** After Shizuku capture was turned on: say so if it cannot work yet. */
+    private fun explainShizukuState() {
+        val ctx = context ?: return
+        if (!ShizukuCapture.isSelected()) return
+        val state = ShizukuCapture.state()
+        if (state == ShizukuCapturePolicy.State.Ready) return
+        val reason = ShizukuCapture.describe(ctx, state)
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.capture_shizuku_enable_title)
+            .setMessage(getString(
+                if (ShizukuCapture.fallbackAllowed()) R.string.capture_shizuku_enable_message
+                else R.string.capture_shizuku_enable_message_no_fallback,
+                reason))
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
     companion object {
+        private const val SHIZUKU_PERMISSION_REQUEST = 1717
+
         fun newInstance(): SettingsAudioFormatFragment {
             return SettingsAudioFormatFragment()
         }
