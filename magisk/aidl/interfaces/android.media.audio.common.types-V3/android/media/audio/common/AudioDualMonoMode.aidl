@@ -13,63 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package android.media.audio.common;
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
 
-/**
- * Dual Mono handling is used when a stereo audio stream
- * contains separate audio content on the left and right channels.
- * Such information about the content of the stream may be found, for example, in
- * ITU T-REC-J.94-201610 A.6.2.3 Component descriptor.
- * This enum corresponds to AudioTrack.DUAL_MONO_MODE_* constants in the SDK.
- *
- * {@hide}
- */
-@Backing(type="int")
-@VintfStability
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
+
+package android.media.audio.common;
+/* @hide */
+@Backing(type="int") @VintfStability
 enum AudioDualMonoMode {
-    /**
-     * This mode disables any Dual Mono presentation effect.
-     */
-    OFF = 0,
-    /**
-     * This mode indicates that a stereo stream should be presented
-     * with the left and right audio channels blended together
-     * and delivered to both channels.
-     *
-     * Behavior for non-stereo streams is implementation defined.
-     * A suggested guideline is that the left-right stereo symmetric
-     * channels are pairwise blended;
-     * the other channels such as center are left alone.
-     *
-     * The Dual Mono effect occurs before volume scaling.
-     */
-    LR = 1,
-    /**
-     * This mode indicates that a stereo stream should be presented
-     * with the left audio channel replicated into the right audio channel.
-     *
-     * Behavior for non-stereo streams is implementation defined.
-     * A suggested guideline is that all channels with left-right
-     * stereo symmetry will have the left channel position replicated
-     * into the right channel position.
-     * The center channels (with no left/right symmetry) or unbalanced
-     * channels are left alone.
-     *
-     * The Dual Mono effect occurs before volume scaling.
-     */
-    LL = 2,
-    /**
-     * This mode indicates that a stereo stream should be presented
-     * with the right audio channel replicated into the left audio channel.
-     *
-     * Behavior for non-stereo streams is implementation defined.
-     * A suggested guideline is that all channels with left-right
-     * stereo symmetry will have the right channel position replicated
-     * into the left channel position.
-     * The center channels (with no left/right symmetry) or unbalanced
-     * channels are left alone.
-     *
-     * The Dual Mono effect occurs before volume scaling.
-     */
-    RR = 3,
+  OFF = 0,
+  LR = 1,
+  LL = 2,
+  RR = 3,
 }

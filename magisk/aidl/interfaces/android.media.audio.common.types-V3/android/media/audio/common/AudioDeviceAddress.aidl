@@ -13,49 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * This structure defines various representations for the audio device
- * address.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 union AudioDeviceAddress {
-    /**
-     * String uniquely identifying the device among other devices
-     * of the same type. Can be empty in case there is only one device
-     * of this type.
-     *
-     * Depending on the device type, its id may be assigned by the framework
-     * (one case used at the time of writing is REMOTE_SUBMIX), or assigned by
-     * the HAL service (the canonical examples are BUS and MIC devices). In any
-     * case, both framework and HAL must never attempt to parse the value of the
-     * 'id' field, regardless of whom has generated it. If the address must be
-     * parsed, one of the members below must be used instead of 'id'.
-     */
-    @utf8InCpp String id;
-    /**
-     * IEEE 802 MAC address. Set for Bluetooth devices. The array must have
-     * exactly 6 elements.
-     */
-    byte[] mac;
-    /**
-     * IPv4 Address. Set for IPv4 devices. The array must have exactly 4
-     * elements.
-     */
-    byte[] ipv4;
-    /**
-     * IPv6 Address. Set for IPv6 devices. The array must have exactly 8
-     * elements.
-     */
-    int[] ipv6;
-    /**
-     * PCI bus Address. Set for USB devices. The array must have exactly 2
-     * elements, in the following order: the card id, and the device id.
-     */
-    int[] alsa;
+  @utf8InCpp String id;
+  byte[] mac;
+  byte[] ipv4;
+  int[] ipv6;
+  int[] alsa;
 }

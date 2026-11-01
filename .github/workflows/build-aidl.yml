@@ -1,13 +1,22 @@
-name: Build AIDL effect service
+name: Build AIDL effect plugin
 
-# Separate from the app workflow: this builds a standalone HAL binary, needs a
-# different toolchain setup, and should not slow down or break APK builds while
-# it is still being brought up.
+# Separate from the app workflow: this builds the rooted engine as an AIDL
+# effect plugin (librv4a_aidl_v<N>.so) for devices whose audio effects run
+# behind the AIDL effect HAL, and the experimental module that installs it.
+# It shares the engine with the app, so engine changes trigger it too: the
+# plugin compiles hal/JamesDspHalEffect.cpp and every engine source.
 on:
   push:
-    branches: [ viper-extras ]
+    branches: [ viper-extras, issue-12-aidl ]
     paths:
       - 'magisk/aidl/**'
+      - 'app/src/main/cpp/**'
+      - 'tools/aidl_plugin_harness.cpp'
+      - '.github/workflows/build-aidl.yml'
+  pull_request:
+    paths:
+      - 'magisk/aidl/**'
+      - 'app/src/main/cpp/**'
       - '.github/workflows/build-aidl.yml'
   workflow_dispatch:
 
@@ -28,55 +37,16 @@ jobs:
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "build-tools;37.0.0" >/dev/null
           ls "$ANDROID_SDK_ROOT/build-tools/"
 
-      - name: Generate AIDL NDK backend
-        run: |
-          bash magisk/aidl/generate.sh
-          find magisk/aidl/generated -type f | wc -l
+      # Every effect HAL version (2, 3, 4) for arm64 and x86_64. build.sh
+      # generates each version's interface code from its frozen snapshots,
+      # links strictly, strips, and runs check-elf.sh on every library:
+      # exactly three exports, only LLNDK dependencies, 16 KB alignment, no
+      # text relocations, nothing newer than Android 14 from libbinder_ndk.
+      - name: Build and check every version and ABI
+        run: bash magisk/aidl/build.sh -o build/aidl
 
-      # Only 64-bit: the AIDL effect HAL exists on Android 14 and later, and
-      # every device that ships it is 64-bit, so a 32-bit build would be dead
-      # weight in the package.
-      - name: Build all ABIs
-        run: |
-          for abi in arm64-v8a x86_64; do
-            cmake -S magisk/aidl -B "build/$abi" -G Ninja \
-              -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake" \
-              -DANDROID_ABI="$abi" \
-              -DANDROID_PLATFORM=android-33
-            cmake --build "build/$abi"
-          done
-
-      # The binary is ~30MB unstripped, almost all debug info. Stripping takes
-      # it to a size worth shipping in a module.
-      - name: Strip and stage
-        run: |
-          STRIP="$(find "$ANDROID_NDK_LATEST_HOME" -name 'llvm-strip' | head -1)"
-          OUT=build/module
-          mkdir -p "$OUT/libs/arm64-v8a" "$OUT/libs/x86_64"
-          for abi in arm64-v8a x86_64; do
-            "$STRIP" "build/$abi/rv4a-effect-service" -o "$OUT/libs/$abi/rv4a-effect-service"
-            ls -la "$OUT/libs/$abi/rv4a-effect-service"
-          done
-          cp magisk/aidl/module/module.prop magisk/aidl/module/customize.sh \
-             magisk/aidl/module/post-fs-data.sh magisk/aidl/module/service.sh \
-             magisk/aidl/module/rv4a-effect.rc "$OUT/"
-          cp magisk/aidl/DESIGN.md "$OUT/README.md"
-
-      - name: Package module
-        run: cd build/module && zip -qr ../rv4a-effect-aidl.zip . && unzip -l ../rv4a-effect-aidl.zip
-
-      # The installer in this package aborts before it writes anything, on
-      # purpose: taking over the stock effect service's name would leave the
-      # device with no working effect HAL. The artifact was named as though it
-      # were something to flash, which is an invitation to try. Keep building
-      # it so the toolchain does not rot, and say plainly what it is.
-      - name: Confirm the installer still refuses to install
-        run: |
-          grep -q 'abort "! Aborting deliberately"' magisk/aidl/module/customize.sh ||
-            { echo "the AIDL installer no longer aborts; it must not be published until it is finished"; exit 1; }
-
-      - name: Upload module
+      - name: Upload libraries
         uses: actions/upload-artifact@v4
         with:
-          name: aidl-effect-service-UNFINISHED-does-not-install
-          path: build/rv4a-effect-aidl.zip
+          name: rv4a-aidl-plugin-libs
+          path: build/aidl/libs

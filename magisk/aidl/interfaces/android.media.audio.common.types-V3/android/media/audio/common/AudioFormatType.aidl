@@ -13,39 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * The type of the audio format. Only used as part of 'AudioFormatDescription'
- * structure.
- *
- * {@hide}
- */
-@VintfStability
-@Backing(type="byte")
+/* @hide */
+@Backing(type="byte") @VintfStability
 enum AudioFormatType {
-    /**
-     * "Default" type is used when the client does not care about the actual
-     * format. All fields of 'AudioFormatDescription' must have default / empty
-     * / null values.
-     */
-    DEFAULT = 0,
-    /**
-     * When the 'encoding' field of 'AudioFormatDescription' is not empty, it
-     * specifies the codec used for bitstream (non-PCM) data. It is also used
-     * in the case when the bitstream data is encapsulated into a PCM stream,
-     * see the documentation for 'AudioFormatDescription'.
-     */
-    NON_PCM = DEFAULT,
-    /**
-     * PCM type. The 'pcm' field of 'AudioFormatDescription' is used to specify
-     * the actual sample size and representation.
-     */
-    PCM = 1,
-    /**
-     * Value reserved for system use only. HALs must never return this value to
-     * the system or accept it from the system.
-     */
-    SYS_RESERVED_INVALID = -1,
+  DEFAULT = 0,
+  NON_PCM = DEFAULT /* 0 */,
+  PCM = 1,
+  SYS_RESERVED_INVALID = (-1) /* -1 */,
 }

@@ -13,49 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioContentType;
-import android.media.audio.common.AudioFlag;
-import android.media.audio.common.AudioSource;
-import android.media.audio.common.AudioUsage;
-
-/**
- * AudioAttributes give information about an audio stream that is more
- * descriptive than stream type alone.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioAttributes {
-    /**
-     * Classifies the content of the audio signal using categories such as
-     * speech or music
-     */
-    AudioContentType contentType = AudioContentType.UNKNOWN;
-    /**
-     * Classifies the intended use of the audio signal using categories such as
-     * alarm or ringtone
-     */
-    AudioUsage usage = AudioUsage.UNKNOWN;
-    /**
-     * Classifies the audio source using categories such as voice uplink or
-     * remote submix
-     */
-    AudioSource source = AudioSource.DEFAULT;
-    /**
-     * Bitmask describing how playback is to be affected.
-     */
-    int flags = AudioFlag.NONE;
-    /**
-     * Tag is an additional use case qualifier complementing AudioUsage and
-     * AudioContentType. Tags are set by vendor-specific applications and must
-     * be prefixed by "VX_". Vendors must namespace their tag names using the
-     * name of their company to avoid conflicts. The namespace must use at least
-     * three characters, and must go directly after the "VX_" prefix.
-     * For example: "VX_MYCOMPANY_VR".
-     */
-    @utf8InCpp String[] tags;
+  android.media.audio.common.AudioContentType contentType = android.media.audio.common.AudioContentType.UNKNOWN;
+  android.media.audio.common.AudioUsage usage = android.media.audio.common.AudioUsage.UNKNOWN;
+  android.media.audio.common.AudioSource source = android.media.audio.common.AudioSource.DEFAULT;
+  int flags = android.media.audio.common.AudioFlag.NONE /* 0 */;
+  @utf8InCpp String[] tags;
 }

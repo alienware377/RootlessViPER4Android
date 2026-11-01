@@ -13,63 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioChannelLayout;
-import android.media.audio.common.AudioDevice;
-import android.media.audio.common.AudioFormatDescription;
-
-/**
- * Extra parameters which are specified when the audio port is in the device role.
- *
- * {@hide}
- */
-@SuppressWarnings(value={"redundant-name"}) // for *DEFAULT_DEVICE
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @SuppressWarnings(value={"redundant-name"}) @VintfStability
 parcelable AudioPortDeviceExt {
-    /** Audio device specification. */
-    AudioDevice device;
-    /** Bitmask indexed by 'FLAG_INDEX_' constants. */
-    int flags;
-    /**
-     * List of supported encoded formats. Specified for ports that perform
-     * hardware-accelerated decoding or transcoding, or connected to external
-     * hardware.
-     */
-    AudioFormatDescription[] encodedFormats;
-    /**
-     * Mask of supported encapsulation modes. Specified for ports that accept
-     * compressed data. The field is a bitmask indexed by AudioEncapsulationMode.
-     */
-    int encapsulationModes;
-    /**
-     * Mask of supported metadata types used for encapsulated compressed data.
-     * This field is a bitmask indexed by AudioEncapsulationMetadataType.
-     */
-    int encapsulationMetadataTypes;
-
-    /**
-     * A default device port is fallback used when the preference for the device
-     * to use has not been specified (AudioDeviceType.type == {IN|OUT}_DEFAULT),
-     * or the specified device does not satisfy routing criteria based on audio
-     * stream attributes and use cases. The device port for which the ID is
-     * returned must be associated with a permanently attached device
-     * (AudioDeviceDescription.connection == ''). There can be no more than one
-     * default device port in a HAL module in each I/O direction.
-     */
-    const int FLAG_INDEX_DEFAULT_DEVICE = 0;
-
-    /**
-     * A channel layout that represents the physical layout of output speakers.
-     *
-     * If set, only the `layoutMask` variant of AudioChannelLayout is valid and
-     * supported for this field.
-     *
-     * The layoutMask only indicates which speaker channels are present, the
-     * physical layout of the speakers should be informed by a standard for
-     * multi-channel sound playback systems, such as ITU-R BS.2051.
-     */
-    @nullable AudioChannelLayout speakerLayout;
+  android.media.audio.common.AudioDevice device;
+  int flags;
+  android.media.audio.common.AudioFormatDescription[] encodedFormats;
+  int encapsulationModes;
+  int encapsulationMetadataTypes;
+  const int FLAG_INDEX_DEFAULT_DEVICE = 0;
 }
