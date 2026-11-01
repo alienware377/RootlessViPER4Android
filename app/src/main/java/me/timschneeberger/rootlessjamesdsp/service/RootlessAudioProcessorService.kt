@@ -44,6 +44,7 @@ import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatab
 import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionManager
 import me.timschneeberger.rootlessjamesdsp.session.rootless.SessionRecordingPolicyManager
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.ProcessedTrackUsage
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_PREFERENCES_UPDATED
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_SAMPLE_RATE_UPDATED
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_SERVICE_HARD_REBOOT_CORE
@@ -652,13 +653,27 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     }
 
     private fun buildAudioTrack(encoding: Int, sampleRate: Int, bufferSizeBytes: Int): AudioTrack {
+        // Media, not unknown, so Android Auto and other features that forward
+        // media audio elsewhere pick this track up too. See ProcessedTrackUsage.
+        // No preferred device is set on purpose: naming a device would stop
+        // those features from taking the track.
+        val usage = ProcessedTrackUsage.usage(legacyUnknownType = false)
+        Timber.d("Output track usage: $usage")
         val attributesBuilder = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_UNKNOWN)
+            .setUsage(usage)
             .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
             .setFlags(0)
 
+        // Still keeps screen recorders, and our own capture, away from the
+        // processed audio, whatever usage the track has.
         sdkAbove(Build.VERSION_CODES.Q) {
             attributesBuilder.setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_NONE)
+        }
+
+        if (ProcessedTrackUsage.optOutOfSpatializer(Build.VERSION.SDK_INT, usage)) {
+            sdkAbove(Build.VERSION_CODES.S_V2) {
+                attributesBuilder.setSpatializationBehavior(AudioAttributes.SPATIALIZATION_BEHAVIOR_NEVER)
+            }
         }
 
         val format = AudioFormat.Builder()
