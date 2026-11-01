@@ -1,9 +1,15 @@
 // Does the smooth mode actually shift the pitch, and is it really steadier
 // than the granular one?
 //
-//   $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -I $J \
-//       tools/pitchshift_harness.c $J/Effects/pitchshift.c $J/Effects/rubberband.c \
-//       tools/lockstub.c -lm -ldl -o pitch
+//   CC=$NDK/x86_64-linux-android29-clang
+//   $CC -O2 -w -ffp-contract=off -I $J -c tools/pitchshift_harness.c \
+//       $J/Effects/pitchshift.c $J/Effects/rubberband.c tools/lockstub.c
+//   ${CC}++ -O2 -std=c++17 -w -I third_party -I $J -c $J/Effects/signalsmith.cpp
+//   ${CC}++ -static-libstdc++ pitchshift_harness.o pitchshift.o rubberband.o \
+//       lockstub.o signalsmith.o -lm -ldl -o pitch
+//
+// pitchshift.c needs signalsmith.cpp, the pitch shifter's one C++ file, so
+// the link goes through clang++.
 //
 // Set RUBBERBAND_SO to a built librubberband.so to exercise the optional
 // back-end as well; without it those checks say so and skip.

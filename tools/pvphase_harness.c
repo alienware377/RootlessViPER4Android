@@ -2,9 +2,15 @@
 //
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
 //   J=app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp
-//   $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -I $J \
-//       tools/pvphase_harness.c $J/Effects/pitchshift.c $J/Effects/rubberband.c \
-//       tools/lockstub.c -lm -ldl -o tools/pvphase_x86
+//   CC=$NDK/x86_64-linux-android29-clang
+//   $CC -O2 -w -ffp-contract=off -I $J -c tools/pvphase_harness.c \
+//       $J/Effects/pitchshift.c $J/Effects/rubberband.c tools/lockstub.c
+//   ${CC}++ -O2 -std=c++17 -w -I third_party -I $J -c $J/Effects/signalsmith.cpp
+//   ${CC}++ -static-libstdc++ pvphase_harness.o pitchshift.o rubberband.o \
+//       lockstub.o signalsmith.o -lm -ldl -o tools/pvphase_x86
+//
+// pitchshift.c needs signalsmith.cpp, the pitch shifter's one C++ file, so
+// the link goes through clang++.
 //
 // The phase vocoder adds each bin's phase advance to a float accumulator
 // every hop, about k * pi / 2 for bin k, 187.5 hops a second. Only a
