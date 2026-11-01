@@ -160,6 +160,13 @@ int main()
 		int adv3[6] = {-80, -100, 63, 0, 0, 0};
 		run("mono.wav", 0, adv3, &frames, &ch, &valid);
 		CHECK(valid, "Delay 63 on a 64 sample IR: valid=%d", valid);
+		// Minimum phase works on a buffer twice the IR's length, so its limit
+		// is twice as long too (why the help says "too long", not "as long").
+		int adv4[6] = {-80, -100, 100, 0, 0, 0}, adv5[6] = {-80, -100, 128, 0, 0, 0};
+		int v4, v5;
+		run("mono.wav", 2, adv4, &frames, &ch, &v4);
+		run("mono.wav", 2, adv5, &frames, &ch, &v5);
+		CHECK(v4 && !v5, "Min phase, 64 sample IR: delay 100 valid=%d, delay 128 valid=%d", v4, v5);
 	}
 	// 7. Observation only: the loudest point is found with a signed compare,
 	// so an IR whose peak is negative is measured against the wrong level.
