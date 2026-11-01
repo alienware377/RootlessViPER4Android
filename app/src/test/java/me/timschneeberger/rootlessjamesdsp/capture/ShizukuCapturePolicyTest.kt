@@ -55,6 +55,18 @@ class ShizukuCapturePolicyTest {
     }
 
     @Test
+    fun `the setting only counts on a rootless build with Android 13 or newer`() {
+        assertTrue(ShizukuCapturePolicy.isSelected(settingOn = true, isRootless = true, sdkInt = 33))
+        assertTrue(ShizukuCapturePolicy.isSelected(settingOn = true, isRootless = true, sdkInt = 35))
+        assertFalse(ShizukuCapturePolicy.isSelected(settingOn = false, isRootless = true, sdkInt = 34))
+        assertFalse(ShizukuCapturePolicy.isSelected(settingOn = true, isRootless = false, sdkInt = 34))
+        // A setting restored onto an older phone, where the switch is greyed
+        // out, must not stand in the way of the standard method
+        assertFalse(ShizukuCapturePolicy.isSelected(settingOn = true, isRootless = true, sdkInt = 32))
+        assertFalse(ShizukuCapturePolicy.isSelected(settingOn = true, isRootless = true, sdkInt = 29))
+    }
+
+    @Test
     fun `start action follows the state and the fallback switch`() {
         assertEquals(StartAction.UseShizuku, ShizukuCapturePolicy.startAction(State.Ready, false))
         assertEquals(StartAction.UseStandard, ShizukuCapturePolicy.startAction(State.NotSelected, false))
