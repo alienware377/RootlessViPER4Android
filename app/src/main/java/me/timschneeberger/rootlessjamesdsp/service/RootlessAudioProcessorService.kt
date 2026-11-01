@@ -693,10 +693,16 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         // Suspend track, release recorder
                         track.stop()
                         if (shizukuCapture) {
-                            // The helper drops the old route and registers
-                            // the new one in a single call, so the gap is short
+                            // Ask the helper to stop BEFORE closing our end of
+                            // the pipe. Closed the other way round, its pump
+                            // sees the reader gone while the capture is still
+                            // current and reports it as lost, which stops
+                            // processing on every app list change. A stop we
+                            // asked for is never reported. The gap until the
+                            // new route is up stays short.
                             val old = source!!
                             source = null
+                            shizukuClient?.stopCapture()
                             try { old.release() } catch (_: Exception) {}
                             source = openShizukuSource(encodingFormat, sampleRate, bufferSize)
                         }
