@@ -10,9 +10,14 @@ class CancelToken {
         private set
     @Volatile private var current: HttpResponse? = null
 
+    /**
+     * Called from the screen's Cancel button. Closing an HTTPS connection
+     * writes to the network (TLS says goodbye), and Android stops the app
+     * for network use on the main thread, so the close happens elsewhere.
+     */
     fun cancel() {
         isCancelled = true
-        current?.close()
+        current?.let { r -> Thread({ r.close() }, "download-cancel").start() }
     }
 
     internal fun attach(r: HttpResponse?) {
