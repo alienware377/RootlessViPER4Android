@@ -380,9 +380,13 @@ class LibraryDownloadFlow(
         val bytes = picked.sumOf { it.file.size }
         val size = Formatter.formatShortFileSize(c, bytes)
         val metered = c.getSystemService<ConnectivityManager>()?.isActiveNetworkMetered == true
+        // A Git LFS file is counted at its pointer's size (about 130 bytes),
+        // so the total above says nothing about how much it will really cost
+        val unknown = picked.count { it.file.maybeLfs }
         val msg = when {
             bytes > BIG_DOWNLOAD -> c.getString(R.string.filelib_big_download, size)
             metered && bytes > METERED_NOTE -> c.getString(R.string.filelib_metered_download, size)
+            metered && unknown > 0 -> c.getString(R.string.filelib_metered_lfs, unknown)
             else -> null
         }
         if (msg == null) {
