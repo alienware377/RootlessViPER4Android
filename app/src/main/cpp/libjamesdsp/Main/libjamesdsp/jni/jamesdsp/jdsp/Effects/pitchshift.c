@@ -510,8 +510,10 @@ static inline float psRead(const float *buf, float pos, int mask)
  * ------------------------------------------------------------------------- */
 
 /* In-place radix-2 FFT. sign -1 forward, +1 inverse (inverse scales by 1/n).
-   Written out rather than borrowed from the engine, whose FFT is wrapped
-   inside a convolver that only exposes a whole convolution. */
+   The engine's own transform is reachable directly (the DFTn codelets in
+   eel2/numericSys/codelet.c, used by dynamic.c and spectralShaper.c), but it
+   is a real Hartley transform; this code wants complex bins, so it keeps its
+   own. */
 static void pvFft(float *re, float *im, int n, int sign)
 {
 	int i, j = 0, k, len;
