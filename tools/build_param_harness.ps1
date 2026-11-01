@@ -42,6 +42,10 @@ $flags = @(
 Set-Content "$root\tools\cc.rsp" ($flags + $sources) -Encoding ascii
 Push-Location $objs
 & $cc "@$($root -replace '\\','/')/tools/cc.rsp"
+# The engine's one C++ file, the C face on the vendored Signalsmith Stretch
+# library. Left out, the link fails on SignalsmithDestroy and friends.
+& $cxx -O1 -w -c -fPIC -std=c++17 -I ("$root/third_party" -replace '\\', '/') `
+    -I ($jdsp -replace '\\', '/') ("$jdsp/Effects/signalsmith.cpp" -replace '\\', '/')
 Pop-Location
 
 $out = "$root/tools/param_harness_$Abi" -replace '\\', '/'
@@ -53,6 +57,9 @@ Set-Content "$root\tools\link.rsp" (
 ) -Encoding ascii
 & $cxx "@$($root -replace '\\','/')/tools/link.rsp"
 
+# adb reports a finished push on stderr, which Windows PowerShell turns into an
+# error record; under Stop that ended the script before the harness ran.
+$ErrorActionPreference = 'Continue'
 $target = if ($Device) { @('-s', $Device) } else { @() }
 & adb @target push $out /data/local/tmp/param_harness | Out-Null
 & adb @target shell 'chmod 755 /data/local/tmp/param_harness; /data/local/tmp/param_harness'
