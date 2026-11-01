@@ -148,7 +148,7 @@
     </Preference>
     <Preference
         android:title="AutoEq"
-        android:summary="Jaakko Pasanen: the method and defaults behind Match EQ, ported to Kotlin, and the measurements and target curves it downloads when you pick them (MIT for the code)"
+        android:summary="Jaakko Pasanen: the method and defaults behind Match EQ, ported to Kotlin (MIT). The measurements and target curves Match EQ downloads when you pick them come from the AutoEq repository and belong to the people who made them"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"
