@@ -16,7 +16,8 @@
 // -DBROKEN_LATENCY, -DBROKEN_DRYRESYNTH, -DBROKEN_FIFO, -DBROKEN_CENTRE,
 // -DBROKEN_SWAP, -DBROKEN_MIRROR, -DBROKEN_NOCOH, -DBROKEN_NOPAD,
 // -DBROKEN_FOLD, -DBROKEN_NOSCRUB, -DBROKEN_RESET, -DBROKEN_SWAPGAP,
-// -DBROKEN_NOFADE, -DBROKEN_NOREFRESH, -DBROKEN_RATECHECK or -DBROKEN_FDNGAIN
+// -DBROKEN_NOFADE, -DBROKEN_NOREFRESH, -DBROKEN_RATECHECK, -DBROKEN_FDNGAIN
+// or -DBROKEN_LATESET
 // (the defines reach the engine file too) and the named check fails. The
 // speed check has no broken build; it is a budget.
 //
@@ -1043,6 +1044,39 @@ static void testRates(void)
 	check("guard bytes touched", liveOverruns(), 0, 0);
 }
 
+/* The app resends the set a while after a rate change, by which time the ring
+   has long filled with nothing rendered from it. The wet signal has to wait
+   for whole frames again rather than fade in over an empty overlap-add. */
+static void testLateSet(void)
+{
+	printf("\n[17] a set that arrives after a rate change: no gap (BROKEN_LATESET)\n");
+	int cOff, cOff2;
+	const int taps = makeSet(48000, 0.0875, g_set, &cOff);
+	const int taps2 = makeSet(44100, 0.0875, g_set2, &cOff2);
+	const int n = 48000 * 2;
+	signalForClicks(n, 171);
+	/* Dry for a fifth of a second, then the set for the new rate. Several
+	   arrival points, so the hop phase cannot hide the gap. */
+	double worst = 0;
+	for (int k = 0; k < 4; k++)
+	{
+		setup(48000, g_set, taps, cOff, 100, 40, 60, 40, 25);
+		uint64_t rs = 1;
+		runRange(inL, inR, outL, outR, 0, 48000, 480, &rs);
+		g_lib.fs = 44100;
+		BinauralUpmixRefresh(&g_lib);
+		const int at = 48000 + 9600 + 131 * k;
+		runRange(inL, inR, outL, outR, 48000, at, 480, &rs);
+		BinauralUpmixLoadHrir(&g_lib, g_set2, BIN_SPEAKERS, taps2, 44100, cOff2);
+		runRange(inL, inR, outL, outR, at, n, 480, &rs);
+		const double ref = sqrt(energy(outL, at + 24000, at + 34000) / 10000);
+		const double d = worstDip(outL, at - 480, at + 4096, ref);
+		if (d < worst) worst = d;
+	}
+	check("deepest 1 ms dip after the late set, dB", worst, -15, 0);
+	check("guard bytes touched", liveOverruns(), 0, 0);
+}
+
 static void testRoom(void)
 {
 	printf("\n[15] the room: nothing at 0, a tail that dies away, NaN cleared (BROKEN_FDNGAIN)\n");
@@ -1173,6 +1207,7 @@ int main(int argc, char **argv)
 	if (!only || only == 14) testRates();
 	if (!only || only == 15) testRoom();
 	if (!only || only == 16) testSpeed();
+	if (!only || only == 17) testLateSet();
 	BinauralUpmixFree(&g_lib);
 	check("guard bytes touched over the whole run", liveOverruns(), 0, 0);
 	printf("\n%s (%d failure%s)\n", failures ? "FAILURES PRESENT" : "all checks passed",
