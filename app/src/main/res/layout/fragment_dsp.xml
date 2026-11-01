@@ -109,6 +109,21 @@
             app:iconSrc="@drawable/ic_baseline_download_24dp"
             app:iconTint="?attr/colorOnSecondaryContainer" />
 
+        <me.timschneeberger.rootlessjamesdsp.view.Card
+            android:id="@+id/global_mode_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="1dp"
+            android:clickable="true"
+            android:visibility="gone"
+            app:bodyText="@string/global_notice_body"
+            app:titleText="@string/global_notice_title"
+            app:cardBackground="?attr/colorSecondaryContainer"
+            app:cardMargin="0dp"
+            app:closeButtonVisible="false"
+            app:iconSrc="@drawable/ic_twotone_public_24dp"
+            app:iconTint="?attr/colorOnSecondaryContainer" />
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

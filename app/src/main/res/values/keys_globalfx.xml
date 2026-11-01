@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Global mode (rootless only). App preferences, not dsp_*: presets and
+         device profiles never carry them. -->
+    <string name="key_global_mode_screen" translatable="false">global_mode_screen</string> <!-- static -->
+    <string name="key_global_mode" translatable="false">global_mode</string>
+    <string name="key_global_target" translatable="false">global_target</string>
+    <string name="key_global_precision" translatable="false">global_precision</string>
+    <string name="key_global_auto_preamp" translatable="false">global_auto_preamp</string>
+    <string name="key_global_check" translatable="false">global_check</string> <!-- static -->
+    <string name="key_global_info" translatable="false">global_info</string> <!-- static -->
+
+    <bool name="default_global_mode" translatable="false" tools:keep="@bool/default_global_mode">false</bool>
+    <string name="default_global_target" translatable="false" tools:keep="@string/default_global_target">all</string>
+    <string name="default_global_precision" translatable="false" tools:keep="@string/default_global_precision">40</string>
+    <bool name="default_global_auto_preamp" translatable="false" tools:keep="@bool/default_global_auto_preamp">true</bool>
+
+    <string-array name="global_target_values" translatable="false">
+        <item>all</item>
+        <item>apps</item>
+    </string-array>
+    <string-array name="global_precision_values" translatable="false">
+        <item>20</item>
+        <item>40</item>
+        <item>80</item>
+    </string-array>
+</resources>

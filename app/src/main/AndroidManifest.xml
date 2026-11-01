@@ -258,6 +258,15 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
+        <!-- Rootless global mode. dataSync, whose permission is already declared
+             above for backups, so this adds no permission. Never started unless
+             the user switches global mode on. -->
+        <service
+            android:name=".globalfx.GlobalEffectService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- Root only: FGS service permission is granted in root/AndroidManifest.xml -->
         <service
             android:name=".service.RootAudioProcessorService"
