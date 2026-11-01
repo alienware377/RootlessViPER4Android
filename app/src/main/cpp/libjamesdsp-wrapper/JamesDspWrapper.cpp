@@ -615,6 +615,18 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBalance(JNIE
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectralShaper(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jfloat amount, jfloat sensitivity, jfloat lowHz, jfloat highHz,
+        jfloat speed, jint focus, jboolean catchTones, jboolean listen, jint msMode)
+{
+    DECLARE_DSP_B
+    SpectralShaperSetParam(dsp, amount, sensitivity, lowHz, highHz, speed, focus,
+                           catchTones ? 1 : 0, listen ? 1 : 0, msMode);
+    if (enable) SpectralShaperEnable(dsp); else SpectralShaperDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVinyl(JNIEnv *env, jobject obj, jlong self,
         jboolean enable, jfloat surface, jfloat crackle, jfloat crackleSize,
         jfloat pops, jfloat clicks, jfloat sizzle, jfloat hiss, jfloat prickle,

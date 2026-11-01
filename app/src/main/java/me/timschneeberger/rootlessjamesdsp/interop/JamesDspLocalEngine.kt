@@ -163,6 +163,9 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean =
         JamesDspWrapper.setBalance(handle, enable, balance, swap, mono)
 
+    override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
+        JamesDspWrapper.setSpectralShaper(handle, enable, amount, sensitivity, lowHz, highHz, speed, focus, catchTones, listen, msMode)
+
     override fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean =
         JamesDspWrapper.setVinyl(handle, enable, surface, crackle, crackleSize, pops, clicks, sizzle, hiss, prickle, rumble, wear, follow, mix)
 

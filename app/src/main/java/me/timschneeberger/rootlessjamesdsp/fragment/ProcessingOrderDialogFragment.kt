@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.utils.ChainOrder
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import java.util.Collections
@@ -44,6 +45,9 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(10, R.string.geq_enable),
         ChainEffect(11, R.string.convolver_enable),
         ChainEffect(12, R.string.v4a_ddc_title),
+        // Listed after the DDC rather than by id: with no saved order this list
+        // is what the screen shows, and the shaper runs right after the DDC.
+        ChainEffect(39, R.string.shaper_enable),
         ChainEffect(13, R.string.liveprog_enable),
         ChainEffect(14, R.string.liveprog_slot_2),
         ChainEffect(15, R.string.liveprog_slot_3),
@@ -95,9 +99,12 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         .getSharedPreferences(Constants.PREF_CHAIN_ORDER, Context.MODE_MULTI_PROCESS)
 
     private fun loadOrder(): MutableList<ChainEffect> {
+        // Completed the same way the engine push is, so the screen shows the
+        // order that is actually running.
         val saved = prefs().getString(Constants.KEY_CHAIN_ORDER, null)
             ?.split(",")
             ?.mapNotNull { it.trim().toIntOrNull() }
+            ?.let { ChainOrder.complete(it) }
             ?: return allEffects.filterNot { isSlotUnused(it.id) }.toMutableList()
         val result = ArrayList<ChainEffect>()
         saved.forEach { id -> allEffects.firstOrNull { it.id == id }?.let(result::add) }

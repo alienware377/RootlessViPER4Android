@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_shaper_enable"
+        android:disableDependentsState="false"
+        android:title="@string/shaper_enable"
+        android:icon="@drawable/ic_baseline_waveform_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/shaper_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_shaper_amount"
+            android:title="@string/shaper_amount"
+            android:summary="@string/shaper_amount_summary"
+            android:defaultValue="6"
+            app:minValue="0" app:maxValue="12" app:unit="dB" app:precision="1"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_shaper_sensitivity"
+            android:title="@string/shaper_sensitivity"
+            android:summary="@string/shaper_sensitivity_summary"
+            android:defaultValue="60"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_shaper_speed"
+            android:title="@string/shaper_speed"
+            android:summary="@string/shaper_speed_summary"
+            android:defaultValue="50"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <ListPreference
+            android:key="@string/key_shaper_focus"
+            android:title="@string/shaper_focus"
+            android:summary="@string/shaper_focus_summary"
+            android:defaultValue="1"
+            android:entries="@array/shaper_focus_modes"
+            android:entryValues="@array/shaper_focus_modes_values"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+
+        <PreferenceCategory android:title="@string/shaper_range_header"
+            app:iconSpaceReserved="false">
+            <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+                android:key="@string/key_shaper_low"
+                android:title="@string/shaper_low"
+                android:summary="@string/shaper_range_summary"
+                android:defaultValue="2000"
+                app:minValue="500" app:maxValue="8000" app:unit="Hz" app:precision="0"
+                app:allowDividerAbove="false" app:updatesContinuously="true"
+                app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+            <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+                android:key="@string/key_shaper_high"
+                android:title="@string/shaper_high"
+                android:defaultValue="10000"
+                app:minValue="2000" app:maxValue="16000" app:unit="Hz" app:precision="0"
+                app:allowDividerAbove="false" app:updatesContinuously="true"
+                app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        </PreferenceCategory>
+
+        <ListPreference
+            android:key="@string/key_shaper_ms_mode"
+            android:title="@string/dyneq_ms_mode"
+            android:summary="@string/shaper_ms_mode_summary"
+            android:defaultValue="0"
+            android:entries="@array/ms_modes"
+            android:entryValues="@array/ms_modes_values"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_shaper_tones"
+            android:title="@string/shaper_tones"
+            android:summary="@string/shaper_tones_summary"
+            android:defaultValue="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_shaper_listen"
+            android:title="@string/shaper_listen"
+            android:summary="@string/shaper_listen_summary"
+            android:defaultValue="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

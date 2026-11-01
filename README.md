@@ -128,11 +128,11 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - ~~**Choose which apps are processed**~~ *(v4.4.0)*: the app list can name the apps to process instead of the ones to skip ([#10](https://github.com/alienware377/RootlessViPER4Android/issues/10))
 - ~~**Remember effect on/off states**~~ *(v4.4.0)* across a ViPER4Android-only mode round trip: switching the mode off now puts back exactly the effects that were on before
 - ~~**Smooth Concert hall and Room**~~ *(v4.4.0)*: rebuilt versions of the two reverbs that sounded metallic, with a dense tail and no repeating echoes. The originals stay, so existing presets sound the same ([#6](https://github.com/alienware377/RootlessViPER4Android/issues/6))
+- ~~**Spectral shaper**~~ *(next release)*: finds frequencies that suddenly stick out of their surroundings, like a harsh cymbal or a sharp peak in bright IEMs, and turns them down only while they do. Clean steady notes are left alone, with a switch to catch those too, and "Listen to what is removed" plays only what it takes away. Adds about 21 ms of delay
 
 ### 🔜 Planned
 
 - **Global "Poweramp-style" mode** — process the whole output mix with Android's built-in effect API instead of audio capture: no capture permission, no persistent notification, and apps that block capture (Spotify) would work. Trade-off: only EQ/bass/limiter-class effects can run there — the ViPER effects need the capture engine. Deprecated by Google and device-dependent (works on many Samsungs, often not Pixels), so it'll ship clearly labelled as experimental.
-- **Spectral shaper** — dynamic taming of harshness and resonances, especially handy on bright IEMs
 - **Match EQ** — match playback to a target curve, pairing naturally with the AutoEq and DDC profiles already supported
 - **Binaural upmix** — build a surround bed from stereo, then fold it back to headphones through HRTF/BRIR convolution so sources can sit behind and above you. Headphones only; two speakers can't do this without crosstalk cancellation
 - **AIDL effect HAL** — a second module for Android 15 and newer, where the effect framework moved from the legacy plugin interface to a binder service. Not a port of the existing one: the engine has to be exposed behind a new interface and driven from fast message queues rather than a process callback
