@@ -15,6 +15,7 @@ project(jamesdsp-wrapper LANGUAGES CXX)
 include(libcrashlytics-connector/CMakeLists.txt)
 include(libjdspimptoolbox/CMakeLists.txt)
 include(libjamesdsp-wrapper/CMakeLists.txt)
+include(libsofareader/CMakeLists.txt)
 
 file(GLOB_RECURSE LIBJAMESDSP_SOURCE_FILES CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_LIST_DIR}/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp/*.c
