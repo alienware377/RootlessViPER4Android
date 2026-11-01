@@ -600,6 +600,16 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="shaper_focus_modes">
+        <item>Narrow peaks</item>
+        <item>Balanced</item>
+        <item>Broad harshness</item>
+    </string-array>
+    <string-array name="shaper_focus_modes_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
     <string-array name="exciter_characters">
         <item>Warm</item>
         <item>Retro</item>
