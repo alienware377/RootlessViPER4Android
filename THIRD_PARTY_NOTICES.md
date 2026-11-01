@@ -110,6 +110,34 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   not in this tree, so its text is reproduced below. The per-file headers give
   the exact copyright years for each file.
 
+### ViPER4Shizuku capture module
+
+- **Author:** TheIceJi (https://www.theiceji.com/). Copyright (C) 2026 TheIceJi.
+- **Licence:** GNU GPL version 3, the same licence as this app, so its text is
+  the one in [LICENSE](LICENSE).
+- **Upstream:** https://github.com/Jirayu-ninl/ViPER4Shizuku, the
+  `android/capture-shizuku/` module (read at commit `ef08faa`). Only that
+  module was used. Nothing was taken from the ViPERDSP submodule, which has
+  no licence.
+- **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/capture/CapturePipeWriter.kt`
+  is adapted from its `PipeWriter.kt` (the stall watchdog on the capture
+  pipe). `ShizukuCaptureUserService.kt`, `ShizukuCaptureClient.kt` and the
+  AIDL files in `app/src/main/aidl/` were written for this app but follow
+  the same design as its `CaptureUserService.kt` and `ShizukuCapture.kt`:
+  a pure loopback audio policy registered as the shell user, a recorder
+  attributed to `com.android.shell`, and the route dropped on every way out.
+- **Used by:** the "Capture with Shizuku" setting (rootless build, Android 13
+  and newer).
+
+### android-realtime-voice-isolation (prior art, no code taken)
+
+- **Author:** André Naumann (sk2andy). MIT licence.
+- **Upstream:** https://github.com/sk2andy/android-realtime-voice-isolation
+- Its privileged Shizuku audio pipeline showed that a loopback audio policy
+  owned by the shell user can capture and replace system playback on Android
+  13 and newer. It was read for the approach only; no code from it is in
+  this repository.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular
