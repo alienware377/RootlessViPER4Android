@@ -128,12 +128,12 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - ~~**Choose which apps are processed**~~ *(v4.4.0)*: the app list can name the apps to process instead of the ones to skip ([#10](https://github.com/alienware377/RootlessViPER4Android/issues/10))
 - ~~**Remember effect on/off states**~~ *(v4.4.0)* across a ViPER4Android-only mode round trip: switching the mode off now puts back exactly the effects that were on before
 - ~~**Smooth Concert hall and Room**~~ *(v4.4.0)*: rebuilt versions of the two reverbs that sounded metallic, with a dense tail and no repeating echoes. The originals stay, so existing presets sound the same ([#6](https://github.com/alienware377/RootlessViPER4Android/issues/6))
+- ~~**Match EQ**~~ *(next release)*: pick your headphones from the AutoEQ database or load a measurement, pick a target sound, and the graphic EQ gets the curve that takes one to the other. Bass, treble and tilt adjustments, limits on boost and cut, and a guard against filling narrow dips. Uses the same method and defaults as AutoEq, and nothing is downloaded until you pick it
 
 ### 🔜 Planned
 
 - **Global "Poweramp-style" mode** — process the whole output mix with Android's built-in effect API instead of audio capture: no capture permission, no persistent notification, and apps that block capture (Spotify) would work. Trade-off: only EQ/bass/limiter-class effects can run there — the ViPER effects need the capture engine. Deprecated by Google and device-dependent (works on many Samsungs, often not Pixels), so it'll ship clearly labelled as experimental.
 - **Spectral shaper** — dynamic taming of harshness and resonances, especially handy on bright IEMs
-- **Match EQ** — match playback to a target curve, pairing naturally with the AutoEq and DDC profiles already supported
 - **Binaural upmix** — build a surround bed from stereo, then fold it back to headphones through HRTF/BRIR convolution so sources can sit behind and above you. Headphones only; two speakers can't do this without crosstalk cancellation
 - **AIDL effect HAL** — a second module for Android 15 and newer, where the effect framework moved from the legacy plugin interface to a binder service. Not a port of the existing one: the engine has to be exposed behind a new interface and driven from fast message queues rather than a process callback
 - **Rooted mode on Android 15+** — the effect framework moved to a binder service there, so the Magisk module above does not apply; that work is the AIDL item above
