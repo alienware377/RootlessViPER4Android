@@ -74,12 +74,15 @@ class GithubClientTest {
         val head = client.headSha("jadilson12/Viper4Android-presets", "v4a+2.7")
         val files = client.listFiles("jadilson12/Viper4Android-presets", head.value, "", listOf(".vdc"))
         assertTrue(files.value.files.all { it.path.endsWith(".vdc") })
+        // The empty files in the recording are all .irs: the DDC library has none to report
+        assertEquals(0, files.value.emptyDropped)
         assertEquals(2, fake.calls.size)
 
         client.headSha("jadilson12/Viper4Android-presets", "v4a+2.7")
         // The same commit's tree serves the other library too
         val irs = client.listFiles("jadilson12/Viper4Android-presets", head.value, "", listOf(".irs", ".wav", ".flac"))
         assertTrue(irs.value.files.isNotEmpty())
+        assertEquals(5, irs.value.emptyDropped)
         assertEquals(2, fake.calls.size)
 
         // The branch is looked up again after six hours; the tree is not, the commit has not moved
