@@ -13,83 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package android.media.audio.common;
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
 
-/**
- * Defines the audio source. An audio source defines both a default physical
- * source of audio signal, and a recording configuration. This enum corresponds
- * to MediaRecorder.AudioSource.* constants in the SDK.
- *
- * {@hide}
- */
-@Backing(type="int")
-@VintfStability
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
+
+package android.media.audio.common;
+/* @hide */
+@Backing(type="int") @VintfStability
 enum AudioSource {
-    /**
-     * Used as default value in parcelables to indicate that a value was not
-     * set. Should never be considered a valid setting, except for backward
-     * compatibility scenarios.
-     */
-    SYS_RESERVED_INVALID = -1,
-    /** Default audio source. */
-    DEFAULT = 0,
-    /** Microphone audio source. */
-    MIC = 1,
-    /** Voice call uplink (Tx) audio source. */
-    VOICE_UPLINK = 2,
-    /** Voice call downlink (Rx) audio source. */
-    VOICE_DOWNLINK = 3,
-    /** Voice call uplink + downlink (duplex) audio source. */
-    VOICE_CALL = 4,
-    /**
-     * Microphone audio source tuned for video recording, with the same
-     * orientation as the camera if available.
-     */
-    CAMCORDER = 5,
-    /** Microphone audio source tuned for voice recognition. */
-    VOICE_RECOGNITION = 6,
-    /**
-     * Microphone audio source tuned for voice communications such as VoIP. It
-     * will for instance take advantage of echo cancellation or automatic gain
-     * control if available.
-     */
-    VOICE_COMMUNICATION = 7,
-    /**
-     * Audio source for a submix of audio streams to be presented remotely. An
-     * application can use this audio source to capture a mix of audio streams
-     * that should be transmitted to a remote receiver such as a Wifi display.
-     * While recording is active, these audio streams are redirected to the
-     * remote submix instead of being played on the device speaker or headset.
-     */
-    REMOTE_SUBMIX = 8,
-    /**
-     * Microphone audio source tuned for unprocessed (raw) sound if available,
-     * behaves like DEFAULT otherwise.
-     */
-    UNPROCESSED = 9,
-    /**
-     * Source for capturing audio meant to be processed in real time and played
-     * back for live performance (e.g karaoke). The capture path will minimize
-     * latency and coupling with playback path.
-     */
-    VOICE_PERFORMANCE = 10,
-    /**
-     * Source for an echo canceller to capture the reference signal to be
-     * canceled. The echo reference signal will be captured as close as
-     * possible to the DAC in order to include all post processing applied to
-     * the playback path.
-     */
-    ECHO_REFERENCE = 1997,
-    /** Audio source for capturing broadcast FM tuner output. */
-    FM_TUNER = 1998,
-    /**
-     * A low-priority, preemptible audio source for background software
-     * hotword detection. Same tuning as VOICE_RECOGNITION.
-     */
-    HOTWORD = 1999,
-    /**
-     * Microphone audio source for ultrasound sound if available, behaves like
-     * DEFAULT otherwise.
-     */
-    ULTRASOUND = 2000,
+  SYS_RESERVED_INVALID = (-1) /* -1 */,
+  DEFAULT = 0,
+  MIC = 1,
+  VOICE_UPLINK = 2,
+  VOICE_DOWNLINK = 3,
+  VOICE_CALL = 4,
+  CAMCORDER = 5,
+  VOICE_RECOGNITION = 6,
+  VOICE_COMMUNICATION = 7,
+  REMOTE_SUBMIX = 8,
+  UNPROCESSED = 9,
+  VOICE_PERFORMANCE = 10,
+  ECHO_REFERENCE = 1997,
+  FM_TUNER = 1998,
+  HOTWORD = 1999,
+  ULTRASOUND = 2000,
 }

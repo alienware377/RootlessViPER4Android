@@ -13,78 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * Parameters determining playback behavior. They are used to speed up or slow
- * down playback and / or change the tonal frequency of the audio content (pitch).
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioPlaybackRate {
-    /**
-     * Speed factor (multiplier). Normal speed has the value of 1.0f.
-     * Values less than 1.0f slow down playback, value greater than 1.0f
-     * speed it up.
-     */
-    float speed;
-    /**
-     * Pitch factor (multiplier). Setting pitch value to 1.0f together
-     * with changing playback speed preserves the pitch, this is often
-     * called "timestretching." Setting the pitch value equal to speed produces
-     * the same effect as playing audio content at different sampling rate.
-     */
-    float pitch;
-
-    /**
-     * Algorithms used for timestretching (preserving pitch while playing audio
-     * content at different speed).
-     */
-    @VintfStability
-    @Backing(type="int")
-    enum TimestretchMode {
-        // Needs to be in sync with AUDIO_STRETCH_MODE_* constants in
-        // frameworks/base/media/java/android/media/PlaybackParams.java
-        DEFAULT = 0,
-        /** Selects timestretch algorithm best suitable for voice (speech) content. */
-        VOICE = 1,
-    }
-    /**
-     * Selects the algorithm used for timestretching (preserving pitch while
-     * playing audio at different speed).
-     */
-    TimestretchMode timestretchMode = TimestretchMode.DEFAULT;
-
-    /**
-     * Behavior when the values for speed and / or pitch are out of the
-     * applicable range.
-     */
-    @VintfStability
-    @Backing(type="int")
-    enum TimestretchFallbackMode {
-        // Needs to be in sync with AUDIO_FALLBACK_MODE_* constants in
-        // frameworks/base/media/java/android/media/PlaybackParams.java,
-        /** Reserved for use by the framework. */
-        SYS_RESERVED_CUT_REPEAT = -1,
-        /** Reserved for use by the framework. */
-        SYS_RESERVED_DEFAULT = 0,
-        /**
-         * If possible, play silence for parameter values that are out of range,
-         * otherwise return an error (same as 'FAIL' would return).
-         */
-        MUTE = 1,
-        /**
-         * Always return an error while trying to set the parameters that are
-         * out of range.
-         */
-        FAIL = 2,
-    }
-    /**
-     * Selects the behavior when the specified values for speed and / or pitch
-     * are out of applicable range.
-     */
-    TimestretchFallbackMode fallbackMode = TimestretchFallbackMode.SYS_RESERVED_DEFAULT;
+  float speed;
+  float pitch;
+  android.media.audio.common.AudioPlaybackRate.TimestretchMode timestretchMode = android.media.audio.common.AudioPlaybackRate.TimestretchMode.DEFAULT;
+  android.media.audio.common.AudioPlaybackRate.TimestretchFallbackMode fallbackMode = android.media.audio.common.AudioPlaybackRate.TimestretchFallbackMode.SYS_RESERVED_DEFAULT;
+  @Backing(type="int") @VintfStability
+  enum TimestretchMode {
+    DEFAULT = 0,
+    VOICE = 1,
+  }
+  @Backing(type="int") @VintfStability
+  enum TimestretchFallbackMode {
+    SYS_RESERVED_CUT_REPEAT = (-1) /* -1 */,
+    SYS_RESERVED_DEFAULT = 0,
+    MUTE = 1,
+    FAIL = 2,
+  }
 }

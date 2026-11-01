@@ -13,33 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioChannelLayout;
-import android.media.audio.common.AudioEncapsulationType;
-import android.media.audio.common.AudioFormatDescription;
-
-/**
- * AudioProfile describes a set of configurations supported for a certain
- * audio format. A profile can be either "static" which means all the
- * configurations are predefined, or "dynamic" which means configurations
- * are queried at run time. Dynamic profiles generally used with detachable
- * devices, e.g. HDMI or USB devices.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioProfile {
-    /** Name is commonly used with static profiles. Can be empty. */
-    @utf8InCpp String name;
-    /** If the format is set to 'DEFAULT', this indicates a dynamic profile. */
-    AudioFormatDescription format;
-    /** Can be empty if channel masks are "dynamic". */
-    AudioChannelLayout[] channelMasks;
-    /** Can be empty if sample rates are "dynamic". */
-    int[] sampleRates;
-    /** For encoded audio formats, an encapsulation can be specified. */
-    AudioEncapsulationType encapsulationType = AudioEncapsulationType.NONE;
+  @utf8InCpp String name;
+  android.media.audio.common.AudioFormatDescription format;
+  android.media.audio.common.AudioChannelLayout[] channelMasks;
+  int[] sampleRates;
+  android.media.audio.common.AudioEncapsulationType encapsulationType = android.media.audio.common.AudioEncapsulationType.NONE;
 }
