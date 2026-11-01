@@ -40,7 +40,6 @@ import me.timschneeberger.rootlessjamesdsp.liveprog.EelParser
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.FileLibraryLayout
-import me.timschneeberger.rootlessjamesdsp.utils.GithubLibraryDownloader
 import me.timschneeberger.rootlessjamesdsp.utils.LiveprogSlots
 import me.timschneeberger.rootlessjamesdsp.model.preset.Preset
 import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
@@ -86,8 +85,8 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
     private var libSearch = ""
     private var revealStartY = -1f
 
-    /** GitHub repository search is parked until its flow is hardened. */
-    private val githubSearchEnabled = false
+    /** Created on first use; closed with the dialog so its pickers go with it. */
+    private var downloadFlow: LibraryDownloadFlow? = null
 
     /** Take just the card arrangement from a preset, leaving settings alone. */
     private fun applyLayoutFrom(name: String, path: String) {
@@ -415,8 +414,18 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
+    // A rotation destroys the library dialog without calling onDialogClosed,
+    // and the download dialogs belong to the old screen, so close them here too
+    override fun onDestroy() {
+        downloadFlow?.close()
+        downloadFlow = null
+        super.onDestroy()
+    }
+
     override fun onDialogClosed(positiveResult: Boolean) {
         scriptScannerScope.cancel()
+        downloadFlow?.close()
+        downloadFlow = null
 
         if (positiveResult && !clickedEntryValue.isNullOrEmpty()) {
             val value = clickedEntryValue.toString()
@@ -789,160 +798,12 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
 
     // ------------------------------ downloading -----------------------------
 
-    private fun libExtensions() =
-        if (fileLibPreference.isVdc()) listOf(".vdc") else listOf(".irs", ".wav", ".flac")
-
+    /** "Download more...": sources, GitHub search, file picker and downloads. */
     private fun showDownloadSources() {
-        val defaults = GithubLibraryDownloader.defaultSources()
-        val customs = GithubLibraryDownloader.customSources(requireContext())
-        val all = defaults + customs
-        val labels = all.map { it.label } +
-            (if (githubSearchEnabled) listOf(getString(R.string.filelib_source_search)) else emptyList()) +
-            getString(R.string.filelib_source_add)
-        val dlg = AlertDialog.Builder(requireContext())
-            .setTitle(R.string.filelib_download_title)
-            .setItems(labels.toTypedArray()) { _, which ->
-                when {
-                    which < all.size -> browseSource(all[which])
-                    githubSearchEnabled && which == all.size -> promptRepoSearch()
-                    else -> promptAddSource()
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-        // Long-press removes a source the user added
-        dlg.listView?.setOnItemLongClickListener { _, _, pos, _ ->
-            if (pos >= defaults.size && pos < all.size) {
-                val src = all[pos]
-                GithubLibraryDownloader.saveCustomSources(
-                    requireContext(), customs.filterNot { it.repo == src.repo })
-                dlg.dismiss()
-                requireContext().toast(getString(R.string.filelib_source_removed, src.label))
-                true
-            } else false
-        }
-        dlg.show()
-    }
-
-    private fun promptAddSource() {
-        requireContext().showInputAlert(
-            layoutInflater,
-            R.string.filelib_source_add,
-            R.string.filelib_source_add_hint,
-            "", false, null
-        ) { input ->
-            if (!isAdded) return@showInputAlert
-            val parsed = input?.let { GithubLibraryDownloader.parseRepoInput(it) }
-            if (parsed == null) {
-                requireContext().toast(getString(R.string.filelib_source_invalid))
-                return@showInputAlert
-            }
-            val (repo, branchIn) = parsed
-            scriptScannerScope.launch {
-                val branch = branchIn ?: GithubLibraryDownloader.defaultBranch(repo)
-                withContext(Dispatchers.Main) {
-                    val c = context ?: return@withContext
-                    if (!isAdded) return@withContext
-                    val customs = GithubLibraryDownloader.customSources(c)
-                    if (customs.none { it.repo == repo }) {
-                        customs.add(GithubLibraryDownloader.Source(repo, branch, repo))
-                        GithubLibraryDownloader.saveCustomSources(c, customs)
-                    }
-                    browseSource(GithubLibraryDownloader.Source(repo, branch, repo))
-                }
-            }
-        }
-    }
-
-    private fun promptRepoSearch() {
-        requireContext().showInputAlert(
-            layoutInflater,
-            R.string.filelib_source_search,
-            R.string.filelib_source_search_hint,
-            if (fileLibPreference.isVdc()) "viper ddc" else "viper irs impulse",
-            false, null
-        ) { query ->
-            if (!isAdded || query.isNullOrBlank()) return@showInputAlert
-            libNetwork(getString(R.string.filelib_searching), {
-                GithubLibraryDownloader.searchRepositories(query.trim())
-            }) { repos ->
-                if (repos.isEmpty()) {
-                    requireContext().toast(getString(R.string.filelibrary_no_presets)); return@libNetwork
-                }
-                AlertDialog.Builder(requireContext())
-                    .setTitle(R.string.filelib_source_search)
-                    .setItems(repos.map { it.label }.toTypedArray()) { _, which ->
-                        browseSource(repos[which])
-                    }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
-            }
-        }
-    }
-
-    private fun browseSource(source: GithubLibraryDownloader.Source) {
-        libNetwork(getString(R.string.filelib_loading_list), {
-            GithubLibraryDownloader.listFiles(source.repo, source.branch, libExtensions())
-        }) { files ->
-            val localNames = fileLibPreference.directory?.list()
-                ?.map { it.lowercase(Locale.getDefault()) } ?: emptyList()
-            val fresh = files.filter { !localNames.contains(it.name.lowercase(Locale.getDefault())) }
-            if (fresh.isEmpty()) {
-                requireContext().toast(getString(R.string.filelib_all_downloaded)); return@libNetwork
-            }
-            val checked = BooleanArray(fresh.size)
-            AlertDialog.Builder(requireContext())
-                .setTitle(getString(R.string.filelib_pick_files, fresh.size))
-                .setMultiChoiceItems(fresh.map { it.name }.toTypedArray(), checked) { _, i, v ->
-                    checked[i] = v
-                }
-                .setPositiveButton(R.string.filelib_download) { _, _ ->
-                    val picked = fresh.filterIndexed { i, _ -> checked[i] }
-                    if (picked.isNotEmpty()) downloadFiles(source, picked)
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        }
-    }
-
-    private fun downloadFiles(
-        source: GithubLibraryDownloader.Source,
-        files: List<GithubLibraryDownloader.RemoteFile>
-    ) {
-        val dir = fileLibPreference.directory ?: return
-        context?.toast(getString(R.string.filelib_downloading, files.size)) ?: return
-        scriptScannerScope.launch {
-            var ok = 0
-            files.forEach { f ->
-                runCatching {
-                    if (GithubLibraryDownloader.download(source.repo, source.branch, f, dir)) ok++
-                }
-            }
-            withContext(Dispatchers.Main) {
-                val c = context ?: return@withContext
-                if (!isAdded) return@withContext
-                c.toast(c.getString(R.string.filelib_downloaded, ok))
-                refresh()
-            }
-        }
-    }
-
-    /** Runs a network call off the main thread with a toast + friendly errors. */
-    private fun <T> libNetwork(message: String, work: () -> T, done: (T) -> Unit) {
-        context?.toast(message) ?: return
-        scriptScannerScope.launch {
-            val result = runCatching { work() }
-            withContext(Dispatchers.Main) {
-                // The dialog may have been dismissed while the request ran
-                val c = context ?: return@withContext
-                if (!isAdded) return@withContext
-                result.fold(done) { e ->
-                    c.toast(
-                        if (e is GithubLibraryDownloader.RateLimitException) e.message!!
-                        else c.getString(R.string.filelib_network_failed))
-                }
-            }
-        }
+        val flow = downloadFlow ?: LibraryDownloadFlow(
+            this, fileLibPreference.isVdc(), { fileLibPreference.directory }, { refresh() }
+        ).also { downloadFlow = it }
+        flow.showSources()
     }
 
     data class Entry(val name: CharSequence, val value: CharSequence, val isHeader: Boolean = false) {

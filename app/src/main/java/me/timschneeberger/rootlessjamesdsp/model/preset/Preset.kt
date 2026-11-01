@@ -12,6 +12,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.EffectCards
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.broadcastPresetLoadEvent
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.toast
+import me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources
 import me.timschneeberger.rootlessjamesdsp.utils.storage.Tar
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -178,6 +179,11 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
                 throw Exception(ctx.getString(R.string.filelibrary_corrupted))
             }
 
+            // Sources an earlier version kept in dsp_filelibrary are still
+            // there until "Download more..." is first opened. The copy below
+            // overwrites that file, so move them out first or they are lost.
+            LibrarySources.absorbLegacy(ctx)
+
             files.forEach next@ { f ->
                 if(!isKnownEntry(f.name))
                     return@next
@@ -199,6 +205,11 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
             }
 
             revealCardsUsedBy(ctx, files, openFoldedGroups)
+
+            // A preset saved before the download sources moved out of
+            // dsp_filelibrary still carries them; add them to the user's own
+            // list instead of leaving them in the preset namespace.
+            LibrarySources.absorbLegacy(ctx)
 
             if (files.any { it.name == FILE_LIVEPROG }) {
                 findLiveprogScriptPath(ctx)?.let {
