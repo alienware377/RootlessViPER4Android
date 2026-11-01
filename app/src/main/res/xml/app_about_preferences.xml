@@ -147,6 +147,14 @@
             android:data="https://github.com/mackron/dr_libs" />
     </Preference>
     <Preference
+        android:title="AutoEq"
+        android:summary="Jaakko Pasanen: the method and defaults behind Match EQ, ported to Kotlin, and the measurements and target curves it downloads when you pick them (MIT for the code)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/jaakkopasanen/AutoEq" />
+    </Preference>
+    <Preference
         android:title="Third-party licence texts"
         android:summary="Full copyright notices and licence texts for the components above"
         app:iconSpaceReserved="false">
