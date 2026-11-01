@@ -582,6 +582,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         }
 
         updateIconState()
+        me.timschneeberger.rootlessjamesdsp.globalfx.GlobalCardUi.apply(this, args.getString(BUNDLE_PREF_NAME))
 
         preferenceManager.sharedPreferences?.registerOnSharedPreferenceChangeListener(listener)
         prefsApp.registerOnSharedPreferenceChangeListener(listenerApp)
