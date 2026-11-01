@@ -11,6 +11,7 @@ import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.broadcastPresetLoadEvent
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
+import me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import me.timschneeberger.rootlessjamesdsp.utils.storage.Tar
 import okio.buffer
@@ -75,7 +76,7 @@ class BackupManager(private val context: Context): KoinComponent {
 
                 File(context.applicationInfo.dataDir + "/shared_prefs")
                     .listFiles()
-                    ?.filter { it.name.startsWith("dsp_") || it.name == FILE_EFFECT_LAYOUT }
+                    ?.filter { it.name.startsWith("dsp_") || it.name == FILE_EFFECT_LAYOUT || it.name == FILE_LIBRARY_SOURCES }
                     ?.filter { it.extension == "xml" }
                     ?.forEach { c.add(it, "shared_prefs/${it.name}") }
 
@@ -121,6 +122,10 @@ class BackupManager(private val context: Context): KoinComponent {
                 throw UnsupportedOperationException(context.getString(R.string.backup_restore_error_version_too_new))
             }
 
+            // Sources an earlier version kept in dsp_filelibrary would be
+            // overwritten by the backup's copy of that file; move them out first
+            LibrarySources.absorbLegacy(context)
+
             // Clean restore
             if(!dirty) {
                 // Remove profiles
@@ -128,7 +133,8 @@ class BackupManager(private val context: Context): KoinComponent {
 
                 // Remove shared dsp prefs
                 File(context.applicationInfo.dataDir + "/shared_prefs").listFiles { file: File ->
-                    file.name.startsWith("dsp_") && file.extension == "xml"
+                    (file.name.startsWith("dsp_") && file.extension == "xml") ||
+                        file.name == FILE_LIBRARY_SOURCES
                 }?.forEach { it.delete() }
                 // Remove external files
                 context.getExternalFilesDir(null)
@@ -172,10 +178,13 @@ class BackupManager(private val context: Context): KoinComponent {
         // The card layout belongs in a backup even though a preset no longer
         // applies one: restoring a backup is meant to put everything back.
         private const val FILE_EFFECT_LAYOUT = "effect_layout.xml"
+        // The download sources the user added: theirs, so restored with the rest
+        private const val FILE_LIBRARY_SOURCES = Constants.PREF_FILELIBRARY_SOURCES + ".xml"
 
         private fun isKnownFile(name: String): Boolean {
             return (name.contains("dsp_") && name.endsWith(".xml")) ||
                     name.endsWith(FILE_EFFECT_LAYOUT) ||
+                    name.endsWith(FILE_LIBRARY_SOURCES) ||
                     name.startsWith("profiles/") ||
                     FileLibraryPreference.types.any { name.contains(it.key) && it.value.any { ext -> name.endsWith(ext) } }
         }
