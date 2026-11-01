@@ -379,6 +379,35 @@ typedef struct
 	float fs, mix;
 	int redesign, msMode;
 } DynamicEq;
+// Spectral shaper (Effects/spectralShaper.c). Focus picks how wide a bump
+// counts as "sticking out".
+enum ShaperFocus
+{
+	SHAPER_FOCUS_NARROW = 0,	// narrow peaks: 2/3 octave reference
+	SHAPER_FOCUS_BALANCED,		// 1 octave reference
+	SHAPER_FOCUS_BROAD			// broad harshness: 2 octave reference
+};
+typedef struct
+{
+	// Settings as the controls set them.
+	float amountDb, sensitivityPct, loHz, hiHz, speedPct;
+	int focus, catchTones, listen, msMode;
+	// Worked out from the settings and the rate.
+	float fs, threshDb, attC, relC, powC, refOct, detailOct, floorPow;
+	int N, R, latency, fadeLen;
+	int kLo, kHi, kCtxLo, kCtxHi;
+	void (*fft)(float *, const float *);
+	// One allocation holds everything below, sized for N.
+	void *mem;
+	float *in[2], *acc[2], *win, *sinTab, *bufA, *bufB;
+	float *pow, *ld, *ref, *tmp, *tgt, *gain, *gainLin, *band;
+	float *mag1, *mag2, *u1re, *u1im, *u2re, *u2im, *cSm, *cPrev, *tonal, *age;
+	double *prefix, *prefixW;
+	unsigned *bitRev;
+	// Ring position, samples since the last frame, switch on and off.
+	int pos, hop, filled, fadingOut;
+	float wetGain;
+} SpectralShaper;
 // 1024 samples is 5.3ms at 48kHz and still 5.3ms of headroom at 192kHz, where
 // the longest lookahead any mode asks for is 768 samples.
 #define MAXR_BUFLEN 1024
@@ -1041,6 +1070,7 @@ enum JdspEffectId
 	JDSP_EFX_TAPE,
 	JDSP_EFX_VINYL,
 	JDSP_EFX_BALANCE,
+	JDSP_EFX_SHAPER,
 	JDSP_EFX_COUNT
 };
 typedef struct
@@ -1233,6 +1263,8 @@ typedef struct dspsys
 	Vinyl vinyl;
 	int balanceEnabled;
 	Balance balance;
+	int shaperEnabled;
+	SpectralShaper shaper;
 	Maximizer maximizer;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
@@ -1468,6 +1500,17 @@ extern void BalanceProcess(JamesDSPLib *jdsp, size_t n);
 extern void BalanceEnable(JamesDSPLib *jdsp);
 extern void BalanceDisable(JamesDSPLib *jdsp);
 extern void BalanceRefresh(JamesDSPLib *jdsp);
+// Spectral shaper. Refresh follows the rule above (lock already held); Free is
+// for engine teardown only. Latency is in samples, 0 while switched off.
+extern void SpectralShaperSetParam(JamesDSPLib *jdsp, float amountDb, float sensitivityPct,
+	float loHz, float hiHz, float speedPct, int focus, int catchTones,
+	int listen, int msMode);
+extern void SpectralShaperProcess(JamesDSPLib *jdsp, size_t n);
+extern void SpectralShaperEnable(JamesDSPLib *jdsp);
+extern void SpectralShaperDisable(JamesDSPLib *jdsp);
+extern void SpectralShaperRefresh(JamesDSPLib *jdsp);
+extern void SpectralShaperFree(JamesDSPLib *jdsp);
+extern int SpectralShaperLatency(JamesDSPLib *jdsp);
 extern void MultibandDistSetBands(JamesDSPLib *jdsp, const float *bands, int count);
 extern void MultibandDistSetParam(JamesDSPLib *jdsp,
 	int routing, int model,
