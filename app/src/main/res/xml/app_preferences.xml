@@ -22,6 +22,14 @@
         app:fragment="me.timschneeberger.rootlessjamesdsp.fragment.settings.SettingsAudioFormatFragment" />
 
     <Preference
+        app:key="@string/key_global_mode_screen"
+        app:title="@string/global_mode_header"
+        app:summary="@string/global_mode_header_summary"
+        app:icon="@drawable/ic_twotone_public_24dp"
+        app:isPreferenceVisible="false"
+        app:fragment="me.timschneeberger.rootlessjamesdsp.globalfx.GlobalModeSettingsFragment" />
+
+    <Preference
         app:key="@string/key_device_profiles"
         app:title="@string/profiles_section_header"
         app:summary="@string/profiles_summary"

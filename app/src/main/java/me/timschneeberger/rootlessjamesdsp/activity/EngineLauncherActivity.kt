@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.getSystemService
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalPower
 import me.timschneeberger.rootlessjamesdsp.service.RootAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.service.RootlessAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.SdkCheck
@@ -31,6 +32,9 @@ class EngineLauncherActivity : BaseActivity() {
             finish()
             return
         }
+
+        // Global mode records nothing, so there is no consent to ask for.
+        if (GlobalPower.startIfGlobal(this)) { finish(); return }
 
         sdkAbove(Build.VERSION_CODES.Q) {
             // If projection token available, start immediately

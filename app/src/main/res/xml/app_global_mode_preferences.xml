@@ -1,0 +1,59 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="@string/key_global_info"
+        android:title="@string/section_info_title"
+        android:summary="@string/global_mode_info"
+        android:persistent="false"
+        app:iconSpaceReserved="false" />
+
+    <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+        android:key="@string/key_global_mode"
+        android:defaultValue="@bool/default_global_mode"
+        android:title="@string/global_mode_switch"
+        android:summary="@string/global_mode_switch_summary"
+        app:iconSpaceReserved="false" />
+
+    <ListPreference
+        android:key="@string/key_global_target"
+        android:title="@string/global_target"
+        android:entries="@array/global_target_entries"
+        android:entryValues="@array/global_target_values"
+        android:defaultValue="@string/default_global_target"
+        android:dependency="@string/key_global_mode"
+        app:useSimpleSummaryProvider="true"
+        app:iconSpaceReserved="false" />
+
+    <Preference
+        android:key="global_target_info"
+        android:summary="@string/global_target_info"
+        android:persistent="false"
+        android:selectable="false"
+        android:dependency="@string/key_global_mode"
+        app:iconSpaceReserved="false" />
+
+    <ListPreference
+        android:key="@string/key_global_precision"
+        android:title="@string/global_precision"
+        android:entries="@array/global_precision_entries"
+        android:entryValues="@array/global_precision_values"
+        android:defaultValue="@string/default_global_precision"
+        android:dependency="@string/key_global_mode"
+        app:useSimpleSummaryProvider="true"
+        app:iconSpaceReserved="false" />
+
+    <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+        android:key="@string/key_global_auto_preamp"
+        android:defaultValue="@bool/default_global_auto_preamp"
+        android:title="@string/global_auto_preamp"
+        android:summary="@string/global_auto_preamp_summary"
+        android:dependency="@string/key_global_mode"
+        app:iconSpaceReserved="false" />
+
+    <Preference
+        android:key="@string/key_global_check"
+        android:title="@string/global_check"
+        android:summary="@string/global_check_summary"
+        app:iconSpaceReserved="false" />
+</PreferenceScreen>

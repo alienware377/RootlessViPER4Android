@@ -177,7 +177,8 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         }
 
         container.addView(TextView(context).apply {
-            setText(R.string.chain_order_explainer)
+            setText(if (me.timschneeberger.rootlessjamesdsp.globalfx.GlobalMode.isOn(context))
+                R.string.global_chain_order_note else R.string.chain_order_explainer)
             setPadding(
                 (24 * density).toInt(), (8 * density).toInt(),
                 (24 * density).toInt(), (8 * density).toInt()

@@ -53,6 +53,7 @@ import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.service.BaseAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.service.RootAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.service.RootlessAudioProcessorService
+import me.timschneeberger.rootlessjamesdsp.globalfx.GlobalPower
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.Result
 import me.timschneeberger.rootlessjamesdsp.utils.SdkCheck
@@ -430,7 +431,7 @@ class MainActivity : BaseActivity() {
                 if(SdkCheck.isQ && isRootless()) {
                     if (binding.powerToggle.isToggled) {
                         // Currently on, let's turn it off
-                        RootlessAudioProcessorService.stop(this@MainActivity)
+                        GlobalPower.stopRootless(this@MainActivity)
                         binding.powerToggle.isToggled = false
                     } else {
                         // Currently off, let's turn it on
@@ -759,7 +760,7 @@ class MainActivity : BaseActivity() {
     private fun bindProcessorService() {
         if (isRootless()) {
             sdkAbove(Build.VERSION_CODES.Q) {
-                Intent(this, RootlessAudioProcessorService::class.java).also { intent ->
+                Intent(this, GlobalPower.serviceClass(this)).also { intent ->
                     val ret = bindService(intent, processorServiceConnection, 0)
                     // Service not active
                     if (!ret)
@@ -786,6 +787,7 @@ class MainActivity : BaseActivity() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun requestCapturePermission() {
+        if (GlobalPower.startIfGlobal(this)) return
         if(app.mediaProjectionStartIntent != null && isRootless() && !SdkCheck.isVanillaIceCream) {
             binding.powerToggle.isToggled = true
             RootlessAudioProcessorService.start(this, app.mediaProjectionStartIntent)
