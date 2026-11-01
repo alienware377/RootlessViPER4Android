@@ -845,6 +845,7 @@ int BinauralUpmixLoadHrir(JamesDSPLib *jdsp, const float *hrir, int speakers,
 		spec = buBuildSpec(Nw, Nf, fs, copy, taps, cOff, &specCOff);
 
 	jdsp_lock(jdsp);
+	const int wasValid = b->mem && buValid(b);
 	float *oldHrir = b->hrir, *oldSpec = 0;
 	b->hrir = copy;
 	b->hrirTaps = taps;
@@ -871,6 +872,17 @@ int BinauralUpmixLoadHrir(JamesDSPLib *jdsp, const float *hrir, int speakers,
 		/* Rate or size moved meanwhile: build again under the lock. */
 		buSyncSpec(b);
 	}
+#ifndef BROKEN_LATESET
+	if (!wasValid && b->mem && buValid(b))
+	{
+		/* No frame has been rendered while there was no usable set (after a
+		   rate change, the app sends one for the new rate a little later), so
+		   the overlap-add holds nothing. Wait for whole frames again, as on
+		   switch-on, rather than fade in over that gap. */
+		b->filled = 0;
+		b->wetGain = 0.0f;
+	}
+#endif
 	jdsp_unlock(jdsp);
 	free(oldHrir);
 	free(oldSpec);
