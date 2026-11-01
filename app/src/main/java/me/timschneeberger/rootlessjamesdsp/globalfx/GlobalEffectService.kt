@@ -85,7 +85,6 @@ class GlobalEffectService : BaseAudioProcessorService() {
                 Constants.ACTION_PREFERENCES_UPDATED,
                 Constants.ACTION_PRESET_LOADED,
                 Constants.ACTION_SAMPLE_RATE_UPDATED -> host.requestSync()
-                Constants.ACTION_SESSION_CHANGED -> handleSessionIntent(intent)
                 Constants.ACTION_SERVICE_STOPPED -> if (waitingForCapture) attachWhenClear()
                 ACTION_SOFT_POWER -> host.setSoftOff(!intent.getBooleanExtra(EXTRA_ON, true))
             }
@@ -131,7 +130,6 @@ class GlobalEffectService : BaseAudioProcessorService() {
             addAction(Constants.ACTION_PREFERENCES_UPDATED)
             addAction(Constants.ACTION_PRESET_LOADED)
             addAction(Constants.ACTION_SAMPLE_RATE_UPDATED)
-            addAction(Constants.ACTION_SESSION_CHANGED)
             addAction(Constants.ACTION_SERVICE_STOPPED)
             addAction(ACTION_SOFT_POWER)
         })
@@ -188,6 +186,14 @@ class GlobalEffectService : BaseAudioProcessorService() {
     }
 
     private val pendingSessionIntents = mutableListOf<Intent>()
+
+    /**
+     * A player announced itself while the service runs. The session receiver
+     * calls this directly: its local ACTION_SESSION_CHANGED copy carries the
+     * extras but not the open or close action, so it cannot say which it was.
+     * Main thread only, like the receiver.
+     */
+    fun onAnnounced(intent: Intent) = handleSessionIntent(intent)
 
     private fun handleSessionIntent(intent: Intent) {
         if (intent.getIntExtra(RootlessSessionDatabase.EXTRA_IGNORE, 0) == 1) return
@@ -325,8 +331,10 @@ class GlobalEffectService : BaseAudioProcessorService() {
             false
         }
 
+        // Not skipped when isAlive is false: a start may still be on its way
+        // (onCreate has not run yet), and stopping a service that is not
+        // running does nothing.
         fun stop(context: Context) {
-            if (!isAlive) return
             context.stopService(Intent(context, GlobalEffectService::class.java))
         }
 
