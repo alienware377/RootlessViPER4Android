@@ -668,6 +668,10 @@
     <string name="session_exclude_restricted">Exclude unsupported apps</string>
     <string name="session_exclude_restricted_off">Apps blocking audio capture stay muted (default Android behavior)</string>
     <string name="session_exclude_restricted_on">Apps blocking audio capture are excluded and remain unprocessed (recommended)</string>
+    <string name="output_header">Processed audio output</string>
+    <string name="output_legacy_unknown_type">Play processed audio as an unknown type</string>
+    <string name="output_legacy_unknown_type_off">Processed audio plays as media, so Android Auto and similar features can send it to the car or another device (recommended)</string>
+    <string name="output_legacy_unknown_type_on">Processed audio plays as an unknown type, like older versions. Android Auto will play it on the phone speaker instead of the car. Only turn this on if sound goes to the wrong place since updating</string>
     <string name="session_detection_header">Audio session detection</string>
     <string name="session_continuous_polling">Force continuous polling</string>
     <string name="session_continuous_polling_off">Only listen for session events from the system</string>

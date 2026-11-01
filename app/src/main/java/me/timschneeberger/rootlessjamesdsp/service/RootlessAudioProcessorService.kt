@@ -44,6 +44,7 @@ import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatab
 import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionManager
 import me.timschneeberger.rootlessjamesdsp.session.rootless.SessionRecordingPolicyManager
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.ProcessedTrackUsage
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_PREFERENCES_UPDATED
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_SAMPLE_RATE_UPDATED
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_SERVICE_HARD_REBOOT_CORE
@@ -105,6 +106,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     // Whether the app list names what to process rather than what to skip
     private var allowlistMode = false
+    // Play the processed audio as "unknown" like older versions did. Off by
+    // default; see ProcessedTrackUsage for why media is the better choice.
+    private var legacyUnknownTrackType = false
 
     // Termination flags
     private var isProcessorDisposing = false
@@ -158,6 +162,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         loadFromPreferences(getString(R.string.key_powersave_suspend))
         loadFromPreferences(getString(R.string.key_session_exclude_restricted))
         loadFromPreferences(getString(R.string.key_blocklist_allowlist_mode))
+        loadFromPreferences(getString(R.string.key_output_legacy_unknown_type))
 
         // Setup database observer
         blockedApps.observeForever(blockedAppObserver)
@@ -442,6 +447,19 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 // is built, so flipping this changes nothing until it is rebuilt.
                 requestAudioRecordRecreation()
             }
+            getString(R.string.key_output_legacy_unknown_type) -> {
+                val legacy = preferences.get<Boolean>(R.string.key_output_legacy_unknown_type)
+                if (legacy == legacyUnknownTrackType)
+                    return
+                legacyUnknownTrackType = legacy
+                Timber.d("Legacy unknown output type set to $legacyUnknownTrackType")
+
+                // The usage is fixed when the output track is built, and the
+                // in-place rebuild only replaces the recorder, so the whole
+                // pipeline has to restart for the change to be heard.
+                if (isRunning)
+                    restartRecording()
+            }
         }
     }
 
@@ -652,13 +670,27 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     }
 
     private fun buildAudioTrack(encoding: Int, sampleRate: Int, bufferSizeBytes: Int): AudioTrack {
+        // Media, not unknown, so Android Auto and other features that forward
+        // media audio elsewhere pick this track up too. See ProcessedTrackUsage.
+        // No preferred device is set on purpose: naming a device would stop
+        // those features from taking the track.
+        val usage = ProcessedTrackUsage.usage(legacyUnknownTrackType)
+        Timber.d("Output track usage: $usage")
         val attributesBuilder = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_UNKNOWN)
+            .setUsage(usage)
             .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
             .setFlags(0)
 
+        // Still keeps screen recorders, and our own capture, away from the
+        // processed audio, whatever usage the track has.
         sdkAbove(Build.VERSION_CODES.Q) {
             attributesBuilder.setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_NONE)
+        }
+
+        if (ProcessedTrackUsage.optOutOfSpatializer(Build.VERSION.SDK_INT, usage)) {
+            sdkAbove(Build.VERSION_CODES.S_V2) {
+                attributesBuilder.setSpatializationBehavior(AudioAttributes.SPATIALIZATION_BEHAVIOR_NEVER)
+            }
         }
 
         val format = AudioFormat.Builder()
