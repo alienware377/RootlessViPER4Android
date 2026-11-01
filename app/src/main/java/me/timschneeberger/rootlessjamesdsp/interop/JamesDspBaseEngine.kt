@@ -19,6 +19,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.BiquadUtils
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.ChainOrder
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.GraphicEqCurve
 import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import timber.log.Timber
@@ -773,47 +774,16 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         preampOffset: Double = 0.0
     ): String {
         // Parse GEQ nodes from "GraphicEQ: f1 g1; f2 g2; ..." string
-        val geqNodes = mutableListOf<Pair<Double, Double>>()
-        val content = geqBands.replace("GraphicEQ:", "").trim()
-        content.split(";").map { it.trim() }.filter { it.isNotBlank() }.forEach { s ->
-            val parts = s.split(" ").filter { it.isNotBlank() }
-            val freq = parts.getOrNull(0)?.toDoubleOrNull()
-            val gain = parts.getOrNull(1)?.toDoubleOrNull()
-            if (freq != null && gain != null) {
-                geqNodes.add(Pair(freq, gain))
-            }
-        }
-        geqNodes.sortBy { it.first }
+        val geqNodes = GraphicEqCurve.parse(geqBands)
 
         // For each PEQ sample point, interpolate GEQ gain (log-linear) and sum
         val sb = StringBuilder("GraphicEQ: ")
         for ((peqFreq, peqGain) in peqResponse) {
-            val geqGain = interpolateGeq(geqNodes, peqFreq)
+            val geqGain = GraphicEqCurve.interpolate(geqNodes, peqFreq)
             sb.append("${dfMergeFreq.format(peqFreq)} ${dfMergeGain.format(peqGain + geqGain + preampOffset)}; ")
         }
 
         return sb.toString()
-    }
-
-    private fun interpolateGeq(nodes: List<Pair<Double, Double>>, freq: Double): Double {
-        if (nodes.isEmpty()) return 0.0
-        if (freq <= nodes.first().first) return nodes.first().second
-        if (freq >= nodes.last().first) return nodes.last().second
-
-        // Find surrounding nodes and do log-linear interpolation
-        for (i in 0 until nodes.size - 1) {
-            val (f0, g0) = nodes[i]
-            val (f1, g1) = nodes[i + 1]
-            if (freq in f0..f1) {
-                if (f1 <= f0) return g0
-                val logF = kotlin.math.ln(freq)
-                val logF0 = kotlin.math.ln(f0)
-                val logF1 = kotlin.math.ln(f1)
-                val t = (logF - logF0) / (logF1 - logF0)
-                return g0 + t * (g1 - g0)
-            }
-        }
-        return 0.0
     }
 
     /**

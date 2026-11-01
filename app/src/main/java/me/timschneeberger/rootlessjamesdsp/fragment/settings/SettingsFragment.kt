@@ -39,6 +39,7 @@ class SettingsFragment : SettingsBaseFragment() {
             }
         )
         troubleshooting?.isVisible = isRootless()
+        findPreference<Preference>(getString(R.string.key_global_mode_screen))?.isVisible = isRootless()
     }
 
     companion object {
