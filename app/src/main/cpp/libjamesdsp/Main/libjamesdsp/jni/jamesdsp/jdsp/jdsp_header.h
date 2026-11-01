@@ -431,10 +431,32 @@ enum PitchMode
 	// three modes out of four is worse than an entry in the list.
 	PITCH_MODE_RUBBERBAND,
 	PITCH_MODE_RUBBERBAND_FORMANT,
+	// Signalsmith Stretch, built in. Added after the Rubber Band pair rather
+	// than beside Smooth because the numbers are what preferences, presets and
+	// the rooted module store, and renumbering would quietly change what
+	// everyone already picked. An engine too old to know these clamps them to
+	// Granular.
+	PITCH_MODE_SIGNALSMITH,
+	PITCH_MODE_SIGNALSMITH_FORMANT,
 	PITCH_MODE_COUNT
 };
 #define PITCH_MODE_IS_RUBBERBAND(m) \
 	((m) == PITCH_MODE_RUBBERBAND || (m) == PITCH_MODE_RUBBERBAND_FORMANT)
+#define PITCH_MODE_IS_SIGNALSMITH(m) \
+	((m) == PITCH_MODE_SIGNALSMITH || (m) == PITCH_MODE_SIGNALSMITH_FORMANT)
+// The Signalsmith set-up: the library's own default block and interval, with
+// SPLIT, which spreads the work of each block over the following interval
+// instead of doing it all in whichever callback starts the block, for one
+// interval of extra delay: 150ms in all, at any sample rate.
+//
+// tools/signalsmith_harness.c compares this with other set-ups. Shorter blocks
+// (100ms) smear chords; more overlap (6 rather than 4) is more accurate on low
+// notes but smears chords too; longer blocks (175ms) are slightly better on
+// both but slower again to answer. Whatever the set-up, the library is a few
+// cents to tens of cents off on a lone sine below 250Hz, where Smooth is exact.
+#define SIGNALSMITH_BLOCK_SEC 0.12f
+#define SIGNALSMITH_INTERVAL_SEC 0.03f
+#define SIGNALSMITH_SPLIT 1
 // 1024 at 48k is about 21ms of latency and a 47Hz bin - fine enough to hold a
 // bass note apart from its neighbour, short enough not to smear a drum.
 #define PV_SIZE 1024
@@ -442,12 +464,26 @@ enum PitchMode
 #define PV_BINS (PV_SIZE / 2 + 1)
 typedef struct
 {
-	float *buf[2];
-	int w;
+	// Every input sample while the card is on, whatever the method. Granular
+	// reads its taps from here, Signalsmith reads its input and its delayed
+	// dry from here, and a method switched in later is primed from here, so
+	// it starts with the music that just played instead of with silence. A
+	// power of two long; histPos counts samples written since Enable, and
+	// histEpoch changes whenever the contents stop following on from before.
+	float *hist[2];
+	int histMask, histEpoch;
+	int64_t histPos;
 	float phasor;
 	float rate, mix;
 	int win, bypass;
 	int mode;
+	// Which back-end is making the sound now (PS_ENGINE_* in pitchshift.c),
+	// and the one being faded out after a switch. While xfWait is above zero
+	// the new one is running but not yet heard, because it has not filled up
+	// with audio yet.
+	int engine, xfFrom, xfWait, xfPos, xfLen;
+	// PS_CHUNK samples each: Signalsmith's output, and the outgoing method's.
+	float *scratch[4];
 	// Phase vocoder. Allocated only while Smooth is the chosen mode, since it
 	// is a good deal of memory to hold for a card most people leave granular.
 	float *pvIn[2], *pvOut[2], *pvAccum[2];
@@ -478,6 +514,16 @@ typedef struct
 	// the audio cutting out. Ramping the wet path in from silence turns it into
 	// the effect arriving instead.
 	float wetGain, fadeLen;
+	// Signalsmith, an opaque C++ object (Effects/signalsmith.cpp). ssFedTo is
+	// the history position it has been given input up to. Anything between
+	// that and histPos is fed to it before the next block, which is how an
+	// instance built and primed away from the audio thread catches up.
+	void *ss;
+	float ssFs;
+	int ssLatency, ssSeekLen;
+	int64_t ssFedTo;
+	// The most history ever fed in one block to catch up, for the harness.
+	int ssCatchUpMax;
 } PitchShift;
 #define VREV_COMBLEN 8192
 #define VREV_APLEN 2048
@@ -1339,7 +1385,22 @@ extern int RubberBandAvailable(void);
 extern const char *RubberBandLastError(void);
 extern int RubberBandPrepare(PitchShift *p, float fs, int formant);
 extern void RubberBandRelease(PitchShift *p);
-extern void RubberBandProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n);
+extern void RubberBandProcess(PitchShift *p, const float *const *in, float *const *out, int n);
+// Samples of delay the pitch shifter adds right now, 0 when it is off.
+extern int PitchShiftLatency(JamesDSPLib *jdsp);
+// Signalsmith Stretch behind a C face (Effects/signalsmith.cpp). Create and
+// Destroy allocate and free, so they never run on the audio thread; every
+// other call is realtime safe. The Ring variants read their input from a ring
+// buffer whose length is mask + 1, starting at an absolute position.
+extern void *SignalsmithCreate(float fs, int formant);
+extern void *SignalsmithCreateCustom(float fs, int formant, float blockSec, float intervalSec, int split);
+extern void SignalsmithDestroy(void *s);
+extern void SignalsmithSetRatio(void *s, float ratio);
+extern void SignalsmithSetFormant(void *s, int formant);
+extern int SignalsmithLatency(const void *s);
+extern int SignalsmithSeekLength(const void *s);
+extern void SignalsmithSeekRing(void *s, const float *const *ring, int mask, int64_t start, int n);
+extern void SignalsmithProcessRing(void *s, const float *const *ring, int mask, int64_t start, float *const *out, int n);
 extern void EchoDelaySetParam(JamesDSPLib *jdsp, float inputLevel, float timeMs,
 	float smoothingPct, float offsetMs, int keepPitch,
 	int model, float stereoPct,

@@ -619,11 +619,15 @@
         <item>Smooth (cleaner, slight delay)</item>
         <item>Rubber Band (best, needs add-on)</item>
         <item>Rubber Band, keep voice character</item>
+        <item>Signalsmith (very clean, built in, 0.15 s delay)</item>
+        <item>Signalsmith, keep voice character</item>
     </string-array>
     <string-array name="pitchshift_modes_values" translatable="false">
         <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>
+        <item>4</item>
+        <item>5</item>
     </string-array>
 </resources>

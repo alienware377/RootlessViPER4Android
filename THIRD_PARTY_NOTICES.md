@@ -67,6 +67,35 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   method of the Pitch shifter derives from smbPitchShift. WOL requires the
   notice in all source copies, and this repository distributes source.
 
+### Signalsmith Stretch
+
+- **Author:** Geraint Luff / Signalsmith Audio Ltd.
+- **Licence:** MIT, see
+  [the Signalsmith Stretch notice](#mit-licence-signalsmith-stretch)
+- **Upstream:** https://github.com/Signalsmith-Audio/signalsmith-stretch,
+  release 1.4.0 as of commit `88061fd4eda56a2353c5d65c74aa3f4ccf76f9da` (the
+  release tag `a670068` plus a build-file change that moves it to Signalsmith
+  Linear 0.6.6). The header's own version constant still reads 1.3.2 at that
+  commit; the commit is what identifies the copy.
+- **Files:** `third_party/signalsmith-stretch/signalsmith-stretch.h`, unmodified,
+  with its `LICENSE.txt`. Reached through `Effects/signalsmith.cpp`, which is
+  this project's own C interface to it.
+- **Used by:** the two Signalsmith methods of the Pitch shifter, and through
+  them the fallback for the Rubber Band methods when the add-on is missing.
+
+### Signalsmith Linear
+
+- **Author:** Signalsmith Audio
+- **Licence:** MIT, see
+  [the Signalsmith Linear notice](#mit-licence-signalsmith-linear)
+- **Upstream:** https://github.com/Signalsmith-Audio/linear, release 0.6.6
+  (commit `7bb1c8f36794d6980080ce817c91f8da8fe56a66`)
+- **Files:** `third_party/signalsmith-linear/stft.h` and `fft.h`, unmodified,
+  with its `LICENSE.txt`. These are the only two files Signalsmith Stretch uses
+  when none of the optional `SIGNALSMITH_USE_*` back-ends is switched on, and
+  none is.
+- **Used by:** Signalsmith Stretch, for its FFT and short-time transform.
+
 ### sndfilter
 
 - **Author:** Sean Connelly
@@ -180,6 +209,62 @@ copy was taken under:
 The MIT License (MIT)
 
 Copyright (c) 2016 Sean Connelly (@voidqk, web: syntheti.cc)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### MIT licence (Signalsmith Stretch)
+
+From Signalsmith Stretch `LICENSE.txt`:
+
+```text
+MIT License
+
+Copyright (c) 2022 Geraint Luff / Signalsmith Audio Ltd.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### MIT licence (Signalsmith Linear)
+
+From Signalsmith Linear `LICENSE.txt`:
+
+```text
+MIT License
+
+Copyright (c) 2025 Signalsmith Audio
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
