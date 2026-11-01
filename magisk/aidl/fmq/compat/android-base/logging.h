@@ -36,6 +36,19 @@ inline int toAndroid(Severity s) {
     }
 }
 
+/* libbase writes nothing below INFO unless a program lowers its minimum
+   severity, which a HAL never does, and it skips building such a message at
+   all. AOSP's effect base classes rely on that: they log every setParameter,
+   getParameter and command at VERBOSE, with the parameter printed in full,
+   while holding the lock the audio thread waits on. liblog alone writes
+   VERBOSE, so without this check each of those calls built a string and sent
+   a line to logcat; a test run on the emulator produced about 100,000 of
+   them. A tester can still turn them on for one tag with
+   setprop log.tag.<tag> V. */
+inline bool wouldLog(Severity s, const char* tag) {
+    return s >= INFO || __android_log_is_loggable(toAndroid(s), tag, ANDROID_LOG_INFO);
+}
+
 class Message {
   public:
     Message(Severity s, const char* tag) : mSeverity(s), mTag(tag) {}
@@ -45,6 +58,8 @@ class Message {
         mStream << value;
         return *this;
     }
+    /* Lets LOG() sit on the right of &&, the way libbase's does. */
+    explicit operator bool() const { return true; }
 
   private:
     Severity mSeverity;
@@ -56,8 +71,14 @@ class Message {
 
 /* The severity is pasted onto the namespace rather than defined as a global
    macro, so names like ERROR or INFO stay free for the enums in the generated
-   interface code. */
-#define LOG(severity) ::rv4a_log::Message(::rv4a_log::severity, LOG_TAG)
+   interface code.
+
+   As in libbase, LOG(x) << a << b reads as wouldLog && (Message << a << b),
+   so when the severity is filtered out none of the << operands are
+   evaluated. */
+#define LOG(severity)                                             \
+    ::rv4a_log::wouldLog(::rv4a_log::severity, LOG_TAG) &&        \
+            ::rv4a_log::Message(::rv4a_log::severity, LOG_TAG)
 
 #ifndef LOG_ALWAYS_FATAL_IF
 #define LOG_ALWAYS_FATAL_IF(cond, ...)                                              \

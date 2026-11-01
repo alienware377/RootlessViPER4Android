@@ -96,7 +96,8 @@ int32_t rv4a_legacy_enable(void *h, bool on)
 int32_t rv4a_legacy_set_param(void *h, const void *param, uint32_t size)
 {
     /* The legacy command takes a non-const pointer but never writes through
-       it; the copy keeps that promise without trusting it. */
+       it. The caller passes its own copy of the bytes it received, so even a
+       write would not reach anything the framework holds. */
     if (!param || size < sizeof(effect_param_t))
         return -EINVAL;
     return cmdStatus(h, EFFECT_CMD_SET_PARAM, size, const_cast<void *>(param));
