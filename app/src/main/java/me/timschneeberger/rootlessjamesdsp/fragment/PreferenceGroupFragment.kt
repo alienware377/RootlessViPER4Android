@@ -738,8 +738,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             val evenOut = sp.getBoolean(kEven, true)
             file?.isVisible = source == BinauralSets.SOURCE_FILE
             // A new choice of file or source gets a fresh try even if an
-            // earlier one failed.
-            val choice = "$source|$path"
+            // earlier one failed, and so does switching the card off and on
+            // again, which is how a helper that did not answer is retried.
+            val choice = "$source|$path|$enabled"
             if (lastChoice != null && lastChoice != choice) BinauralSets.forgetFailures()
             lastChoice = choice
             val src = BinauralSets.source(ctx, source, path)
