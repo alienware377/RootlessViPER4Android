@@ -47,9 +47,11 @@ import java.nio.ByteBuffer
  * reflection. If any of it is missing on a device, start() throws and the app
  * falls back to the standard method.
  *
- * Written for this app. The design follows ViPER4Shizuku's capture-shizuku
- * module (Copyright (C) 2026 TheIceJi, GPL-3.0) and sk2andy's
- * android-realtime-voice-isolation (MIT), see THIRD_PARTY_NOTICES.md.
+ * Adapted from CaptureUserService in ViPER4Shizuku's capture-shizuku module,
+ * Copyright (C) 2026 TheIceJi, GPL-3.0: the start and teardown structure and
+ * the shell-attributed recorder for the route follow it closely. The approach
+ * was first shown by sk2andy's android-realtime-voice-isolation (MIT, no code
+ * taken). See THIRD_PARTY_NOTICES.md.
  */
 @SuppressLint("PrivateApi", "DiscouragedPrivateApi")
 class ShizukuCaptureUserService(private val context: Context) : IShizukuCaptureService.Stub() {
