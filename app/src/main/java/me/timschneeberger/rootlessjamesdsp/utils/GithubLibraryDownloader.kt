@@ -1,7 +1,7 @@
 package me.timschneeberger.rootlessjamesdsp.utils
 
 import android.content.Context
-import org.json.JSONArray
+import me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -27,33 +27,14 @@ object GithubLibraryDownloader {
 
     // ------------------------------------------------------------ user sources
 
-    fun customSources(ctx: Context): MutableList<Source> {
-        val store = ctx.getSharedPreferences(Constants.PREF_FILELIBRARY, Context.MODE_MULTI_PROCESS)
-        val legacy = ctx.getSharedPreferences(Constants.PREF_APP, Context.MODE_MULTI_PROCESS)
-        if (!store.contains("filelib_sources") && legacy.contains("filelib_sources")) {
-            store.edit().putString("filelib_sources", legacy.getString("filelib_sources", null)).apply()
-            legacy.edit().remove("filelib_sources").apply()
-        }
-        val raw = store.getString("filelib_sources", null) ?: return mutableListOf()
-        val list = mutableListOf<Source>()
-        runCatching {
-            val arr = JSONArray(raw)
-            for (i in 0 until arr.length()) {
-                val o = arr.getJSONObject(i)
-                list.add(Source(o.getString("repo"), o.getString("branch"), o.getString("label")))
-            }
-        }
-        return list
-    }
+    /** Kept outside the preset namespace now; see [LibrarySources]. */
+    fun customSources(ctx: Context): MutableList<Source> =
+        LibrarySources.load(ctx).map { Source(it.repo, it.branch, it.label) }.toMutableList()
 
-    fun saveCustomSources(ctx: Context, sources: List<Source>) {
-        val arr = JSONArray()
-        sources.forEach {
-            arr.put(JSONObject().put("repo", it.repo).put("branch", it.branch).put("label", it.label))
-        }
-        ctx.getSharedPreferences(Constants.PREF_FILELIBRARY, Context.MODE_MULTI_PROCESS)
-            .edit().putString("filelib_sources", arr.toString()).apply()
-    }
+    fun saveCustomSources(ctx: Context, sources: List<Source>) =
+        LibrarySources.save(ctx, sources.map {
+            me.timschneeberger.rootlessjamesdsp.utils.github.Source(it.repo, it.branch, it.label)
+        })
 
     /**
      * Accepts "user/repo", "github.com/user/repo" or a full URL, optionally
