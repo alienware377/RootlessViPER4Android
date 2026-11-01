@@ -258,6 +258,16 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
+        <!-- Reads .sofa head measurements for the Binaural upmix. Isolated: its
+             own throwaway user id, no permissions and no access to the app's
+             files; it is handed the file as an open descriptor. A file that
+             breaks the reader ends only this process. -->
+        <service
+            android:name=".hrtf.SofaParserService"
+            android:process=":sofa"
+            android:isolatedProcess="true"
+            android:exported="false" />
+
         <!-- Root only: FGS service permission is granted in root/AndroidManifest.xml -->
         <service
             android:name=".service.RootAudioProcessorService"

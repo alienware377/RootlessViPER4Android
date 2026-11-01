@@ -55,6 +55,8 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(17, R.string.crossfeed_enable),
         ChainEffect(18, R.string.cure_enable),
         ChainEffect(19, R.string.stereowide_enable),
+        // Listed after the stereo widening rather than by id, where it runs.
+        ChainEffect(40, R.string.binaural_enable),
         ChainEffect(20, R.string.fieldsurround_enable),
         ChainEffect(21, R.string.v4a_hpsurround_title),
         ChainEffect(22, R.string.spectrumext_enable),

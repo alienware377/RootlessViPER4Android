@@ -726,3 +726,44 @@ JNIEXPORT void JNICALL Java_me_timschneeberger_rootlessjamesdsp_interop_JdspImpR
     (*env)->ReleaseDoubleArrayElements(env, jcplxRe, cplxRe, 0);
     (*env)->ReleaseDoubleArrayElements(env, jcplxIm, cplxIm, 0);
 }
+
+/* Resamples count short responses of frames samples each, one by one, with the
+   same converter the impulse responses above go through (libsamplerate, best
+   sinc). For the Binaural upmix's head sets. Returns count blocks of
+   round(frames * toRate / fromRate) samples, or null. */
+JNIEXPORT jfloatArray JNICALL Java_me_timschneeberger_rootlessjamesdsp_interop_JdspImpResToolbox_ResampleResponses
+(JNIEnv *env, jobject obj, jfloatArray jin, jint count, jint frames, jint fromRate, jint toRate)
+{
+	(void)obj;
+	if (!jin || count <= 0 || count > 64 || frames <= 0 || frames > 65536 ||
+		fromRate < 8000 || fromRate > 384000 || toRate < 8000 || toRate > 384000)
+		return 0;
+	if ((*env)->GetArrayLength(env, jin) != count * frames)
+		return 0;
+	const double ratio = (double)toRate / (double)fromRate;
+	const int outFrames = (int)floor(frames * ratio + 0.5);
+	if (outFrames < 1 || outFrames > 262144)
+		return 0;
+	float *in = (float *)malloc(sizeof(float) * (size_t)count * (size_t)frames);
+	float *out = (float *)calloc((size_t)count * (size_t)outFrames, sizeof(float));
+	if (!in || !out)
+	{
+		free(in); free(out);
+		return 0;
+	}
+	(*env)->GetFloatArrayRegion(env, jin, 0, count * frames, in);
+	for (int i = 0; i < count; i++)
+	{
+		if (toRate == fromRate)
+			memcpy(out + (size_t)i * outFrames, in + (size_t)i * frames, sizeof(float) * (size_t)frames);
+		else
+			JamesDSPOfflineResampling(in + (size_t)i * frames, out + (size_t)i * outFrames,
+				(size_t)frames, (size_t)outFrames, 1, ratio, 0);
+	}
+	jfloatArray res = (*env)->NewFloatArray(env, count * outFrames);
+	if (res)
+		(*env)->SetFloatArrayRegion(env, res, 0, count * outFrames, out);
+	free(in);
+	free(out);
+	return res;
+}
