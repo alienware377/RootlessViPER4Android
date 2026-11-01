@@ -108,7 +108,7 @@
     </Preference>
     <Preference
         android:title="Boost.Math interpolators"
-        android:summary="Nick Thompson: PCHIP, makima and cubic Hermite interpolation, ported to C, used by the Multimodal equalizer and the Dynamic range compander (Boost Software License 1.0)"
+        android:summary="Nick Thompson: PCHIP, makima and cubic Hermite interpolation, ported to C and Kotlin, used by the Multimodal equalizer (also in global mode) and the Dynamic range compander (Boost Software License 1.0)"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"
