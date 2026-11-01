@@ -42,11 +42,19 @@ object AudioEffectExtensions {
         return safeAccess { this.setParameter(parameterCommit, 1.toShort()) }
     }
 
+    /**
+     * Sends a float payload in 4096-float parts: a geometry header, the parts,
+     * then a commit. The convolver uses the default header id and layout; the
+     * Binaural upmix's head set has its own ids, so [infoParameter] and [info]
+     * replace them.
+     */
     fun AudioEffectHidden?.setParameterImpulseResponseBuffer(
         parameterSend: Int,
         parameterCommit: Int,
         impulseResponse: FloatArray,
-        channels: Int
+        channels: Int,
+        infoParameter: Int = PARAM_FLOAT_BUFFER_INFO,
+        info: IntArray? = null,
     ) : Int {
         this ?: return AudioEffect.ERROR_NO_INIT
 
@@ -55,7 +63,7 @@ object AudioEffectExtensions {
         val partitionCount = ceil(frames.toDouble() / MAX_IR_PARTITION_SIZE).toInt()
 
         // Send buffer info for module to allocate memory
-        setParameterIntArray(PARAM_FLOAT_BUFFER_INFO, intArrayOf(frames, channels, 0, partitionCount))
+        setParameterIntArray(infoParameter, info ?: intArrayOf(frames, channels, 0, partitionCount))
 
         // Fill final array with zero padding
         val finalArray = FloatArray(partitionCount * MAX_IR_PARTITION_SIZE)

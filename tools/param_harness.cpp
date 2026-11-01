@@ -325,6 +325,59 @@ int main()
 		check("default chain: shaper right after the DDC", ddc >= 0 && sh == ddc + 1);
 	}
 
+	// ---- binaural upmix ----------------------------------------------------
+	// The five values JamesDspRemoteEngine.setBinauralInternal packs, then the
+	// switch one hundred above. The head set itself goes through the HAL's
+	// own payload ids (9997 / 12002 / 10011), which hal_harness covers.
+	printf("\nbinaural upmix\n");
+	{
+		const float v[5] = { 70.0f, 90.0f, 10.0f, 80.0f, 55.0f };
+		sendFloats(26024, v, 5);
+		const BinauralUpmix *b = &g_lib.binaural;
+		check("26024 sets amount, width, surround, height, room",
+			  b->amountPct == 70.0f && b->widthPct == 90.0f && b->surroundPct == 10.0f &&
+			  b->heightPct == 80.0f && b->roomPct == 55.0f);
+		check("and what they work out to",
+			  fabsf(b->amountTarget - 0.7f) < 1e-6f && fabsf(b->width - 0.9f) < 1e-6f);
+		const float shortv[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		sendFloats(26024, shortv, 4);
+		check("26024 with too few values changes nothing", b->amountPct == 70.0f);
+		const float junk[5] = { NAN, -5.0f, 1e30f, INFINITY, -INFINITY };
+		sendFloats(26024, junk, 5);
+		check("26024 clamps nonsense",
+			  b->amountPct == 100.0f && b->widthPct == 0.0f && b->surroundPct == 100.0f &&
+			  b->heightPct == 100.0f && b->roomPct == 0.0f);
+		// A set made in place, as the HAL would hand it over after a commit:
+		// one impulse per ear for every speaker.
+		static float set[BIN_SPEAKERS * 2 * 64];
+		memset(set, 0, sizeof(set));
+		for (int i = 0; i < BIN_SPEAKERS * 2; i++) set[i * 64 + 4] = 0.5f;
+		check("a head set loads", BinauralUpmixLoadHrir(&g_lib, set, BIN_SPEAKERS, 64, 48000.0f, 4) == 0);
+		sendEnable(26124, true);
+		check("26124 switches it on", g_lib.binauralEnabled != 0 && b->mem != nullptr && b->spec != nullptr);
+		check("and it reports its delay", BinauralUpmixLatency(&g_lib) == 1023 + 4);
+		sendEnable(26124, false);
+		float *L = g_lib.tmpBuffer[0], *R = g_lib.tmpBuffer[1];
+		memset(L, 0, 2048 * sizeof(float)); memset(R, 0, 2048 * sizeof(float));
+		BinauralUpmixProcess(&g_lib, 2048);
+		check("26124 off fades and then clears the switch", g_lib.binauralEnabled == 0);
+		sendEnable(26124, false);
+		check("and the buffers are let go, the set kept",
+			  b->mem == nullptr && b->spec == nullptr && b->hrir != nullptr);
+	}
+
+	// The default chain runs binaural right after the stereo widening.
+	{
+		JamesDSPResetChainOrder(&g_lib);
+		int sw = -1, bin = -1;
+		for (int i = 0; i < g_lib.chainCount; i++)
+		{
+			if (g_lib.chainOrder[i] == JDSP_EFX_STEREOWIDE) sw = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_BINAURAL) bin = i;
+		}
+		check("default chain: binaural right after the stereo widening", sw >= 0 && bin == sw + 1);
+	}
+
 	// ---- an id with no mapping is tolerated, not refused --------------------
 	printf("\nunknown ids\n");
 	{

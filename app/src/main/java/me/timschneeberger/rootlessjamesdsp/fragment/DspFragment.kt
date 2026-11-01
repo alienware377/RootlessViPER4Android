@@ -266,6 +266,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         CardEntry(R.id.card_tube, R.string.v4a_tube_title),
         CardEntry(R.id.card_spectrumext, R.string.spectrumext_enable),
         CardEntry(R.id.card_stereowide, R.string.stereowide_enable),
+        CardEntry(R.id.card_binaural, R.string.binaural_enable),
         CardEntry(R.id.card_crossfeed, R.string.crossfeed_enable),
         CardEntry(R.id.card_reverb, R.string.reverb_enable),
     )
@@ -350,6 +351,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         CardSpec(R.id.card_tube, Constants.PREF_TUBE, R.xml.dsp_tube_preferences),
         CardSpec(R.id.card_spectrumext, Constants.PREF_SPECTRUMEXT, R.xml.dsp_spectrumext_preferences),
         CardSpec(R.id.card_stereowide, Constants.PREF_STEREOWIDE, R.xml.dsp_stereowide_preferences),
+        CardSpec(R.id.card_binaural, Constants.PREF_BINAURAL, R.xml.dsp_binaural_preferences),
         CardSpec(R.id.card_crossfeed, Constants.PREF_CROSSFEED, R.xml.dsp_crossfeed_preferences),
         CardSpec(R.id.card_reverb, Constants.PREF_REVERB, R.xml.dsp_reverb_preferences),
     )

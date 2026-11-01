@@ -627,6 +627,33 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectralShap
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBinaural(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jfloat amount, jfloat width, jfloat surround, jfloat height, jfloat room)
+{
+    DECLARE_DSP_B
+    BinauralUpmixSetParam(dsp, amount, width, surround, height, room);
+    if (enable) BinauralUpmixEnable(dsp); else BinauralUpmixDisable(dsp);
+    return true;
+}
+
+/* The nine pairs of the head set, left ear then right, taps each, already at
+   the engine's rate. The engine copies them and checks every value, and keeps
+   the set it had if this one is refused. */
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBinauralHrir(JNIEnv *env, jobject obj, jlong self,
+        jfloatArray hrir, jint speakers, jint taps, jint fs, jint cOff)
+{
+    DECLARE_DSP_B
+    if (!hrir || speakers <= 0 || taps <= 0 || env->GetArrayLength(hrir) != speakers * 2 * taps)
+        return false;
+    jfloat *p = env->GetFloatArrayElements(hrir, nullptr);
+    if (!p) return false;
+    const int rc = BinauralUpmixLoadHrir(dsp, p, speakers, taps, (float)fs, cOff);
+    env->ReleaseFloatArrayElements(hrir, p, JNI_ABORT);
+    return rc == 0;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVinyl(JNIEnv *env, jobject obj, jlong self,
         jboolean enable, jfloat surface, jfloat crackle, jfloat crackleSize,
         jfloat pops, jfloat clicks, jfloat sizzle, jfloat hiss, jfloat prickle,
