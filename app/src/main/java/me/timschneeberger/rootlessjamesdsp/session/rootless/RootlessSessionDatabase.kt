@@ -15,6 +15,28 @@ class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
     private var sessionLossListener: OnSessionLossListener? = null
     private var appProblemListener: OnAppProblemListener? = null
 
+    /**
+     * Whether new sessions get the effect that mutes the app's own output.
+     *
+     * The screen capture method needs it: the capture is a copy, so the
+     * original has to be silenced or it would be heard twice. The Shizuku
+     * method must never have it. There the app's audio is moved into the
+     * loopback route rather than copied, so the original is already off the
+     * speaker, and a mute effect would follow the session into the route and
+     * silence the very audio being captured. Sessions are still tracked in
+     * that mode for the notification, the app list and idle detection.
+     *
+     * Changing it drops the current sessions, so their effects are released
+     * now and the next poll creates them again the new way.
+     */
+    @Volatile
+    var attachMuteEffects = true
+        set(value) {
+            if (field == value) return
+            field = value
+            clearSessions()
+        }
+
     override val excludedPackages = arrayOf(
         context.packageName,
 
@@ -38,6 +60,9 @@ class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
     override fun shouldAddSession(id: Int, uid: Int, packageName: String) = true
 
     override fun createSession(id: Int, uid: Int, packageName: String): MutedEffectSession? {
+        if (!attachMuteEffects)
+            return MutedEffectSession(uid, packageName, null)
+
         val muteEffect = factory.make(id, packageName)
         if(muteEffect == null)
         {

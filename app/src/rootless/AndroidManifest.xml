@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Shizuku capture has no media projection, so the processing service
+         runs as a media playback service in that mode. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:targetApi="upside_down_cake" />
+
+    <application
+        tools:node="merge">
+        <service
+            android:name="me.timschneeberger.rootlessjamesdsp.service.RootlessAudioProcessorService"
+            android:foregroundServiceType="mediaProjection|mediaPlayback"
+            tools:replace="android:foregroundServiceType" />
+    </application>
+</manifest>

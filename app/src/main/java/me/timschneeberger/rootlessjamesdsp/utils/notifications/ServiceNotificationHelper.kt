@@ -132,8 +132,41 @@ object ServiceNotificationHelper: KoinComponent {
         .apply {
             if(isRootless())
                 addAction(createStopAction(context))
+            if(isRootless() && SdkCheck.isQ && RootlessAudioProcessorService.shizukuCaptureActive)
+                setSubText(context.getString(R.string.capture_shizuku_notification_subtext))
         }
         .build()
+
+    /**
+     * Shizuku capture stopped while it was running, or could not start with
+     * nobody there to see it. Tapping goes through the launcher, which tries
+     * Shizuku again and falls back to screen capture if allowed.
+     */
+    fun pushShizukuCaptureLostNotification(context: Context, reason: String) =
+        NotificationCompat.Builder(context, Notifications.CHANNEL_SERVICE_SESSION_LOSS)
+            .setContentTitle(context.getString(R.string.capture_shizuku_lost_title))
+            .setContentText(context.getString(R.string.capture_shizuku_lost_text, reason))
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText(context.getString(R.string.capture_shizuku_lost_text, reason)))
+            .setSmallIcon(R.drawable.ic_baseline_warning_24dp)
+            .setAutoCancel(true)
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    context,
+                    Notifications.ID_SHIZUKU_CAPTURE_LOST,
+                    Intent(context, EngineLauncherActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+            .build()
+            .let {
+                context.getSystemService<NotificationManager>()
+                    ?.notify(Notifications.ID_SHIZUKU_CAPTURE_LOST, it)
+            }
 
     fun pushSessionLossNotification(context: Context, mediaProjectionStartIntent: Intent?) =
         NotificationCompat.Builder(context, Notifications.CHANNEL_SERVICE_SESSION_LOSS)
