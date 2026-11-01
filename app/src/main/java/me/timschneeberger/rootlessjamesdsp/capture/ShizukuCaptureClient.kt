@@ -22,9 +22,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * capture ends without [release] having been called: the helper or Shizuku
  * died, or the helper dropped the route itself (the app stopped reading).
  *
- * The helper is bound with daemon off, so Shizuku kills it when this app's
- * process dies. On top of that the helper watches [appToken]. Either one is
- * enough to take the route down after a crash or a force stop.
+ * The helper is bound with daemon off, so when this app's process dies
+ * Shizuku calls the helper's destroy(), which drops the route and exits. On
+ * top of that the helper watches [appToken]. Either one is enough to take the
+ * route down after a crash or a force stop.
  */
 @RequiresApi(ShizukuCapturePolicy.MIN_SDK)
 class ShizukuCaptureClient(
@@ -173,8 +174,9 @@ class ShizukuCaptureClient(
         try { serviceBinder?.unlinkToDeath(helperDeath, 0) } catch (_: Exception) {}
         serviceBinder = null
 
-        // remove = true kills the helper process, so even a hung helper lets
-        // go of the route.
+        // remove = true makes Shizuku call the helper's destroy(), which drops
+        // the route and ends the helper process. If the helper is stuck, the
+        // process still exits, and its death takes the route with it.
         try {
             if (Shizuku.pingBinder())
                 Shizuku.unbindUserService(args, connection, true)
