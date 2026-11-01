@@ -97,9 +97,12 @@ Boot safety (`post-fs-data.sh`, `service.sh`):
 - After boot: the factory must register within 60 s, have our library loaded
   with the matching interface version, and keep its pid (and audioserver its
   pid) for 15 s. For the rest of the boot, three restarts within three minutes
-  count as a crash loop. On any of these: our config is set aside, our mount
-  is taken away so the restarts stop at once, and a notification asks for a
-  reboot.
+  count as a crash loop. On any of these: our config is set aside and a
+  notification asks for a reboot. Where our copy of the config is a mount of
+  its own (Magisk's bind mounts), that mount is also taken away, so the next
+  restart already reads the stock file. Where the module is part of an
+  overlay of the whole partition (KernelSU), there is no mount of ours alone
+  to remove, and the restarts can go on until that reboot.
 - The manager's module description shows the last decision.
 
 ## Building and testing
