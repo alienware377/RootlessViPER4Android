@@ -179,6 +179,11 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
                 throw Exception(ctx.getString(R.string.filelibrary_corrupted))
             }
 
+            // Sources an earlier version kept in dsp_filelibrary are still
+            // there until "Download more..." is first opened. The copy below
+            // overwrites that file, so move them out first or they are lost.
+            LibrarySources.absorbLegacy(ctx)
+
             files.forEach next@ { f ->
                 if(!isKnownEntry(f.name))
                     return@next
