@@ -157,6 +157,42 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   downloaded at runtime from the AutoEq repository, one file at a time, only
   when the user picks them, and stay in the app's own storage.
 
+### libmysofa
+
+- **Author:** Christian Hoene, Symonics GmbH
+- **Licence:** BSD 3-Clause, see [the libmysofa notice](#bsd-3-clause-licence-libmysofa)
+- **Upstream:** https://github.com/hoene/libmysofa, release 1.3.5 (tag `v1.3.5`,
+  commit `6cc5b15a73e9bd97810d03767082edda7f315881`)
+- **Files:** `third_party/libmysofa/`: the SOFA reader only (`src/hdf/` and part
+  of `src/hrtf/`), unmodified. `src/config.h` and `src/hrtf/mysofa_export.h` are
+  written for this project in place of files upstream's build generates. See
+  `third_party/libmysofa/README-RV4A.md` for what was left out.
+  `src/hrtf/portable_endian.h` in it is by Mathias Panzenböck and in the public
+  domain, as its own header says.
+- **Used by:** the Binaural upmix, to read `.sofa` head measurement files. It is
+  built into its own library, `librv4asofa.so`, loaded only by an isolated helper
+  process. It needs zlib, which is the Android system library and not shipped
+  with the app.
+
+### MIT KEMAR head measurements (data)
+
+- **Authors:** Bill Gardner and Keith Martin, MIT Media Lab, Machine Listening
+  Group. SOFA conversion by Piotr Majdak and Michael Mihocic, Acoustics Research
+  Institute, Austrian Academy of Sciences.
+- **Licence:** see [the MIT KEMAR notice](#mit-kemar-data-licence)
+- **Source:** https://sofacoustics.org/data/database/mit/mit_kemar_normal_pinna.sofa
+  (1,171,764 bytes, SHA-256
+  `e7035994f5fd754058424c061380ee92b1d5ed58fccef2887a4266916616acdf`), the
+  official SOFA database copy of http://sound.media.mit.edu/resources/KEMAR.html
+- **Files:** `app/src/main/assets/hrtf/mit_kemar_normal_pinna.sofa`, unmodified.
+- **Used by:** the Binaural upmix, as its built-in head.
+- **Citation:** Gardner, W. G., and Martin, K. D. (1995). "HRTF measurements of a
+  KEMAR". J. Acoust. Soc. Am. 97(6), 3907 to 3908. Shown on the card and in the
+  About screen.
+- **Not a GPL work:** this is measurement data under its own terms, shipped next
+  to the app as a separate file. Debian ships the same data in its main archive
+  under the same text.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular
@@ -301,6 +337,61 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+### BSD 3-Clause licence (libmysofa)
+
+From libmysofa `LICENSE`:
+
+```text
+Copyright (c) 2016-2017, Symonics GmbH, Christian Hoene
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    (1) Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+    (2) Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+    (3)The name of the author may not be used to
+    endorse or promote products derived from this software without
+    specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+```
+
+### MIT KEMAR data licence
+
+From the MIT Media Lab's KEMAR page and the archive's `README`:
+
+```text
+This data is Copyright 1994 by the MIT Media Laboratory. It is provided free
+with no restrictions on use, provided the authors are cited when the data is
+used in any research or commercial application.
+```
+
+The `License` attribute inside the SOFA file:
+
+```text
+This HRTF data is provided without any usage restrictions. It is requested
+that you cite Gardner and Martin (1995) when using this data for research or
+commercial applications.
 ```
 
 ### MIT licence (AutoEq)
