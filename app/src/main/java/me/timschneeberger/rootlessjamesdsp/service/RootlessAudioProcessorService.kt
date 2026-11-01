@@ -106,6 +106,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     // Whether the app list names what to process rather than what to skip
     private var allowlistMode = false
+    // Play the processed audio as "unknown" like older versions did. Off by
+    // default; see ProcessedTrackUsage for why media is the better choice.
+    private var legacyUnknownTrackType = false
 
     // Termination flags
     private var isProcessorDisposing = false
@@ -159,6 +162,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         loadFromPreferences(getString(R.string.key_powersave_suspend))
         loadFromPreferences(getString(R.string.key_session_exclude_restricted))
         loadFromPreferences(getString(R.string.key_blocklist_allowlist_mode))
+        loadFromPreferences(getString(R.string.key_output_legacy_unknown_type))
 
         // Setup database observer
         blockedApps.observeForever(blockedAppObserver)
@@ -443,6 +447,19 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 // is built, so flipping this changes nothing until it is rebuilt.
                 requestAudioRecordRecreation()
             }
+            getString(R.string.key_output_legacy_unknown_type) -> {
+                val legacy = preferences.get<Boolean>(R.string.key_output_legacy_unknown_type)
+                if (legacy == legacyUnknownTrackType)
+                    return
+                legacyUnknownTrackType = legacy
+                Timber.d("Legacy unknown output type set to $legacyUnknownTrackType")
+
+                // The usage is fixed when the output track is built, and the
+                // in-place rebuild only replaces the recorder, so the whole
+                // pipeline has to restart for the change to be heard.
+                if (isRunning)
+                    restartRecording()
+            }
         }
     }
 
@@ -657,7 +674,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // media audio elsewhere pick this track up too. See ProcessedTrackUsage.
         // No preferred device is set on purpose: naming a device would stop
         // those features from taking the track.
-        val usage = ProcessedTrackUsage.usage(legacyUnknownType = false)
+        val usage = ProcessedTrackUsage.usage(legacyUnknownTrackType)
         Timber.d("Output track usage: $usage")
         val attributesBuilder = AudioAttributes.Builder()
             .setUsage(usage)
