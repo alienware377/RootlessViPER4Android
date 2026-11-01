@@ -93,8 +93,13 @@ object GlobalPower {
             intent.getIntExtra(android.media.audiofx.AudioEffect.EXTRA_AUDIO_SESSION, -1),
             intent.getIntExtra(android.media.audiofx.AudioEffect.EXTRA_CONTENT_TYPE, 0),
         )
-        if (open && GlobalMode.target(context) == GlobalMode.Target.APPS && !GlobalEffectService.isAlive &&
-            GlobalMode.isWanted(context))
+        val running = GlobalEffectService.current
+        if (running != null) {
+            // Open and close both, so a player that says goodbye loses its effect.
+            running.onAnnounced(intent)
+            return
+        }
+        if (open && GlobalMode.target(context) == GlobalMode.Target.APPS && GlobalMode.isWanted(context))
             GlobalEffectService.start(context, intent)
     }
 
