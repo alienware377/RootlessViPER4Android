@@ -10,6 +10,8 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import me.timschneeberger.rootlessjamesdsp.MainApplication
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapture
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapturePolicy
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.EngineUtils.toggleEnginePower
 import me.timschneeberger.rootlessjamesdsp.utils.SdkCheck
@@ -84,8 +86,10 @@ class QuickTileService : TileService(),
         toggleEnginePower(toggled) { intent ->
             val pending = PendingIntent.getActivity(app, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
-            // If projection permission request needs to be shown, collapse status bar
-            if (isRootless() && app.mediaProjectionStartIntent == null && !hasProjectMediaAppOp() && !SdkCheck.isVanillaIceCream) {
+            // If projection permission request needs to be shown, collapse status bar.
+            // Shizuku capture shows no prompt.
+            val shizukuReady = isRootless() && ShizukuCapture.state() == ShizukuCapturePolicy.State.Ready
+            if (isRootless() && !shizukuReady && app.mediaProjectionStartIntent == null && !hasProjectMediaAppOp() && !SdkCheck.isVanillaIceCream) {
                 if(SdkCheck.isUpsideDownCake)
                     startActivityAndCollapse(pending)
                 else
