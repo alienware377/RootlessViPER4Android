@@ -25,6 +25,8 @@
     <bool name="default_session_exclude_restricted">true</bool>
     <!-- The app list names apps to skip, not apps to process. -->
     <bool name="default_blocklist_allowlist_mode">false</bool>
+    <!-- Processed audio plays as media so Android Auto can carry it. -->
+    <bool name="default_output_legacy_unknown_type">false</bool>
     <string name="default_session_detection_method" translatable="false">1</string>
     <string name="default_session_continuous_polling_rate" translatable="false">3000</string>
     <bool name="default_session_continuous_polling" translatable="false">false</bool>
