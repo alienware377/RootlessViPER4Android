@@ -75,7 +75,7 @@ class BackupManager(private val context: Context): KoinComponent {
 
                 File(context.applicationInfo.dataDir + "/shared_prefs")
                     .listFiles()
-                    ?.filter { it.name.startsWith("dsp_") || it.name == FILE_EFFECT_LAYOUT }
+                    ?.filter { it.name.startsWith("dsp_") || it.name == FILE_EFFECT_LAYOUT || it.name == FILE_LIBRARY_SOURCES }
                     ?.filter { it.extension == "xml" }
                     ?.forEach { c.add(it, "shared_prefs/${it.name}") }
 
@@ -128,7 +128,8 @@ class BackupManager(private val context: Context): KoinComponent {
 
                 // Remove shared dsp prefs
                 File(context.applicationInfo.dataDir + "/shared_prefs").listFiles { file: File ->
-                    file.name.startsWith("dsp_") && file.extension == "xml"
+                    (file.name.startsWith("dsp_") && file.extension == "xml") ||
+                        file.name == FILE_LIBRARY_SOURCES
                 }?.forEach { it.delete() }
                 // Remove external files
                 context.getExternalFilesDir(null)
@@ -172,10 +173,13 @@ class BackupManager(private val context: Context): KoinComponent {
         // The card layout belongs in a backup even though a preset no longer
         // applies one: restoring a backup is meant to put everything back.
         private const val FILE_EFFECT_LAYOUT = "effect_layout.xml"
+        // The download sources the user added: theirs, so restored with the rest
+        private const val FILE_LIBRARY_SOURCES = Constants.PREF_FILELIBRARY_SOURCES + ".xml"
 
         private fun isKnownFile(name: String): Boolean {
             return (name.contains("dsp_") && name.endsWith(".xml")) ||
                     name.endsWith(FILE_EFFECT_LAYOUT) ||
+                    name.endsWith(FILE_LIBRARY_SOURCES) ||
                     name.startsWith("profiles/") ||
                     FileLibraryPreference.types.any { name.contains(it.key) && it.value.any { ext -> name.endsWith(ext) } }
         }
