@@ -561,8 +561,14 @@ static void shFrame(SpectralShaper *s)
 	const float pass = s->listen ? 0.0f : 1.0f;
 	for (int k = 0; k < K; k++)
 	{
+#ifdef BROKEN_MSSWAP
+		/* The cut on the wrong half: harness only. */
+		const float gA = (ms == MS_MODE_MID) ? pass : s->gainLin[k];
+		const float gB = (ms == MS_MODE_SIDE) ? pass : s->gainLin[k];
+#else
 		const float gA = (ms == MS_MODE_SIDE) ? pass : s->gainLin[k];
 		const float gB = (ms == MS_MODE_MID) ? pass : s->gainLin[k];
+#endif
 		const int kk = (N - k) & mask;
 		A[k] *= gA;
 		B[k] *= gB;
@@ -606,7 +612,12 @@ static void shFrame(SpectralShaper *s)
 		else
 		{
 			s->acc[0][idx] += ya + yb;
+#ifdef BROKEN_MSMIX
+			/* Right rebuilt as left: harness only. */
+			s->acc[1][idx] += ya + yb;
+#else
 			s->acc[1][idx] += ya - yb;
+#endif
 		}
 	}
 }
