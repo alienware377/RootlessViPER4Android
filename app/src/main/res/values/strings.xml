@@ -1349,7 +1349,6 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="matcheq_replace">The graphic EQ already has a curve. Applying this replaces it.</string>
     <string name="matcheq_enable_title">Turn on the graphic EQ?</string>
     <string name="matcheq_enable">The graphic EQ is off, so you will not hear this until it is on. Turn it on now?</string>
-    <string name="matcheq_loading">Downloading, one moment</string>
     <string name="matcheq_download_failed">Could not download it: %1$s</string>
     <string name="matcheq_not_in_index">This model is not in the AutoEQ files yet, so it cannot be matched to other targets. Its ready-made profile still works from the AutoEQ profiles button.</string>
     <string name="matcheq_file_unreadable">Could not read that file.</string>
@@ -1360,5 +1359,4 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="matcheq_file_is_profile">That file is an EQ profile rather than a measurement, so the measurement is estimated from it and the target you have picked. Expect it to be close, not exact.</string>
     <string name="matcheq_file_profile_no_target">That file is an EQ profile rather than a measurement. Pick a target first, then load it again.</string>
     <string name="matcheq_file_profile_not_target">That file is an EQ profile, not a target curve. A target is the sound you want, such as a CSV of a frequency response.</string>
-    <string name="matcheq_need_target">Pick a target before applying.</string>
 </resources>

@@ -30,6 +30,15 @@ class FrequencyCurve(val freq: DoubleArray, val gain: DoubleArray) {
     /** This curve resampled onto [grid]. */
     fun resample(grid: DoubleArray) = FrequencyCurve(grid, Curves.interpolate(freq, gain, grid))
 
+    /**
+     * This curve, small enough to keep in settings. A full-resolution export
+     * (REW writes tens of thousands of points) is put on the working grid,
+     * which is the first thing the solver does with it anyway, so the result
+     * is the same while the stored text, presets and every recompute stay
+     * small. Curves no larger than the grid are kept as they are.
+     */
+    fun forStorage(): FrequencyCurve = if (size > Curves.grid.size) resample(Curves.grid) else this
+
     /** Plain "frequency,gain" lines, two decimals, for storage. */
     fun serialize(): String {
         val sb = StringBuilder()

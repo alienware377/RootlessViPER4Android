@@ -83,4 +83,32 @@ class CurvesTest {
         assertEquals(null, FrequencyCurve.deserialize("20,1;nonsense"))
         assertEquals(null, FrequencyCurve.deserialize(""))
     }
+
+    @Test
+    fun `a full-resolution export is stored small and still gives the same result`() {
+        // Like a REW text export: 32768 points spaced 0.73 Hz apart from 0.73 Hz up.
+        val n = 32768
+        val f = DoubleArray(n) { (it + 1) * 24000.0 / n }
+        val c = me.timschneeberger.rootlessjamesdsp.utils.BiquadUtils.computeCoefficients(
+            3000.0, 6.0, 4.0, me.timschneeberger.rootlessjamesdsp.model.ParametricEqFilterType.PEAKING, 48000.0)
+        val g = DoubleArray(n) {
+            me.timschneeberger.rootlessjamesdsp.utils.BiquadUtils.magnitudeResponse(c, f[it], 48000.0) -
+                2.0 * kotlin.math.log2(f[it] / 1000.0)
+        }
+        val dense = FrequencyCurve(f, g)
+
+        val text = dense.forStorage().serialize()
+        assertTrue("stored ${text.length} characters", text.length < 20000)
+        val stored = FrequencyCurve.deserialize(text)!!
+        assertEquals(Curves.grid.size, stored.size)
+
+        val target = Synthetic.target()
+        val a = MatchEqSolver.solve(dense, target)
+        val b = MatchEqSolver.solve(stored, target)
+        for (i in a.outGain.indices) assertEquals(a.outGain[i], b.outGain[i], 0.02)
+
+        // Anything already no bigger than the grid is kept exactly as it is.
+        val small = Synthetic.headphone()
+        assertTrue(small.forStorage() === small)
+    }
 }
