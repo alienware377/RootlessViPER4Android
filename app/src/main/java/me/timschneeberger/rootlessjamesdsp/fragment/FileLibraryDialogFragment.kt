@@ -414,6 +414,14 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
+    // A rotation destroys the library dialog without calling onDialogClosed,
+    // and the download dialogs belong to the old screen, so close them here too
+    override fun onDestroy() {
+        downloadFlow?.close()
+        downloadFlow = null
+        super.onDestroy()
+    }
+
     override fun onDialogClosed(positiveResult: Boolean) {
         scriptScannerScope.cancel()
         downloadFlow?.close()

@@ -347,4 +347,20 @@ class GithubClientTest {
         assertEquals(0, dir.list()!!.size)
         assertFalse(body.n >= content.size)
     }
+
+    @Test
+    fun `cancel closes the connection away from the thread that pressed it`() {
+        // Cancel is pressed on the main thread, where Android stops the app
+        // for the network write that closing an HTTPS connection makes
+        val closedOn = java.util.concurrent.ArrayBlockingQueue<Thread>(1)
+        val token = CancelToken()
+        token.attach(HttpResponse(200, emptyMap(), ByteArrayInputStream(ByteArray(0))) {
+            closedOn.offer(Thread.currentThread())
+        })
+        token.cancel()
+        val t = closedOn.poll(5, java.util.concurrent.TimeUnit.SECONDS)
+        assertTrue("the connection was never closed", t != null)
+        assertTrue("closed on the thread that pressed Cancel", t !== Thread.currentThread())
+        assertTrue(token.isCancelled)
+    }
 }

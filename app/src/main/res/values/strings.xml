@@ -462,7 +462,7 @@
     <string name="filelib_err_http">GitHub answered with an error (%1$d). Try again later.</string>
     <string name="filelib_err_bad_reply">GitHub sent a reply the app couldn\'t read. Try again later.</string>
     <string name="filelib_err_corrupt">The file didn\'t arrive intact.</string>
-    <string name="filelib_err_lfs">The file is stored with Git LFS and its owner\'s download allowance is used up.</string>
+    <string name="filelib_err_lfs">GitHub wouldn\'t send this Git LFS file. Most often its owner\'s download allowance is used up.</string>
     <string name="filelib_too_big">This repository is too big to list in one go. Pick a folder to look in.</string>
     <string name="filelib_pick_folder">Pick a folder</string>
     <string name="filelib_no_folders">There are no folders to look in.</string>
@@ -477,6 +477,7 @@
     <string name="filelib_maybe_lfs">may be stored with Git LFS, real size shown after download</string>
     <string name="filelib_big_download">That is %1$s to download. Continue?</string>
     <string name="filelib_metered_download">You are on a metered connection and this is %1$s. Continue?</string>
+    <string name="filelib_metered_lfs">You are on a metered connection, and %1$d of these files are stored with Git LFS, so their real size is only known once they arrive. Continue?</string>
     <string name="filelib_continue">Continue</string>
     <string name="filelib_save_source">Save source</string>
     <string name="filelib_source_saved">Saved %1$s as a source</string>
