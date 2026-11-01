@@ -43,6 +43,9 @@
     <string name="key_audioformat_processing" translatable="false">audioformat_processing</string>
     <string name="key_audioformat_enhanced_processing" translatable="false">audioformat_enhanced_processing</string>
     <string name="key_audioformat_optimization_benchmark" translatable="false">audioformat_optimization_benchmark</string>
+    <string name="key_capture_shizuku" translatable="false">capture_shizuku</string>
+    <string name="key_capture_shizuku_fallback" translatable="false">capture_shizuku_fallback</string>
+    <string name="key_capture_shizuku_info" translatable="false">capture_shizuku_info</string> <!-- static -->
 
     <!-- Device profiles -->
     <string name="key_device_profiles_enable" translatable="false">device_profiles_enable</string>

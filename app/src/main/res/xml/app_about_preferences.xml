@@ -204,6 +204,24 @@
             android:data="https://github.com/AndroidAudioMods/ViPERFX_RE" />
     </Preference>
 
+    <Preference
+        android:title="@string/credits_viper4shizuku"
+        android:summary="TheIceJi: Shizuku capture module, the design behind Capture with Shizuku; its pipe watchdog is adapted from it (GPL-3.0)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/Jirayu-ninl/ViPER4Shizuku" />
+    </Preference>
+
+    <Preference
+        android:title="@string/credits_voice_isolation"
+        android:summary="André Naumann (sk2andy): showed the shell-user loopback capture that Capture with Shizuku builds on (MIT, approach only)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/sk2andy/android-realtime-voice-isolation" />
+    </Preference>
+
     <PreferenceCategory
         android:key="@string/key_translators"
         app:title="@string/translators"

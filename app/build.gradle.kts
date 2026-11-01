@@ -172,8 +172,10 @@ android {
 
     buildFeatures {
         viewBinding = true
+        // The Shizuku capture helper talks to the app over a binder interface
+        // (src/main/aidl), so the AIDL compiler is needed.
+        aidl = true
         // Disable unused features
-        aidl = false
         renderScript = false
         shaders = false
     }
