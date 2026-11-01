@@ -9,7 +9,8 @@
 //       $J/Effects/pitchshift.c $J/Effects/rubberband.c
 //   ${CC}++ -O2 -std=c++17 -w -I third_party -I $J -c $J/Effects/signalsmith.cpp
 //   ${CC}++ -static-libstdc++ -Wl,--wrap=calloc -Wl,--wrap=free \
-//       -Wl,--wrap=SignalsmithCreate *.o -lm -ldl -o signalsmith
+//       -Wl,--wrap=SignalsmithCreate -Wl,--wrap=SignalsmithDestroy \
+//       *.o -lm -ldl -o signalsmith
 //   adb -s emulator-5554 push signalsmith /data/local/tmp/ && \
 //       adb -s emulator-5554 shell /data/local/tmp/signalsmith
 //
@@ -112,9 +113,32 @@ static int liveBlocks(void)
 /* ---------------- a way to make Signalsmith refuse to start -------------- */
 void *__real_SignalsmithCreate(float fs, int formant);
 static int g_failCreate = 0;
+// Every instance the engine creates is remembered until it is destroyed. The
+// guard bytes above only see calloc, and the library allocates with new, so
+// this is what shows an instance being leaked.
+void __real_SignalsmithDestroy(void *s);
+#define MAXSS 64
+static void *g_ss[MAXSS];
 void *__wrap_SignalsmithCreate(float fs, int formant)
 {
-	return g_failCreate ? 0 : __real_SignalsmithCreate(fs, formant);
+	void *s = g_failCreate ? 0 : __real_SignalsmithCreate(fs, formant);
+	if (s)
+		for (int i = 0; i < MAXSS; i++)
+			if (!g_ss[i]) { g_ss[i] = s; break; }
+	return s;
+}
+void __wrap_SignalsmithDestroy(void *s)
+{
+	for (int i = 0; s && i < MAXSS; i++)
+		if (g_ss[i] == s) { g_ss[i] = 0; break; }
+	__real_SignalsmithDestroy(s);
+}
+static int liveInstances(void)
+{
+	int n = 0;
+	for (int i = 0; i < MAXSS; i++)
+		if (g_ss[i]) n++;
+	return n;
 }
 
 /* ---------------- helpers ------------------------------------------------ */
@@ -732,7 +756,7 @@ static void testSwitching(void)
 	check("longest the audio thread could wait on the lock (ms)", worstLock, 0.0, 1.0);
 
 	// Switching the card on in Signalsmith mode: the dry signal plays until the
-	// delayed one has music in it, rather than 100ms of silence.
+	// delayed one has music in it, rather than 150ms of silence.
 	{
 		prepare(48000.0);
 		const double c[3] = { 220.0, 277.18, 329.63 };
@@ -745,6 +769,42 @@ static void testSwitching(void)
 		       ref, first);
 		check("switching the card on does not open a silent gap (dB dip)", ref - first, -100.0, 3.0);
 	}
+}
+
+// Smooth plays tone A, then stops being run for a while (another method took
+// over, or the slider sat at 0 and the stage was skipped) while the music
+// moves on to tone B, and then Smooth is chosen again. Returns how loud
+// shifted A is in the 150ms after that, against shifted B once settled: any A
+// at all is audio from before the break, left in the vocoder's buffers.
+static double staleLeak(int how)
+{
+	prepare(48000.0);
+	const int n = secs(3.0), change = secs(1.2);
+	const double fa = 440.0, fb = 700.0, r = pow(2.0, 5.0 / 12.0);
+	for (int i = 0; i < n; i++)
+		inL[i] = inR[i] = (float)(0.4 * sin(2.0 * M_PI * (i < change ? fa : fb) * (double)i / g_fs));
+	startCard(5.0f, 100.0f, PITCH_MODE_SMOOTH);
+	stream(secs(1.0));
+	if (how == 0) PitchShiftSetParam(&g_lib, 5.0f, 100.0f, PITCH_MODE_SIGNALSMITH);
+	else PitchShiftSetParam(&g_lib, 0.0f, 100.0f, PITCH_MODE_SMOOTH);
+	stream(secs(0.5));
+	PitchShiftSetParam(&g_lib, 5.0f, 100.0f, PITCH_MODE_SMOOTH);
+	const int at = (int)g_pos, len = secs(0.15);
+	stream(n - (int)g_pos);
+	for (int i = 0; i < len; i++) g_win[i] = 0.5 - 0.5 * cos(2.0 * M_PI * (i + 0.5) / len);
+	const double a = dtftMag(bufL, at, len, fa * r);
+	const double b = dtftMag(bufL, secs(2.5), len, fb * r);
+	PitchShiftDisable(&g_lib);
+	return 20.0 * log10((a > 1e-12 ? a : 1e-12) / b);
+}
+
+static void testStale(void)
+{
+	const double back = staleLeak(0), zero = staleLeak(1);
+	printf("      old audio in Smooth when it is chosen again: after another method %.1f dB,\n"
+	       "      after sitting at 0 semitones %.1f dB\n", back, zero);
+	check("Smooth chosen again starts clean, not with old audio (dB)", back, -400.0, -50.0);
+	check("and so does Smooth moved off 0 semitones (dB)", zero, -400.0, -50.0);
 }
 
 static void testDrag(void)
@@ -980,6 +1040,7 @@ static void testRobust(void)
 		}
 		check("300 on/off cycles: non-finite samples", (double)bad, 0, 0);
 		check("and nothing left allocated after the last one (blocks)", (double)liveBlocks(), 0, 0);
+		check("and no Signalsmith instance left behind", (double)liveInstances(), 0, 0);
 		check("and nothing overrun", (double)liveOverruns(), 0, 0);
 	}
 	{
@@ -1039,6 +1100,7 @@ int main(int argc, char **argv)
 	testLevel();
 	testLatency();
 	testSwitching();
+	testStale();
 	testDrag();
 	testCpu();
 	if (!quick) testRobust();
