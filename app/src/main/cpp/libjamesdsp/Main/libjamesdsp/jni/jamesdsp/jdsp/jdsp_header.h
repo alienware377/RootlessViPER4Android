@@ -408,6 +408,59 @@ typedef struct
 	int pos, hop, filled, fadingOut;
 	float wetGain;
 } SpectralShaper;
+// Binaural upmix (Effects/binauralUpmix.c): stereo spread over nine fixed
+// virtual speakers and rendered for headphones through a head related impulse
+// response set the app sends. Speaker order in that set, and in every array
+// below that is per speaker.
+enum BinauralSpeaker
+{
+	BIN_C = 0,		// 0 degrees
+	BIN_FL, BIN_FR,	// +30 / -30
+	BIN_WL, BIN_WR,	// +60 / -60, where Width moves hard panned sound
+	BIN_SL, BIN_SR,	// +110 / -110, rear ambience
+	BIN_TL, BIN_TR,	// +45 / -45 at 40 degrees up, height ambience
+	BIN_SPEAKERS
+};
+#define BINAURAL_FDN_LINES 8
+typedef struct
+{
+	// Settings as the controls set them, in percent.
+	float amountPct, widthPct, surroundPct, heightPct, roomPct;
+	// Worked out from the settings and the rate.
+	float fs, width, ambFront, ambSurround, ambHeight, amountTarget, roomTarget;
+	float covC, smoothC, xoverC, fdnLpC;
+	int Nw, Nf, R, K, fadeLen;
+	void (*fft)(float *, const float *);
+	// One allocation, sized for Nw, taken on switch-on.
+	void *mem;
+	float *in[2], *acc[2], *win, *sinTab, *bufL, *bufR;
+	float *pll, *prr, *plrRe, *plrIm, *gAmb, *pan, *tmp;
+	unsigned *bitRev;
+	float *fdnBuf;
+	int fdnLen[BINAURAL_FDN_LINES], fdnOff[BINAURAL_FDN_LINES], fdnPos[BINAURAL_FDN_LINES];
+	float fdnG[BINAURAL_FDN_LINES], fdnLp[BINAURAL_FDN_LINES];
+	float xo[4];
+	// The set as the app sent it: BIN_SPEAKERS pairs of taps floats each, left
+	// ear then right, at hrirFs. Kept while switched off so switching on needs
+	// nothing sent again; 18 KB at 48 kHz.
+	float *hrir;
+	int hrirTaps, hrirCOff;
+	float hrirFs;
+	// Filter spectra built from it for the current frame size and rate:
+	// [speaker][ear][bin][re, im]. Only used while specFs is the engine rate.
+	float *spec;
+	int specNf, specCOff;
+	float specFs;
+	// Smoothed per sample.
+	float amount, room;
+	// Ring position, samples since the last frame, switch on and off.
+	int pos, hop, filled, fadingOut;
+	float wetGain;
+#ifdef BINAURAL_STATS
+	// Harness only: energy each speaker was fed, and in the primary part.
+	double feedEnergy[BIN_SPEAKERS], primaryEnergy, ambienceEnergy;
+#endif
+} BinauralUpmix;
 // 1024 samples is 5.3ms at 48kHz and still 5.3ms of headroom at 192kHz, where
 // the longest lookahead any mode asks for is 768 samples.
 #define MAXR_BUFLEN 1024
@@ -1071,6 +1124,7 @@ enum JdspEffectId
 	JDSP_EFX_VINYL,
 	JDSP_EFX_BALANCE,
 	JDSP_EFX_SHAPER,
+	JDSP_EFX_BINAURAL,
 	JDSP_EFX_COUNT
 };
 typedef struct
@@ -1265,6 +1319,8 @@ typedef struct dspsys
 	Balance balance;
 	int shaperEnabled;
 	SpectralShaper shaper;
+	int binauralEnabled;
+	BinauralUpmix binaural;
 	Maximizer maximizer;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
@@ -1511,6 +1567,21 @@ extern void SpectralShaperDisable(JamesDSPLib *jdsp);
 extern void SpectralShaperRefresh(JamesDSPLib *jdsp);
 extern void SpectralShaperFree(JamesDSPLib *jdsp);
 extern int SpectralShaperLatency(JamesDSPLib *jdsp);
+// Binaural upmix. Refresh follows the rule above (lock already held); Free is
+// for engine teardown only. LoadHrir takes BIN_SPEAKERS pairs of taps floats
+// (left ear then right) at fs, with the centre pair's onset at cOff, copies
+// them and returns 0, or refuses the set and returns a negative number with
+// the loaded one kept. Latency is in samples, 0 while switched off.
+extern void BinauralUpmixSetParam(JamesDSPLib *jdsp, float amountPct, float widthPct,
+	float surroundPct, float heightPct, float roomPct);
+extern int BinauralUpmixLoadHrir(JamesDSPLib *jdsp, const float *hrir, int speakers,
+	int taps, float fs, int cOff);
+extern void BinauralUpmixProcess(JamesDSPLib *jdsp, size_t n);
+extern void BinauralUpmixEnable(JamesDSPLib *jdsp);
+extern void BinauralUpmixDisable(JamesDSPLib *jdsp);
+extern void BinauralUpmixRefresh(JamesDSPLib *jdsp);
+extern void BinauralUpmixFree(JamesDSPLib *jdsp);
+extern int BinauralUpmixLatency(JamesDSPLib *jdsp);
 extern void MultibandDistSetBands(JamesDSPLib *jdsp, const float *bands, int count);
 extern void MultibandDistSetParam(JamesDSPLib *jdsp,
 	int routing, int model,

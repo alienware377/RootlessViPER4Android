@@ -386,7 +386,12 @@ static const int jdspDefaultChain[] =
 	JDSP_EFX_LIVEPROG4, JDSP_EFX_CROSSFEED, JDSP_EFX_CURE,
 	// Width before the surround effects, so they act on the intended image.
 	JDSP_EFX_IMAGING,
-	JDSP_EFX_STEREOWIDE, JDSP_EFX_FIELDSURROUND, JDSP_EFX_HPSURROUND,
+	JDSP_EFX_STEREOWIDE,
+	// Binaural after the width has been set, so it spreads the intended image,
+	// and before the other surround effects and the reverbs, which then act on
+	// its result. It replaces what they do for headphones; the card says so.
+	JDSP_EFX_BINAURAL,
+	JDSP_EFX_FIELDSURROUND, JDSP_EFX_HPSURROUND,
 	JDSP_EFX_SPECTRUMEXT, JDSP_EFX_CLARITY, JDSP_EFX_AGC,
 	JDSP_EFX_SPEAKEROPT, JDSP_EFX_REVERB, JDSP_EFX_VREVERB, JDSP_EFX_ECHODELAY, JDSP_EFX_MULTIBANDDIST,
 	// Colour last, but still ahead of the limiter.
@@ -671,6 +676,13 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 		// Locked: a rate change can swap its buffers from the settings thread.
 		jdsp_lock(jdsp);
 		if (jdsp->shaperEnabled) SpectralShaperProcess(jdsp, n);
+		jdsp_unlock(jdsp);
+		break;
+	case JDSP_EFX_BINAURAL:
+		// Locked: a rate change or a new head set can swap its buffers from
+		// the settings thread.
+		jdsp_lock(jdsp);
+		if (jdsp->binauralEnabled) BinauralUpmixProcess(jdsp, n);
 		jdsp_unlock(jdsp);
 		break;
 	default:
@@ -1670,6 +1682,12 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	// at a medium speed, steady tones left alone.
 	SpectralShaperSetParam(jdsp, 6.0f, 60.0f, 2000.0f, 10000.0f, 50.0f,
 		SHAPER_FOCUS_BALANCED, 0, 0, MS_MODE_STEREO);
+	jdsp->binauralEnabled = 0;
+	memset(&jdsp->binaural, 0, sizeof(jdsp->binaural));
+	// Fully spatial, a little wider than the mix, ambience mostly to the sides
+	// and behind, some above, and a small room. Nothing is allocated until it
+	// is switched on.
+	BinauralUpmixSetParam(jdsp, 100.0f, 40.0f, 60.0f, 40.0f, 25.0f);
 	jdsp->vinylEnabled = 0;
 	// A record played a lot but looked after: quiet surface, steady crackle, the
 	// occasional pop, a little rumble underneath. Deliberately short on pops and
@@ -1834,6 +1852,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	VinylRefresh(jdsp);
 	BalanceRefresh(jdsp);
 	SpectralShaperRefresh(jdsp);
+	BinauralUpmixRefresh(jdsp);
 	PitchShiftRefresh(jdsp);
 	VReverbRefresh(jdsp);
 	// The stereo widening's band split and envelope times follow the rate too.
@@ -1878,6 +1897,7 @@ void JamesDSPFree(JamesDSPLib *jdsp)
 	JamesDSPReleaseEffectBuffers(jdsp);
 	jdsp_lock(jdsp);
 	SpectralShaperFree(jdsp);
+	BinauralUpmixFree(jdsp);
 	StereoEnhancementDestructor(jdsp);
 	CompressorDestructor(jdsp);
 	LiveProgDestructor(jdsp);
