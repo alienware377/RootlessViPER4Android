@@ -45,6 +45,7 @@ object V4aMode {
         Constants.PREF_TAPE to R.string.key_tape_enable,
         Constants.PREF_VINYL to R.string.key_vinyl_enable,
         Constants.PREF_BALANCE to R.string.key_balance_enable,
+        Constants.PREF_SHAPER to R.string.key_shaper_enable,
         Constants.PREF_GEQ to R.string.key_geq_enable,
         Constants.PREF_PEQ to R.string.key_peq_enable,
         Constants.PREF_LIVEPROG to R.string.key_liveprog_enable,
@@ -73,7 +74,7 @@ object V4aMode {
         // Vinyl and Balance were missed when their cards were added, which is
         // the exact failure the comment above warns about: V4A mode switched
         // their engines off and left both cards sitting on screen.
-        R.id.card_vinyl, R.id.card_balance,
+        R.id.card_vinyl, R.id.card_balance, R.id.card_shaper,
         R.id.card_geq,
         R.id.card_peq, R.id.card_liveprog, R.id.card_liveprog2,
         R.id.card_liveprog3, R.id.card_liveprog4, R.id.card_stereowide,
