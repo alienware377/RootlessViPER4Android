@@ -11,6 +11,7 @@ import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.broadcastPresetLoadEvent
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
+import me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import me.timschneeberger.rootlessjamesdsp.utils.storage.Tar
 import okio.buffer
@@ -120,6 +121,10 @@ class BackupManager(private val context: Context): KoinComponent {
                 targetFolder.deleteRecursively()
                 throw UnsupportedOperationException(context.getString(R.string.backup_restore_error_version_too_new))
             }
+
+            // Sources an earlier version kept in dsp_filelibrary would be
+            // overwritten by the backup's copy of that file; move them out first
+            LibrarySources.absorbLegacy(context)
 
             // Clean restore
             if(!dirty) {
