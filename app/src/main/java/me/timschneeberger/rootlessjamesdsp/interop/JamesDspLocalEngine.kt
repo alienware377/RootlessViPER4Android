@@ -199,8 +199,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         // at it here rather than once at startup means a library fetched a
         // moment ago is picked up without restarting anything, and one that was
         // never fetched costs nothing at all. If it is missing the engine falls
-        // back to the built-in smooth mode rather than going quiet.
-        if (mode >= RubberBandInstaller.FIRST_MODE && RubberBandInstaller.isInstalled(context))
+        // back to the built-in Signalsmith method rather than going quiet.
+        if (RubberBandInstaller.isRubberBandMode(mode) && RubberBandInstaller.isInstalled(context))
             JamesDspWrapper.setRubberBandPath(handle, RubberBandInstaller.path(context))
         return JamesDspWrapper.setPitchShift(handle, enable, semitones, mix, mode)
     }

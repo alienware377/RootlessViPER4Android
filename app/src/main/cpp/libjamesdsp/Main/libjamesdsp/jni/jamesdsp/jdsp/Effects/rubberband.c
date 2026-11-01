@@ -6,8 +6,9 @@
 // the only thing that knows how to talk to it: the library is opened by path at
 // runtime and every entry point is looked up by name. If it was never
 // downloaded, or the download was removed, or the file is for the wrong
-// architecture, nothing here is reachable and the card falls back to a built-in
-// mode. Nothing else in the engine has to know it might be missing.
+// architecture, nothing here is reachable and the card falls back to the
+// built-in Signalsmith method, with the same formant choice. Nothing else in
+// the engine has to know it might be missing.
 //
 // The library is never dlclose()d. Removing the download deletes the file so it
 // is gone from the next launch onwards, but a mapping the audio thread may be
@@ -172,22 +173,23 @@ int RubberBandPrepare(PitchShift *p, float fs, int formant)
 	return 1;
 }
 
-void RubberBandProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n)
+// in and out may be the same buffers: each sample is read before it is written.
+void RubberBandProcess(PitchShift *p, const float *const *in, float *const *out, int n)
 {
 	const int block = p->rbBlock;
 	const float step = p->fadeLen > 0.0f ? 1.0f / p->fadeLen : 1.0f;
 	int idx = p->rbFill;
 	float g = p->wetGain;
-	for (size_t i = 0; i < n; i++)
+	for (int i = 0; i < n; i++)
 	{
-		const float dryL = jdsp->tmpBuffer[0][i];
-		const float dryR = jdsp->tmpBuffer[1][i];
+		const float dryL = in[0][i];
+		const float dryR = in[1][i];
 		const float wetL = p->rbOut[0][idx];
 		const float wetR = p->rbOut[1][idx];
 		p->rbIn[0][idx] = dryL;
 		p->rbIn[1][idx] = dryR;
-		jdsp->tmpBuffer[0][i] = dryL + p->mix * g * (wetL - dryL);
-		jdsp->tmpBuffer[1][i] = dryR + p->mix * g * (wetR - dryR);
+		out[0][i] = dryL + p->mix * g * (wetL - dryL);
+		out[1][i] = dryR + p->mix * g * (wetR - dryR);
 		if (g < 1.0f) { g += step; if (g > 1.0f) g = 1.0f; }
 		if (++idx >= block)
 		{
