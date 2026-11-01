@@ -194,9 +194,12 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     RubberBandInstaller.remove(requireContext().applicationContext)
                     // A method that can no longer work must not be left
                     // selected: the engine would fall back silently and the
-                    // list would go on claiming Rubber Band was in use.
+                    // list would go on claiming Rubber Band was in use. Moved
+                    // to what the engine falls back to anyway, built-in
+                    // Signalsmith with the same voice choice.
                     val current = mode?.value?.toIntOrNull() ?: 0
-                    if (current >= RubberBandInstaller.FIRST_MODE) mode?.value = "1"
+                    if (RubberBandInstaller.isRubberBandMode(current))
+                        mode?.value = RubberBandInstaller.builtInFallback(current).toString()
                     refresh()
                     Toast.makeText(
                         requireContext(),
@@ -209,11 +212,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         }
 
         // Choosing a method that needs the add-on, without the add-on, would
-        // quietly play as Smooth. Saying so and leaving the list alone is
+        // quietly play as Signalsmith. Saying so and leaving the list alone is
         // kinder than letting it look like it worked.
         mode?.setOnPreferenceChangeListener { _, value ->
             val wanted = (value as? String)?.toIntOrNull() ?: 0
-            if (wanted < RubberBandInstaller.FIRST_MODE) return@setOnPreferenceChangeListener true
+            if (!RubberBandInstaller.isRubberBandMode(wanted)) return@setOnPreferenceChangeListener true
             if (RubberBandInstaller.isInstalled(requireContext())) return@setOnPreferenceChangeListener true
             Toast.makeText(requireContext(), R.string.pitchshift_rubberband_needed, Toast.LENGTH_LONG).show()
             false

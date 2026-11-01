@@ -26,11 +26,18 @@ object RubberBandInstaller {
     const val VERSION = "4.0.0"
 
     /**
-     * The first entry in the Method list that needs this download. Everything
-     * from here up is Rubber Band; below it are the two built-in methods, which
-     * always work.
+     * Whether a Method list entry needs this download: the two Rubber Band
+     * entries, 2 and 3. It used to be "2 and up", which stopped being true when
+     * the built-in Signalsmith entries arrived after them as 4 and 5, and would
+     * have refused those without the add-on.
      */
-    const val FIRST_MODE = 2
+    fun isRubberBandMode(mode: Int) = mode == 2 || mode == 3
+
+    /**
+     * What the engine plays when a Rubber Band entry cannot run: the built-in
+     * Signalsmith entry with the same voice choice.
+     */
+    fun builtInFallback(mode: Int) = if (mode == 3) 5 else 4
     private const val TAG = "rubberband-v$VERSION"
     private const val BASE =
         "https://github.com/alienware377/RootlessViPER4Android/releases/download/$TAG"
