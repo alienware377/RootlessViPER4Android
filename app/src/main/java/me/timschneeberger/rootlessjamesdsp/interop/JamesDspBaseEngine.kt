@@ -17,6 +17,7 @@ import me.timschneeberger.rootlessjamesdsp.model.ProcessorMessage
 import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.utils.BiquadUtils
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
+import me.timschneeberger.rootlessjamesdsp.utils.ChainOrder
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
@@ -199,6 +200,18 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val balBalance = cache.get(R.string.key_balance_balance, 0f)
             val balSwap = cache.get(R.string.key_balance_swap, false)
             val balMono = cache.get(R.string.key_balance_mono, 0f)
+
+            cache.select(Constants.PREF_SHAPER)
+            val shEnabled = cache.get(R.string.key_shaper_enable, false)
+            val shAmount = cache.get(R.string.key_shaper_amount, 6f)
+            val shSensitivity = cache.get(R.string.key_shaper_sensitivity, 60f)
+            val shLow = cache.get(R.string.key_shaper_low, 2000f)
+            val shHigh = cache.get(R.string.key_shaper_high, 10000f)
+            val shSpeed = cache.get(R.string.key_shaper_speed, 50f)
+            val shFocus = cache.get(R.string.key_shaper_focus, "1").toInt()
+            val shTones = cache.get(R.string.key_shaper_tones, false)
+            val shListen = cache.get(R.string.key_shaper_listen, false)
+            val shMs = cache.get(R.string.key_shaper_ms_mode, "0").toInt()
 
             cache.select(Constants.PREF_VINYL)
             val vnEnabled = cache.get(R.string.key_vinyl_enable, false)
@@ -461,6 +474,10 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     )
                     Constants.PREF_BALANCE -> setBalance(
                         balEnabled, balBalance, balSwap, balMono
+                    )
+                    Constants.PREF_SHAPER -> setSpectralShaper(
+                        shEnabled, shAmount, shSensitivity, shLow, shHigh, shSpeed,
+                        shFocus, shTones, shListen, shMs
                     )
                     Constants.PREF_VINYL -> setVinyl(
                         vnEnabled, vnSurface, vnCrackle, vnCrackleSize, vnPops,
@@ -882,6 +899,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
     abstract fun setTape(enable: Boolean, wow: Float, flutter: Float, saturation: Float, bias: Float, headBump: Float, mix: Float): Boolean
     abstract fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean
+    abstract fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean
     abstract fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean
     abstract fun setExciter(enable: Boolean, f1: Float, f2: Float, f3: Float, a1: Float, a2: Float, a3: Float, a4: Float, character: Int, drive: Float, mix: Float): Boolean
     abstract fun setLowEnd(enable: Boolean, subsonic: Float, weightHz: Float, weightDb: Float, mudHz: Float, mudDb: Float, mix: Float): Boolean
@@ -975,9 +993,12 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         val saved = context
             .getSharedPreferences(Constants.PREF_CHAIN_ORDER, Context.MODE_MULTI_PROCESS)
             .getString(Constants.KEY_CHAIN_ORDER, null)
+        // Completed first, so an effect newer than the saved list runs where it
+        // belongs rather than wherever the engine would append it.
         val order = saved
             ?.split(",")
             ?.mapNotNull { it.trim().toIntOrNull() }
+            ?.let { ChainOrder.complete(it) }
             ?.toIntArray()
         setChainOrder(if (order == null || order.isEmpty()) null else order)
     }

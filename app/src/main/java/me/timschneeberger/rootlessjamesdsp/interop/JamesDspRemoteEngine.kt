@@ -205,6 +205,12 @@ class JamesDspRemoteEngine(
     override fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean =
         sendForkEffect(PARAM_BALANCE, enable, floatArrayOf(balance, if (swap) 1f else 0f, mono))
 
+    override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
+        sendForkEffect(PARAM_SHAPER, enable, floatArrayOf(
+            amount, sensitivity, lowHz, highHz, speed, focus.toFloat(),
+            if (catchTones) 1f else 0f, if (listen) 1f else 0f, msMode.toFloat()
+        ))
+
     override fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean =
         sendForkEffect(PARAM_VINYL, enable, floatArrayOf(
             surface, crackle, crackleSize, pops, clicks, sizzle,
@@ -531,6 +537,7 @@ class JamesDspRemoteEngine(
         private const val PARAM_VINYL = PARAM_FORK_BASE + 20
         private const val PARAM_BALANCE = PARAM_FORK_BASE + 21
         private const val PARAM_SPECTRUM_EXT = PARAM_FORK_BASE + 22
+        private const val PARAM_SHAPER = PARAM_FORK_BASE + 23
         /** Enable flags live one hundred above their value id. */
         private const val PARAM_FORK_ENABLE_OFFSET = 100
 
