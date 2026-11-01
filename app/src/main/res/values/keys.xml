@@ -354,6 +354,16 @@
     <string name="key_shaper_tones" translatable="false">shaper_tones</string>
     <string name="key_shaper_listen" translatable="false">shaper_listen</string>
     <string name="key_shaper_ms_mode" translatable="false">shaper_ms_mode</string>
+    <string name="key_binaural_enable" translatable="false">binaural_enable</string>
+    <string name="key_binaural_amount" translatable="false">binaural_amount</string>
+    <string name="key_binaural_width" translatable="false">binaural_width</string>
+    <string name="key_binaural_surround" translatable="false">binaural_surround</string>
+    <string name="key_binaural_height" translatable="false">binaural_height</string>
+    <string name="key_binaural_room" translatable="false">binaural_room</string>
+    <string name="key_binaural_source" translatable="false">binaural_source</string>
+    <string name="key_binaural_file" translatable="false">binaural_file</string>
+    <string name="key_binaural_even_out" translatable="false">binaural_even_out</string>
+    <string name="key_binaural_speaker_off" translatable="false">binaural_speaker_off</string>
     <string name="key_exciter_enable" translatable="false">exciter_enable</string>
     <string name="key_exciter_freq1" translatable="false">exciter_freq1</string>
     <string name="key_exciter_freq2" translatable="false">exciter_freq2</string>

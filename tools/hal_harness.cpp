@@ -60,12 +60,9 @@ extern "C" void __wrap_free(void *p) { delp(p); __real_free(p); }
 #include "../app/src/main/cpp/hal/JamesDspHalEffect.cpp"
 #include "hal_vdc_blob.h"
 
-// pitch shifting is not under test; keep the link free of Rubber Band
-extern "C" {
-int RubberBandPrepare(PitchShift *p, float fs, int formant) { return 0; }
-void RubberBandProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n) { }
-void RubberBandRelease(PitchShift *p) { }
-}
+// Rubber Band is no longer linked into the engine: Effects/rubberband.c loads
+// it at run time, so the engine objects link as they are and the stubs that
+// used to stand in for it here (with an older signature) are gone.
 
 static int failures = 0;
 static void check(const char *what, bool ok, const char *detail = "")
@@ -343,6 +340,73 @@ int main()
 		check("26022 / 26122 switch spectrum extension on", C()->dsp.spectrumExtEnabled == 1, d);
 		setShort(26122, 0);
 		check("26122 switches it off again", C()->dsp.spectrumExtEnabled == 0, "");
+		EffectRelease(h);
+	}
+
+	// ---- 11: the binaural upmix's head set ----------------------------------
+	// The sequence JamesDspRemoteEngine.setBinauralInternal sends: geometry on
+	// 9997, 4096-float parts on 12002, commit 10011, hash 25004, then the
+	// values on 26024 and the switch on 26124. None of these ids may fall
+	// through to the default arm, which would accept them and do nothing.
+	printf("\n[11] binaural: head set payload, hash and switch\n");
+	{
+		const int taps = 256, total = BIN_SPEAKERS * 2 * taps, parts = (total + 4095) / 4096;
+		std::vector<float> set(parts * 4096, 0.0f);
+		for (int i = 0; i < BIN_SPEAKERS * 2; i++) set[i * taps + 20] = 0.5f;
+		auto sendSet = [&](const std::vector<float> &v, int sendParts, int32_t hash) {
+			int32_t info[6] = { total, BIN_SPEAKERS, taps, 48000, 20, parts };
+			setParamRaw(9997, info, sizeof info);
+			for (int i = 0; i < sendParts; i++) setParamRaw(12002, v.data() + i * 4096, 4096 * 4);
+			setShort(10011, 1);
+			setInt(25004, hash);
+		};
+
+		create(); config(48000);
+		setFloats(26024, { 80.0f, 40.0f, 60.0f, 40.0f, 25.0f });
+		setShort(26124, 1);
+		snprintf(d, sizeof d, "binauralEnabled %d", C()->dsp.binauralEnabled);
+		check("switch refused before any head set has arrived", C()->dsp.binauralEnabled == 0, d);
+
+		sendSet(set, parts - 1, 11);
+		snprintf(d, sizeof d, "haveHrir %d hash %d", (int)C()->haveHrir, getInt(30004));
+		check("a set missing a part is discarded and its hash not kept",
+			  !C()->haveHrir && getInt(30004) != 11 && C()->dsp.binaural.hrir == nullptr, d);
+
+		std::vector<float> bad = set;
+		bad[100] = NAN;
+		sendSet(bad, parts, 12);
+		snprintf(d, sizeof d, "haveHrir %d hash %d", (int)C()->haveHrir, getInt(30004));
+		check("a set with NaN in it is refused and its hash not kept",
+			  !C()->haveHrir && getInt(30004) != 12 && C()->dsp.binaural.hrir == nullptr, d);
+
+		int32_t badInfo[6] = { total, 7, taps, 48000, 20, parts };
+		setParamRaw(9997, badInfo, sizeof badInfo);
+		check("geometry with the wrong speaker count is refused", C()->hrirBuf == nullptr, "");
+
+		sendSet(set, parts, 13);
+		snprintf(d, sizeof d, "haveHrir %d hash %d taps %d", (int)C()->haveHrir, getInt(30004),
+				 C()->dsp.binaural.hrirTaps);
+		check("a whole set loads and its hash reads back on 30004",
+			  C()->haveHrir && getInt(30004) == 13 && C()->dsp.binaural.hrirTaps == taps &&
+			  C()->dsp.binaural.hrirCOff == 20, d);
+		check("26024 reached the engine", C()->dsp.binaural.amountPct == 80.0f, "");
+		setShort(26124, 1);
+		snprintf(d, sizeof d, "binauralEnabled %d latency %d", C()->dsp.binauralEnabled,
+				 BinauralUpmixLatency(&C()->dsp));
+		check("26124 switches it on once a set is there",
+			  C()->dsp.binauralEnabled == 1 && BinauralUpmixLatency(&C()->dsp) == 1023 + 20, d);
+
+		// A refused set after a good one: the good one keeps playing, but the
+		// refused set's hash must not be kept or the app never resends.
+		sendSet(bad, parts, 14);
+		snprintf(d, sizeof d, "haveHrir %d hash %d", (int)C()->haveHrir, getInt(30004));
+		check("a refused set after a good one leaves it playing, hash not kept",
+			  C()->haveHrir && C()->dsp.binauralEnabled == 1 && getInt(30004) != 14, d);
+
+		// The convolver's slot is a different one: no IR here, so not kept.
+		setInt(25003, 77);
+		check("convolver hash slot still separate", getInt(30003) != 77 && getInt(30004) != 77, "");
+		setShort(26124, 0);
 		EffectRelease(h);
 	}
 

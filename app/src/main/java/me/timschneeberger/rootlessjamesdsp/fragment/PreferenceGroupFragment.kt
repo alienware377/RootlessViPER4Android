@@ -27,6 +27,7 @@ import me.timschneeberger.rootlessjamesdsp.activity.GraphicEqualizerActivity
 import me.timschneeberger.rootlessjamesdsp.activity.LiveprogEditorActivity
 import me.timschneeberger.rootlessjamesdsp.activity.ParametricEqualizerActivity
 import me.timschneeberger.rootlessjamesdsp.activity.EchoPanelActivity
+import me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSets
 import me.timschneeberger.rootlessjamesdsp.activity.MultibandDistActivity
 import me.timschneeberger.rootlessjamesdsp.activity.LiveprogParamsActivity
 import me.timschneeberger.rootlessjamesdsp.adapter.RoundedRipplePreferenceGroupAdapter
@@ -57,11 +58,13 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     private var recyclerView: RecyclerView? = null
     private var reportedProcessingSampleRate: Int? = null
     private var convolverStatusUpdater: (() -> Unit)? = null
+    private var binauralStatusUpdater: (() -> Unit)? = null
 
     private val listener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
             requireContext().sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
             convolverStatusUpdater?.invoke()
+            binauralStatusUpdater?.invoke()
         }
 
     private val listenerApp =
@@ -86,6 +89,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     if (arguments?.getInt(BUNDLE_XML_RES) == R.xml.dsp_graphiceq_preferences)
                         (preferenceScreen.getPreference(0) as? SwitchPreferenceGroup)?.setValue(true)
                 }
+                Constants.ACTION_BINAURAL_SET_READY -> binauralStatusUpdater?.invoke()
                 Constants.ACTION_REPORT_SAMPLE_RATE -> {
                     reportedProcessingSampleRate = intent
                         .getFloatExtra(Constants.EXTRA_SAMPLE_RATE, 0f)
@@ -261,6 +265,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             addAction(Constants.ACTION_PRESET_LOADED)
             addAction(Constants.ACTION_REPORT_SAMPLE_RATE)
             addAction(Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON)
+            addAction(Constants.ACTION_BINAURAL_SET_READY)
         })
 
         // The ViPER4Android classic theme tints every effect icon purple.
@@ -334,6 +339,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 }
             }
             R.xml.dsp_convolver_preferences -> setupConvolverSampleRateFiles()
+            R.xml.dsp_binaural_preferences -> setupBinaural()
             R.xml.dsp_compander_preferences -> {
                 findPreference<MaterialSeekbarPreference>(getString(R.string.key_compander_granularity))?.valueLabelOverride =
                     fun(it: Float): String {
@@ -709,6 +715,51 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         updateSummary()
     }
 
+    /**
+     * The Binaural upmix card: the file picker only while a file is the
+     * source, and a line saying which head is in use, with its citation or
+     * licence, or why it could not be loaded.
+     */
+    private fun setupBinaural() {
+        val sp = preferenceManager.sharedPreferences ?: return
+        val status = findPreference<Preference>("binaural_set_status") ?: return
+        val file = findPreference<FileLibraryPreference>(getString(R.string.key_binaural_file))
+        val kSource = getString(R.string.key_binaural_source)
+        val kFile = getString(R.string.key_binaural_file)
+        val kEnable = getString(R.string.key_binaural_enable)
+        val kEven = getString(R.string.key_binaural_even_out)
+        var lastChoice: String? = null
+
+        fun update() {
+            val ctx = context ?: return
+            val source = sp.getString(kSource, BinauralSets.SOURCE_BUILTIN) ?: BinauralSets.SOURCE_BUILTIN
+            val path = sp.getString(kFile, "").orEmpty()
+            val enabled = sp.getBoolean(kEnable, false)
+            val evenOut = sp.getBoolean(kEven, true)
+            file?.isVisible = source == BinauralSets.SOURCE_FILE
+            // A new choice of file or source gets a fresh try even if an
+            // earlier one failed.
+            val choice = "$source|$path"
+            if (lastChoice != null && lastChoice != choice) BinauralSets.forgetFailures()
+            lastChoice = choice
+            val src = BinauralSets.source(ctx, source, path)
+            status.summary = when {
+                src == null -> getString(R.string.binaural_status_no_file)
+                BinauralSets.failure(src, evenOut) != null -> BinauralSets.failure(src, evenOut)
+                src.builtIn -> getString(R.string.binaural_status_builtin)
+                BinauralSets.isWorking(src, evenOut) -> getString(R.string.binaural_status_working)
+                else -> BinauralSets.cached(ctx, src, evenOut)?.let { set ->
+                    val title = listOf(set.database, set.title).filter { it.isNotBlank() }
+                        .joinToString(", ").ifBlank { getString(R.string.binaural_status_untitled) }
+                    if (set.license.isBlank()) getString(R.string.binaural_status_file_no_licence, title)
+                    else getString(R.string.binaural_status_file, title, set.license)
+                } ?: getString(if (enabled) R.string.binaural_status_working else R.string.binaural_status_off)
+            }
+        }
+        binauralStatusUpdater = ::update
+        update()
+    }
+
     override fun onCreateRecyclerView(
         inflater: LayoutInflater,
         parent: ViewGroup,
@@ -728,6 +779,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
 
     override fun onDestroy() {
         convolverStatusUpdater = null
+        binauralStatusUpdater = null
         super.onDestroy()
         requireContext().unregisterLocalReceiver(receiver)
         prefsApp.unregisterOnSharedPreferenceChangeListener(listener)
