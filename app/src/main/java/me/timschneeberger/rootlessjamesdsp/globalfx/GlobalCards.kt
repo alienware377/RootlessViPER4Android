@@ -44,6 +44,7 @@ object GlobalCards {
         Constants.PREF_MULTIBANDDIST to Support.NONE,
         Constants.PREF_DYNAMICEQ to Support.NONE,
         Constants.PREF_SHAPER to Support.NONE,
+        Constants.PREF_BINAURAL to Support.NONE,
         Constants.PREF_IMAGING to Support.NONE,
         Constants.PREF_TRANSIENT to Support.NONE,
         Constants.PREF_LOWEND to Support.NONE,

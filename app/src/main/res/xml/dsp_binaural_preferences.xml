@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_binaural_enable"
+        android:disableDependentsState="false"
+        android:title="@string/binaural_enable"
+        android:icon="@drawable/ic_twotone_headphones_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/binaural_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_binaural_amount"
+            android:title="@string/binaural_amount"
+            android:summary="@string/binaural_amount_summary"
+            android:defaultValue="100"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_binaural_width"
+            android:title="@string/binaural_width"
+            android:summary="@string/binaural_width_summary"
+            android:defaultValue="40"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_binaural_surround"
+            android:title="@string/binaural_surround"
+            android:summary="@string/binaural_surround_summary"
+            android:defaultValue="60"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_binaural_height"
+            android:title="@string/binaural_height"
+            android:summary="@string/binaural_height_summary"
+            android:defaultValue="40"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_binaural_room"
+            android:title="@string/binaural_room"
+            android:summary="@string/binaural_room_summary"
+            android:defaultValue="25"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+
+        <PreferenceCategory android:title="@string/binaural_head_header"
+            app:iconSpaceReserved="false">
+            <ListPreference
+                android:key="@string/key_binaural_source"
+                android:title="@string/binaural_source"
+                android:defaultValue="0"
+                android:entries="@array/binaural_sources"
+                android:entryValues="@array/binaural_sources_values"
+                app:useSimpleSummaryProvider="true"
+                app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+            <me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
+                android:key="@string/key_binaural_file"
+                android:title="@string/binaural_file"
+                android:defaultValue=""
+                android:dialogTitle="@string/binaural_file"
+                app:useSimpleSummaryProvider="false"
+                app:type="Sofa"
+                app:iconSpaceReserved="false"/>
+            <Preference
+                android:key="binaural_set_status"
+                android:title="@string/binaural_status_title"
+                android:summary="@string/binaural_status_off"
+                android:persistent="false"
+                android:selectable="false"
+                app:iconSpaceReserved="false"/>
+            <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+                android:key="@string/key_binaural_even_out"
+                android:title="@string/binaural_even_out"
+                android:summary="@string/binaural_even_out_summary"
+                android:defaultValue="true"
+                app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+            <Preference
+                android:key="binaural_more_sets"
+                android:title="@string/binaural_more_sets"
+                android:summary="@string/binaural_more_sets_summary"
+                android:persistent="false"
+                app:iconSpaceReserved="false">
+                <intent
+                    android:action="android.intent.action.VIEW"
+                    android:data="https://www.sofacoustics.org/data/database/" />
+            </Preference>
+        </PreferenceCategory>
+
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_binaural_speaker_off"
+            android:title="@string/binaural_speaker_off"
+            android:summary="@string/binaural_speaker_off_summary"
+            android:defaultValue="true"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>
