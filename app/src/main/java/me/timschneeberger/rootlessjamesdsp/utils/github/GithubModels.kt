@@ -63,8 +63,20 @@ data class TreeListing(
     val files: List<RemoteFile>,
     val folders: List<String>,
     val truncated: Boolean,
-    val emptyDropped: Int,
-)
+    /** Empty files left out, by lower-case extension, so each library counts only its own. */
+    val emptyByExt: Map<String, Int> = emptyMap(),
+) {
+    val emptyDropped get() = emptyByExt.values.sum()
+
+    /** Only the files (and empty-file counts) with one of [extensions]. */
+    fun only(extensions: Collection<String>): TreeListing {
+        val lower = extensions.map { it.lowercase() }
+        return copy(
+            files = files.filter { f -> lower.any { f.path.lowercase().endsWith(it) } },
+            emptyByExt = emptyByExt.filterKeys { it in lower },
+        )
+    }
+}
 
 /** A repository named on the app's own suggested sources list. */
 data class Suggestion(val repo: String, val branch: String?, val kinds: List<String>, val note: String?)

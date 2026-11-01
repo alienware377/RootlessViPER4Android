@@ -122,8 +122,7 @@ class GithubClient(
                 if (e.code == 422 && f.isNotEmpty()) throw GithubException.NoSuchFolder(f) else throw e
             }
         }
-        val lower = extensions.map { it.lowercase() }
-        return result.map { t -> t.copy(files = t.files.filter { file -> lower.any { file.path.lowercase().endsWith(it) } }) }
+        return result.map { it.only(extensions) }
     }
 
     /** The folders directly inside [folder]: one small request, cached for good. */

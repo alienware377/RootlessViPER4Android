@@ -129,7 +129,7 @@ object GithubJson {
         val files = mutableListOf<RemoteFile>()
         val folders = mutableListOf<String>()
         var truncated = false
-        var empty = 0
+        val empty = HashMap<String, Int>()
         val lowerExt = extensions.map { it.lowercase() }
         val pre = prefix.trim('/').let { if (it.isEmpty()) "" else "$it/" }
         try {
@@ -138,7 +138,15 @@ object GithubJson {
                 while (j.hasNext()) {
                     when (j.nextName()) {
                         "truncated" -> truncated = truncated || bool(j)
-                        "empty_dropped" -> empty += num(j).toInt()
+                        "empty_dropped" -> {
+                            j.beginObject()
+                            while (j.hasNext()) {
+                                val ext = j.nextName()
+                                val n = num(j).toInt()
+                                if (ext in lowerExt) empty[ext] = (empty[ext] ?: 0) + n
+                            }
+                            j.endObject()
+                        }
                         "tree" -> {
                             var count = 0
                             j.beginArray()
@@ -164,8 +172,8 @@ object GithubJson {
                                     "tree" -> if (keepNestedFolders || !path.contains('/')) folders += pre + path
                                     "blob" -> {
                                         val lower = path.lowercase()
-                                        if (lowerExt.none { lower.endsWith(it) }) continue
-                                        if (size == 0L) { empty++; continue }
+                                        val ext = lowerExt.firstOrNull { lower.endsWith(it) } ?: continue
+                                        if (size == 0L) { empty[ext] = (empty[ext] ?: 0) + 1; continue }
                                         if (sha == null || size < 0) continue
                                         files += RemoteFile(pre + path, size, sha)
                                     }
@@ -192,7 +200,9 @@ object GithubJson {
     fun writeTree(t: TreeListing): String = write { w ->
         w.beginObject()
         w.name("truncated").value(t.truncated)
-        w.name("empty_dropped").value(t.emptyDropped)
+        w.name("empty_dropped").beginObject()
+        t.emptyByExt.toSortedMap().forEach { (ext, n) -> w.name(ext).value(n) }
+        w.endObject()
         w.name("tree").beginArray()
         t.folders.forEach { f ->
             w.beginObject().name("path").value(f).name("type").value("tree").endObject()
