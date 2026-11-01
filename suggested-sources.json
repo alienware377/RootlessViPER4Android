@@ -1,0 +1,26 @@
+{
+  "about": "Repositories the app suggests in its GitHub search for DDC and convolver files. Only names are listed here; the files stay in their own repositories and are fetched from there when a user picks them. kinds: vdc = DDC library, irs = convolver library.",
+  "sources": [
+    {
+      "repo": "jadilson12/Viper4Android-presets",
+      "branch": "v4a+2.7",
+      "kinds": ["vdc", "irs"],
+      "note": "A large mixed collection of DDC profiles and convolver impulse responses."
+    },
+    {
+      "repo": "eedeidk/PulseAudio-IRSs",
+      "kinds": ["irs"],
+      "note": "Around 390 impulse responses in .irs format."
+    },
+    {
+      "repo": "Codejune/viper4android-eq",
+      "kinds": ["vdc", "irs"],
+      "note": "Older collection, no longer updated."
+    },
+    {
+      "repo": "ShanonPearce/ASH-IR-Dataset",
+      "kinds": ["irs"],
+      "note": "About 2000 room and speaker impulse responses as .wav. Large, so pick a few rather than all."
+    }
+  ]
+}

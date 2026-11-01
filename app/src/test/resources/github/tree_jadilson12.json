@@ -1,0 +1,289 @@
+{
+  "sha": "d3258669f1bb9e33ebed33b839a80a10d91c6236",
+  "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/d3258669f1bb9e33ebed33b839a80a10d91c6236",
+  "tree": [
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9e0722294c7ae49d8b09992afe90d0c065b3b571",
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/9e0722294c7ae49d8b09992afe90d0c065b3b571"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "66cef0cdb4cc27195070f8ee08357af15c2e4558",
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/66cef0cdb4cc27195070f8ee08357af15c2e4558"
+    },
+    {
+      "path": "DDC",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "64f9c06db1c71088acfefdf38233268c683a91e0",
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/64f9c06db1c71088acfefdf38233268c683a91e0"
+    },
+    {
+      "path": "Kernel",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "accc3fdc3ceefbadb134acdd116ebb3bcd78784b",
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/accc3fdc3ceefbadb134acdd116ebb3bcd78784b"
+    },
+    {
+      "path": "Kernel/48k",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "fe68fef51c96f8705e263cceb3ed274d652f6e92",
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/fe68fef51c96f8705e263cceb3ed274d652f6e92"
+    },
+    {
+      "path": "Preset",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5861b07d13d287199d4a406bc7bed153b995b7bc",
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/trees/5861b07d13d287199d4a406bc7bed153b995b7bc"
+    },
+    {
+      "path": "Kernel/Archy｛DTS｝入���式-前置模式 4声道.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "Kernel/TC M5000 Studio 1.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "Kernel/TC M5000 Studio 2.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "Kernel/TC M5000 TajMahal.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "Kernel/TC M5000 The Shop.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "DDC/SONY XBA-H3.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "42823391b9ee21cf46d66dc1ec72de26f4d1ea58",
+      "size": 912,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/42823391b9ee21cf46d66dc1ec72de26f4d1ea58"
+    },
+    {
+      "path": "DDC/Sony XBA-H3.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bfa7718481117d4d44fa036c7141d848c72b8b5e",
+      "size": 866,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/bfa7718481117d4d44fa036c7141d848c72b8b5e"
+    },
+    {
+      "path": "Kernel/48k/EAX Advanced HD 5.0 ((48k H-Edition)) 1.Amphitheater.irs",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "a49a0cfa72cc8a06212f61b47821f14bfb86d5a6",
+      "size": 285372,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/a49a0cfa72cc8a06212f61b47821f14bfb86d5a6"
+    },
+    {
+      "path": "Kernel/EAX Advanced HD 5.0 ((48k H-Edition)) 1.Amphitheater.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a49a0cfa72cc8a06212f61b47821f14bfb86d5a6",
+      "size": 285372,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/a49a0cfa72cc8a06212f61b47821f14bfb86d5a6"
+    },
+    {
+      "path": "Kernel/48k/EAX Advanced HD 5.0 ((48k H-Edition)) 2.Jazz Club.irs",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "97f578e44dd73b40a79b93a73c2afc31939ddd82",
+      "size": 285372,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/97f578e44dd73b40a79b93a73c2afc31939ddd82"
+    },
+    {
+      "path": "Kernel/EAX Advanced HD 5.0 ((48k H-Edition)) 2.Jazz Club.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "97f578e44dd73b40a79b93a73c2afc31939ddd82",
+      "size": 285372,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/97f578e44dd73b40a79b93a73c2afc31939ddd82"
+    },
+    {
+      "path": "Kernel/Archy｛DTS｝入耳式-宽广模式.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "517c6109fa43e722fd04b422ee4437774351c3f6",
+      "size": 37520,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/517c6109fa43e722fd04b422ee4437774351c3f6"
+    },
+    {
+      "path": "Kernel/Archy｛DTS｝入耳式-近场模式 4声道.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5365a5ea29b7de6534ef26326b5cd8061244303a",
+      "size": 64150,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/5365a5ea29b7de6534ef26326b5cd8061244303a"
+    },
+    {
+      "path": "Kernel/Archy｛DTS｝入耳式-近场模式.irs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "63e93e1c680f0931833b6b99707eadfb2b198b7c",
+      "size": 37520,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/63e93e1c680f0931833b6b99707eadfb2b198b7c"
+    },
+    {
+      "path": "DDC/AKG 271S.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c26fe6b2e7c98205f667013ea4051be02d251204",
+      "size": 742,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/c26fe6b2e7c98205f667013ea4051be02d251204"
+    },
+    {
+      "path": "DDC/AKG EO-IG955.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3eae923aa90e521369650a6dd6a9756eb8a0b7f9",
+      "size": 678,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/3eae923aa90e521369650a6dd6a9756eb8a0b7f9"
+    },
+    {
+      "path": "DDC/AKG K240.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "06dcf6db2b244ed3f2dbe32474d17a212f3a336b",
+      "size": 908,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/06dcf6db2b244ed3f2dbe32474d17a212f3a336b"
+    },
+    {
+      "path": "DDC/AKG K242HD.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4acef449380aebceb034419b04dbade5a97c223f",
+      "size": 909,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/4acef449380aebceb034419b04dbade5a97c223f"
+    },
+    {
+      "path": "DDC/AKG K267.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b70529822bae46194e3f11b3e8716c4926ff9873",
+      "size": 920,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/b70529822bae46194e3f11b3e8716c4926ff9873"
+    },
+    {
+      "path": "DDC/AKG K272HD.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "603a8cebca7039331e7acc584c02fb78c9554439",
+      "size": 914,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/603a8cebca7039331e7acc584c02fb78c9554439"
+    },
+    {
+      "path": "DDC/AKG K3003.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f51e061c6c481ca048dc7d91ddd671a6f432ec1",
+      "size": 916,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/4f51e061c6c481ca048dc7d91ddd671a6f432ec1"
+    },
+    {
+      "path": "DDC/AKG K309.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e5f1e02a9edb70af9ebc727801d52a66a81fd75",
+      "size": 912,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/0e5f1e02a9edb70af9ebc727801d52a66a81fd75"
+    },
+    {
+      "path": "DDC/AKG K315.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "894bc980d444ae56af9a1ad278eba1e47832ddb4",
+      "size": 912,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/894bc980d444ae56af9a1ad278eba1e47832ddb4"
+    },
+    {
+      "path": "DDC/AKG K319.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f6f6b856c0fb2b70e3d4e266030f83c137cd36f7",
+      "size": 911,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/f6f6b856c0fb2b70e3d4e266030f83c137cd36f7"
+    },
+    {
+      "path": "DDC/AKG K321.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "11a44610395616d59c44e2b4ae2d93dc5b7bb32e",
+      "size": 924,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/11a44610395616d59c44e2b4ae2d93dc5b7bb32e"
+    },
+    {
+      "path": "DDC/AKG K328.vdc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4649dce55d041076e5a85a14400bf3b48673a453",
+      "size": 929,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/4649dce55d041076e5a85a14400bf3b48673a453"
+    },
+    {
+      "path": ".github/workflows/blank.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1c604678fa9d66bf936be965c9bae260bb3809d6",
+      "size": 1143,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/1c604678fa9d66bf936be965c9bae260bb3809d6"
+    },
+    {
+      "path": "Kernel/BSDgeek_Jake",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "38edaf90582b581bf2717227e75749e81632c1ef",
+      "size": 134,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/38edaf90582b581bf2717227e75749e81632c1ef"
+    },
+    {
+      "path": "Kernel/Guide to cross-channel IRSes and V4A 2.5.0.5.url",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d92ce89b95db2fd2482ff17073134aa635957fd4",
+      "size": 159,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/d92ce89b95db2fd2482ff17073134aa635957fd4"
+    },
+    {
+      "path": "Kernel/InEarProHD_v1.02_jdsp_121218173021.zip",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "34799ca020df411567b22f6cc6d38feda1f5d8d9",
+      "size": 2246,
+      "url": "https://api.github.com/repos/jadilson12/Viper4Android-presets/git/blobs/34799ca020df411567b22f6cc6d38feda1f5d8d9"
+    }
+  ],
+  "truncated": false
+}
