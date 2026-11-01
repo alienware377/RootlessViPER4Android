@@ -1324,7 +1324,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="binaural_error_not_hrir">This file is not a head related impulse response set for two ears.</string>
     <string name="binaural_error_too_big">This file is too big (over 64 MB).</string>
     <string name="binaural_error_unusable">This set could not be used: its responses are out of range.</string>
-    <string name="binaural_error_helper">The helper that reads SOFA files did not answer. Try again.</string>
+    <string name="binaural_error_helper">The helper that reads SOFA files did not answer. Switch the card off and on again to retry.</string>
     <string name="binaural_even_out">Even out the set\'s tone</string>
     <string name="binaural_even_out_summary">Takes out the colour every direction of a measured set shares, such as the measuring speaker and the dummy head\'s ear canal. Leave it on unless a set says it is already evened out.</string>
     <string name="binaural_more_sets">Want a different head?</string>
