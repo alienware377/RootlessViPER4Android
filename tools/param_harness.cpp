@@ -119,12 +119,27 @@ int main()
 		check("26005 Cure sets its filter", g_lib.cure.lpCoef != 0.0f);
 	}
 	{
+		// Since Signalsmith came in, the pitch shifter builds nothing while its
+		// card is off: SetParam only stores the settings, and Enable works out
+		// the bypass and buffers when the card comes on. The old checks sent
+		// 26009 to a card that was off, so the bypass flag never moved and
+		// "re-enters bypass" failed for a reason that was not a bug. Switch it
+		// on first, as the app does, and check the off state on its own.
+		const float unity[2] = { 0.0f, 100.0f };
+		sendFloats(26009, unity, 2);
+		check("26009 with the card off builds nothing",
+		      g_lib.pitchShift.hist[0] == nullptr);
+		sendEnable(26109, true);
+		check("26109 at unity starts in bypass",
+		      g_lib.pitchShiftEnabled != 0 && g_lib.pitchShift.bypass != 0);
 		const float v[2] = { 5.0f, 100.0f };
 		sendFloats(26009, v, 2);
 		check("26009 pitch shift leaves bypass", g_lib.pitchShift.bypass == 0);
-		const float unity[2] = { 0.0f, 100.0f };
 		sendFloats(26009, unity, 2);
 		check("26009 at unity re-enters bypass", g_lib.pitchShift.bypass != 0);
+		sendEnable(26109, false);
+		check("26109 off frees the history", g_lib.pitchShiftEnabled == 0 &&
+		      g_lib.pitchShift.hist[0] == nullptr);
 	}
 	{
 		float v[25];
