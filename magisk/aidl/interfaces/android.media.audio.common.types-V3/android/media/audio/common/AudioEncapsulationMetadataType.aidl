@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package android.media.audio.common;
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
 
-/**
- * Enumeration of metadata types permitted for use by encapsulation mode audio
- * streams (see AudioEncapsulationMode). This type corresponds to
- * AudioTrack.ENCAPSULATION_METADATA_TYPE_* constants in the SDK.
- *
- * {@hide}
- */
-@Backing(type="int")
-@VintfStability
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
+
+package android.media.audio.common;
+/* @hide */
+@Backing(type="int") @VintfStability
 enum AudioEncapsulationMetadataType {
-    /** Default value. */
-    NONE = 0,
-    /**
-     * Encapsulation metadata type for framework tuner information.
-     */
-    FRAMEWORK_TUNER = 1,
-    /**
-     * Encapsulation metadata type for DVB AD descriptor.
-     *
-     * This metadata is formatted per ETSI TS 101 154 Table E.1: AD_descriptor.
-     */
-    DVB_AD_DESCRIPTOR = 2,
+  NONE = 0,
+  FRAMEWORK_TUNER = 1,
+  DVB_AD_DESCRIPTOR = 2,
 }

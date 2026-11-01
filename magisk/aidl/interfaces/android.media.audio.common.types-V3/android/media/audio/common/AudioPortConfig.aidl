@@ -13,45 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioChannelLayout;
-import android.media.audio.common.AudioFormatDescription;
-import android.media.audio.common.AudioGainConfig;
-import android.media.audio.common.AudioIoFlags;
-import android.media.audio.common.AudioPortExt;
-import android.media.audio.common.Int;
-
-/**
- * Audio port configuration structure specifies a particular configuration
- * of an audio port.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioPortConfig {
-    /**
-     * Port config unique ID. This field is set to a non-zero value when it is
-     * needed to select a previously reported port config and apply new
-     * configuration to it.
-     */
-    int id;
-    /**
-     * The ID of the AudioPort instance this configuration applies to.
-     */
-    int portId;
-    /** Sample rate in Hz. Can be left unspecified. */
-    @nullable Int sampleRate;
-    /** Channel mask. Can be left unspecified. */
-    @nullable AudioChannelLayout channelMask;
-    /** Format. Can be left unspecified. */
-    @nullable AudioFormatDescription format;
-    /** Gain to apply. Can be left unspecified. */
-    @nullable AudioGainConfig gain;
-    /** I/O feature flags. Can be left unspecified. */
-    @nullable AudioIoFlags flags;
-    /** Extra parameters depending on the port role. */
-    AudioPortExt ext;
+  int id;
+  int portId;
+  @nullable android.media.audio.common.Int sampleRate;
+  @nullable android.media.audio.common.AudioChannelLayout channelMask;
+  @nullable android.media.audio.common.AudioFormatDescription format;
+  @nullable android.media.audio.common.AudioGainConfig gain;
+  @nullable android.media.audio.common.AudioIoFlags flags;
+  android.media.audio.common.AudioPortExt ext;
 }

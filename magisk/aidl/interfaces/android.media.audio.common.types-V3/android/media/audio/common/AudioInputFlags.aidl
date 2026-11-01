@@ -13,65 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * Specifies options applicable to audio input. These can be functional
- * requests or performance requests. These flags apply both to audio ports and
- * audio streams. Flags specified for an audio stream are usually used to find
- * the best matching audio port for it.
- *
- * {@hide}
- */
-@VintfStability
-@Backing(type="int")
+/* @hide */
+@Backing(type="int") @VintfStability
 enum AudioInputFlags {
-    /**
-     * Input is optimized for decreasing audio latency.
-     */
-    FAST = 0,
-    /**
-     * Input is for capturing "hotword" audio commands.
-     */
-    HW_HOTWORD = 1,
-    /**
-     * Input stream should only have minimal signal processing applied.
-     */
-    RAW = 2,
-    /**
-     * Input stream needs to be synchronized with an output stream.
-     */
-    SYNC = 3,
-    /**
-     * Input uses MMAP no IRQ mode--direct memory mapping with the hardware.
-     */
-    MMAP_NOIRQ = 4,
-    /**
-     * Input is used for receiving VoIP audio.
-     */
-    VOIP_TX = 5,
-    /**
-     * Input stream contains AV synchronization markers embedded.
-     */
-    HW_AV_SYNC = 6,
-    /**
-     * Input contains an encoded audio stream.
-     */
-    DIRECT = 7,
-    /**
-     * Input is for capturing "ultrasound" audio commands.
-     */
-    ULTRASOUND = 8,
-    /**
-     * Input is for capturing audio directly from the hotword pipeline.
-     * Represents the same content as SoundTrigger streams associated with
-     * keyphrase models. Must not disrupt SoundTrigger recognition if set.
-     */
-    HOTWORD_TAP = 9,
-    /**
-     * Input is for capturing buffered audio from prior to stream open.
-     * Currently requires HOTWORD_TAP.
-     */
-    HW_LOOKBACK = 10,
+  FAST = 0,
+  HW_HOTWORD = 1,
+  RAW = 2,
+  SYNC = 3,
+  MMAP_NOIRQ = 4,
+  VOIP_TX = 5,
+  HW_AV_SYNC = 6,
+  DIRECT = 7,
+  ULTRASOUND = 8,
+  HOTWORD_TAP = 9,
+  HW_LOOKBACK = 10,
 }

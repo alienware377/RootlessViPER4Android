@@ -13,52 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioHalVolumeCurve;
-
-/**
- * AudioHalVolumeGroup is a software volume control concept that associates
- * volume on the UI (where volume index is incremented or decremented by steps
- * of 1) to a set of volume curves.
- *
- * {@hide}
- */
-@SuppressWarnings(value={"redundant-name"}) // for *AUDIO_SERVICE
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @SuppressWarnings(value={"redundant-name"}) @VintfStability
 parcelable AudioHalVolumeGroup {
-    /**
-     * Used to indicate that the system shall not use the HAL's definition of a
-     * volume group's minIndex or maxIndex, and will instead defer to audio
-     * service for these values
-     */
-    const int INDEX_DEFERRED_TO_AUDIO_SERVICE = -1;
-    /**
-     * Name is used to associate an AudioHalVolumeGroup with an AudioStreamType
-     * and some AudioAttributes by means of an AudioHalAttributesGroup
-     */
-    @utf8InCpp String name;
-    /**
-     * Defines the min volume index on the UI scale, which must be a
-     * non-negative integer <= maxIndex. Setting this to
-     * INDEX_DEFERRED_TO_AUDIO_SERVICE is only valid if the AudioHalVolumeGroup
-     * is associated to a valid AudioStreamType.
-     */
-    int minIndex;
-    /**
-     * Defines the max volume index on the UI scale, which must be
-     * a non-negative integer >= minIndex. Setting this to
-     * INDEX_DEFERRED_TO_AUDIO_SERVICE is only valid if the AudioHalVolumeGroup
-     * is associated to a valid AudioStreamType.
-     */
-    int maxIndex;
-    /**
-     * Defines the set of volume curves for this group, each of which
-     * corresponds to a different device category. That is, each
-     * AudioHalVolumeCurve in this list contains a field for a device category,
-     * and no two curves in this list can have the same deviceCategory.
-     */
-    AudioHalVolumeCurve[] volumeCurves;
+  @utf8InCpp String name;
+  int minIndex;
+  int maxIndex;
+  android.media.audio.common.AudioHalVolumeCurve[] volumeCurves;
+  const int INDEX_DEFERRED_TO_AUDIO_SERVICE = (-1) /* -1 */;
 }
