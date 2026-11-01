@@ -80,7 +80,7 @@ object MatchEqStore {
         ctx: Context, curve: FrequencyCurve, name: String, origin: String, rig: Rig?, estimated: Boolean,
     ) {
         prefs(ctx).edit()
-            .putString(key(ctx, R.string.key_matcheq_measurement), curve.serialize())
+            .putString(key(ctx, R.string.key_matcheq_measurement), curve.forStorage().serialize())
             .putString(key(ctx, R.string.key_matcheq_measurement_name), name)
             .putString(key(ctx, R.string.key_matcheq_measurement_origin), origin)
             .putString(key(ctx, R.string.key_matcheq_measurement_rig),
@@ -97,10 +97,10 @@ object MatchEqStore {
         when (id) {
             AutoEqTargets.FLAT_ID -> {}
             TARGET_FILE -> {
-                e.putString(key(ctx, R.string.key_matcheq_target_file_curve), curve?.serialize())
+                e.putString(key(ctx, R.string.key_matcheq_target_file_curve), curve?.forStorage()?.serialize())
                 e.putString(key(ctx, R.string.key_matcheq_target_name), fileName)
             }
-            else -> e.putString(key(ctx, R.string.key_matcheq_target_curve), curve?.serialize())
+            else -> e.putString(key(ctx, R.string.key_matcheq_target_curve), curve?.forStorage()?.serialize())
         }
         e.apply()
     }
