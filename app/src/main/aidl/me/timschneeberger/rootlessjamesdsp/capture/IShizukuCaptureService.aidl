@@ -10,7 +10,7 @@ import me.timschneeberger.rootlessjamesdsp.capture.IShizukuCaptureCallback;
  * See ShizukuCaptureUserService for what each call does.
  */
 interface IShizukuCaptureService {
-    /** Called by Shizuku itself when it removes the helper. Drops the route. */
+    /** Called by Shizuku itself when it removes the helper. Drops the route, then exits. */
     void destroy() = 16777114;
 
     /** The uid the helper runs as. Only 2000 (shell) is supported. */
