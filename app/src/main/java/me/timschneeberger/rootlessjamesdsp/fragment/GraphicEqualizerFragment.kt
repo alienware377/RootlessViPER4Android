@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.activity.GraphicEqualizerActivity
+import me.timschneeberger.rootlessjamesdsp.activity.MatchEqActivity
 import me.timschneeberger.rootlessjamesdsp.adapter.GraphicEqNodeAdapter
 import me.timschneeberger.rootlessjamesdsp.contract.AutoEqSelectorContract
 import me.timschneeberger.rootlessjamesdsp.databinding.FragmentGraphicEqBinding
@@ -48,6 +49,7 @@ class GraphicEqualizerFragment : Fragment() {
             binding.add.isEnabled = !value
             binding.reset.isEnabled = !value
             binding.autoeq.isEnabled = !value
+            binding.match.isEnabled = !value
             binding.editString.isEnabled = !value
         }
 
@@ -58,6 +60,31 @@ class GraphicEqualizerFragment : Fragment() {
                 save()
             }
         }
+
+    private val matchEqLauncher =
+        registerForActivityResult(MatchEqActivity.Contract()) { result ->
+            result?.let {
+                adapter.nodes.deserialize(it.graphicEq)
+                updateViewState()
+                save()
+                if (it.enable) switchOn()
+            }
+        }
+
+    /**
+     * Turns the graphic EQ on from here. The card's switch is told as well, so
+     * it shows the new state at once and does not write the old one back.
+     */
+    @SuppressLint("ApplySharedPref")
+    private fun switchOn() {
+        val ctx = requireContext()
+        ctx.getSharedPreferences(Constants.PREF_GEQ, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(getString(R.string.key_geq_enable), true)
+            .commit()
+        ctx.sendLocalBroadcast(Intent(Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON))
+        ctx.sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
+    }
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -163,6 +190,11 @@ class GraphicEqualizerFragment : Fragment() {
         binding.autoeq.setOnClickListener {
             editorDiscard()
             autoEqSelectorLauncher.launch(0)
+        }
+
+        binding.match.setOnClickListener {
+            editorDiscard()
+            matchEqLauncher.launch(Unit)
         }
 
         // Load node data

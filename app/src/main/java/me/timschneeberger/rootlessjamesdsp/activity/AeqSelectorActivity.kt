@@ -95,11 +95,16 @@ class AeqSelectorActivity : BaseActivity() {
             isLoading = true
             updateViewStates()
 
+            val picked = it
             autoEqClient.getProfile(
                 it.id!!,
-                onResponse = { profile, _  ->
+                onResponse = { profile, info  ->
                     val response = Intent()
                     response.putExtra(AutoEqSelectorContract.EXTRA_RESULT, profile)
+                    // Match EQ needs to know which headphone this was, not only
+                    // its ready-made curve, to find the measurement behind it.
+                    response.putExtra(AutoEqSelectorContract.EXTRA_NAME, info.name ?: picked.name)
+                    response.putExtra(AutoEqSelectorContract.EXTRA_SOURCE, info.source ?: picked.source)
                     setResult(RESULT_OK, response)
                     finish()
                 },
