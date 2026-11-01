@@ -28,6 +28,7 @@ object Notifications {
     const val ID_SERVICE_APPCOMPAT = 3
     const val CHANNEL_SERVICE_STARTUP = "service_startup"
     const val ID_SERVICE_STARTUP = 4
+    const val ID_SHIZUKU_CAPTURE_LOST = 5
 
     /**
      * Notification channel and ids used by the backup/restore system.

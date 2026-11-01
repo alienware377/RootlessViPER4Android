@@ -80,6 +80,10 @@ object Constants {
     const val ACTION_SERVICE_SOFT_REBOOT_CORE = BuildConfig.APPLICATION_ID + ".action.service.SOFT_REBOOT_CORE"
     const val ACTION_PROCESSOR_MESSAGE = BuildConfig.APPLICATION_ID + ".action.service.PROCESSOR_MESSAGE"
     const val ACTION_DISCARD_AUTHORIZATION = BuildConfig.APPLICATION_ID + ".action.service.DISCARD_AUTHORIZATION"
+    /** Shizuku capture failed to start or ended on its own. The service has stopped. */
+    const val ACTION_SHIZUKU_CAPTURE_FAILED = BuildConfig.APPLICATION_ID + ".action.service.SHIZUKU_CAPTURE_FAILED"
+    const val EXTRA_SHIZUKU_FAILURE_REASON = "reason"
+    const val EXTRA_SHIZUKU_FAILURE_DURING_STARTUP = "duringStartup"
     const val ACTION_REPORT_SAMPLE_RATE = BuildConfig.APPLICATION_ID + ".action.service.REPORT_SAMPLE_RATE"
     const val ACTION_BACKUP_RESTORED = BuildConfig.APPLICATION_ID + ".action.backup.RESTORED"
 

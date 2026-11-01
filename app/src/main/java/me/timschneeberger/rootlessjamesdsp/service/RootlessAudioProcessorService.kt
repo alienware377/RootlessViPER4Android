@@ -20,16 +20,23 @@ import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.os.Process
 import androidx.annotation.RequiresApi
 import androidx.core.content.getSystemService
 import androidx.core.math.MathUtils.clamp
 import androidx.lifecycle.Observer
 import androidx.lifecycle.asLiveData
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import me.timschneeberger.rootlessjamesdsp.BuildConfig
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.capture.PcmPipeReader
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapture
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCaptureClient
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCapturePolicy
+import me.timschneeberger.rootlessjamesdsp.capture.ShizukuCaptureUserService
 import me.timschneeberger.rootlessjamesdsp.flavor.CrashlyticsImpl
 import me.timschneeberger.rootlessjamesdsp.interop.JamesDspLocalEngine
 import me.timschneeberger.rootlessjamesdsp.interop.ProcessorMessageHandler
@@ -100,6 +107,23 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     }
     private var suspendOnIdle = false
 
+    // Capture backend. A run uses exactly one of the two: screen capture
+    // (MediaProjection) or Shizuku. Never both, that would be doubled audio.
+    private var shizukuCapture = false
+    private var shizukuClient: ShizukuCaptureClient? = null
+    /** Set once the Shizuku capture delivered its pipe; before that a failure counts as a failed start. */
+    private var shizukuCaptureStarted = false
+    /**
+     * Whether an activity is waiting to hear how the start went. Both callers
+     * of [startShizuku] wait; a start Android redelivers after this process
+     * was killed has nobody waiting, so a failure there gets a notification.
+     */
+    private var shizukuStartHasWaiter = false
+    /** The helper, the client and the capture thread can all report the same end. Act once. */
+    private var shizukuEndHandled = false
+    private var isForeground = false
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
+
     // Exclude restricted apps flag
     private var excludeRestrictedSessions = false
 
@@ -167,17 +191,48 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // No need to recreate in this stage
         recreateRecorderRequested = false
 
-        // Launch foreground service
-        startForeground(
-            Notifications.ID_SERVICE_STATUS,
-            ServiceNotificationHelper.createServiceNotification(this, arrayOf()),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-        )
+        // The foreground call moved to onStartCommand: its type depends on
+        // the capture method, which only the start intent says.
+    }
+
+    /**
+     * Android wants a foreground call for every startForegroundService,
+     * stop requests included. Screen capture runs as a media projection
+     * service; Shizuku capture has no projection, so it runs as media
+     * playback, which is what it is. If Android refuses the preferred type
+     * the other one is tried, so a start never crashes over the type.
+     */
+    private fun enterForeground(shizuku: Boolean) {
+        if (isForeground) return
+        val notification = ServiceNotificationHelper.createServiceNotification(this, arrayOf())
+        val playback = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+        val projection = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+        val first = if (shizuku) playback else projection
+        val second = if (shizuku) projection else playback
+        try {
+            startForeground(Notifications.ID_SERVICE_STATUS, notification, first)
+        }
+        catch (ex: Exception) {
+            Timber.w(ex, "Foreground type $first refused, trying $second")
+            try {
+                startForeground(Notifications.ID_SERVICE_STATUS, notification, second)
+            }
+            catch (ex2: Exception) {
+                Timber.e(ex2, "Could not enter the foreground")
+            }
+        }
+        isForeground = true
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
 
         Timber.d("onStartCommand")
+
+        val wantsShizuku = intent.action == ACTION_START &&
+                intent.getBooleanExtra(EXTRA_SHIZUKU_CAPTURE, false)
+        if (wantsShizuku && !isRunning && shizukuClient == null)
+            shizukuCaptureActive = true
+        enterForeground(wantsShizuku || shizukuCapture)
 
         // Handle intent action
         when (intent.action) {
@@ -194,13 +249,25 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             }
         }
 
-        if (isRunning) {
+        // Already running, or a Shizuku capture still connecting
+        if (isRunning || shizukuClient != null) {
             return START_NOT_STICKY
         }
 
         // Cancel outdated notifications
         notificationManager.cancel(Notifications.ID_SERVICE_SESSION_LOSS)
         notificationManager.cancel(Notifications.ID_SERVICE_APPCOMPAT)
+        notificationManager.cancel(Notifications.ID_SHIZUKU_CAPTURE_LOST)
+
+        if (wantsShizuku) {
+            shizukuStartHasWaiter = (flags and START_FLAG_REDELIVERY) == 0
+            startShizukuCapture()
+            return START_REDELIVER_INTENT
+        }
+
+        shizukuCapture = false
+        shizukuCaptureActive = false
+        sessionManager.sessionDatabase.attachMuteEffects = true
 
         // Setup media projection
         mediaProjectionStartIntent = intent.extras?.getParcelableAs(EXTRA_MEDIA_PROJECTION_DATA)
@@ -233,6 +300,12 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     override fun onDestroy() {
         isServiceDisposing = true
+        shizukuCaptureActive = false
+
+        // Shizuku capture: drop the route FIRST, for the same reason as the
+        // projection below. Until it is gone every app plays into it and is
+        // silent. This also ends the pipe, which wakes the capture thread.
+        releaseShizukuClient()
 
         // Release the projection FIRST. If anything below fails, the capture
         // must still be handed back or every app on the device stays silent
@@ -407,6 +480,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     // Session policy change listener
     private val onSessionPolicyChangeListener = object : SessionRecordingPolicyManager.OnSessionRecordingPolicyChangeListener {
         override fun onSessionRecordingPolicyChanged(sessionList: HashMap<String, SessionRecordingPolicyEntry>, isMinorUpdate: Boolean) {
+            if(shizukuCapture) {
+                // Apps that block screen capture are captured fine this way
+                return
+            }
             if(!this@RootlessAudioProcessorService.excludeRestrictedSessions) {
                 Timber.d("onRestrictedSessionChanged: blocked; excludeRestrictedSessions disabled")
                 return
@@ -432,7 +509,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 excludeRestrictedSessions = preferences.get<Boolean>(R.string.key_session_exclude_restricted)
                 Timber.d("Exclude restricted set to $excludeRestrictedSessions")
 
-                requestAudioRecordRecreation()
+                // Shizuku capture reaches those apps anyway, nothing to rebuild
+                if (!shizukuCapture)
+                    requestAudioRecordRecreation()
             }
             getString(R.string.key_blocklist_allowlist_mode) -> {
                 allowlistMode = preferences.get<Boolean>(R.string.key_blocklist_allowlist_mode)
@@ -455,11 +534,65 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         recreateRecorderRequested = true
     }
 
+    /**
+     * Where the capture thread gets its audio from. Screen capture reads an
+     * AudioRecord in this process; Shizuku capture reads the pipe from the
+     * helper. The processing loop around it is the same for both.
+     */
+    private interface CaptureSource {
+        /**
+         * The Shizuku helper takes the route down when the pipe stays full
+         * (that is how it notices a frozen app), so that source has to keep
+         * being read even while nothing plays.
+         */
+        val drainWhileIdle: Boolean
+        fun read(buffer: FloatArray)
+        fun read(buffer: ShortArray)
+        fun pause()
+        fun resume()
+        fun release()
+    }
+
+    private class PlaybackCaptureSource(private val recorder: AudioRecord) : CaptureSource {
+        override val drainWhileIdle = false
+        override fun read(buffer: FloatArray) {
+            recorder.read(buffer, 0, buffer.size, AudioRecord.READ_BLOCKING)
+        }
+        override fun read(buffer: ShortArray) {
+            recorder.read(buffer, 0, buffer.size, AudioRecord.READ_BLOCKING)
+        }
+        override fun pause() {
+            if(recorder.state == AudioRecord.STATE_INITIALIZED &&
+                recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING)
+                recorder.stop()
+        }
+        override fun resume() {
+            if(recorder.recordingState == AudioRecord.RECORDSTATE_STOPPED)
+                recorder.startRecording()
+        }
+        override fun release() {
+            if(recorder.state != AudioRecord.STATE_UNINITIALIZED)
+                recorder.stop()
+            recorder.release()
+        }
+    }
+
+    private class ShizukuPipeSource(pipe: ParcelFileDescriptor) : CaptureSource {
+        private val reader = PcmPipeReader(ParcelFileDescriptor.AutoCloseInputStream(pipe))
+        override val drainWhileIdle = true
+        override fun read(buffer: FloatArray) { reader.read(buffer) }
+        override fun read(buffer: ShortArray) { reader.read(buffer) }
+        override fun pause() {}
+        override fun resume() {}
+        override fun release() = reader.close()
+    }
+
     // Start recording thread
     @SuppressLint("BinaryOperationInTimber")
     private fun startRecording() {
-        // Sanity check
-        if (!hasRecordPermission()) {
+        // Sanity check. Shizuku capture records in the helper, as the shell
+        // user, so it does not need this app's own record permission.
+        if (!shizukuCapture && !hasRecordPermission()) {
             Timber.e("Record audio permission missing. Can't record")
             stopSelf()
             return
@@ -482,19 +615,27 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         Timber.i("Sample rate: $sampleRate; Encoding: ${encoding.name}; " +
                 "Buffer size: $bufferSize; Buffer size (bytes): $bufferSizeBytes ; " +
-                "HAL buffer size (bytes): ${determineBufferSize()}")
+                "HAL buffer size (bytes): ${determineBufferSize()}; " +
+                "Capture: ${if (shizukuCapture) "Shizuku" else "screen capture"}")
 
-        // Create recorder and track
-        var recorder: AudioRecord
+        // Create recorder and track. The Shizuku source is opened on the
+        // capture thread instead: it is a binder call into the helper and
+        // has no business on the main thread.
+        var initialSource: CaptureSource? = null
         val track: AudioTrack
         try {
-            recorder = buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes)
+            if (!shizukuCapture)
+                initialSource = PlaybackCaptureSource(buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes))
             track = buildAudioTrack(encodingFormat, sampleRate, bufferSizeBytes)
         }
         catch(ex: Exception) {
             Timber.e("Failed to create initial audio record/track")
             Timber.e(ex)
-            stopSelf()
+            try { initialSource?.release() } catch (_: Exception) {}
+            if (shizukuCapture)
+                onShizukuCaptureEnded(ex.message ?: ex.javaClass.simpleName)
+            else
+                stopSelf()
             return
         }
 
@@ -505,7 +646,26 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         // TODO Move all audio-related code to C++
         recorderThread = Thread {
+            var source = initialSource
             try {
+                if (source == null) {
+                    source = try {
+                        openShizukuSource(encodingFormat, sampleRate, bufferSize)
+                    }
+                    catch (ex: Exception) {
+                        Timber.e(ex, "Shizuku capture could not start")
+                        val reason = ex.message ?: ex.javaClass.simpleName
+                        mainHandler.post { onShizukuCaptureEnded(reason) }
+                        return@Thread
+                    }
+                    mainHandler.post {
+                        if (!isServiceDisposing && shizukuCapture) {
+                            shizukuCaptureStarted = true
+                            sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STARTED))
+                        }
+                    }
+                }
+
                 // Rebuilding the processing pipeline must not overwrite the current
                 // session-aware notification with a false "idle" state.
                 ServiceNotificationHelper.pushServiceNotification(
@@ -531,32 +691,50 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         Timber.d("Recreating recorder without stopping thread...")
 
                         // Suspend track, release recorder
-                        recorder.stop()
                         track.stop()
-                        recorder.release()
-
-
-                        if (mediaProjection == null) {
-                            Timber.e("Media projection handle is null, stopping service")
-                            stopSelf()
-                            return@Thread
+                        if (shizukuCapture) {
+                            // The helper drops the old route and registers
+                            // the new one in a single call, so the gap is short
+                            val old = source!!
+                            source = null
+                            try { old.release() } catch (_: Exception) {}
+                            source = openShizukuSource(encodingFormat, sampleRate, bufferSize)
                         }
+                        else {
+                            source!!.release()
+                            source = null
 
-                        // Recreate recorder with new AudioPlaybackRecordingConfiguration
-                        recorder = buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes)
+                            if (mediaProjection == null) {
+                                Timber.e("Media projection handle is null, stopping service")
+                                stopSelf()
+                                return@Thread
+                            }
+
+                            // Recreate recorder with new AudioPlaybackRecordingConfiguration
+                            source = PlaybackCaptureSource(buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes))
+                        }
                         Timber.d("Recorder recreated")
                     }
+                    val src = source!!
 
                     // Suspend core while idle
                     if(isProcessorIdle && suspendOnIdle)
                     {
-                        if(recorder.state == AudioRecord.STATE_INITIALIZED &&
-                            recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING)
-                            recorder.stop()
                         if(track.state == AudioTrack.STATE_INITIALIZED &&
                             track.playState != AudioTrack.PLAYSTATE_STOPPED)
                             track.stop()
 
+                        if (src.drainWhileIdle) {
+                            // Read and drop: no effects, no output, but the
+                            // helper sees the app is alive. The submix hands
+                            // out silence at its normal pace while nothing
+                            // plays, so this does not spin.
+                            if(encoding == AudioEncoding.PcmShort) src.read(shortBuffer)
+                            else src.read(floatBuffer)
+                            continue
+                        }
+
+                        src.pause()
                         try {
                             Thread.sleep(50)
                         }
@@ -567,9 +745,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                     }
 
                     // Resume recorder if suspended
-                    if(recorder.recordingState == AudioRecord.RECORDSTATE_STOPPED) {
-                        recorder.startRecording()
-                    }
+                    src.resume()
                     // Resume track if suspended
                     if(track.playState != AudioTrack.PLAYSTATE_PLAYING) {
                         track.play()
@@ -577,7 +753,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
                     // Choose encoding and process data
                     if(encoding == AudioEncoding.PcmShort) {
-                        recorder.read(shortBuffer, 0, shortBuffer.size, AudioRecord.READ_BLOCKING)
+                        src.read(shortBuffer)
                         var silent = suspendOnIdle
                         if (silent) {
                             for (v in shortBuffer) if (v.toInt() != 0) { silent = false; break }
@@ -591,7 +767,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         }
                     }
                     else {
-                        recorder.read(floatBuffer, 0, floatBuffer.size, AudioRecord.READ_BLOCKING)
+                        src.read(floatBuffer)
                         var silent = suspendOnIdle
                         if (silent) {
                             for (v in floatBuffer) if (v > 1e-7f || v < -1e-7f) { silent = false; break }
@@ -607,21 +783,25 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 }
             } catch (e: IOException) {
                 Timber.w(e)
-                // ignore
+                // A closed pipe while nobody asked us to stop means the helper
+                // or Shizuku went away. Screen capture ignores this as before.
+                if (shizukuCapture && !isProcessorDisposing && !isServiceDisposing)
+                    mainHandler.post { onShizukuCaptureEnded(getString(R.string.capture_shizuku_reason_pipe_closed)) }
             } catch (e: Exception) {
                 Timber.e("Exception in recorderThread raised")
                 Timber.e(e)
-                stopSelf()
+                if (shizukuCapture) {
+                    val reason = e.message ?: e.javaClass.simpleName
+                    mainHandler.post { onShizukuCaptureEnded(reason) }
+                }
+                else
+                    stopSelf()
             } finally {
                 // Clean up recorder and track
-                if(recorder.state != AudioRecord.STATE_UNINITIALIZED) {
-                    recorder.stop()
-                }
+                try { source?.release() } catch (e: Exception) { Timber.w(e) }
                 if(track.state != AudioTrack.STATE_UNINITIALIZED) {
                     track.stop()
                 }
-
-                recorder.release()
                 track.release()
             }
         }
@@ -632,6 +812,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     fun stopRecording() {
         if (recorderThread != null) {
             isProcessorDisposing = true
+            // The Shizuku source blocks in a pipe read, which an interrupt does
+            // not wake. Stopping the capture closes the pipe from the other end.
+            if (shizukuCapture)
+                shizukuClient?.stopCapture()
             recorderThread!!.interrupt()
             recorderThread!!.join(500)
             recorderThread = null
@@ -649,6 +833,114 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         isProcessorDisposing = false
         recreateRecorderRequested = false
         startRecording()
+    }
+
+    /**
+     * Starts the Shizuku capture: bring up the helper, then the capture
+     * thread, which asks the helper for the audio. Every way this can fail
+     * ends in [onShizukuCaptureEnded].
+     */
+    private fun startShizukuCapture() {
+        shizukuCapture = true
+        shizukuCaptureActive = true
+        shizukuCaptureStarted = false
+        shizukuEndHandled = false
+        // The audio is moved into the route, not copied: no mute effects
+        sessionManager.sessionDatabase.attachMuteEffects = false
+
+        if (Build.VERSION.SDK_INT < ShizukuCapturePolicy.MIN_SDK) {
+            onShizukuCaptureEnded(ShizukuCapture.describe(this, ShizukuCapturePolicy.State.AndroidTooOld))
+            return
+        }
+
+        val client = ShizukuCaptureClient(this) { reason ->
+            mainHandler.post { onShizukuCaptureEnded(reason) }
+        }
+        shizukuClient = client
+
+        // After a restart of this process (redelivered start) Shizuku may not
+        // have handed over its binder yet
+        ShizukuCapture.awaitBinder(SHIZUKU_BINDER_WAIT_MS) {
+            if (isServiceDisposing || shizukuClient !== client) return@awaitBinder
+            client.connect(SHIZUKU_CONNECT_TIMEOUT_MS) { error ->
+                if (isServiceDisposing || shizukuClient !== client) return@connect
+                if (error != null)
+                    onShizukuCaptureEnded(error.message ?: error.javaClass.simpleName)
+                else
+                    startRecording()
+            }
+        }
+    }
+
+    /** Runs on the capture thread. Throws with a readable message on failure. */
+    @RequiresApi(ShizukuCapturePolicy.MIN_SDK)
+    private fun openShizukuSource(encodingFormat: Int, sampleRate: Int, bufferSize: Int): CaptureSource {
+        val client = shizukuClient ?: throw IllegalStateException("Shizuku capture is not connected")
+        val listed = blockedApps.value?.map { it.uid }.orEmpty()
+        val uids = ShizukuCapturePolicy.mixUids(allowlistMode, listed, Process.myUid())
+
+        // Same bookkeeping as the screen capture path, for the notification
+        // and idle detection. Apps that block screen capture are not left
+        // out here: this method reaches them.
+        if (uids.match.isNotEmpty()) {
+            sessionManager.sessionDatabase.setAllowedUids(uids.match.toTypedArray())
+            sessionManager.sessionDatabase.setExcludedUids(arrayOf())
+        }
+        else {
+            sessionManager.sessionDatabase.setAllowedUids(null)
+            sessionManager.sessionDatabase.setExcludedUids(uids.exclude.toTypedArray())
+        }
+        sessionManager.pollOnce(false)
+        Timber.d("openShizukuSource: $uids")
+
+        val request = ShizukuCaptureUserService.Request(
+            sampleRate = sampleRate,
+            encoding = encodingFormat,
+            // About half a processing block per pipe write keeps the pipe busy
+            // without waking the helper too often
+            readFrames = (bufferSize / 4).coerceIn(256, 4096),
+            stallTimeoutMs = SHIZUKU_STALL_TIMEOUT_MS,
+            usages = ShizukuCaptureUserService.Request.DEFAULT_USAGES,
+        )
+        return ShizukuPipeSource(client.start(request, uids))
+    }
+
+    /** Drops the route and removes the helper. Safe to call more than once. */
+    private fun releaseShizukuClient() {
+        val client = shizukuClient ?: return
+        shizukuClient = null
+        try { client.release() }
+        catch (ex: Exception) { Timber.e(ex, "Failed to release the Shizuku capture") }
+    }
+
+    /**
+     * The Shizuku capture failed to start or ended without being asked to.
+     * Main thread only. The route is dropped first so audio goes back to
+     * the speaker, then the service stops.
+     *
+     * Whoever started us (the launcher activity, the main screen) hears about
+     * it through [Constants.ACTION_SHIZUKU_CAPTURE_FAILED] and switches to
+     * screen capture if that is allowed. If nobody is listening, or it was
+     * already running, a notification offers to turn processing back on.
+     */
+    private fun onShizukuCaptureEnded(reason: String) {
+        if (isServiceDisposing || !shizukuCapture || shizukuEndHandled) return
+        shizukuEndHandled = true
+        val duringStartup = !shizukuCaptureStarted
+        Timber.w("Shizuku capture ended (during startup: $duringStartup): $reason")
+
+        isProcessorDisposing = true
+        releaseShizukuClient()
+        stopSelf()
+
+        val heard = LocalBroadcastManager.getInstance(this).sendBroadcast(
+            Intent(Constants.ACTION_SHIZUKU_CAPTURE_FAILED)
+                .putExtra(Constants.EXTRA_SHIZUKU_FAILURE_REASON, reason)
+                .putExtra(Constants.EXTRA_SHIZUKU_FAILURE_DURING_STARTUP, duringStartup)
+        )
+        val action = ShizukuCapturePolicy.lossAction(duringStartup, ShizukuCapture.fallbackAllowed())
+        if (action == ShizukuCapturePolicy.LossAction.StopAndNotify || !heard || !shizukuStartHasWaiter)
+            ServiceNotificationHelper.pushShizukuCaptureLostNotification(this, reason)
     }
 
     private fun buildAudioTrack(encoding: Int, sampleRate: Int, bufferSizeBytes: Int): AudioTrack {
@@ -795,10 +1087,34 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         const val EXTRA_MEDIA_PROJECTION_DATA = "mediaProjectionData"
         const val EXTRA_APP_UID = "uid"
         const val EXTRA_APP_COMPAT_INTERNAL_CALL = "appCompatInternalCall"
+        /** Start with the Shizuku capture method instead of screen capture. */
+        const val EXTRA_SHIZUKU_CAPTURE = "shizukuCapture"
+
+        private const val SHIZUKU_BINDER_WAIT_MS = 2000L
+        private const val SHIZUKU_CONNECT_TIMEOUT_MS = 8000L
+        /** How long the app may leave the pipe full before the helper drops the route. */
+        private const val SHIZUKU_STALL_TIMEOUT_MS = 1500L
+
+        /** True while this service runs (or is starting) a Shizuku capture. For the notification. */
+        @Volatile
+        var shizukuCaptureActive = false
+            private set
 
         fun start(context: Context, data: Intent?) {
             try {
                 context.startForegroundService(ServiceNotificationHelper.createStartIntent(context, data))
+            }
+            catch(ex: Exception) {
+                CrashlyticsImpl.recordException(ex)
+            }
+        }
+
+        /** Start with Shizuku capture. Only after ShizukuCapture said Ready. */
+        fun startShizuku(context: Context) {
+            try {
+                context.startForegroundService(ServiceNotificationHelper.createStartIntent(context, null).apply {
+                    putExtra(EXTRA_SHIZUKU_CAPTURE, true)
+                })
             }
             catch(ex: Exception) {
                 CrashlyticsImpl.recordException(ex)
