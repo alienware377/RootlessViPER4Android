@@ -80,7 +80,7 @@ them to**:
 When you use these features, your device makes an ordinary web request to that
 third-party service (for example GitHub), which will see your IP address as any
 website would. The developer does not operate, control, or receive data from those
-services. Their own privacy policies apply — for example,
+services. Their own privacy policies apply, for example
 [GitHub's Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-privacy-statement).
 
 The app performs no background network activity for any other purpose.

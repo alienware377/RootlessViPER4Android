@@ -1,5 +1,5 @@
 // ViPER FET compressor, Cure+ crossfeed, ViPER bass, Reverberation (freeverb
-// style) and Speaker optimization — inspired ports for the V4A edition fork.
+// style) and Speaker optimization: inspired ports for the V4A edition fork.
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-// ViPER Dynamic System (dynamic bass) — ported from RootlessViPER4Android
+// ViPER Dynamic System (dynamic bass), ported from RootlessViPER4Android
 // (jdsp/Effects/vdynbass.c), itself a port of ViPER's DynamicBass.
 //
 // Two quite different paths, chosen by the lower crossover:

@@ -1,4 +1,4 @@
-// RV4A Multiband Distortion — VST3.
+// RV4A Multiband Distortion, VST3.
 //
 // The effect itself is the app's own source, compiled unmodified behind a shim.
 #include "Rv4aPluginBase.h"
