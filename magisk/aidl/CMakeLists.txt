@@ -31,11 +31,23 @@ if(ENGINE_COUNT LESS 40)
         "friends. Check the ENGINE path: ${ENGINE}")
 endif()
 
+# The pitch shifter's Signalsmith methods: the engine's one C++ file, a C face
+# on the header-only library vendored in third_party/. The *.c glob above
+# cannot see it, and the link below ignores unresolved symbols, so leaving it
+# out still builds, and the service then cannot start on the device. The same
+# file, include path and visibility as the app's jamesdsp and jamesdsp_hal.
+set(SIGNALSMITH_SHIM
+        ${ENGINE}/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp/Effects/signalsmith.cpp)
+set(SIGNALSMITH_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party)
+set_source_files_properties(${SIGNALSMITH_SHIM} PROPERTIES
+        COMPILE_OPTIONS "-fvisibility=hidden;-fvisibility-inlines-hidden")
+
 add_executable(rv4a-effect-service
         src/service.cpp
         fmq/EventFlag.cpp
         ${AIDL_SRC}
-        ${ENGINE_SRC})
+        ${ENGINE_SRC}
+        ${SIGNALSMITH_SHIM})
 
 target_include_directories(rv4a-effect-service PRIVATE
         ${GEN}/include
@@ -45,6 +57,7 @@ target_include_directories(rv4a-effect-service PRIVATE
         compat                # binder service APIs, vendored from AOSP
         ${ENGINE}/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp
         ${ENGINE}/hal                    # shared parameter dispatch
+        ${SIGNALSMITH_INCLUDE}
         ${ENGINE}/libjamesdsp/VeryOldOpen_source_edition/Audio_Engine/eclipse_libjamesdsp_free_bp/jni)  # audio_effect.h
 
 # The engine sources predate current clang defaults, same as in the app build.
