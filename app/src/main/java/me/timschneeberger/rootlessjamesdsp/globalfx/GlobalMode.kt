@@ -75,6 +75,14 @@ object GlobalMode {
         null
     }
 
+    /**
+     * Whether the settings switch can be used. Without the effect it cannot
+     * be turned on, but one that is already on (carried over to a phone that
+     * lacks the effect by a device transfer or a cloud backup) must still
+     * turn off, or there is no way back to capture mode.
+     */
+    fun switchUsable(available: Boolean, on: Boolean): Boolean = available || on
+
     /** Whether to offer the switch at all. Asked once per process. */
     fun isAvailable(): Boolean {
         if (!isRootless()) return false

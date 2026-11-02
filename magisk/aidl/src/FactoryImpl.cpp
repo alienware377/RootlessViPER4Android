@@ -114,7 +114,7 @@ class Rv4aFactory : public BnFactory {
         d.common.id.type = {static_cast<int32_t>(0xf98765f4), 0xc321, 0x5de6, 0x9a45,
                             {0x12, 0x34, 0x59, 0x49, 0x5a, 0xb2}};
         d.common.id.uuid = kOurUuid;
-        d.common.name = "RootlessViPER4Android";
+        d.common.name = kEngineName;
         d.common.implementor = "alienware377";
         d.common.flags.type = Flags::Type::INSERT;
         d.common.flags.insert = Flags::Insert::FIRST;

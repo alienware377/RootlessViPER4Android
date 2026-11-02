@@ -215,15 +215,26 @@ class JamesDspRemoteEngine(
             if (catchTones) 1f else 0f, if (listen) 1f else 0f, msMode.toFloat()
         ))
 
+    /** Set once the module has shown it has no head set support (an older build). */
+    private var binauralMissing = false
+
     override fun setBinauralInternal(
         enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float,
         set: me.timschneeberger.rootlessjamesdsp.hrtf.BinauralSets.ForRate?,
     ): Boolean {
-        if (enable && set != null) {
+        if (enable && set != null && !binauralMissing) {
             binauralSampleRate = set.fs
-            val prev = this.binauralHash
+            // Only a module that knows the head set can say which one it
+            // holds. An older one refuses to answer, and taking that as "a
+            // different set" sent the whole set again on every sync, to be
+            // accepted and ignored each time.
+            val prev = effect.getParameterInt(30004)
+            if (prev == null) {
+                Timber.w("Binaural: the root module cannot hold a head set; not sending one")
+                binauralMissing = true
+            }
             Timber.i("Binaural set hash before: $prev, current: ${set.hash}")
-            if (prev != set.hash) {
+            if (prev != null && prev != set.hash) {
                 // Its own ids and buffer, so an impulse response and a head set
                 // being sent at the same time cannot overwrite each other.
                 effect.setParameterImpulseResponseBuffer(
@@ -538,7 +549,15 @@ class JamesDspRemoteEngine(
         Available,
         Unsupported,
         /** Something answers to our uuid, but it is not this fork's engine. */
-        Foreign
+        Foreign,
+        /**
+         * This fork's engine, but a build older than the app: it works, but
+         * accepts and ignores what it does not know yet (see EngineName).
+         */
+        Outdated;
+
+        /** Whether the engine runs at all, outdated or not. */
+        val usable get() = this == Available || this == Outdated
     }
 
     companion object {
@@ -595,21 +614,11 @@ class JamesDspRemoteEngine(
                     .orEmpty()
                     .firstOrNull { it.uuid == EFFECT_JAMESDSP }
                     ?.run {
-                        when {
-                            name.contains("v3") -> PluginState.Unsupported
-                            // Our own engine says so in its descriptor. Stock
-                            // JamesDSP answers to the same uuid, so without
-                            // this the app reported Available, showed every
-                            // fork card, and sent parameter ids the stock
-                            // engine has never heard of. Unhandled ids are
-                            // dropped silently at that end and the app has no
-                            // way to notice, so the user moved sliders that
-                            // could not do anything and nothing said why.
-                            name.contains("RootlessViPER4Android") -> PluginState.Available
-                            else -> {
+                        EngineName.state(name).also {
+                            if (it == PluginState.Foreign)
                                 Timber.w("isPluginInstalled: a different engine answers to this uuid: '$name'")
-                                PluginState.Foreign
-                            }
+                            if (it == PluginState.Outdated)
+                                Timber.w("isPluginInstalled: the root module is older than this app: '$name'")
                         }
                     } ?: PluginState.Unavailable
             } catch (e: Exception) {

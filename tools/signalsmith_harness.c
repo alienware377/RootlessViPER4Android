@@ -651,7 +651,9 @@ typedef struct { int from, to; const char *name; } Switch;
 // Plays mode `from` for a second, switches to `to`, and plays on. Returns the
 // worst dip below the steady level and the worst step against the steady
 // signal's own largest step.
-static void runSwitch(int from, int to, int sig, int slip, double *dip, double *click,
+// slip samples of audio are let through when the lock is taken for the
+// slipLock-th time during the switch.
+static void runSwitch(int from, int to, int sig, int slip, int slipLock, double *dip, double *click,
                       double *setMs, double *lockMs, double *blockMs, int *catchUp)
 {
 	prepare(48000.0);
@@ -663,7 +665,7 @@ static void runSwitch(int from, int to, int sig, int slip, double *dip, double *
 	stream(sw);
 	g_lockMax = 0.0;
 	g_lockCount = 0;
-	g_slipAt = slip ? 3 : 0;   // lock 1 reads the state, 2 copies the history, 3 installs
+	g_slipAt = slip ? slipLock : 0;
 	g_slipSamples = slip;
 	const double t0 = now();
 	PitchShiftSetParam(&g_lib, 5.0f, 100.0f, to);
@@ -716,7 +718,7 @@ static void testSwitching(void)
 		{
 			double dip, click, setMs, lockMs, blockMs;
 			int cu;
-			runSwitch(sw[k].from, sw[k].to, s, 0, &dip, &click, &setMs, &lockMs, &blockMs, &cu);
+			runSwitch(sw[k].from, sw[k].to, s, 0, 0, &dip, &click, &setMs, &lockMs, &blockMs, &cu);
 			printf("       %6.2f dB /%5.2fx", dip, click);
 			if (dip > worstDip[s]) worstDip[s] = dip;
 			if (click > worstClick[s]) worstClick[s] = click;
@@ -735,17 +737,54 @@ static void testSwitching(void)
 	printf("      worst sine dip %.2f dB\n", worstDip[2]);
 
 	// Audio keeps playing while the new instance is primed on another thread.
-	// Let 30ms of it through between the history copy and the install, and
-	// make sure the instance catches up on exactly that and nothing is lost.
+	// The switch takes the lock to read the state (1), to copy the history
+	// (2), to see how much audio went by while it primed (3, then again after
+	// each round of feeding that in) and, last, to install (4 when nothing
+	// went by). Audio is let through at those points.
+	//
+	// 30ms just before the install: the audio thread catches up on exactly
+	// that and nothing is lost.
 	{
 		double dip, click, setMs, lockMs, blockMs;
 		int cu;
-		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.03), &dip, &click,
+		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.03), 4, &dip, &click,
 		          &setMs, &lockMs, &blockMs, &cu);
-		printf("      30ms of audio played during priming: caught up %d samples, dip %.2f dB, step %.2fx\n",
+		printf("      30ms of audio played just before the install: caught up %d samples, dip %.2f dB, step %.2fx\n",
 		       cu, dip, click);
 		check("it catches up on exactly the audio it missed (samples)", (double)cu,
 		      (double)secs(0.03), (double)secs(0.03) + 480.0);
+		check("with no dip (dB)", dip, -100.0, 3.0);
+		check("and no click (x)", click, 0.0, 1.5);
+	}
+	// 200ms while priming, a settings thread starved on a busy phone. The
+	// audio thread must not be left to feed all of it in one block: that is
+	// as much work as priming again, inside one callback.
+	{
+		double dip, click, setMs, lockMs, blockMs;
+		int cu;
+		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.2), 3, &dip, &click,
+		          &setMs, &lockMs, &blockMs, &cu);
+		printf("      200ms of audio played while priming: the audio thread fed %d samples to catch up\n"
+		       "      (slowest block after it %.3f ms), dip %.2f dB, step %.2fx\n",
+		       cu, blockMs, dip, click);
+		check("the audio thread feeds at most a few blocks' worth (samples)", (double)cu, 0.0,
+		      8.0 * 256.0);
+		check("with no dip (dB)", dip, -100.0, 3.0);
+		check("and no click (x)", click, 0.0, 1.5);
+	}
+	// 200ms just before the install, the one place the settings thread cannot
+	// feed it first: the audio thread seeks rather than feeding it all, and
+	// waits for the seeked instance to fill before fading it in.
+	{
+		double dip, click, setMs, lockMs, blockMs;
+		int cu;
+		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.2), 4, &dip, &click,
+		          &setMs, &lockMs, &blockMs, &cu);
+		printf("      200ms of audio played just before the install: the audio thread fed %d samples\n"
+		       "      (slowest block after it %.3f ms), dip %.2f dB, step %.2fx\n",
+		       cu, blockMs, dip, click);
+		check("the audio thread feeds at most a few blocks' worth (samples)", (double)cu, 0.0,
+		      8.0 * 256.0);
 		check("with no dip (dB)", dip, -100.0, 3.0);
 		check("and no click (x)", click, 0.0, 1.5);
 	}
@@ -1092,10 +1131,112 @@ static void testRobust(void)
 	}
 }
 
+// A value that is not a number can reach the engine from anywhere that sends
+// raw floats: the rooted audio server takes them straight from setParameter.
+// In formant mode a not-a-number ratio once became a not-a-number band index
+// inside the library, which on x86 reads far outside its table and takes the
+// whole process down, and that process is the audio server.
+static void testBadValues(void)
+{
+	printf("\n8. values that are not numbers\n");
+	const float bad[4] = { NAN, INFINITY, 0.0f, -1.0f };
+	const char *badName[4] = { "a NaN", "an infinite", "a zero", "a negative" };
+	for (int b = 0; b < 4; b++)
+	{
+		// The C face on its own: a formant instance told a ratio it cannot use.
+		prepare(48000.0);
+		genTone(440.0, 0.5, secs(0.5));
+		void *s = SignalsmithCreate(48000.0f, 1);
+		const float *ring[2] = { inL, inR };
+		float *out[2] = { bufL, bufR };
+		SignalsmithSetRatio(s, 1.5f);
+		SignalsmithProcessRing(s, ring, -1, 0, out, secs(0.25));
+		SignalsmithSetRatio(s, bad[b]);
+		SignalsmithProcessRing(s, ring, -1, secs(0.25), out + 0, secs(0.25));
+		int nf = 0;
+		for (int i = 0; i < secs(0.25); i++)
+			if (!isfinite(bufL[i]) || !isfinite(bufR[i])) nf++;
+		SignalsmithDestroy(s);
+		printf("      formant instance given %s ratio: still running, %d non-finite samples\n",
+		       badName[b], nf);
+		char what[96];
+		snprintf(what, sizeof(what), "%s ratio leaves the output finite (samples)", badName[b]);
+		check(what, (double)nf, 0, 0);
+	}
+	// The same through the card, the way the audio server takes it. Rubber
+	// Band formant falls back to Signalsmith formant when it is not installed,
+	// which in the audio server it never is.
+	const int modes[2] = { PITCH_MODE_SIGNALSMITH_FORMANT, PITCH_MODE_RUBBERBAND_FORMANT };
+	for (int k = 0; k < 2; k++)
+	{
+		prepare(48000.0);
+		genTone(440.0, 0.5, secs(2.0));
+		startCard(5.0f, 100.0f, modes[k]);
+		stream(secs(1.0));
+		const int before = nonFinite(secs(1.0));
+		PitchShiftSetParam(&g_lib, NAN, 100.0f, modes[k]);
+		stream(secs(1.0));
+		const int after = nonFinite(secs(2.0)) - before;
+		printf("      %s, a NaN shift sent: survived, %d non-finite samples before, %d after\n",
+		       modeName(modes[k]), before, after);
+		char what[96];
+		snprintf(what, sizeof(what), "%s survives a NaN shift with finite output", modeName(modes[k]));
+		check(what, (double)(before + after), 0, 0);
+		PitchShiftDisable(&g_lib);
+	}
+	// One bad value must not stick. Every method gets a NaN shift, then a
+	// good one, and a minute of music after it has to be all real numbers.
+	// So does a NaN mix, while it is set.
+	const int all[5] = { PITCH_MODE_GRANULAR, PITCH_MODE_SMOOTH, PITCH_MODE_SIGNALSMITH,
+	                     PITCH_MODE_SIGNALSMITH_FORMANT, PITCH_MODE_RUBBERBAND };
+	for (int k = 0; k < 5; k++)
+	{
+		const int seg = secs(10.0);
+		prepare(48000.0);
+		genTone(440.0, 0.5, seg);
+		startCard(5.0f, 100.0f, all[k]);
+		stream(secs(0.5));
+		PitchShiftSetParam(&g_lib, NAN, 100.0f, all[k]);
+		stream(secs(0.5));
+		PitchShiftSetParam(&g_lib, 3.0f, 100.0f, all[k]);
+		int bad = 0;
+		for (int s = 0; s < 6; s++)
+		{
+			g_pos = 0;
+			stream(seg);
+			bad += nonFinite(seg);
+		}
+		g_pos = 0;
+		PitchShiftSetParam(&g_lib, 3.0f, NAN, all[k]);
+		stream(secs(1.0));
+		const int badMix = nonFinite(secs(1.0));
+		printf("      %-20s a NaN shift, then +3: %d non-finite samples in the next minute;"
+		       " a NaN mix: %d\n", modeName(all[k]), bad, badMix);
+		char what[96];
+		snprintf(what, sizeof(what), "%s recovers from a NaN shift (samples)", modeName(all[k]));
+		check(what, (double)bad, 0, 0);
+		snprintf(what, sizeof(what), "%s ignores a NaN mix (samples)", modeName(all[k]));
+		check(what, (double)badMix, 0, 0);
+		PitchShiftDisable(&g_lib);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	const int quick = argc > 1 && !strcmp(argv[1], "quick");
+	// A section number runs only that section.
+	const int only = argc > 1 ? atoi(argv[1]) : 0;
+	// Unbuffered, so a crash still shows how far it got.
+	setvbuf(stdout, NULL, _IONBF, 0);
 	printf("== Signalsmith pitch shifting ==\n");
+	if (only == 4 || only == 8)
+	{
+		if (only == 4) testSwitching();
+		else testBadValues();
+		prepare(48000.0);
+		printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
+		return failures ? 1 : 0;
+	}
 	testPitch();
 	testLevel();
 	testLatency();
@@ -1104,6 +1245,7 @@ int main(int argc, char **argv)
 	testDrag();
 	testCpu();
 	if (!quick) testRobust();
+	testBadValues();
 	prepare(48000.0);
 	printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
 	return failures ? 1 : 0;
