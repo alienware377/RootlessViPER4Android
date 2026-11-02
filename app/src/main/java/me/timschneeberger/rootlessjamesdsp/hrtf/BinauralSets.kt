@@ -15,6 +15,8 @@ import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import kotlin.math.floor
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -29,17 +31,45 @@ object BinauralSets {
     const val SOURCE_FILE = "1"
     const val BUILTIN_ASSET = "hrtf/mit_kemar_normal_pinna.sofa"
     /** Bump when HrtfPrep changes what it makes, so old copies are redone. */
-    private const val PREP_VERSION = 1
+    internal const val PREP_VERSION = 1
+    private const val BUILTIN_PREFIX = "builtin-"
+    /** What the engine takes per response (BinauralUpmixLoadHrir). */
+    private const val MIN_TAPS = 16
+    private const val MAX_TAPS = 1024
 
     class Source(val key: String, val builtIn: Boolean, val path: String?)
 
     /** A set ready for one engine rate. */
     class ForRate(val hrir: FloatArray, val taps: Int, val fs: Int, val cOff: Int) {
-        val hash: Int get() = hrir.contentHashCode() * 31 + cOff * 7 + fs
+        val hash: Int = hrir.contentHashCode() * 31 + cOff * 7 + fs
     }
+
+    /** A set brought to one rate, and the prepared set it was made from. */
+    private class Ready(val from: PreparedHrtfSet, val set: ForRate)
+
+    /**
+     * Why the set in use could not be brought to the engine's rate: the
+     * rate, and the highest rate the set can serve. Kept until the next
+     * push that gets past choosing a set.
+     */
+    class RateProblem(val rate: Int, val maxRate: Int)
 
     private val memory = ConcurrentHashMap<String, PreparedHrtfSet>()
     private val failures = ConcurrentHashMap<String, String>()
+    private val rateProblems = ConcurrentHashMap<String, RateProblem>()
+    /** Sets already brought to a rate, newest last, by cache key and rate. */
+    private val ready = object : LinkedHashMap<String, Ready>(8, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Ready>?) = size > READY_KEEP
+    }
+    private const val READY_KEEP = 4
+    /** The resampler, swapped out by the unit tests, which cannot load the native library. */
+    internal var resample: (FloatArray, Int, Int, Int, Int) -> FloatArray? = { h, count, taps, from, to ->
+        try {
+            JdspImpResToolbox.ResampleResponses(h, count, taps, from, to)
+        } catch (e: UnsatisfiedLinkError) {
+            null
+        }
+    }
     private val running = ConcurrentHashMap.newKeySet<String>()
     private val worker = Executors.newSingleThreadExecutor { r ->
         Thread(r, "binaural-sets").apply { priority = Thread.MIN_PRIORITY }
@@ -48,7 +78,7 @@ object BinauralSets {
     /** Null when the file choice points at nothing. */
     fun source(context: Context, kind: String, file: String): Source? {
         if (kind != SOURCE_FILE)
-            return Source("builtin-${BuildConfig.VERSION_CODE}", true, null)
+            return Source("$BUILTIN_PREFIX${BuildConfig.VERSION_CODE}", true, null)
         if (file.isBlank()) return null
         val f = File(FileLibraryPreference.createFullPathCompat(context, file))
         if (!f.isFile) return null
@@ -99,11 +129,7 @@ object BinauralSets {
                         val set = HrtfPrep.prepare(o.set, evenOut)
                         val f = cacheFile(app, key)
                         f.parentFile?.mkdirs()
-                        // Copies made by an older version of the preparation
-                        // are no longer needed.
-                        f.parentFile?.listFiles()?.filter {
-                            it.name.startsWith(src.key) && !it.name.startsWith("${src.key}-p$PREP_VERSION-")
-                        }?.forEach { it.delete() }
+                        f.parentFile?.let { removeStaleCopies(it, src) }
                         val tmp = File(f.parentFile, f.name + ".tmp")
                         tmp.outputStream().buffered().use { HrtfSetFile.write(set, it) }
                         tmp.renameTo(f)
@@ -161,19 +187,83 @@ object BinauralSets {
             SofaParserClient.Failure.NO_HELPER -> R.string.binaural_error_helper
         })
 
-    /** The set at the engine's rate. */
-    fun forRate(set: PreparedHrtfSet, rate: Int): ForRate? {
+    /**
+     * Deletes prepared copies in [dir] that nothing will read again: those
+     * of [src] made by an older version of the preparation and, for the
+     * built-in set, those made for other app versions. Each app version
+     * makes its own copy of the built-in set (its key holds the version
+     * code), and before this every one of them stayed behind for good.
+     */
+    internal fun removeStaleCopies(dir: File, src: Source) {
+        val current = "${src.key}-p$PREP_VERSION-"
+        dir.listFiles()?.filter { f ->
+            val n = f.name
+            !n.startsWith(current) &&
+                (n.startsWith("${src.key}-") || (src.builtIn && n.startsWith(BUILTIN_PREFIX)))
+        }?.forEach { it.delete() }
+    }
+
+    /** What the card shows when the set cannot be used at the engine's rate, or null. */
+    fun rateProblem(src: Source, evenOut: Boolean): RateProblem? = rateProblems[cacheKey(src, evenOut)]
+
+    /**
+     * Forgets any rate problem, for a push that turns the effect off before
+     * it gets to choosing a rate. Tells the card if that changes what it shows.
+     */
+    fun clearRateProblems(context: Context) {
+        if (rateProblems.isEmpty()) return
+        rateProblems.clear()
+        context.sendLocalBroadcast(Intent(Constants.ACTION_BINAURAL_STATUS_CHANGED))
+    }
+
+    /**
+     * The set at the engine's rate. Remembers the result, so a settings
+     * change while the card is on does not resample the set all over again,
+     * and remembers when the rate is one the set cannot serve, for the card.
+     */
+    fun forRate(context: Context, src: Source, evenOut: Boolean, set: PreparedHrtfSet, rate: Int): ForRate? {
+        val key = cacheKey(src, evenOut)
+        val out = forRate(key, set, rate)
+        val problem = if (out == null) RateProblem(rate, maxRate(set)) else null
+        val before = rateProblems[key]
+        if (problem == null) rateProblems.remove(key) else rateProblems[key] = problem
+        if (before?.rate != problem?.rate || before?.maxRate != problem?.maxRate)
+            context.sendLocalBroadcast(Intent(Constants.ACTION_BINAURAL_STATUS_CHANGED))
+        return out
+    }
+
+    /** [forRate] without the card's bookkeeping; [key] names the set and its preparation. */
+    internal fun forRate(key: String, set: PreparedHrtfSet, rate: Int): ForRate? {
+        val slot = "$key@$rate"
+        synchronized(ready) {
+            ready[slot]?.takeIf { it.from === set }?.let { return it.set }
+        }
+        val made = resampleTo(set, rate) ?: return null
+        synchronized(ready) { ready[slot] = Ready(set, made) }
+        return made
+    }
+
+    private fun resampleTo(set: PreparedHrtfSet, rate: Int): ForRate? {
         val from = set.fs.roundToInt()
-        if (rate == from) return ForRate(set.hrir, set.taps, rate, set.cOff)
-        val out = try {
-            JdspImpResToolbox.ResampleResponses(set.hrir, BinauralSpeakers.COUNT * 2, set.taps, from, rate)
-        } catch (e: UnsatisfiedLinkError) {
-            null
-        } ?: return null
+        if (rate == from)
+            return if (set.taps in MIN_TAPS..MAX_TAPS) ForRate(set.hrir, set.taps, rate, set.cOff) else null
+        if (rate > maxRate(set)) return null
+        val out = resample(set.hrir, BinauralSpeakers.COUNT * 2, set.taps, from, rate) ?: return null
         val taps = out.size / (BinauralSpeakers.COUNT * 2)
-        if (taps < 16 || taps > 1024) return null
+        if (taps < MIN_TAPS || taps > MAX_TAPS) return null
         val cOff = (set.cOff * rate.toDouble() / from).roundToInt().coerceIn(0, taps - 1)
         return ForRate(out, taps, rate, cOff)
+    }
+
+    /**
+     * The highest rate [set] can be brought to: its responses get longer
+     * with the rate, and the engine takes at most [MAX_TAPS] taps. The
+     * resampler makes round(taps * to / from) of them.
+     */
+    internal fun maxRate(set: PreparedHrtfSet): Int {
+        val from = set.fs.roundToInt()
+        return min(384000.0, floor((MAX_TAPS + 0.5) * from / set.taps)).toInt()
+            .let { if ((set.taps * it.toDouble() / from + 0.5).toInt() > MAX_TAPS) it - 1 else it }
     }
 
     private fun sha1(s: String): String =
