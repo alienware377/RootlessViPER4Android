@@ -6,7 +6,7 @@ Installs this fork's DSP engine as a **system-wide audio effect**.
 
 In root mode the app doesn't use the engine bundled in the APK. It drives a
 system effect through Android's `AudioEffect` API, which is a *different*
-native library — the one shipped by whichever JamesDSP module is installed.
+native library: the one shipped by whichever JamesDSP module is installed.
 
 That means with the stock module, everything this fork added silently does
 nothing in root mode: the extra reverb rooms, the ViPER classic limiter, the
@@ -35,14 +35,14 @@ cmake --build <build-dir> --target jamesdsp_hal
 
 The target emits `libjamesdsp_hal.so` (it cannot be called `libjamesdsp.so` in
 the build tree without colliding with the APK's own library of that name).
-Copy it to `magisk/libs/<abi>/libjamesdsp.so` — renaming as you go, since that
-is the filename the audio server expects — then zip the `magisk/` directory.
+Copy it to `magisk/libs/<abi>/libjamesdsp.so` (renaming as you go, since that
+is the filename the audio server expects), then zip the `magisk/` directory.
 
 ## Installing
 
 Flash in Magisk, then reboot. The installer copies the library into
 `/system/lib*/soundfx/` and registers it in whichever audio effects config the
-device uses — XML on Android 9+, the older `.conf` on some vendor images —
+device uses (XML on Android 9+, the older `.conf` on some vendor images),
 overlaying the file rather than editing the real one.
 
 ## Which devices this works on
@@ -53,7 +53,7 @@ Android used up to and including 14.
 
 **Android 15 moved audio effects to an AIDL HAL.** Devices that ship only the
 AIDL path never read those files, so the engine cannot be found there no matter
-where it is installed — the app reports no driver. This is the same wall every
+where it is installed: the app reports no driver. This is the same wall every
 legacy audio mod hit, and it is why ViPER4Android now ships separate non-AIDL
 and AIDL modules. There is **no AIDL build of this module yet**; supporting it
 means implementing the AIDL effect HAL, not relocating a file.
@@ -72,7 +72,7 @@ recovery advice to whichever it finds.
 
 One caveat worth knowing before you try: on KernelSU and APatch, mounting files
 into `/vendor` and `/system` can require a **metamodule**. If the module
-installs cleanly but the effect never appears, check that first — it is the
+installs cleanly but the effect never appears, check that first. It is the
 usual cause, and it is reported for other audio modules as well.
 
 ## If the device won't boot
@@ -80,13 +80,13 @@ usual cause, and it is reported for other audio modules as well.
 An audio module can leave the audio server crashing on every boot, which looks
 like a bootloop. Recovery, easiest first:
 
-1. **ADB** — with USB debugging on, plug in and run
+1. **ADB**: with USB debugging on, plug in and run
    `adb wait-for-device shell magisk --remove-modules`. It runs the moment the
    device is reachable and disables every module.
-2. **Safe Mode** — hold the key combo your device uses at boot. Magisk detects
+2. **Safe Mode**: hold the key combo your device uses at boot. Magisk detects
    Safe Mode and disables all modules; the state persists after a normal
    reboot, so you can then remove this one from the Magisk app.
-3. **Recovery** — delete `/data/adb/modules/rv4a_engine` from a file manager in
+3. **Recovery**: delete `/data/adb/modules/rv4a_engine` from a file manager in
    TWRP, or `rm -rf /data/adb/modules/rv4a_engine` from its shell.
 
 The module also defends itself: `post-fs-data.sh` runs before the audio server
@@ -117,5 +117,5 @@ engine's setters, so effect *settings* don't cross over yet. That mapping is
 the remaining work, and it is mechanical: the ids already exist in the JNI
 wrapper.
 
-**Do not install alongside the stock JamesDSP module** — two libraries claiming
+**Do not install alongside the stock JamesDSP module**: two libraries claiming
 the same effect UUID will conflict.
