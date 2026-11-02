@@ -1145,6 +1145,41 @@ static void testBadValues(void)
 		check(what, (double)(before + after), 0, 0);
 		PitchShiftDisable(&g_lib);
 	}
+	// One bad value must not stick. Every method gets a NaN shift, then a
+	// good one, and a minute of music after it has to be all real numbers.
+	// So does a NaN mix, while it is set.
+	const int all[5] = { PITCH_MODE_GRANULAR, PITCH_MODE_SMOOTH, PITCH_MODE_SIGNALSMITH,
+	                     PITCH_MODE_SIGNALSMITH_FORMANT, PITCH_MODE_RUBBERBAND };
+	for (int k = 0; k < 5; k++)
+	{
+		const int seg = secs(10.0);
+		prepare(48000.0);
+		genTone(440.0, 0.5, seg);
+		startCard(5.0f, 100.0f, all[k]);
+		stream(secs(0.5));
+		PitchShiftSetParam(&g_lib, NAN, 100.0f, all[k]);
+		stream(secs(0.5));
+		PitchShiftSetParam(&g_lib, 3.0f, 100.0f, all[k]);
+		int bad = 0;
+		for (int s = 0; s < 6; s++)
+		{
+			g_pos = 0;
+			stream(seg);
+			bad += nonFinite(seg);
+		}
+		g_pos = 0;
+		PitchShiftSetParam(&g_lib, 3.0f, NAN, all[k]);
+		stream(secs(1.0));
+		const int badMix = nonFinite(secs(1.0));
+		printf("      %-20s a NaN shift, then +3: %d non-finite samples in the next minute;"
+		       " a NaN mix: %d\n", modeName(all[k]), bad, badMix);
+		char what[96];
+		snprintf(what, sizeof(what), "%s recovers from a NaN shift (samples)", modeName(all[k]));
+		check(what, (double)bad, 0, 0);
+		snprintf(what, sizeof(what), "%s ignores a NaN mix (samples)", modeName(all[k]));
+		check(what, (double)badMix, 0, 0);
+		PitchShiftDisable(&g_lib);
+	}
 }
 
 int main(int argc, char **argv)
