@@ -2,7 +2,7 @@
 
 `AServiceManager_addService` and `ABinderProcess_joinThreadPool` are **system**
 APIs. The NDK ships the app-facing half of libbinder_ndk but not these, since
-an ordinary app has no business registering a system service — which is exactly
+an ordinary app has no business registering a system service, which is exactly
 what a HAL does.
 
 The full `binder_ndk` header set is vendored from AOSP unmodified, not just the

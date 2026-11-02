@@ -1,4 +1,4 @@
-// ViPER Clarity, Field Surround and AGC — inspired ports of the remaining
+// ViPER Clarity, Field Surround and AGC: inspired ports of the remaining
 // ViperFX effects for the viper-extras fork.
 #include <math.h>
 #include <string.h>

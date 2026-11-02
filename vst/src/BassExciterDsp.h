@@ -1,4 +1,4 @@
-// Psychoacoustic bass exciter — ported verbatim from RootlessViPER4Android
+// Psychoacoustic bass exciter, ported verbatim from RootlessViPER4Android
 // (jdsp/Effects/bassex.c) so the plugin and the Android app sound identical.
 //
 // The idea: lowpass to isolate the sub content, rectify it (which generates
