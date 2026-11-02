@@ -57,6 +57,13 @@
 #define PS_CHUNK 256
 // How long a switch from one method to another takes once the new one is ready.
 #define PS_XF_SEC 0.04f
+// The most audio a new Signalsmith instance is fed on the audio thread to
+// catch up after being primed elsewhere, and how much the settings thread
+// leaves for it. Feeding is as costly as playing, so a block that had to
+// feed a few hundred milliseconds would do many blocks' work at once and miss
+// its deadline. Past this it seeks instead.
+#define PS_SS_CATCHUP_MAX (8 * PS_CHUNK)
+#define PS_SS_CATCHUP_LEFT (2 * PS_CHUNK)
 
 // What is producing the sound. Zero is "no crossfade" for xfFrom, so that a
 // zeroed struct means nothing is fading.
@@ -239,6 +246,39 @@ static void psPrepareSignalsmith(JamesDSPLib *jdsp, int mode, float rate, int fo
 		}
 		f->fedTo = pos;
 		f->primed = 1;
+		// The music kept playing while that ran, and on a busy phone priming
+		// can take a few hundred milliseconds. Feed what went by here, from a
+		// fresh copy of the history, rather than leave all of it to one audio
+		// block. Each round is shorter than the one before; the last few
+		// milliseconds are left to the audio thread.
+		for (int round = 0; round < 4; round++)
+		{
+			int fresh = 0;
+			int64_t to = 0;
+			jdsp_lock(jdsp);
+			if (jdsp->pitchShiftEnabled && p->hist[0] && p->histMask + 1 == len &&
+			    p->histEpoch == f->epoch)
+			{
+				to = p->histPos;
+				const int64_t gap = to - f->fedTo;
+				if (gap > PS_SS_CATCHUP_LEFT && gap < len - 2 * PS_CHUNK)
+				{
+					memcpy(copy, p->hist[0], (size_t)len * sizeof(float));
+					memcpy(copy + len, p->hist[1], (size_t)len * sizeof(float));
+					fresh = 1;
+				}
+			}
+			jdsp_unlock(jdsp);
+			if (!fresh)
+				break;
+			for (int64_t q = f->fedTo; q < to;)
+			{
+				const int k = (to - q) > PS_CHUNK ? PS_CHUNK : (int)(to - q);
+				SignalsmithProcessRing(f->inst, ring, len - 1, q, out, k);
+				q += k;
+			}
+			f->fedTo = to;
+		}
 	}
 	free(copy);
 }
@@ -812,9 +852,9 @@ static void psGranular(PitchShift *p, float *const *out, int m)
 
 // Feeds Signalsmith whatever history it has not seen yet, output discarded.
 // Normally nothing, or the few milliseconds that went by while a new instance
-// was being primed. If it fell so far behind that the history has moved on,
-// it is pointed at the latest audio instead; that costs a short fade but no
-// burst of work.
+// was being installed. If it fell further behind than one block should have
+// to make up, or so far that the history has moved on, it is pointed at the
+// latest audio instead; that costs a short fade but no burst of work.
 static void psSignalsmithCatchUp(PitchShift *p, int m)
 {
 	const int64_t gap = p->histPos - p->ssFedTo;
@@ -822,10 +862,16 @@ static void psSignalsmithCatchUp(PitchShift *p, int m)
 		return;
 	const float *ring[2] = { p->hist[0], p->hist[1] };
 	const int len = p->histMask + 1;
-	if (gap > len - m - PS_CHUNK)
+	if (gap > PS_SS_CATCHUP_MAX || gap > len - m - PS_CHUNK)
 	{
 		SignalsmithSeekRing(p->ss, ring, p->histMask, p->histPos - p->ssSeekLen, p->ssSeekLen);
 		p->ssFedTo = p->histPos;
+		// After a seek its output fills from silence. If it is the one being
+		// faded in and the fade has not started, hold the fade until it has,
+		// as for an instance that could not be primed at all.
+		if (p->xfFrom != PS_XF_NONE && psTarget(p) == PS_ENGINE_SIGNALSMITH && p->xfPos == 0 &&
+		    p->xfWait < p->ssLatency)
+			p->xfWait = p->ssLatency;
 		return;
 	}
 	if (gap > p->ssCatchUpMax) p->ssCatchUpMax = (int)gap;
