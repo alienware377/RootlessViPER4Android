@@ -121,4 +121,23 @@ object NewCardPlacement {
         while (i < order.size && order[i] !in headers) i++
         return i
     }
+
+    /**
+     * The order "Restore the default effect order" puts the screen back in.
+     *
+     * Every built-in card and heading goes back where it is declared. A
+     * heading the user made is kept, since the reset leaves their groups
+     * alone, but goes after everything else: a heading owns the cards below
+     * it, so one left near the top would swallow a built-in group.
+     *
+     * @param declared every built-in card and heading in declared order
+     * @param present what the screen holds right now, in its current order
+     */
+    fun defaultOrder(declared: List<String>, present: List<String>): List<String> {
+        val presentSet = present.toHashSet()
+        val declaredSet = declared.toHashSet()
+        val builtIn = declared.filter { it in presentSet }.distinct()
+        val userMade = present.filter { it !in declaredSet }.distinct()
+        return builtIn + userMade
+    }
 }
