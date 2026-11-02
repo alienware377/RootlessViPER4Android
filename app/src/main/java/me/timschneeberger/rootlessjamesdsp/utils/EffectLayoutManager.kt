@@ -933,6 +933,11 @@ class EffectLayoutManager(
 
     fun resetLayout() {
         prefs.edit().remove(KEY_ORDER).remove(KEY_HIDDEN).remove(KEY_FOLDED).apply()
+        // With nothing saved, applyLayout leaves the views where they are.
+        // That is right at startup, when they are still in declared order,
+        // but here they are in the user's order, so the reset only showed
+        // after the next launch. Put the declared order back first.
+        reorder(NewCardPlacement.defaultOrder(declaredOrder, containerOrder()))
         applyLayout()
     }
 

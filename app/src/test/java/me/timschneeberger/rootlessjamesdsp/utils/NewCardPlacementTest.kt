@@ -225,4 +225,25 @@ class NewCardPlacementTest {
         )
         assertEquals(listOf("card_b", "card_a", custom), merged)
     }
+
+    @Test
+    fun `restoring the default order puts every built-in card back where it is declared`() {
+        val present = savedBeforeShaper + listOf("card_shaper", "card_binaural")
+        val restored = NewCardPlacement.defaultOrder(declared, present)
+        assertEquals(declared, restored.filter { it in declared })
+    }
+
+    @Test
+    fun `restoring the default order keeps the user's own headings, after everything else`() {
+        val present = savedBeforeShaper + listOf("card_shaper", "card_binaural")
+        val restored = NewCardPlacement.defaultOrder(declared, present)
+        assertEquals(declared + listOf(gBass, gDyn, gEq, gStereo, gFx), restored)
+    }
+
+    @Test
+    fun `restoring the default order names only what is on screen, once each`() {
+        val present = listOf("card_eq", gFx, "card_bass", "card_eq", "card_output_control")
+        val restored = NewCardPlacement.defaultOrder(declared, present)
+        assertEquals(listOf("card_output_control", "card_bass", "card_eq", gFx), restored)
+    }
 }
