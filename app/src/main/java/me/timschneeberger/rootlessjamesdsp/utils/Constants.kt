@@ -78,6 +78,12 @@ object Constants {
     const val ACTION_SAMPLE_RATE_UPDATED = BuildConfig.APPLICATION_ID + ".action.sample_rate.UPDATED"
     /** A head set for the Binaural upmix finished preparing, or failed to. */
     const val ACTION_BINAURAL_SET_READY = BuildConfig.APPLICATION_ID + ".action.binaural.SET_READY"
+    /**
+     * What the Binaural upmix card should say changed, without a new set
+     * (for example the set cannot be used at the engine's rate). Only the
+     * card listens; the engines do not resync on it.
+     */
+    const val ACTION_BINAURAL_STATUS_CHANGED = BuildConfig.APPLICATION_ID + ".action.binaural.STATUS_CHANGED"
     const val ACTION_PRESET_LOADED = BuildConfig.APPLICATION_ID + ".action.preset.LOADED"
     const val ACTION_GRAPHIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.CHANGED"
     /** The graphic EQ was switched on from outside its card (Match EQ); the card should show it. */
