@@ -185,6 +185,15 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
 
         Timber.i("====> Application starting up")
 
+        // Download sources an older version kept among the effect settings,
+        // where a reset or a profile change deletes them. Move them to their
+        // own file now rather than the first time "Download more..." opens.
+        try {
+            me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources.absorbLegacy(this)
+        } catch (t: Throwable) {
+            Timber.e(t)
+        }
+
         val dumpFile = File(filesDir, "dump.txt")
         if(dumpFile.exists()) {
             dumpFile.delete()
