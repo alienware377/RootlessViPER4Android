@@ -57,6 +57,13 @@ class EffectLayoutManager(
     private val pendingPrefs = context.getSharedPreferences(PENDING_PREFS, Context.MODE_PRIVATE)
     private val editRows = HashMap<String, View>()
 
+    /**
+     * The default layout: the order the cards are declared in, read before
+     * anything has moved them. Later the container holds the user's order,
+     * which says nothing about where a card the saved order lacks belongs.
+     */
+    private val declaredOrder: List<String> = containerOrder()
+
     var editMode = false
         private set
 
@@ -145,16 +152,19 @@ class EffectLayoutManager(
             ?.filter { it.isNotBlank() }
             ?: return null
 
-        val natural = containerOrder()
-        val result = ArrayList(saved.filter { natural.contains(it) })
-        // Effects added by an app update aren't in the saved order yet; slot
-        // them in at their declared position instead of dumping them at the end.
-        natural.forEachIndexed { index, key ->
-            if (!result.contains(key)) {
-                result.add(index.coerceAtMost(result.size), key)
-            }
-        }
-        return result
+        // Effects added by an app update aren't in the saved order yet. They
+        // go next to the card declared beside them, wherever the user has
+        // moved that one. Their declared position number was used before, and
+        // in a rearranged layout that lands in whatever group happens to be
+        // there: the spectral shaper ended up among stereo effects and the
+        // binaural upmix under bass.
+        return NewCardPlacement.merge(
+            saved = saved,
+            declared = declaredOrder,
+            present = containerOrder(),
+            headers = headerKeys(),
+            hidden = hiddenKeys(),
+        )
     }
 
     // ----------------------------------------------------------------- groups
