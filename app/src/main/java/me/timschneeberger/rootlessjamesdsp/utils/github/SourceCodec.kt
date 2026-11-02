@@ -51,9 +51,13 @@ object SourceCodec {
         return out
     }
 
-    /** [mine] first, then anything from [incoming] it does not already have. */
-    fun merge(mine: List<Source>, incoming: List<Source>): List<Source> {
+    /**
+     * [mine] first, then anything from [incoming] it does not already have,
+     * leaving out sources whose [Source.key] is in [removed]: those the user
+     * took off the list, which an older list must not bring back.
+     */
+    fun merge(mine: List<Source>, incoming: List<Source>, removed: Set<String> = emptySet()): List<Source> {
         val keys = mine.map { it.key }.toHashSet()
-        return mine + incoming.filter { keys.add(it.key) }
+        return mine + incoming.filter { it.key !in removed && keys.add(it.key) }
     }
 }

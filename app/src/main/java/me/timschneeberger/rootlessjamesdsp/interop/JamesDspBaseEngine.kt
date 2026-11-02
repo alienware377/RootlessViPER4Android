@@ -688,21 +688,23 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         val group = routingObserver?.currentDevice?.group
         val onSpeakers = speakerOff &&
             (group == RoutingObserver.DeviceGroup.SPEAKER || group == RoutingObserver.DeviceGroup.HDMI)
-        if (!enable || onSpeakers)
-            return setBinauralInternal(false, amount, width, surround, height, room, null)
-        val src = BinauralSets.source(context, source, file)
-            ?: return setBinauralInternal(false, amount, width, surround, height, room, null)
-        val set = BinauralSets.cached(context, src, evenOut)
-        if (set == null) {
-            BinauralSets.request(context, src, evenOut)
+        val src = if (!enable || onSpeakers) null else BinauralSets.source(context, source, file)
+        val set = src?.let { BinauralSets.cached(context, it, evenOut) }
+        if (src == null || set == null) {
+            // Off for some other reason, so an older "cannot be used at
+            // this rate" no longer applies
+            BinauralSets.clearRateProblems(context)
+            if (src != null) BinauralSets.request(context, src, evenOut)
             return setBinauralInternal(false, amount, width, surround, height, room, null)
         }
         // Before the first stream the rate is not known yet; the engine runs
         // at 48 kHz until then, and a rate change brings this back.
         val rate = sampleRate.toInt().takeIf { it in 8000..384000 } ?: 48000
-        val forRate = BinauralSets.forRate(set, rate)
+        // Kept per set and rate, and noted for the card when the set cannot
+        // serve this rate, so the effect is not silently off
+        val forRate = BinauralSets.forRate(context, src, evenOut, set, rate)
         if (forRate == null) {
-            Timber.e("setBinaural: could not bring the set to $rate Hz")
+            Timber.w("setBinaural: the set cannot be brought to $rate Hz")
             return setBinauralInternal(false, amount, width, surround, height, room, null)
         }
         return setBinauralInternal(true, amount, width, surround, height, room, forRate)

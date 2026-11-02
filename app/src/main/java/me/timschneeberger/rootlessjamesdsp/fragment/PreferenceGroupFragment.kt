@@ -89,7 +89,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     if (arguments?.getInt(BUNDLE_XML_RES) == R.xml.dsp_graphiceq_preferences)
                         (preferenceScreen.getPreference(0) as? SwitchPreferenceGroup)?.setValue(true)
                 }
-                Constants.ACTION_BINAURAL_SET_READY -> binauralStatusUpdater?.invoke()
+                Constants.ACTION_BINAURAL_SET_READY,
+                Constants.ACTION_BINAURAL_STATUS_CHANGED -> binauralStatusUpdater?.invoke()
                 Constants.ACTION_REPORT_SAMPLE_RATE -> {
                     reportedProcessingSampleRate = intent
                         .getFloatExtra(Constants.EXTRA_SAMPLE_RATE, 0f)
@@ -266,6 +267,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             addAction(Constants.ACTION_REPORT_SAMPLE_RATE)
             addAction(Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON)
             addAction(Constants.ACTION_BINAURAL_SET_READY)
+            addAction(Constants.ACTION_BINAURAL_STATUS_CHANGED)
         })
 
         // The ViPER4Android classic theme tints every effect icon purple.
@@ -745,9 +747,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             if (lastChoice != null && lastChoice != choice) BinauralSets.forgetFailures()
             lastChoice = choice
             val src = BinauralSets.source(ctx, source, path)
+            val rateProblem = src?.takeIf { enabled }?.let { BinauralSets.rateProblem(it, evenOut) }
             status.summary = when {
                 src == null -> getString(R.string.binaural_status_no_file)
                 BinauralSets.failure(src, evenOut) != null -> BinauralSets.failure(src, evenOut)
+                rateProblem != null -> rateProblemText(rateProblem)
                 src.builtIn -> getString(R.string.binaural_status_builtin)
                 BinauralSets.isWorking(src, evenOut) -> getString(R.string.binaural_status_working)
                 else -> BinauralSets.cached(ctx, src, evenOut)?.let { set ->
@@ -760,6 +764,15 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         }
         binauralStatusUpdater = ::update
         update()
+    }
+
+    /** Why the effect is off at the engine's current rate, in plain words. */
+    private fun rateProblemText(p: BinauralSets.RateProblem): String {
+        fun khz(hz: Int) = String.format(java.util.Locale.ROOT, if (hz % 1000 == 0) "%.0f" else "%.1f", hz / 1000.0)
+        return if (p.rate > p.maxRate)
+            getString(R.string.binaural_status_rate_too_high, khz(p.rate), khz(p.maxRate / 1000 * 1000))
+        else
+            getString(R.string.binaural_status_rate_failed, khz(p.rate))
     }
 
     override fun onCreateRecyclerView(

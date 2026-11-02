@@ -13,9 +13,15 @@ import java.io.File
  * whatever the preset happened to hold (usually none). Now presets never
  * carry them, and a list found in an older preset is merged in rather than
  * replacing anything.
+ *
+ * Merging alone brought back sources the user had removed, whenever an
+ * older preset that still listed them was loaded. So a removal is
+ * remembered, and a merged list never brings that source back; only adding
+ * it again by hand does.
  */
 object LibrarySources {
     private const val KEY = "filelib_sources"
+    private const val KEY_REMOVED = "filelib_sources_removed"
 
     /** The built-in community pack carries both the DDC and the IRS collections. */
     fun builtIn() = listOf(
@@ -35,13 +41,27 @@ object LibrarySources {
     /** Adds [source] unless it is already there. @return false if it was already there */
     fun add(ctx: Context, source: Source): Boolean {
         val list = load(ctx)
+        // Added by hand, so an earlier removal no longer stands
+        val removed = removed(ctx)
+        if (removed.remove(source.key)) saveRemoved(ctx, removed)
         if (list.any { it.key == source.key }) return false
         list += source
         save(ctx, list)
         return true
     }
 
-    fun remove(ctx: Context, source: Source) = save(ctx, load(ctx).filterNot { it.key == source.key })
+    fun remove(ctx: Context, source: Source) {
+        val removed = removed(ctx)
+        if (removed.add(source.key)) saveRemoved(ctx, removed)
+        save(ctx, load(ctx).filterNot { it.key == source.key })
+    }
+
+    private fun removed(ctx: Context): MutableSet<String> =
+        prefs(ctx).getStringSet(KEY_REMOVED, null)?.toHashSet() ?: HashSet()
+
+    private fun saveRemoved(ctx: Context, keys: Set<String>) {
+        prefs(ctx).edit().putStringSet(KEY_REMOVED, HashSet(keys)).commit()
+    }
 
     /**
      * Moves a list left in the old places into this file: the preset
@@ -57,7 +77,8 @@ object LibrarySources {
         val found = olds.filter { it.contains(KEY) }
         if (found.isEmpty()) return
         var merged = SourceCodec.decode(prefs(ctx).getString(KEY, null))
-        found.forEach { merged = SourceCodec.merge(merged, SourceCodec.decode(it.getString(KEY, null))) }
+        val removed = removed(ctx)
+        found.forEach { merged = SourceCodec.merge(merged, SourceCodec.decode(it.getString(KEY, null)), removed) }
         save(ctx, merged)
         found.forEach { it.edit().remove(KEY).commit() }
     }

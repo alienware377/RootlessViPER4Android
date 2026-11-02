@@ -49,6 +49,26 @@ class LocalNamesTest {
     }
 
     @Test
+    fun `same name and size in two folders, only the first downloaded`() {
+        val files = listOf(f("oratory1990/HD 650.wav", 4000), f("crinacle/HD 650.wav", 4000))
+        // First visit: both offered, the second under its folder tag
+        assertEquals(listOf("HD 650.wav", "HD 650 (crinacle).wav"),
+            LocalNames.plan(files, emptyMap(), "u/AutoEq").map { it.localName })
+        // Only the first was downloaded. The second must still be offered,
+        // under the same name as before; it used to match the first one's file.
+        val second = LocalNames.plan(files, mapOf("hd 650.wav" to 4000L), "u/AutoEq")
+        assertTrue(second[0].alreadyHave)
+        assertEquals("HD 650 (crinacle).wav", second[1].localName)
+        // Both downloaded: both recognised
+        val both = LocalNames.plan(files, mapOf("hd 650.wav" to 4000L, "hd 650 (crinacle).wav" to 4000L), "u/AutoEq")
+        assertTrue(both.all { it.alreadyHave })
+        // Only the second downloaded: the first is offered again under its own name
+        val onlySecond = LocalNames.plan(files, mapOf("hd 650 (crinacle).wav" to 4000L), "u/AutoEq")
+        assertEquals("HD 650.wav", onlySecond[0].localName)
+        assertTrue(onlySecond[1].alreadyHave)
+    }
+
+    @Test
     fun `files at the top of the repository are tagged with its name`() {
         val plans = LocalNames.plan(listOf(f("Hall.irs", 7000)), mapOf("hall.irs" to 5000L), "someone/Reverbs")
         assertEquals("Hall (Reverbs).irs", plans[0].localName)
