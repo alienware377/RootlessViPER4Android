@@ -52,7 +52,8 @@ static effect_descriptor_t rv4a_descriptor =
        said nothing about which engine or which version, which is why a device
        running the stock module showed every fork card and responded to none
        of them: unhandled ids are dropped without a word at both ends.
-       The number is the module version. Raise it (and EngineName in the app)
+       The number is the module version. Raise it (and EngineName in the app,
+       and kEngineName in magisk/aidl/src/EffectImpl.h)
        whenever the module learns ids an older one would quietly ignore, so
        the app can tell the user to flash the new one.
        v5: the spectral shaper and the binaural upmix. */
