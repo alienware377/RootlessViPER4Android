@@ -32,13 +32,15 @@ class GlobalModeSettingsFragment : SettingsBaseFragment() {
 
         val switch = findPreference<TwoStatePreference>(getString(R.string.key_global_mode))
         if (!GlobalMode.isAvailable()) {
-            switch?.isEnabled = false
+            switch?.isEnabled = GlobalMode.switchUsable(false, switch?.isChecked == true)
             switch?.summary = getString(R.string.global_mode_unavailable)
         }
-        switch?.setOnPreferenceChangeListener { _, value ->
+        switch?.setOnPreferenceChangeListener { pref, value ->
             val on = value as Boolean
             val captureRunning = on && BaseAudioProcessorService.activeServices > 0 && !GlobalEffectService.isAlive
             GlobalPower.onSwitchChanged(requireContext(), on)
+            // Turned off on a phone without the effect: it cannot come back on.
+            if (!on) pref.isEnabled = GlobalMode.switchUsable(GlobalMode.isAvailable(), false)
             if (captureRunning) requireContext().toast(R.string.global_mode_capture_running, false)
             true
         }

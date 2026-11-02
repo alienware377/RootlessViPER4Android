@@ -172,6 +172,7 @@ static void buClearState(BinauralUpmix *b)
 	b->xo[0] = b->xo[1] = b->xo[2] = b->xo[3] = 0.0f;
 	b->pos = 0;
 	b->hop = 0;
+	b->dryXfade = 0;
 }
 
 /* Settings that follow the controls or the rate. Never touches audio state,
@@ -721,7 +722,18 @@ void BinauralUpmixProcess(JamesDSPLib *jdsp, size_t n)
 		const float wL = b->acc[0][rd], wR = b->acc[1][rd];
 		b->acc[0][rd] = 0.0f;
 		b->acc[1][rd] = 0.0f;
-		const float dL = b->in[0][dr], dR = b->in[1][dr];
+		float dL = b->in[0][dr], dR = b->in[1][dr];
+		if (b->dryXfade > 0 && valid)
+		{
+			/* A set with another centre onset just came in: glide from the
+			   old read point to the new one rather than jump, which would
+			   click whenever any of the dry is heard. */
+			const int dro = (b->pos - Nw + 1 - b->dryCOffOld) & mask;
+			const float t = (float)b->dryXfade / (float)(b->fadeLen + 1);
+			dL += t * (b->in[0][dro] - dL);
+			dR += t * (b->in[1][dro] - dR);
+			b->dryXfade--;
+		}
 		b->pos = (b->pos + 1) & mask;
 
 		float eL, eR;
@@ -860,6 +872,15 @@ int BinauralUpmixLoadHrir(JamesDSPLib *jdsp, const float *hrir, int speakers,
 		b->spec = spec;
 		b->specNf = Nf;
 		b->specFs = fs;
+#ifndef BROKEN_DRYJUMP
+		if (wasValid && specCOff != b->specCOff)
+		{
+			/* The overlap-add crossfades the wet path, but the dry is read
+			   at the centre onset, so it would jump by the difference. */
+			b->dryCOffOld = b->specCOff;
+			b->dryXfade = b->fadeLen;
+		}
+#endif
 		b->specCOff = specCOff;
 		spec = 0;
 #ifdef BROKEN_SWAPGAP

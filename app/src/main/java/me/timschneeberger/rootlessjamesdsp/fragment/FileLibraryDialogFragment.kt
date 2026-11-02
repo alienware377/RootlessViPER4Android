@@ -25,6 +25,7 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.FileProvider
 import androidx.core.content.getSystemService
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.DialogPreference.TargetFragment
 import androidx.preference.ListPreferenceDialogFragmentCompat
 import androidx.preference.Preference
@@ -374,39 +375,54 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
                 return@registerForActivityResult
 
             result?.data?.data?.let { uri ->
+                val ctx = requireContext()
                 val correctType = fileLibPreference.hasCorrectExtension(
                     StorageUtils.queryName(
-                        requireContext(),
+                        ctx,
                         uri
                     ) ?: "INVALID"
                 )
                 if(!correctType)
                 {
-                    requireContext().showAlert(R.string.filelibrary_unsupported_format_title,
+                    ctx.showAlert(R.string.filelibrary_unsupported_format_title,
                         R.string.filelibrary_unsupported_format)
                     return@let
                 }
 
-                StorageUtils.openInputStreamSafe(requireContext(), uri)?.use {
-                    if(!fileLibPreference.hasValidContent(it)) {
-                        Timber.e("File rejected due to invalid content")
-                        requireContext().showAlert(R.string.filelibrary_corrupted_title,
-                            R.string.filelibrary_corrupted)
-                        return@let
-                    }
-                }
-
-                val file = StorageUtils.importFile(requireContext(),
-                    fileLibPreference.directory?.absolutePath ?: "", uri)
-                if(file == null)
-                {
-                    Timber.e("Failed to import file")
+                // The engine refuses a head set over this size, so do not copy one in.
+                val maxBytes = if (fileLibPreference.isSofa()) FileLibraryPreference.SOFA_MAX_BYTES
+                    else Long.MAX_VALUE
+                if ((StorageUtils.querySize(ctx, uri) ?: 0L) > maxBytes) {
+                    ctx.showAlert(R.string.filelibrary_too_big_title, R.string.filelibrary_sofa_too_big)
                     return@let
                 }
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    delay(150L)
-                    refresh()
+                // Off the main thread: a head set can be tens of megabytes, or
+                // stream from a cloud provider, and copying it there froze the
+                // dialog.
+                val dir = fileLibPreference.directory?.absolutePath ?: ""
+                lifecycleScope.launch {
+                    val outcome = withContext(Dispatchers.IO) {
+                        val valid = StorageUtils.openInputStreamSafe(ctx, uri)?.use {
+                            fileLibPreference.hasValidContent(it)
+                        } ?: true
+                        if (!valid) null
+                        else StorageUtils.importFile(ctx, dir, uri, maxBytes)
+                    }
+                    when (outcome) {
+                        null -> {
+                            Timber.e("File rejected due to invalid content")
+                            ctx.showAlert(R.string.filelibrary_corrupted_title,
+                                R.string.filelibrary_corrupted)
+                        }
+                        StorageUtils.Import.TooBig ->
+                            ctx.showAlert(R.string.filelibrary_too_big_title, R.string.filelibrary_sofa_too_big)
+                        StorageUtils.Import.Failed -> Timber.e("Failed to import file")
+                        is StorageUtils.Import.Ok -> {
+                            delay(150L)
+                            refresh()
+                        }
+                    }
                 }
             }
         }

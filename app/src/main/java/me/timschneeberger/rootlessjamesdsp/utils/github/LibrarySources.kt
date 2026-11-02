@@ -21,6 +21,7 @@ import java.io.File
  */
 object LibrarySources {
     private const val KEY = "filelib_sources"
+    /** Keys of the sources the user removed, so an older list cannot bring them back. */
     private const val KEY_REMOVED = "filelib_sources_removed"
 
     /** The built-in community pack carries both the DDC and the IRS collections. */
@@ -66,7 +67,8 @@ object LibrarySources {
     /**
      * Moves a list left in the old places into this file: the preset
      * namespace (from before this change, or from a preset just loaded) and
-     * the app preferences (from before that). Merged, never replaced.
+     * the app preferences (from before that). Merged, never replaced, and
+     * never bringing back a source the user removed.
      */
     fun absorbLegacy(ctx: Context) {
         @Suppress("DEPRECATION")
@@ -76,8 +78,8 @@ object LibrarySources {
         )
         val found = olds.filter { it.contains(KEY) }
         if (found.isEmpty()) return
-        var merged = SourceCodec.decode(prefs(ctx).getString(KEY, null))
         val removed = removed(ctx)
+        var merged = SourceCodec.decode(prefs(ctx).getString(KEY, null))
         found.forEach { merged = SourceCodec.merge(merged, SourceCodec.decode(it.getString(KEY, null)), removed) }
         save(ctx, merged)
         found.forEach { it.edit().remove(KEY).commit() }

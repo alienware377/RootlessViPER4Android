@@ -16,8 +16,8 @@
 // -DBROKEN_LATENCY, -DBROKEN_DRYRESYNTH, -DBROKEN_FIFO, -DBROKEN_CENTRE,
 // -DBROKEN_SWAP, -DBROKEN_MIRROR, -DBROKEN_NOCOH, -DBROKEN_NOPAD,
 // -DBROKEN_FOLD, -DBROKEN_NOSCRUB, -DBROKEN_RESET, -DBROKEN_SWAPGAP,
-// -DBROKEN_NOFADE, -DBROKEN_NOREFRESH, -DBROKEN_RATECHECK, -DBROKEN_FDNGAIN
-// or -DBROKEN_LATESET
+// -DBROKEN_NOFADE, -DBROKEN_NOREFRESH, -DBROKEN_RATECHECK, -DBROKEN_FDNGAIN,
+// -DBROKEN_LATESET or -DBROKEN_DRYJUMP
 // (the defines reach the engine file too) and the named check fails. The
 // speed check has no broken build; it is a budget.
 //
@@ -933,9 +933,18 @@ static double worstDip(const float *y, int a, int b, double refRms)
 	return worst;
 }
 
+/* The same set with every response starting `by` samples later: a set whose
+   centre onset differs, as the built-in set and a SOFA file usually do. */
+static void shiftSet(const float *src, int taps, int by, float *dst)
+{
+	for (int p = 0; p < BIN_SPEAKERS * 2; p++)
+		for (int i = 0; i < taps; i++)
+			dst[(size_t)p * taps + i] = i >= by ? src[(size_t)p * taps + i - by] : 0.0f;
+}
+
 static void testSetSwap(void)
 {
-	printf("\n[12] a new head set mid-song: no click, no gap (BROKEN_SWAPGAP)\n");
+	printf("\n[12] a new head set mid-song: no click, no gap (BROKEN_SWAPGAP, BROKEN_DRYJUMP)\n");
 	const float fs = 48000;
 	int cOff, cOff2;
 	const int taps = makeSet(fs, 0.0875, g_set, &cOff);
@@ -960,6 +969,34 @@ static void testSetSwap(void)
 	check("worst sample step against steady, times", s, 0, 4.0);
 	const double ref = sqrt(energy(outL, seg, 2 * seg) / seg);
 	check("deepest 1 ms dip around the swaps, dB", worstDip(outL, at[0], at[1] + 4096, ref), -15, 0);
+
+	/* A set whose centre onset is later moves the dry signal, which is heard
+	   whenever Amount is under 100 and during every fade. It has to glide to
+	   the new delay, not jump there. A plain tone with no room shows a jump
+	   as a step far bigger than the tone's own. */
+	const int by = 38;
+	shiftSet(g_set, taps, by, g_set2);
+	const float amounts[2] = { 0, 50 };
+	for (int k = 0; k < 2; k++)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			const float v = (float)(0.25 * sin(2 * M_PI * 700.0 * i / 48000.0));
+			inL[i] = v;
+			inR[i] = v;
+		}
+		setup(fs, g_set, taps, cOff, amounts[k], 40, 60, 40, 0);
+		rs = 1;
+		runRange(inL, inR, outL, outR, 0, seg * 2 + 77, 480, &rs);
+		BinauralUpmixLoadHrir(&g_lib, g_set2, BIN_SPEAKERS, taps, fs, cOff + by);
+		runRange(inL, inR, outL, outR, at[0], seg * 3 + 77, 480, &rs);
+		BinauralUpmixLoadHrir(&g_lib, g_set, BIN_SPEAKERS, taps, fs, cOff);
+		runRange(inL, inR, outL, outR, at[1], n, 480, &rs);
+		const char *later[2] = { "onset 38 later", "back again" };
+		printf("   Amount %.0f, a 700 Hz tone, sets whose centre onsets differ:\n", amounts[k]);
+		clickScore(outL, at, 2, BinauralUpmixLatency(&g_lib), later, &e, &s);
+		check("worst sample step against steady, times", s, 0, 4.0);
+	}
 }
 
 static void testSwitch(void)

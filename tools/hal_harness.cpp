@@ -403,6 +403,22 @@ int main()
 		check("a refused set after a good one leaves it playing, hash not kept",
 			  C()->haveHrir && C()->dsp.binauralEnabled == 1 && getInt(30004) != 14, d);
 
+		// Geometry refused after a good set, then the rest of the sequence as
+		// the app sends it regardless: the parts and the commit find nothing
+		// to fill, and the hash must not inherit the good set's success.
+		sendSet(set, parts, 16);
+		{
+			int32_t wrongInfo[6] = { total, 7, taps, 48000, 20, parts };
+			setParamRaw(9997, wrongInfo, sizeof wrongInfo);
+			for (int i = 0; i < parts; i++) setParamRaw(12002, set.data() + i * 4096, 4096 * 4);
+			setShort(10011, 1);
+			setInt(25004, 17);
+		}
+		snprintf(d, sizeof d, "haveHrir %d hash %d taps %d", (int)C()->haveHrir, getInt(30004),
+				 C()->dsp.binaural.hrirTaps);
+		check("refused geometry after a good set: old set plays, hash not kept",
+			  C()->haveHrir && C()->dsp.binauralEnabled == 1 && getInt(30004) != 17, d);
+
 		// The convolver's slot is a different one: no IR here, so not kept.
 		setInt(25003, 77);
 		check("convolver hash slot still separate", getInt(30003) != 77 && getInt(30004) != 77, "");

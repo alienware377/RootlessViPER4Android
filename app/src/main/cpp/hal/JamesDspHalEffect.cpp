@@ -51,8 +51,13 @@ static effect_descriptor_t rv4a_descriptor =
        one, so the only thing that can tell the two apart is this string. It
        said nothing about which engine or which version, which is why a device
        running the stock module showed every fork card and responded to none
-       of them: unhandled ids are dropped without a word at both ends. */
-    "RootlessViPER4Android engine v4",
+       of them: unhandled ids are dropped without a word at both ends.
+       The number is the module version. Raise it (and EngineName in the app,
+       and kEngineName in magisk/aidl/src/EffectImpl.h)
+       whenever the module learns ids an older one would quietly ignore, so
+       the app can tell the user to flash the new one.
+       v5: the spectral shaper and the binaural upmix. */
+    "RootlessViPER4Android engine v5",
     "alienware377"
 };
 
@@ -354,6 +359,12 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
         c->hrirBuf = nullptr;
         c->hrirCapacity = 0;
         c->hrirPartsSeen = 0;
+        /* A new set is on its way, so the last one's success no longer
+           speaks for what the next hash will name. If this one is refused
+           here, or cannot be allocated, its commit finds nothing and would
+           otherwise leave the previous true in place for its hash. The set
+           already loaded keeps playing (haveHrir is untouched). */
+        c->hrirLastOk = false;
         const int64_t total = v[0];
         const int speakers = v[1], taps = v[2], fs = v[3], cOff = v[4], parts = v[5];
         if (speakers != BIN_SPEAKERS || taps < 16 || taps > 1024 || fs < 8000 || fs > 384000 ||
