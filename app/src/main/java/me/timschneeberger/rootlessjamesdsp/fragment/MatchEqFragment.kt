@@ -1,5 +1,6 @@
 package me.timschneeberger.rootlessjamesdsp.fragment
 
+import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
@@ -27,6 +28,7 @@ import me.timschneeberger.rootlessjamesdsp.matcheq.Rig
 import me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.MatchEqStore
+import me.timschneeberger.rootlessjamesdsp.utils.storage.BoundedRead
 import timber.log.Timber
 
 /**
@@ -190,18 +192,22 @@ class MatchEqFragment : PreferenceFragmentCompat() {
             ?: throw IllegalStateException("unreadable target")
     }
 
+    // Off the main thread: the file may be large, or streamed by a cloud
+    // provider, and reading and parsing it there froze the screen.
     private fun loadTargetFile(uri: Uri) {
         val ctx = requireContext()
-        val (name, text) = readUri(uri) ?: return
-        when (val r = CurveParser.parse(text, listOf("raw", "target"))) {
-            is CurveParser.Result.Failed -> host?.message(problemText(r.problem))
-            is CurveParser.Result.Ok -> {
-                if (r.isGraphicEq) {
-                    // A correction is not a sound to aim for.
-                    host?.message(getString(R.string.matcheq_file_profile_not_target))
-                    return
+        busy {
+            val (name, text) = readUri(ctx, uri) ?: return@busy
+            when (val r = CurveParser.parse(text, listOf("raw", "target"))) {
+                is CurveParser.Result.Failed -> say(problemText(ctx, r.problem))
+                is CurveParser.Result.Ok -> {
+                    if (r.isGraphicEq) {
+                        // A correction is not a sound to aim for.
+                        say(ctx.getString(R.string.matcheq_file_profile_not_target))
+                        return@busy
+                    }
+                    MatchEqStore.putTarget(ctx, MatchEqStore.TARGET_FILE, r.curve, 0.0, name)
                 }
-                MatchEqStore.putTarget(ctx, MatchEqStore.TARGET_FILE, r.curve, 0.0, name)
             }
         }
     }
@@ -259,54 +265,65 @@ class MatchEqFragment : PreferenceFragmentCompat() {
 
     private fun loadMeasurementFile(uri: Uri) {
         val ctx = requireContext()
-        val (name, text) = readUri(uri) ?: return
-        when (val r = CurveParser.parse(text, listOf("raw"))) {
-            is CurveParser.Result.Failed -> host?.message(problemText(r.problem))
-            is CurveParser.Result.Ok -> {
-                if (!r.isGraphicEq) {
-                    MatchEqStore.putMeasurement(ctx, r.curve, name, ORIGIN_FILE, null, false)
-                    return
+        busy {
+            val (name, text) = readUri(ctx, uri) ?: return@busy
+            when (val r = CurveParser.parse(text, listOf("raw"))) {
+                is CurveParser.Result.Failed -> say(problemText(ctx, r.problem))
+                is CurveParser.Result.Ok -> {
+                    if (!r.isGraphicEq) {
+                        MatchEqStore.putMeasurement(ctx, r.curve, name, ORIGIN_FILE, null, false)
+                        return@busy
+                    }
+                    // An EQ profile: estimate the measurement it was made for, as
+                    // if it was made for the target picked now.
+                    val target = MatchEqStore.target(ctx)
+                    if (target == null) {
+                        say(ctx.getString(R.string.matcheq_file_profile_no_target))
+                        return@busy
+                    }
+                    val bass = MatchEqStore.params(ctx).bassBoost
+                    val est = MatchEqSolver.estimateMeasurement(r.curve, target, bass)
+                    MatchEqStore.putMeasurement(ctx, est, name, ORIGIN_FILE, null, true)
+                    say(ctx.getString(R.string.matcheq_file_is_profile))
                 }
-                // An EQ profile: estimate the measurement it was made for, as
-                // if it was made for the target picked now.
-                val target = MatchEqStore.target(ctx)
-                if (target == null) {
-                    host?.message(getString(R.string.matcheq_file_profile_no_target))
-                    return
-                }
-                val bass = MatchEqStore.params(ctx).bassBoost
-                val est = MatchEqSolver.estimateMeasurement(r.curve, target, bass)
-                MatchEqStore.putMeasurement(ctx, est, name, ORIGIN_FILE, null, true)
-                host?.message(getString(R.string.matcheq_file_is_profile))
             }
         }
     }
 
     // ------------------------------------------------------------ helpers
 
-    private fun readUri(uri: Uri): Pair<String, String>? {
-        val ctx = requireContext()
+    /** Shows [text] from a [busy] block. */
+    private suspend fun say(text: String) = withContext(Dispatchers.Main) { host?.message(text) }
+
+    /** Runs on the IO dispatcher. */
+    private suspend fun readUri(ctx: Context, uri: Uri): Pair<String, String>? {
         return try {
             var name = uri.lastPathSegment?.substringAfterLast('/') ?: "file"
-            ctx.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
-                if (c.moveToFirst()) c.getString(0)?.let { name = it }
+            var size: Long? = null
+            ctx.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),
+                null, null, null)?.use { c ->
+                if (c.moveToFirst()) {
+                    c.getString(0)?.let { name = it }
+                    if (!c.isNull(1)) size = c.getLong(1)
+                }
             }
-            val text = ctx.contentResolver.openInputStream(uri)?.use { input ->
-                val bytes = input.readBytes()
-                if (bytes.size > MAX_FILE_BYTES) null else String(bytes, Charsets.UTF_8)
+            // Known to be too big: turn it down without opening it.
+            val text = if ((size ?: 0L) > MAX_FILE_BYTES) null
+            else ctx.contentResolver.openInputStream(uri)?.use { input ->
+                BoundedRead.readAtMost(input, MAX_FILE_BYTES)?.let { String(it, Charsets.UTF_8) }
             }
             if (text == null) {
-                host?.message(getString(R.string.matcheq_file_unreadable))
+                say(ctx.getString(R.string.matcheq_file_unreadable))
                 null
             } else name.substringBeforeLast('.') to text
         } catch (e: Exception) {
             Timber.w(e, "readUri")
-            host?.message(getString(R.string.matcheq_file_unreadable))
+            say(ctx.getString(R.string.matcheq_file_unreadable))
             null
         }
     }
 
-    private fun problemText(p: CurveParser.Problem) = getString(when (p) {
+    private fun problemText(ctx: Context, p: CurveParser.Problem) = ctx.getString(when (p) {
         CurveParser.Problem.EMPTY -> R.string.matcheq_file_empty
         CurveParser.Problem.TOO_FEW_POINTS -> R.string.matcheq_file_too_few
         CurveParser.Problem.TOO_NARROW -> R.string.matcheq_file_too_narrow
