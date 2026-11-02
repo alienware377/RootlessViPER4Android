@@ -651,7 +651,9 @@ typedef struct { int from, to; const char *name; } Switch;
 // Plays mode `from` for a second, switches to `to`, and plays on. Returns the
 // worst dip below the steady level and the worst step against the steady
 // signal's own largest step.
-static void runSwitch(int from, int to, int sig, int slip, double *dip, double *click,
+// slip samples of audio are let through when the lock is taken for the
+// slipLock-th time during the switch.
+static void runSwitch(int from, int to, int sig, int slip, int slipLock, double *dip, double *click,
                       double *setMs, double *lockMs, double *blockMs, int *catchUp)
 {
 	prepare(48000.0);
@@ -663,7 +665,7 @@ static void runSwitch(int from, int to, int sig, int slip, double *dip, double *
 	stream(sw);
 	g_lockMax = 0.0;
 	g_lockCount = 0;
-	g_slipAt = slip ? 3 : 0;   // lock 1 reads the state, 2 copies the history, 3 installs
+	g_slipAt = slip ? slipLock : 0;
 	g_slipSamples = slip;
 	const double t0 = now();
 	PitchShiftSetParam(&g_lib, 5.0f, 100.0f, to);
@@ -716,7 +718,7 @@ static void testSwitching(void)
 		{
 			double dip, click, setMs, lockMs, blockMs;
 			int cu;
-			runSwitch(sw[k].from, sw[k].to, s, 0, &dip, &click, &setMs, &lockMs, &blockMs, &cu);
+			runSwitch(sw[k].from, sw[k].to, s, 0, 0, &dip, &click, &setMs, &lockMs, &blockMs, &cu);
 			printf("       %6.2f dB /%5.2fx", dip, click);
 			if (dip > worstDip[s]) worstDip[s] = dip;
 			if (click > worstClick[s]) worstClick[s] = click;
@@ -735,17 +737,54 @@ static void testSwitching(void)
 	printf("      worst sine dip %.2f dB\n", worstDip[2]);
 
 	// Audio keeps playing while the new instance is primed on another thread.
-	// Let 30ms of it through between the history copy and the install, and
-	// make sure the instance catches up on exactly that and nothing is lost.
+	// The switch takes the lock to read the state (1), to copy the history
+	// (2), to see how much audio went by while it primed (3, then again after
+	// each round of feeding that in) and, last, to install (4 when nothing
+	// went by). Audio is let through at those points.
+	//
+	// 30ms just before the install: the audio thread catches up on exactly
+	// that and nothing is lost.
 	{
 		double dip, click, setMs, lockMs, blockMs;
 		int cu;
-		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.03), &dip, &click,
+		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.03), 4, &dip, &click,
 		          &setMs, &lockMs, &blockMs, &cu);
-		printf("      30ms of audio played during priming: caught up %d samples, dip %.2f dB, step %.2fx\n",
+		printf("      30ms of audio played just before the install: caught up %d samples, dip %.2f dB, step %.2fx\n",
 		       cu, dip, click);
 		check("it catches up on exactly the audio it missed (samples)", (double)cu,
 		      (double)secs(0.03), (double)secs(0.03) + 480.0);
+		check("with no dip (dB)", dip, -100.0, 3.0);
+		check("and no click (x)", click, 0.0, 1.5);
+	}
+	// 200ms while priming, a settings thread starved on a busy phone. The
+	// audio thread must not be left to feed all of it in one block: that is
+	// as much work as priming again, inside one callback.
+	{
+		double dip, click, setMs, lockMs, blockMs;
+		int cu;
+		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.2), 3, &dip, &click,
+		          &setMs, &lockMs, &blockMs, &cu);
+		printf("      200ms of audio played while priming: the audio thread fed %d samples to catch up\n"
+		       "      (slowest block after it %.3f ms), dip %.2f dB, step %.2fx\n",
+		       cu, blockMs, dip, click);
+		check("the audio thread feeds at most a few blocks' worth (samples)", (double)cu, 0.0,
+		      8.0 * 256.0);
+		check("with no dip (dB)", dip, -100.0, 3.0);
+		check("and no click (x)", click, 0.0, 1.5);
+	}
+	// 200ms just before the install, the one place the settings thread cannot
+	// feed it first: the audio thread seeks rather than feeding it all, and
+	// waits for the seeked instance to fill before fading it in.
+	{
+		double dip, click, setMs, lockMs, blockMs;
+		int cu;
+		runSwitch(PITCH_MODE_GRANULAR, PITCH_MODE_SIGNALSMITH, 1, secs(0.2), 4, &dip, &click,
+		          &setMs, &lockMs, &blockMs, &cu);
+		printf("      200ms of audio played just before the install: the audio thread fed %d samples\n"
+		       "      (slowest block after it %.3f ms), dip %.2f dB, step %.2fx\n",
+		       cu, blockMs, dip, click);
+		check("the audio thread feeds at most a few blocks' worth (samples)", (double)cu, 0.0,
+		      8.0 * 256.0);
 		check("with no dip (dB)", dip, -100.0, 3.0);
 		check("and no click (x)", click, 0.0, 1.5);
 	}
@@ -1190,9 +1229,10 @@ int main(int argc, char **argv)
 	// Unbuffered, so a crash still shows how far it got.
 	setvbuf(stdout, NULL, _IONBF, 0);
 	printf("== Signalsmith pitch shifting ==\n");
-	if (only == 8)
+	if (only == 4 || only == 8)
 	{
-		testBadValues();
+		if (only == 4) testSwitching();
+		else testBadValues();
 		prepare(48000.0);
 		printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
 		return failures ? 1 : 0;
