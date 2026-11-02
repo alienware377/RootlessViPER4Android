@@ -40,4 +40,27 @@ class LibrarySourcesTest {
         with(ContextExtensions) { ctx.restoreDspSettings(silent = true) }
         assertEquals(listOf(a, c), LibrarySources.load(ctx))
     }
+
+    @Test
+    fun `a removed source does not come back from an older preset`() {
+        leaveLegacy(a, c)
+        assertEquals(listOf(a, c), LibrarySources.load(ctx))
+        LibrarySources.remove(ctx, a)
+        // Loading a preset an older version saved copies its list back in.
+        leaveLegacy(a, c)
+        LibrarySources.absorbLegacy(ctx)
+        assertEquals(listOf(c), LibrarySources.load(ctx))
+    }
+
+    @Test
+    fun `adding a removed source again by hand keeps it`() {
+        leaveLegacy(a)
+        LibrarySources.load(ctx)
+        LibrarySources.remove(ctx, a)
+        LibrarySources.add(ctx, a)
+        LibrarySources.remove(ctx, c)
+        leaveLegacy(a, c)
+        LibrarySources.absorbLegacy(ctx)
+        assertEquals(listOf(a), LibrarySources.load(ctx))
+    }
 }
