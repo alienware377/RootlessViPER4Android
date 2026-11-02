@@ -455,6 +455,13 @@ void PitchShiftSetParam(JamesDSPLib *jdsp, float semitones, float mixPct, int mo
 	PitchShift *p = &jdsp->pitchShift;
 	PsFresh fresh;
 	void *trash = 0;
+	// Not a number: keep what was set before. Every clamp below is a
+	// comparison, which a NaN passes, and a NaN rate or mix is not just one
+	// bad block: Granular adds the rate into its read position every sample,
+	// so that position stays NaN and the card plays nothing until it is
+	// switched off and on again.
+	if (!isfinite(semitones) || !isfinite(mixPct))
+		return;
 	if (semitones > 12.0f) semitones = 12.0f;
 	if (semitones < -12.0f) semitones = -12.0f;
 	if (mode < 0 || mode >= PITCH_MODE_COUNT) mode = PITCH_MODE_GRANULAR;
@@ -796,6 +803,8 @@ static void psGranular(PitchShift *p, float *const *out, int m)
 		out[1][i] = r + p->mix * (wetR - r);
 
 		p->phasor += (1.0f - p->rate);
+		// The loops below cannot bring a NaN back into range.
+		if (!isfinite(p->phasor)) p->phasor = 0.0f;
 		while (p->phasor >= W) p->phasor -= W;
 		while (p->phasor < 0.0f) p->phasor += W;
 	}
