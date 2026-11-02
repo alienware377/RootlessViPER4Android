@@ -13,7 +13,8 @@ import me.timschneeberger.rootlessjamesdsp.interop.JamesDspRemoteEngine.PluginSt
 object EngineName {
     /**
      * The module version this app needs for everything it sends. Raise it,
-     * together with the name in hal/JamesDspHalEffect.cpp, whenever the module
+     * together with the name in hal/JamesDspHalEffect.cpp and kEngineName in
+     * magisk/aidl/src/EffectImpl.h, whenever the module
      * learns ids an older one would accept and then ignore.
      * 5: the spectral shaper (26023/26123) and the binaural upmix (26024/26124
      * and its head set, 9997/12002/10011/25004/30004).

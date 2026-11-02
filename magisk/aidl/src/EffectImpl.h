@@ -52,6 +52,14 @@ static const AudioUuid kEffectUuid = {
 static const AudioUuid kEffectType = {
     static_cast<int32_t>(0xf98765f4), 0xc321, 0x5de6, 0x9a45, {0x12, 0x34, 0x59, 0x49, 0x5a, 0xb2}};
 
+/* The app reads the version from this name and greys the newest cards, with a
+   note to flash the module again, when it is older than the app (EngineName in
+   the app). It is the legacy HAL's name in JamesDspHalEffect.cpp, raised with
+   it: both run the same dispatch, EffectParams.h. Without the number this
+   service counted as an outdated module that no flash could ever bring up to
+   date. */
+static constexpr const char *kEngineName = "RootlessViPER4Android engine v5";
+
 /* The engine sizes its internals from the block given at init, so never hand
    it more than this in one call regardless of what arrives. */
 static constexpr int kBlock = 4096;
@@ -113,7 +121,7 @@ class Rv4aEffect : public BnEffect {
     ndk::ScopedAStatus getDescriptor(Descriptor* desc) override {
         desc->common.id.type = kEffectType;
         desc->common.id.uuid = kEffectUuid;
-        desc->common.name = "RootlessViPER4Android";
+        desc->common.name = kEngineName;
         desc->common.implementor = "alienware377";
         desc->common.flags.type = Flags::Type::INSERT;
         desc->common.flags.insert = Flags::Insert::FIRST;
