@@ -459,6 +459,11 @@ object ContextExtensions {
     }
 
     fun Context.restoreDspSettings(silent: Boolean = false) {
+        // Download sources an older version kept in dsp_filelibrary are not a
+        // sound setting, and that file is about to be deleted: move them to
+        // their own file first, or they are gone for good.
+        me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources.absorbLegacy(this)
+
         // Delete DSP settings
         Timber.d("Reverting dsp preferences")
         File(applicationInfo.dataDir + "/shared_prefs")
