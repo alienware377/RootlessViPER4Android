@@ -51,8 +51,12 @@ static effect_descriptor_t rv4a_descriptor =
        one, so the only thing that can tell the two apart is this string. It
        said nothing about which engine or which version, which is why a device
        running the stock module showed every fork card and responded to none
-       of them: unhandled ids are dropped without a word at both ends. */
-    "RootlessViPER4Android engine v4",
+       of them: unhandled ids are dropped without a word at both ends.
+       The number is the module version. Raise it (and EngineName in the app)
+       whenever the module learns ids an older one would quietly ignore, so
+       the app can tell the user to flash the new one.
+       v5: the spectral shaper and the binaural upmix. */
+    "RootlessViPER4Android engine v5",
     "alienware377"
 };
 

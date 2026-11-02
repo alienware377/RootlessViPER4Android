@@ -440,7 +440,9 @@ class MainActivity : BaseActivity() {
                 }
                 else if (isRoot()) {
                     when(JamesDspRemoteEngine.isPluginInstalled()) {
-                        JamesDspRemoteEngine.PluginState.Available -> {
+                        // An older module still runs everything it knows.
+                        JamesDspRemoteEngine.PluginState.Available,
+                        JamesDspRemoteEngine.PluginState.Outdated -> {
                             binding.powerToggle.isToggled = !binding.powerToggle.isToggled
                             prefsApp.set(R.string.key_powered_on, binding.powerToggle.isToggled)
                         }
@@ -487,6 +489,9 @@ class MainActivity : BaseActivity() {
         if(isRoot()) {
             when(JamesDspRemoteEngine.isPluginInstalled()) {
                 JamesDspRemoteEngine.PluginState.Unavailable -> showLibraryLoadError()
+                // The module from before the last app update. It works, but
+                // the newest cards are greyed until it is flashed again.
+                JamesDspRemoteEngine.PluginState.Outdated -> toast(getString(R.string.outdated_engine_root_toast))
                 // Someone else's engine sits behind our uuid, almost always
                 // the stock JamesDSP module. It accepts the connection and
                 // then ignores every parameter this fork adds without saying
