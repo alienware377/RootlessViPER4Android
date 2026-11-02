@@ -1092,10 +1092,76 @@ static void testRobust(void)
 	}
 }
 
+// A value that is not a number can reach the engine from anywhere that sends
+// raw floats: the rooted audio server takes them straight from setParameter.
+// In formant mode a not-a-number ratio once became a not-a-number band index
+// inside the library, which on x86 reads far outside its table and takes the
+// whole process down, and that process is the audio server.
+static void testBadValues(void)
+{
+	printf("\n8. values that are not numbers\n");
+	const float bad[4] = { NAN, INFINITY, 0.0f, -1.0f };
+	const char *badName[4] = { "a NaN", "an infinite", "a zero", "a negative" };
+	for (int b = 0; b < 4; b++)
+	{
+		// The C face on its own: a formant instance told a ratio it cannot use.
+		prepare(48000.0);
+		genTone(440.0, 0.5, secs(0.5));
+		void *s = SignalsmithCreate(48000.0f, 1);
+		const float *ring[2] = { inL, inR };
+		float *out[2] = { bufL, bufR };
+		SignalsmithSetRatio(s, 1.5f);
+		SignalsmithProcessRing(s, ring, -1, 0, out, secs(0.25));
+		SignalsmithSetRatio(s, bad[b]);
+		SignalsmithProcessRing(s, ring, -1, secs(0.25), out + 0, secs(0.25));
+		int nf = 0;
+		for (int i = 0; i < secs(0.25); i++)
+			if (!isfinite(bufL[i]) || !isfinite(bufR[i])) nf++;
+		SignalsmithDestroy(s);
+		printf("      formant instance given %s ratio: still running, %d non-finite samples\n",
+		       badName[b], nf);
+		char what[96];
+		snprintf(what, sizeof(what), "%s ratio leaves the output finite (samples)", badName[b]);
+		check(what, (double)nf, 0, 0);
+	}
+	// The same through the card, the way the audio server takes it. Rubber
+	// Band formant falls back to Signalsmith formant when it is not installed,
+	// which in the audio server it never is.
+	const int modes[2] = { PITCH_MODE_SIGNALSMITH_FORMANT, PITCH_MODE_RUBBERBAND_FORMANT };
+	for (int k = 0; k < 2; k++)
+	{
+		prepare(48000.0);
+		genTone(440.0, 0.5, secs(2.0));
+		startCard(5.0f, 100.0f, modes[k]);
+		stream(secs(1.0));
+		const int before = nonFinite(secs(1.0));
+		PitchShiftSetParam(&g_lib, NAN, 100.0f, modes[k]);
+		stream(secs(1.0));
+		const int after = nonFinite(secs(2.0)) - before;
+		printf("      %s, a NaN shift sent: survived, %d non-finite samples before, %d after\n",
+		       modeName(modes[k]), before, after);
+		char what[96];
+		snprintf(what, sizeof(what), "%s survives a NaN shift with finite output", modeName(modes[k]));
+		check(what, (double)(before + after), 0, 0);
+		PitchShiftDisable(&g_lib);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	const int quick = argc > 1 && !strcmp(argv[1], "quick");
+	// A section number runs only that section.
+	const int only = argc > 1 ? atoi(argv[1]) : 0;
+	// Unbuffered, so a crash still shows how far it got.
+	setvbuf(stdout, NULL, _IONBF, 0);
 	printf("== Signalsmith pitch shifting ==\n");
+	if (only == 8)
+	{
+		testBadValues();
+		prepare(48000.0);
+		printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
+		return failures ? 1 : 0;
+	}
 	testPitch();
 	testLevel();
 	testLatency();
@@ -1104,6 +1170,7 @@ int main(int argc, char **argv)
 	testDrag();
 	testCpu();
 	if (!quick) testRobust();
+	testBadValues();
 	prepare(48000.0);
 	printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures, failures == 1 ? "" : "s");
 	return failures ? 1 : 0;
