@@ -92,7 +92,7 @@ class BackupManager(private val context: Context): KoinComponent {
                 FileLibraryPreference.types.entries.forEach { entry ->
                     File(context.getExternalFilesDir(null), "/${entry.key}")
                         .listFiles()
-                        ?.filter { entry.value.any { ext -> it.absolutePath.endsWith(ext) } }
+                        ?.filter { FileLibraryPreference.matchesType(entry.key, it.name) }
                         ?.forEach { c.add(it, "${entry.key}/${it.name}") }
                 }
             }
@@ -181,12 +181,12 @@ class BackupManager(private val context: Context): KoinComponent {
         // The download sources the user added: theirs, so restored with the rest
         private const val FILE_LIBRARY_SOURCES = Constants.PREF_FILELIBRARY_SOURCES + ".xml"
 
-        private fun isKnownFile(name: String): Boolean {
+        internal fun isKnownFile(name: String): Boolean {
             return (name.contains("dsp_") && name.endsWith(".xml")) ||
                     name.endsWith(FILE_EFFECT_LAYOUT) ||
                     name.endsWith(FILE_LIBRARY_SOURCES) ||
                     name.startsWith("profiles/") ||
-                    FileLibraryPreference.types.any { name.contains(it.key) && it.value.any { ext -> name.endsWith(ext) } }
+                    FileLibraryPreference.types.keys.any { name.contains(it) && FileLibraryPreference.matchesType(it, name) }
         }
 
         fun getBackupFilename(): String {
