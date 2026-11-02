@@ -456,6 +456,9 @@ typedef struct
 	// Ring position, samples since the last frame, switch on and off.
 	int pos, hop, filled, fadingOut;
 	float wetGain;
+	// A new set whose centre onset differs moves the dry read point. For
+	// dryXfade more samples the dry is still partly read at dryCOffOld.
+	int dryCOffOld, dryXfade;
 #ifdef BINAURAL_STATS
 	// Harness only: energy each speaker was fed, and in the primary part.
 	double feedEnergy[BIN_SPEAKERS], primaryEnergy, ambienceEnergy;
