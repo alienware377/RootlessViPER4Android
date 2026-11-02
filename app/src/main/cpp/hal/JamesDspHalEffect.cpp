@@ -354,6 +354,12 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
         c->hrirBuf = nullptr;
         c->hrirCapacity = 0;
         c->hrirPartsSeen = 0;
+        /* A new set is on its way, so the last one's success no longer
+           speaks for what the next hash will name. If this one is refused
+           here, or cannot be allocated, its commit finds nothing and would
+           otherwise leave the previous true in place for its hash. The set
+           already loaded keeps playing (haveHrir is untouched). */
+        c->hrirLastOk = false;
         const int64_t total = v[0];
         const int speakers = v[1], taps = v[2], fs = v[3], cOff = v[4], parts = v[5];
         if (speakers != BIN_SPEAKERS || taps < 16 || taps > 1024 || fs < 8000 || fs > 384000 ||
