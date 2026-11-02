@@ -205,6 +205,14 @@ class NewCardPlacementTest {
             declared = tiny, present = tiny, headers = setOf("group_v4a"),
         )
         assertEquals(listOf("card_b", "card_a", "group_v4a"), merged)
+
+        // Its declared neighbour sits above a card here. Slotted in after
+        // that neighbour, the heading would take that card into its group.
+        val merged2 = NewCardPlacement.merge(
+            saved = listOf("card_a", "card_b"),
+            declared = tiny, present = tiny, headers = setOf("group_v4a"),
+        )
+        assertEquals(listOf("card_a", "card_b", "group_v4a"), merged2)
     }
 
     @Test
