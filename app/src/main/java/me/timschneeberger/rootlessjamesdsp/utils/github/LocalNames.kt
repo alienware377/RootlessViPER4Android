@@ -22,10 +22,14 @@ object LocalNames {
      */
     fun plan(files: List<RemoteFile>, existing: Map<String, Long>, repoName: String): List<Plan> {
         val taken = HashSet(existing.keys)
-        return files.map { planOne(it, existing, taken, repoName) }
+        val claimed = HashSet<String>()
+        return files.map { planOne(it, existing, taken, claimed, repoName) }
     }
 
-    private fun planOne(f: RemoteFile, existing: Map<String, Long>, taken: MutableSet<String>, repoName: String): Plan {
+    private fun planOne(
+        f: RemoteFile, existing: Map<String, Long>, taken: MutableSet<String>,
+        claimed: MutableSet<String>, repoName: String,
+    ): Plan {
         val base = sanitize(f.name)
         val tag = sanitize(f.folder.substringAfterLast('/').ifEmpty { repoName.substringAfterLast('/') })
         var n = 0
@@ -35,7 +39,11 @@ object LocalNames {
             val have = existing[key]
             // A file of the same name and size is the same file. A Git LFS
             // pointer's size says nothing about the real file, so the name has to do.
-            if (have != null && (have == f.size || f.maybeLfs)) return Plan(f, null)
+            // One library file stands for one remote file only: two folders can
+            // hold different files of the same name and size, and on a second
+            // visit the second one used to match the first one's download and
+            // was shown as already downloaded when it never was.
+            if (have != null && (have == f.size || f.maybeLfs) && claimed.add(key)) return Plan(f, null)
             if (key !in taken) {
                 taken += key
                 return Plan(f, candidate)

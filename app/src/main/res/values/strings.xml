@@ -1320,6 +1320,8 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="binaural_status_file">%1$s\nLicence of this set: %2$s</string>
     <string name="binaural_status_file_no_licence">%1$s\nThis set does not say what its licence is.</string>
     <string name="binaural_status_untitled">Untitled set</string>
+    <string name="binaural_status_rate_too_high">Off for now: your audio is playing at %1$s kHz, and this head set only works up to %2$s kHz. It comes back on by itself when the audio is at %2$s kHz or lower.</string>
+    <string name="binaural_status_rate_failed">Off for now: this head set could not be prepared for %1$s kHz, the rate your audio is playing at. It tries again when the rate changes.</string>
     <string name="binaural_error_unreadable">This file could not be read as a SOFA file.</string>
     <string name="binaural_error_not_hrir">This file is not a head related impulse response set for two ears.</string>
     <string name="binaural_error_too_big">This file is too big (over 64 MB).</string>
@@ -1332,7 +1334,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="binaural_speaker_off">Off on speakers</string>
     <string name="binaural_speaker_off_summary">Switches itself off while the sound comes from the phone\'s speaker or HDMI. Bluetooth and USB count as headphones.</string>
     <string name="shaper_enable">Spectral shaper</string>
-    <string name="shaper_info">Finds frequencies that suddenly stick out, like a harsh cymbal, a sharp \"s\" or a bright peak in some earphones, and turns them down only while they stick out. Everything else passes through untouched. Clean, steady notes are left alone on purpose, which also means a ring that only happens along with a held note is left alone too. Switch on Catch steady tones too if that is what bothers you. This card delays the sound by about 21 ms, which is fine for music and for video.</string>
+    <string name="shaper_info">Finds frequencies that suddenly stick out, like a harsh cymbal, a sharp \"s\" or a bright peak in some earphones, and turns them down only while they stick out. Everything else passes through untouched. Clean, steady notes are left alone on purpose, which also means a ring that only happens along with a held note is left alone too. Switch on Catch steady tones too if that is what bothers you. This card delays the sound by about 21 ms at 48 kHz and 23 ms at 44.1 kHz, which is fine for music and for video.</string>
     <string name="shaper_amount">Amount</string>
     <string name="shaper_amount_summary">The most any frequency can be turned down. At 0 nothing is changed.</string>
     <string name="shaper_sensitivity">Sensitivity</string>
