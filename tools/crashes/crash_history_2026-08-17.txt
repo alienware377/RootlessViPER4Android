@@ -36,7 +36,7 @@ Caused by: kotlin.UninitializedPropertyAccessException: lateinit property bindin
 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1526)
 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4436)
 
-===== 2026-08-11 14:35:35 (JVM) — same lateinit, different entry point =====
+===== 2026-08-11 14:35:35 (JVM): same lateinit, different entry point =====
 thread=main
 java.lang.RuntimeException: Unable to start activity ...: kotlin.UninitializedPropertyAccessException: lateinit property binding has not been initialized
 	at android.app.ActivityThread.handleRelaunchActivityInner(ActivityThread.java:7028)
