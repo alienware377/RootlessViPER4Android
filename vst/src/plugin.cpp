@@ -1,4 +1,4 @@
-// RV4A Bass Exciter — VST3.
+// RV4A Bass Exciter, VST3.
 #include "Rv4aPluginBase.h"
 #include "public.sdk/source/main/pluginfactory.h"
 #include "BassExciterDsp.h"
