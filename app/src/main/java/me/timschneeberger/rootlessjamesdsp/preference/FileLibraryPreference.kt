@@ -175,6 +175,9 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
             "Sofa" to listOf(".sofa")
         )
 
+        /** The largest head set the engine reads, SOFA_MAX_BYTES in sofa_extract.h. */
+        const val SOFA_MAX_BYTES = 64L shl 20
+
         fun hasIrsExtension(it: String): Boolean {
             return types["Convolver"]!!.any { ext -> it.endsWith(ext) }
         }
