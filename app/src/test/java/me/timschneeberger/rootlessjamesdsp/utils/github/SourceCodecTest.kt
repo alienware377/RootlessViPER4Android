@@ -33,4 +33,16 @@ class SourceCodecTest {
         // Same repository, different folder: a separate source
         assertEquals(3, SourceCodec.merge(mine, listOf(Source("a/b", "main", "a/b/x", "x"))).size)
     }
+
+    @Test
+    fun `a source the user removed is not brought back by an older preset`() {
+        val mine = listOf(Source("a/b", "main", "a/b"))
+        val preset = listOf(Source("C/D", "main", "c/d"), Source("e/f", "main", "e/f"),
+            Source("e/f", "main", "e/f/x", "x"))
+        // c/d was removed (keys are lower-cased); the folder source of e/f was removed, the plain one not
+        val removed = setOf(Source("c/d", "main", "").key, Source("e/f", "main", "", "x").key)
+        assertEquals(listOf("a/b:", "e/f:"), SourceCodec.merge(mine, preset, removed).map { it.key })
+        // Something already on the list stays, whatever the removed set says
+        assertEquals(mine, SourceCodec.merge(mine, emptyList(), setOf(mine[0].key)))
+    }
 }
