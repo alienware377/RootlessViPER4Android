@@ -184,6 +184,11 @@ class ProfileManager : BroadcastReceiver(), RoutingObserver.RoutingChangedCallba
         val profile = activeProfile ?: routingObserver.currentDevice?.let { Profile.from(it) }
         profile ?: return
 
+        // Download sources an older version kept in dsp_filelibrary would
+        // otherwise survive only inside this profile's preset once the dsp_*
+        // files below are deleted.
+        me.timschneeberger.rootlessjamesdsp.utils.github.LibrarySources.absorbLegacy(context)
+
         store(profile)
 
         // Clear old current files

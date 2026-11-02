@@ -9,6 +9,11 @@ on:
     paths:
       - 'magisk/aidl/**'
       - '.github/workflows/build-aidl.yml'
+      # The service compiles the engine and the hal dispatch too, so a change
+      # there can break it as easily as one here.
+      - 'app/src/main/cpp/libjamesdsp/**'
+      - 'app/src/main/cpp/hal/**'
+      - 'third_party/signalsmith-*/**'
   workflow_dispatch:
 
 jobs:
@@ -44,6 +49,15 @@ jobs:
               -DANDROID_ABI="$abi" \
               -DANDROID_PLATFORM=android-33
             cmake --build "build/$abi"
+          done
+
+      # The link ignores unresolved symbols (see CMakeLists.txt), so a source
+      # left out of the build still links, and the service then cannot start.
+      - name: Check every symbol the service needs is provided
+        run: |
+          for abi in arm64-v8a x86_64; do
+            bash magisk/aidl/check-undefined.sh "build/$abi/rv4a-effect-service" \
+              "$ANDROID_NDK_LATEST_HOME" "$abi" 33
           done
 
       # The binary is ~30MB unstripped, almost all debug info. Stripping takes

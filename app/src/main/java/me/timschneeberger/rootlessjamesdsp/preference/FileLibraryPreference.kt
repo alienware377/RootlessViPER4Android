@@ -175,6 +175,9 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
             "Sofa" to listOf(".sofa")
         )
 
+        /** The largest head set the engine reads, SOFA_MAX_BYTES in sofa_extract.h. */
+        const val SOFA_MAX_BYTES = 64L shl 20
+
         fun hasIrsExtension(it: String): Boolean {
             return types["Convolver"]!!.any { ext -> it.endsWith(ext) }
         }
@@ -188,8 +191,16 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
             return types["Presets"]!!.any { ext -> it.endsWith(ext) }
         }
         fun hasSofaExtension(it: String): Boolean {
-            return types["Sofa"]!!.any { ext -> it.lowercase().endsWith(ext) }
+            return matchesType("Sofa", it)
         }
+
+        /**
+         * Whether [name] has one of the extensions of library folder [type],
+         * in any case. What backups take and restore, so that a file the
+         * library accepted (a ".SOFA" head set, say) is never left out.
+         */
+        fun matchesType(type: String, name: String): Boolean =
+            types[type]?.any { ext -> name.endsWith(ext, ignoreCase = true) } == true
 
 
         /**

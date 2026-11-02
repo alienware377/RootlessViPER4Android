@@ -9,6 +9,7 @@
 // method instead of going quiet. Nothing is allocated after Create; process()
 // only reuses buffers sized in configure(), so the calls marked realtime safe
 // below really are.
+#include <cmath>
 #include <new>
 #include "signalsmith-stretch/signalsmith-stretch.h"
 
@@ -106,6 +107,11 @@ void SignalsmithDestroy(void *p)
 void SignalsmithSetRatio(void *p, float ratio)
 {
 	Shifter *s = static_cast<Shifter *>(p);
+	// A ratio that is not a positive number has no meaning, and in formant
+	// mode a NaN one becomes a NaN band index inside the library, which reads
+	// far outside its table and crashes the process (on x86 the index turns
+	// into the most negative int). Play it unshifted instead.
+	if (!(ratio > 0.0f) || !std::isfinite(ratio)) ratio = 1.0f;
 	if (ratio == s->ratio) return;
 	s->ratio = ratio;
 	s->st.setTransposeFactor(ratio);
