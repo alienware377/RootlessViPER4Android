@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <vector>
+#include <time.h>
 
 #include "../app/src/main/cpp/hal/JamesDspHalEffect.cpp"
 
@@ -276,36 +277,44 @@ static void create()
    after each. Names the ids whose values can poison the output. */
 static int scanIds(void)
 {
+	setvbuf(stdout, NULL, _IONBF, 0);
 	int bad = 0;
 	for (int k = 0; k < kNumIds; k++)
 	{
 		const int32_t id = kIds[k];
-		long badHere = 0;
-		for (int t = 0; t < 200 && !badHere; t++)
+		const char *only = getenv("FUZZ_ONLY");
+		if (only && atoi(only) != id) continue;
+		g_rng = 0x9E3779B97F4A7C15ull ^ (uint64_t)(uint32_t)id;   /* replayable per id */
+		/* One engine per id; payloads until one poisons it or 300 are tried. */
+		create();
+		int16_t one = 1;
+		const int32_t en[] = { id + 100, 1200 + (id % 100) };
+		for (int e = 0; e < 2; e++)
 		{
-			create();
-			int16_t one = 1;
-			const int32_t en[] = { id + 100, 1200 + (id % 100) };
-			for (int e = 0; e < 2; e++)
-			{
-				g_buf.assign(sizeof(effect_param_t) + 8, 0);
-				effect_param_t *p = (effect_param_t *)g_buf.data();
-				p->psize = 4; p->vsize = 2;
-				memcpy(p->data, &en[e], 4); memcpy(p->data + 4, &one, 2);
-				command(EFFECT_CMD_SET_PARAM, (uint32_t)g_buf.size(), g_buf.data(), NULL, NULL);
-			}
-			setParam(id, 4 * (1 + below(24)), true);
-			const long before = g_badBlocks;
-			for (int a = 0; a < 6; a++) audio();
-			badHere = g_badBlocks - before;
-			if (badHere)
-			{
-				printf("  id %d poisons the output; the payload was:\n    %s\n", id,
-					g_trace[(g_traceAt - 7) & 63]);
-				bad++;
-			}
-			EffectRelease(h);
+			g_buf.assign(sizeof(effect_param_t) + 8, 0);
+			effect_param_t *p = (effect_param_t *)g_buf.data();
+			p->psize = 4; p->vsize = 2;
+			memcpy(p->data, &en[e], 4); memcpy(p->data + 4, &one, 2);
+			command(EFFECT_CMD_SET_PARAM, (uint32_t)g_buf.size(), g_buf.data(), NULL, NULL);
 		}
+		const time_t start = time(NULL);
+		int t;
+		for (t = 0; t < 300 && time(NULL) - start < 20; t++)
+		{
+			setParam(id, 4 * (1 + below(24)), true);
+			const unsigned at = g_traceAt - 1;
+			if (only) printf("    %s\n", g_trace[at & 63]);
+			const long before = g_badBlocks;
+			for (int a = 0; a < 2; a++) audio();
+			if (g_badBlocks != before)
+			{
+				printf("  id %d poisons the output after:\n    %s\n", id, g_trace[at & 63]);
+				bad++;
+				break;
+			}
+		}
+		printf("  id %d: %d payloads, %lds\n", id, t, (long)(time(NULL) - start));
+		EffectRelease(h);
 	}
 	printf("%d ids can poison the output\n", bad);
 	return bad ? 1 : 0;
