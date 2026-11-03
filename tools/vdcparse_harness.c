@@ -3,7 +3,7 @@
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
 //   J=app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp
 //   $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -I $J \
-//       -Wl,--wrap=malloc -Wl,--wrap=calloc tools/vdcparse_harness.c \
+//       -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=free tools/vdcparse_harness.c \
 //       $J/Effects/vdc.c tools/lockstub.c -lm -o tools/vdcparse_x86
 //
 // DDCParser sized both coefficient arrays from the comma count of the
@@ -27,6 +27,10 @@
 #define GUARD 128
 #define MAXBLK 64
 static struct { unsigned char *p; size_t n; } blk[MAXBLK];
+/* Guard bytes found changed in blocks the parser freed itself. Checked at the
+   free, because reading them afterwards (as this once did) reads freed memory,
+   which AddressSanitizer rightly reports as the harness's own fault. */
+static int freedGuard = 0;
 static int failures = 0;
 
 static void record(unsigned char *p, size_t n)
@@ -42,6 +46,19 @@ void *__wrap_malloc(size_t n)
 	if (p) record(p, n);
 	return p;
 }
+void __real_free(void *p);
+void __wrap_free(void *p)
+{
+	for (int i = 0; p && i < MAXBLK; i++)
+		if (blk[i].p == p)
+		{
+			for (int k = 0; k < GUARD; k++)
+				freedGuard += blk[i].p[blk[i].n + k] != 0xA5;
+			blk[i].p = 0;
+			break;
+		}
+	__real_free(p);
+}
 // clang at -O2 fuses vdc.c's malloc + memset(0) into calloc, so wrap that too
 void *__real_calloc(size_t a, size_t b);
 void *__wrap_calloc(size_t a, size_t b)
@@ -56,6 +73,7 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48);
 static void run(const char *label, const char *s, int wantSos, double want441, double want48)
 {
 	memset(blk, 0, sizeof(blk));
+	freedGuard = 0;
 	static const char tail[] = ",9,9,9,9,9";
 	size_t len = strlen(s);
 	char *buf = (char *)__real_malloc(len + 1 + sizeof(tail));
@@ -63,7 +81,7 @@ static void run(const char *label, const char *s, int wantSos, double want441, d
 	memcpy(buf + len + 1, tail, sizeof(tail));
 	DirectForm2 *a = 0, *b = 0;
 	int sos = DDCParser(buf, &a, &b);
-	int guard = 0, nines = 0;
+	int guard = freedGuard, nines = 0;
 	for (int i = 0; i < MAXBLK; i++)
 		if (blk[i].p)
 			for (int k = 0; k < GUARD; k++)
