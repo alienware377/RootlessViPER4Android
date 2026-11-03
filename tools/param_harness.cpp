@@ -95,6 +95,37 @@ int main()
 		check("26022 keeps an ordinary strength as sent", fabsf(g_lib.spectrumExt.strength - 0.1f) < 1e-6f);
 	}
 
+	// 115, the compander: NaN curve points made its gains NaN, and the rate
+	// lookup then read before the start of its table.
+	{
+		float cv[17] = { 0.22f, 2.0f, 0.0f };
+		for (int i = 3; i < 17; i++) cv[i] = NAN;
+		sendFloats(115, cv, 17);
+		bool finite = true;
+		for (int i = 0; i < NUMPTS_DRS + 2; i++)
+			finite = finite && isfinite(g_lib.comp.gains2[i]) && isfinite(g_lib.comp.freq2[i]);
+		check("115 turns NaN curve points into finite ones", finite);
+	}
+
+	// Tape (26018) and echo/delay (26010) passed NaN through their clamps to
+	// the delay lines' read positions; most echo values had no clamp at all.
+	{
+		float tv[6]; for (int i = 0; i < 6; i++) tv[i] = NAN;
+		sendFloats(26018, tv, 6);
+		check("26018 turns NaN wow and flutter into finite ones",
+			  isfinite(g_lib.tape.wowPct) && isfinite(g_lib.tape.flutterPct) && isfinite(g_lib.tape.mix));
+		float ev[26]; for (int i = 0; i < 26; i++) ev[i] = NAN;
+		sendFloats(26010, ev, 26);
+		check("26010 turns NaN delay settings into finite ones",
+			  isfinite(g_lib.echoDelay.offsetSamples) && isfinite(g_lib.echoDelay.modTime) &&
+			  isfinite(g_lib.echoDelay.targetDelay) && isfinite(g_lib.echoDelay.wet));
+		for (int i = 0; i < 26; i++) ev[i] = 1e30f;
+		sendFloats(26010, ev, 26);
+		check("26010 holds 1e30 settings to the knobs' ranges",
+			  g_lib.echoDelay.wet <= 1.0f && g_lib.echoDelay.modRate <= 10.0f &&
+			  fabsf(g_lib.echoDelay.offsetSamples) <= 0.2f * 48000.0f + 1.0f);
+	}
+
 	// 116: filter type, interpolation mode, then 15 frequencies and 15 gains.
 	{
 		float v[32];
