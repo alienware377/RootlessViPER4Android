@@ -8,8 +8,18 @@
 #include "../jdsp_header.h"
 void JLimiterSetCoefficients(JamesDSPLib *jdsp, double thresholddB, double msRelease)
 {
-	if (msRelease < 1.5)
+	/* Written so a NaN fails every test and lands on a safe value: a NaN
+	   threshold or release made the limiter's gain NaN, and the output stayed
+	   NaN from then on. In root mode any app can send these (found by
+	   tools/paramfuzz_harness.cpp). */
+	if (!(msRelease >= 1.5))
 		msRelease = 1.5;
+	if (msRelease > 10000.0)
+		msRelease = 10000.0;
+	if (!(thresholddB <= -0.09))
+		thresholddB = -0.09;
+	if (thresholddB < -120.0)
+		thresholddB = -120.0;
 	jdsp->limiter.relCoef = (float)exp(-1000.0 / (msRelease * round((double)jdsp->fs)));
 	jdsp->limiter.threshold = (float)pow(10.0, thresholddB / 20.0);
 }

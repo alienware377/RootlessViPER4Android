@@ -1769,6 +1769,9 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 }
 void JamesDSPSetPostGain(JamesDSPLib *jdsp, double pGaindB)
 {
+	/* NaN passed both tests below and made every output sample NaN. */
+	if (pGaindB != pGaindB)
+		pGaindB = 0.0;
 	if (pGaindB < -15.0f)
 		pGaindB = -15.0f;
 	if (pGaindB > 15.0f)
