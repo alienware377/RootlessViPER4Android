@@ -18,6 +18,19 @@ extern "C" {
 #define LOGD(...) ((void)0)
 #endif
 
+/* Floats from the payload to ints. Any app can send these in root mode, and a
+   NaN or an out-of-range float converted to int is undefined behaviour (arm64
+   happens to give 0 or saturate; nothing promises it). NaN becomes 0 and the
+   rest is held to +-1e9 first; every setter clamps to its own range after. */
+static inline int pInt(float v)
+{
+    if (!(v == v)) return 0;
+    if (v > 1e9f) v = 1e9f;
+    if (v < -1e9f) v = -1e9f;
+    return (int)v;
+}
+static inline int pRound(float v) { return pInt(v + 0.5f); }
+
 static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
                               const float *fv, uint32_t fn)
 {
@@ -57,7 +70,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
        Values come as a float array in the order the app packs them; enable
        flags sit one hundred above the value id. Anything with too few values
        is ignored rather than half-applied. */
-    case 26000: if (fn >= 2) ViperClaritySetParam(d, (int)fv[0], fv[1]); break;
+    case 26000: if (fn >= 2) ViperClaritySetParam(d, pInt(fv[0]), fv[1]); break;
     case 26100: if (on) ViperClarityEnable(d); else ViperClarityDisable(d); break;
 
     case 26001: if (fn >= 2) FieldSurroundSetParam(d, fv[0], fv[1]); break;
@@ -69,12 +82,12 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     case 26003: if (fn >= 2) HpSurroundSetParam(d, fv[0], fv[1]); break;
     case 26103: if (on) HpSurroundEnable(d); else HpSurroundDisable(d); break;
 
-    case 26006: if (fn >= 3) ViperBassSetParam(d, (int)fv[0], fv[1], fv[2]); break;
+    case 26006: if (fn >= 3) ViperBassSetParam(d, pInt(fv[0]), fv[1], fv[2]); break;
     case 26106: if (on) ViperBassEnable(d); else ViperBassDisable(d); break;
 
     case 26007:
         if (fn >= 12)
-            VReverbSetParam(d, (int)fv[0], fv[1], fv[2], fv[3], fv[4], fv[5],
+            VReverbSetParam(d, pInt(fv[0]), fv[1], fv[2], fv[3], fv[4], fv[5],
                             fv[6], fv[7], fv[8], fv[9], fv[10], fv[11]);
         break;
     case 26107: if (on) VReverbEnable(d); else VReverbDisable(d); break;
@@ -87,7 +100,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26104: if (on) FetCompEnable(d); else FetCompDisable(d); break;
 
-    case 26005: if (fn >= 1) CureSetParam(d, (int)fv[0]); break;
+    case 26005: if (fn >= 1) CureSetParam(d, pInt(fv[0])); break;
     case 26105: if (on) CureEnable(d); else CureDisable(d); break;
 
     case 26009:
@@ -97,16 +110,16 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
            methods (4 and 5) need nothing here. Rubber Band is never loaded in
            the audio server, so its two modes play as the matching Signalsmith
            one. A module older than the app clamps 4 and 5 to granular. */
-        if (fn >= 3) PitchShiftSetParam(d, fv[0], fv[1], (int)(fv[2] + 0.5f));
+        if (fn >= 3) PitchShiftSetParam(d, fv[0], fv[1], pRound(fv[2]));
         else if (fn >= 2) PitchShiftSetParam(d, fv[0], fv[1], PITCH_MODE_GRANULAR);
         break;
     case 26109: if (on) PitchShiftEnable(d); else PitchShiftDisable(d); break;
 
     case 26010:
         if (fn >= 25)
-            EchoDelaySetParam(d, fv[0], fv[1], fv[2], fv[3], fv[4] != 0.0f, (int)fv[5],
-                              fv[6], fv[7], fv[8], fv[9], (int)fv[10], fv[11], fv[12],
-                              fv[13], fv[14], fv[15], fv[16], fv[17], (int)fv[18],
+            EchoDelaySetParam(d, fv[0], fv[1], fv[2], fv[3], fv[4] != 0.0f, pInt(fv[5]),
+                              fv[6], fv[7], fv[8], fv[9], pInt(fv[10]), fv[11], fv[12],
+                              fv[13], fv[14], fv[15], fv[16], fv[17], pInt(fv[18]),
                               fv[19], fv[20], fv[21], fv[22], fv[23], fv[24]);
         break;
     case 26110: if (on) EchoDelayEnable(d); else EchoDelayDisable(d); break;
@@ -119,7 +132,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     case 26013:
         if (fn >= 3)
         {
-            int count = (int)(fv[1] + 0.5f);
+            int count = pRound(fv[1]);
             /* Clamped BEFORE the length it implies is worked out, which is the
                whole point. Computed the other way round, a count of 2^29
                multiplied by eight wraps a 32-bit length back to zero, so the
@@ -134,7 +147,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
             if (fn >= need)
             {
                 DynamicEqSetBands(d, fv + 3, count);
-                DynamicEqSetParam(d, fv[0], (int)(fv[2] + 0.5f));
+                DynamicEqSetParam(d, fv[0], pRound(fv[2]));
             }
         }
         break;
@@ -162,7 +175,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     case 26017:
         if (fn >= 10)
             ExciterSetParam(d, fv[0], fv[1], fv[2], fv[3], fv[4], fv[5], fv[6],
-                            (int)(fv[7] + 0.5f), fv[8], fv[9]);
+                            pRound(fv[7]), fv[8], fv[9]);
         break;
     case 26117: if (on) ExciterEnable(d); else ExciterDisable(d); break;
 
@@ -181,7 +194,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
 
     case 26021:
         if (fn >= 3)
-            BalanceSetParam(d, fv[0], (int)(fv[1] + 0.5f), fv[2]);
+            BalanceSetParam(d, fv[0], pRound(fv[1]), fv[2]);
         break;
     case 26121: if (on) BalanceEnable(d); else BalanceDisable(d); break;
 
@@ -200,8 +213,8 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     case 26023:
         if (fn >= 9)
             SpectralShaperSetParam(d, fv[0], fv[1], fv[2], fv[3], fv[4],
-                                   (int)(fv[5] + 0.5f), fv[6] > 0.5f ? 1 : 0,
-                                   fv[7] > 0.5f ? 1 : 0, (int)(fv[8] + 0.5f));
+                                   pRound(fv[5]), fv[6] > 0.5f ? 1 : 0,
+                                   fv[7] > 0.5f ? 1 : 0, pRound(fv[8]));
         break;
     case 26123: if (on) SpectralShaperEnable(d); else SpectralShaperDisable(d); break;
 
@@ -229,9 +242,9 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
        own switch. */
     case 26019:
         if (fn >= 10)
-            MaximizerSetParam(d, (int)(fv[0] + 0.5f), fv[1], fv[2], fv[3],
-                              fv[4], fv[5], (int)(fv[6] + 0.5f), fv[7],
-                              (int)(fv[8] + 0.5f), (int)(fv[9] + 0.5f));
+            MaximizerSetParam(d, pRound(fv[0]), fv[1], fv[2], fv[3],
+                              fv[4], fv[5], pRound(fv[6]), fv[7],
+                              pRound(fv[8]), pRound(fv[9]));
         break;
     case 26119: if (on) MaximizerEnable(d); else MaximizerDisable(d); break;
 
@@ -273,7 +286,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
             /* A fourth value is the limiter mode (V4A-only mode pins 3, the
                faithful SoftwareLimiter). Older apps send three. */
             if (fn >= 4)
-                JLimiterSetMode(d, (int)(fv[3] + 0.5f));
+                JLimiterSetMode(d, pRound(fv[3]));
         }
         break;
 
@@ -290,7 +303,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
             }
             /* Under the lock the compander's dispatch runs under. */
             jdsp_lock(d);
-            CompressorSetParam(d, fv[0], (int)(fv[1] + 0.5f), (int)(fv[2] + 0.5f), 0);
+            CompressorSetParam(d, fv[0], pRound(fv[1]), pRound(fv[2]), 0);
             CompressorSetGain(d, axis, axis + 7, 1);
             jdsp_unlock(d);
         }
@@ -307,7 +320,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
                 axis[i + 15] = (double)fv[2 + 15 + i];
             }
             MultimodalEqualizerAxisInterpolation(
-                d, fv[1] < 0.0f ? 0 : 1, (int)(fv[0] + 0.5f), axis, axis + 15);
+                d, fv[1] < 0.0f ? 0 : 1, pRound(fv[0]), axis, axis + 15);
         }
         break;
 
