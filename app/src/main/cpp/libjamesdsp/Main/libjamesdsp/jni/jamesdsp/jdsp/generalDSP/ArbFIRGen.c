@@ -247,7 +247,12 @@ void ArbitraryEqString2SortedNodes(ArbitraryEq *arbEq, char *frArbitraryEqString
 		nodes = arbEq->nodes;
 	i = 0;
 	count = 1;
-	while (*counter)
+	/* Stops once every node is filled. With an odd count of numbers (pairs
+	   plus one stray number) the stray one was written as the frequency of
+	   nodes[numOfNodes], one past the end of the array: a read past the
+	   allocation and a write through whatever it held. The string comes from
+	   the app, and in root mode from any app. */
+	while (*counter && i < numOfNodes)
 	{
 		if (get_floatArb(counter, &number))
 		{
