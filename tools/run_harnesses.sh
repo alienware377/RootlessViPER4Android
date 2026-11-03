@@ -38,7 +38,7 @@ if [ -n "${SANITIZE:-}" ]; then
     SANC="-fgnu89-inline"
     OUT=tools/host_build_san
     export ASAN_OPTIONS="detect_leaks=0:abort_on_error=0:halt_on_error=1"
-    export UBSAN_OPTIONS="print_stacktrace=1"
+    export UBSAN_OPTIONS="print_stacktrace=1:suppressions=$PWD/tools/ubsan.supp"
 fi
 SHIM="-I tools/hostshim"
 COMMONC="-Wno-error=implicit-function-declaration -Wno-error=incompatible-function-pointer-types -Wno-error=implicit-int -Wno-error=int-conversion"
@@ -47,7 +47,9 @@ mkdir -p $OUT/objs
 
 # --- engine archive -------------------------------------------------------
 ENGINE=$OUT/libengine.a
-if [ ! -f $ENGINE ] || [ -n "$(find $J \( -name '*.c' -o -name '*.cpp' \) -newer $ENGINE | head -1)" ]; then
+# Headers count too: a struct that changed shape leaves every old object
+# reading the engine at the wrong offsets.
+if [ ! -f $ENGINE ] || [ -n "$(find $J \( -name '*.c' -o -name '*.cpp' -o -name '*.h' \) -newer $ENGINE | head -1)" ]; then
     echo "== building engine archive"
     rm -f $OUT/objs/*.o
     find $J -name '*.c' | xargs -P "${JOBS:-$(nproc)}" -I{} sh -c \
