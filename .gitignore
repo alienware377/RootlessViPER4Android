@@ -83,3 +83,6 @@ tools/*_x86
 
 # Kotlin daemon scratch and crash logs
 .kotlin/
+
+# Host builds of the harnesses (tools/run_harnesses.sh)
+tools/host_build/
