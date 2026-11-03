@@ -1,0 +1,11 @@
+# UBSan reports left alone on purpose, for tools/run_harnesses.sh SANITIZE=1.
+#
+# The EEL2 (Liveprog) interpreter is upstream WDL code. It packs pointers into
+# its bytecode at whatever offset comes next and keeps its float stack pointer
+# one before the array while empty. Both are undefined by the letter of C but
+# deliberate, and fine on the arm64 and x86 parts this runs on. Not ours to
+# rewrite; anything else in the engine is still reported.
+alignment:nseel-compiler.c
+alignment:glue_port.h
+bounds:glue_port.h
+pointer-overflow:glue_port.h
