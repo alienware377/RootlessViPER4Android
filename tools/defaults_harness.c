@@ -156,8 +156,14 @@ int main(void)
 		// VTInit, which reset the gain, so the knob was inert across its whole
 		// range on both engine paths - the same knob that had already been
 		// reported dead once for a different reason.
+		// Measured against the drive-0 output, level-matched, not against the
+		// input: the crossover's phase shifts already put the plain difference
+		// above 0 dB at no drive at all, so it could not rise with drive and
+		// the knob read as inert when it was not. What is left after removing
+		// the best-fit gain is the saturation alone.
+		static float atZero[N];
 		double drives[] = { 0.0, 6.0, 12.0, 24.0 };
-		double prev = -1.0;
+		double prev = -1e9;
 		int monotonic = 1;
 		for (int d = 0; d < 4; d++)
 		{
@@ -166,10 +172,27 @@ int main(void)
 			VacuumTubeEnable(&g_lib);
 			fillMusic(0.6f);
 			VacuumTubeProcess(&g_lib, N);
-			double diff = difference(512);
-			printf("  drive %5.1f dB %20s %7.2f dB\n", drives[d], "", diff);
-			if (d > 0 && diff <= prev + 0.5) monotonic = 0;
-			prev = diff;
+			if (d == 0)
+				memcpy(atZero, bufL, sizeof(atZero));
+			double xy = 0.0, yy = 0.0, e = 0.0;
+			for (int i = 512; i < N; i++)
+			{
+				xy += (double)bufL[i] * atZero[i];
+				yy += (double)atZero[i] * atZero[i];
+			}
+			double a = xy / (yy + 1e-30);
+			for (int i = 512; i < N; i++)
+			{
+				double q = bufL[i] - a * atZero[i];
+				e += q * q;
+			}
+			double diff = 10.0 * log10((e + 1e-30) / (yy + 1e-30));
+			if (d == 0)
+				printf("  drive %5.1f dB %20s %7s\n", drives[d], "", "ref");
+			else
+				printf("  drive %5.1f dB %20s %7.2f dB\n", drives[d], "", diff);
+			if (d > 1 && diff <= prev + 0.5) monotonic = 0;
+			if (d > 0) prev = diff;
 			VacuumTubeDisable(&g_lib);
 		}
 		printf("  %-30s %s\n", "rises with drive",
