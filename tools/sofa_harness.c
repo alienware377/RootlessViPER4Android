@@ -20,6 +20,7 @@
 // crash. Build with -DBROKEN_NOSIZECHECK (sofa_extract.c skips its file size
 // limit) or -DBROKEN_NEAREST (it takes the first measurement for every
 // speaker) and the named check fails.
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
