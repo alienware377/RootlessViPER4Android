@@ -787,6 +787,14 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 			float gR = jdsp->limiter.threshold / jdsp->limiter.envOverThreshold;
 			jdsp->tmpBuffer[0][i] = xL * gR;
 			jdsp->tmpBuffer[1][i] = xR * gR;
+			/* This sample is limited by the full envelope above; only what is
+			   remembered for the next ones is capped, at 36 dB over the
+			   threshold. Uncapped, the decay back from one huge sample took
+			   the release time times its log: 1.4 s of silence after a 1e10
+			   glitch upstream, seconds more for bigger ones. Up to +36 dB
+			   nothing changes. */
+			if (jdsp->limiter.envOverThreshold > jdsp->limiter.threshold * 64.0f)
+				jdsp->limiter.envOverThreshold = jdsp->limiter.threshold * 64.0f;
 		}
 	}
 }
@@ -883,6 +891,14 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 			float gR = jdsp->limiter.threshold / jdsp->limiter.envOverThreshold;
 			jdsp->tmpBuffer[0][i] = xL * gR;
 			jdsp->tmpBuffer[1][i] = xR * gR;
+			/* This sample is limited by the full envelope above; only what is
+			   remembered for the next ones is capped, at 36 dB over the
+			   threshold. Uncapped, the decay back from one huge sample took
+			   the release time times its log: 1.4 s of silence after a 1e10
+			   glitch upstream, seconds more for bigger ones. Up to +36 dB
+			   nothing changes. */
+			if (jdsp->limiter.envOverThreshold > jdsp->limiter.threshold * 64.0f)
+				jdsp->limiter.envOverThreshold = jdsp->limiter.threshold * 64.0f;
 		}
 	}
 	if (benchmarkCompletionFlag == 1)
