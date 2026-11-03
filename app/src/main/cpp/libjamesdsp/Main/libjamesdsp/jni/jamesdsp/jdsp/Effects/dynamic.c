@@ -1773,6 +1773,9 @@ void CompressorSetGain(JamesDSPLib *jdsp, double *freq, double *gains, char cpy)
 void CompressorProcess(JamesDSPLib *jdsp, size_t n)
 {
 	FFTCompander *cm = (FFTCompander *)(&jdsp->comp);
+	/* Never spin: with no transform built the step below is 0. */
+	if (cm->tfresolution < 3 && cm->ovpLen == 0)
+		return;
 	if (cm->tfresolution < 3)
 	{
 		unsigned int offset = 0;
