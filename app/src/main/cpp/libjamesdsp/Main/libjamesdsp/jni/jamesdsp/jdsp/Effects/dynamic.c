@@ -91,6 +91,10 @@ static size_t fast_upper_bound4(float *vec, size_t n, float *value)
 }
 static inline float lerp1DNoExtrapo(float val, float *x, float *y, int n)
 {
+	/* A NaN fails both tests below, and the search then returns 0, so the
+	   line after read x[-1] and y[-1], before the start of the arrays. */
+	if (!(val == val))
+		return y[0];
 	if (val <= x[0])
 		return y[0];
 	if (val >= x[n - 1])
@@ -1682,6 +1686,14 @@ void CompressorSetGain(JamesDSPLib *jdsp, double *freq, double *gains, char cpy)
 	{
 		memcpy(cm->freq2 + 1, freq, NUMPTS_DRS * sizeof(double));
 		memcpy(cm->gains2 + 1, gains, NUMPTS_DRS * sizeof(double));
+	}
+	/* In root mode these come from any app (id 115). A NaN or infinite
+	   point made the interpolated curve NaN, and from there the compander's
+	   gains; the points are made finite before anything uses them. */
+	for (int i = 1; i <= NUMPTS_DRS; i++)
+	{
+		if (!isfinite(cm->freq2[i])) cm->freq2[i] = 0.0;
+		if (!isfinite(cm->gains2[i])) cm->gains2[i] = 0.0;
 	}
 	cm->freq2[0] = 0.0;
 	cm->gains2[0] = cm->gains2[1];
