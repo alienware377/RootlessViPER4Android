@@ -18,8 +18,36 @@ object ChainOrder {
     const val DDC = 12
     const val STEREOWIDE = 19
     const val MAXIMIZER = 30
+    const val TAPE = 36
+    const val VINYL = 37
+    const val BALANCE = 38
     const val SHAPER = 39
     const val BINAURAL = 40
+
+    /**
+     * The engine's default chain (jdspDefaultChain in jdspController.c), as
+     * effect ids. This is what runs when no order has been saved, so it is also
+     * what the processing order screen must show then: the screen used to list
+     * the effects by id instead, which put the maximiser ahead of dynamic EQ,
+     * imaging, impact, low end, exciter and tape, and saving from it made that
+     * the running order. ChainOrderTest reads the C array and fails if the two
+     * drift apart.
+     */
+    val DEFAULT: List<Int> = listOf(
+        0, 1, 2, 3,          // tube, compander, pitch shift, FET compressor
+        33,                  // impact
+        4, 5, 6, 7, 8,       // differential surround, bass boost, ViPER bass x3
+        34, 35,              // low end, exciter
+        9, 10, 31,           // equaliser, graphic EQ, dynamic EQ
+        11, 12, SHAPER,      // convolver, DDC, spectral shaper
+        13, 14, 15, 16,      // liveprog slots
+        17, 18,              // crossfeed, cure
+        32, STEREOWIDE, BINAURAL,
+        20, 21, 22, 23, 24,  // field surround, headphone surround, spectrum ext, clarity, AGC
+        25, 26, 27, 28, 29,  // speaker opt, reverb, ViPER reverb, echo, multiband distortion
+        TAPE, VINYL, BALANCE,
+        MAXIMIZER,
+    )
 
     /** Newer effect id to the id it follows in the default chain. */
     private val placeAfter = linkedMapOf(
@@ -27,6 +55,12 @@ object ChainOrder {
         // After the stereo widening, so it spreads the image the user set up,
         // and before the surround effects and reverbs that then act on it.
         BINAURAL to STEREOWIDE,
+        // Older than the two above, but the processing order screen never
+        // listed them, so no order it saved has them either. Left to the
+        // engine they ran after the maximiser; in the default chain they sit
+        // just ahead of it, after tape. Vinyl first, so balance can follow it.
+        VINYL to TAPE,
+        BALANCE to VINYL,
     )
 
     /**
