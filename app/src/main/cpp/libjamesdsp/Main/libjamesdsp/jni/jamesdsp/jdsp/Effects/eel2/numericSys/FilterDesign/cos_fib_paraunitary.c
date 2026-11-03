@@ -739,6 +739,13 @@ void subsamplingCal(unsigned int M, double alpha, double *f_def, unsigned int *S
 		unsigned int nk_max = (unsigned int)(fU / B);
 		for (unsigned int nk = 0; nk < nk_max; nk++)
 		{
+			/* The first band's lower edge is 0, so nk / (2 * fL) below was 0/0
+			   or n/0, and NaN or infinity converted to unsigned int is
+			   undefined. On x86 and arm64 alike it came out so that lb - 1
+			   wrapped past ub and nothing was done; skip it explicitly, so the
+			   design (and the sound) stays exactly what it was. */
+			if (!(fL > 0.0))
+				continue;
 			unsigned int ub = (unsigned int)((nk + 1) / (2 * fU));
 			unsigned int lb = (unsigned int)max(ceil(nk / (2 * fL)), 1.0) - 1;
 			if (ub >= lb)
