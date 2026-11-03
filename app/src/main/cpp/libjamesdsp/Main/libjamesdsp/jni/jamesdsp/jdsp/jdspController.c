@@ -1752,7 +1752,14 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 			randXorshift(jdsp->rndstate);
 	}
 	JamesDSPRefreshBlob(jdsp, (double)jdsp->fs);
-	jdsp->rndstate[1] = (uint64_t)(randXorshift(jdsp->rndstate) * 2.0);
+	/* randXorshift is in [-1, 1), so this is in [-2, 2), and a negative value
+	   converted to an unsigned integer is undefined: arm64 gives 0, x86 wraps
+	   to a huge number, so the host harnesses ran a different noise sequence
+	   from the phones. Spelled out as arm64 does it, so devices are unchanged. */
+	{
+		const double r = randXorshift(jdsp->rndstate) * 2.0;
+		jdsp->rndstate[1] = r > 0.0 ? (uint64_t)r : 0;
+	}
 #ifdef DEBUG
 	__android_log_print(ANDROID_LOG_INFO, TAG, "Printing benchmark data start");
 	for (int s = 0; s < MAX_BENCHMARK; s++)
