@@ -25,6 +25,16 @@ J=app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp
 N=$J/Effects/eel2/numericSys
 HALJNI=app/src/main/cpp/libjamesdsp/VeryOldOpen_source_edition/Audio_Engine/eclipse_libjamesdsp_free_bp/jni
 OUT=tools/host_build
+# SANITIZE=1: the engine and every harness under AddressSanitizer and UBSan,
+# built into their own directory. A harness passes only if it also prints no
+# sanitizer report.
+SAN=""
+if [ -n "${SANITIZE:-}" ]; then
+    SAN="-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+    OUT=tools/host_build_san
+    export ASAN_OPTIONS="detect_leaks=0:abort_on_error=0:halt_on_error=1"
+    export UBSAN_OPTIONS="print_stacktrace=1"
+fi
 SHIM="-I tools/hostshim"
 COMMONC="-Wno-error=implicit-function-declaration -Wno-error=incompatible-function-pointer-types -Wno-error=implicit-int -Wno-error=int-conversion"
 TIMEOUT=${TIMEOUT:-300}
@@ -36,13 +46,13 @@ if [ ! -f $ENGINE ] || [ -n "$(find $J \( -name '*.c' -o -name '*.cpp' \) -newer
     echo "== building engine archive"
     rm -f $OUT/objs/*.o
     find $J -name '*.c' | xargs -P "${JOBS:-$(nproc)}" -I{} sh -c \
-        'o=$(echo "{}" | sed "s|/|_|g; s|\.c$|.o|"); clang -O2 -w -ffp-contract=off -fPIC -std=gnu11 '"$COMMONC $SHIM"' -I '"$J"' -c "{}" -o '"$OUT"'/objs/$o' \
+        'o=$(echo "{}" | sed "s|/|_|g; s|\.c$|.o|"); clang -O2 -w -ffp-contract=off -fPIC -std=gnu11 '"$SAN $COMMONC $SHIM"' -I '"$J"' -c "{}" -o '"$OUT"'/objs/$o' \
         || { echo "engine build failed"; exit 1; }
     # The engine's one C++ file (the Signalsmith shim) needs the vendored
     # header-only library from third_party.
     for f in $(find $J -name '*.cpp'); do
         o=$(echo "$f" | sed "s|/|_|g; s|\.cpp$|.o|")
-        clang++ -O2 -w -std=c++17 -fPIC -I third_party -I $J -c "$f" -o $OUT/objs/$o \
+        clang++ -O2 -w -std=c++17 -fPIC $SAN -I third_party -I $J -c "$f" -o $OUT/objs/$o \
             || { echo "engine C++ build failed: $f"; exit 1; }
     done
     ar rcs $ENGINE $OUT/objs/*.o
@@ -74,19 +84,19 @@ recipe() {
             local d=$OUT/signalsmith.objs
             rm -rf $d && mkdir -p $d && (
                 cd $d &&
-                clang -O2 -w -ffp-contract=off -I $ROOT/$J -I $ROOT/tools/hostshim -c \
+                clang -O2 -w -ffp-contract=off $SAN -I $ROOT/$J -I $ROOT/tools/hostshim -c \
                     $ROOT/tools/signalsmith_harness.c $ROOT/$J/Effects/pitchshift.c \
                     $ROOT/$J/Effects/rubberband.c &&
-                clang++ -O2 -std=c++17 -w -I $ROOT/third_party -I $ROOT/$J -c \
+                clang++ -O2 -std=c++17 -w $SAN -I $ROOT/third_party -I $ROOT/$J -c \
                     $ROOT/$J/Effects/signalsmith.cpp &&
                 clang++ -Wl,--wrap=calloc -Wl,--wrap=free \
                     -Wl,--wrap=SignalsmithCreate -Wl,--wrap=SignalsmithDestroy \
-                    *.o -lm -ldl -lpthread -o $ROOT/$OUT/signalsmith ) ;;
+                    *.o $SAN -lm -ldl -lpthread -o $ROOT/$OUT/signalsmith ) ;;
         sofa)
             # The SOFA reader and libmysofa, under AddressSanitizer as on the
             # emulator; it reads the bundled KEMAR set.
             local S=third_party/libmysofa/src
-            clang -O1 -g -w -fsanitize=address -I $S -I $S/hrtf -I app/src/main/cpp/libsofareader \
+            clang -O1 -g -w -fsanitize=address $( [ -n "$SAN" ] && echo -fsanitize=undefined ) -I $S -I $S/hrtf -I app/src/main/cpp/libsofareader \
                 tools/sofa_harness.c app/src/main/cpp/libsofareader/sofa_extract.c \
                 $S/hdf/*.c $S/hrtf/check.c $S/hrtf/reader.c $S/hrtf/spherical.c \
                 $S/hrtf/tools.c -lz -lm -o $OUT/sofa ;;
@@ -105,6 +115,9 @@ DEVICE_ONLY=" convadv "
 pass=(); fail=(); nobuild=(); noline=(); skipped=(); known=()
 verdict() {
     local n=$1 rc=$2 t=$3
+    if [ $rc -eq 0 ] && grep -qE "runtime error:|ERROR: AddressSanitizer" "$OUT/$n.log"; then
+        rc=99
+    fi
     if [ $rc -eq 0 ]; then
         pass+=("$n"); echo "ok $n (${t}s)"
         case " ${KNOWN_FAIL:-} " in *" $n "*) echo "   ($n is listed in KNOWN_FAIL but passed)" ;; esac
@@ -160,7 +173,7 @@ for n in "${names[@]}"; do
     # already defined when it is first included; include it up front.
     case $cmd in clang++*) cmd="$cmd -include cmath" ;; *) cmd="$cmd $COMMONC" ;; esac
     # The archive carries C++ now, so every harness links its runtime.
-    cmd="$cmd $SHIM -lpthread -lstdc++ -o $OUT/$n"
+    cmd="$cmd $SAN $SHIM -lpthread -lstdc++ -o $OUT/$n"
     if ! (eval "$cmd") > $OUT/$n.build.log 2>&1; then
         nobuild+=("$n"); echo "XX $n: build failed (see $OUT/$n.build.log)"; continue
     fi
