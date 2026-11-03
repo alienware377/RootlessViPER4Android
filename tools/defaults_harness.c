@@ -140,7 +140,7 @@ int main(void)
 		{
 			char label[48];
 			prepare(rates[r]);
-			PitchShiftSetParam(&g_lib, 0.0f, 100.0f);
+			PitchShiftSetParam(&g_lib, 0.0f, 100.0f, PITCH_MODE_GRANULAR);
 			PitchShiftEnable(&g_lib);
 			fillMusic(0.6f);
 			PitchShiftProcess(&g_lib, N);

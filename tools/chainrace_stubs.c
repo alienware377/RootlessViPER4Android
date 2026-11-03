@@ -147,3 +147,11 @@ void PitchShiftRefresh(void) {}
 void TransientRefresh(void) {}
 void VReverbRefresh(void) {}
 void VinylRefresh(void) {}
+void SpectralShaperProcess(void) {}
+void SpectralShaperSetParam(void) {}
+void SpectralShaperRefresh(void) {}
+void SpectralShaperFree(void) {}
+void BinauralUpmixProcess(void) {}
+void BinauralUpmixSetParam(void) {}
+void BinauralUpmixRefresh(void) {}
+void BinauralUpmixFree(void) {}
