@@ -75,5 +75,5 @@ int main(void)
 
 // pitch shifting is not under test; keep the link free of Rubber Band
 int RubberBandPrepare(PitchShift *p, float fs, int formant) { return 0; }
-void RubberBandProcess(JamesDSPLib *jdsp, PitchShift *p, size_t n) { }
+void RubberBandProcess(PitchShift *p, const float *const *in, float *const *out, int n) { }
 void RubberBandRelease(PitchShift *p) { }
