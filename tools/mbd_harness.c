@@ -215,12 +215,16 @@ int main(void)
 		MultibandDistProcess(&g_lib, N);
 		fail |= check("no bands");
 
+		// Spread log-evenly and narrow, so the clamp is what is tested. At
+		// 400 Hz spacing and Q 1 the boosts stacked: two dozen +6 dB peaks
+		// over the same octave are a 57 dB boost, and the peak that came out
+		// was the gain asked for, not a runaway.
 		static float many[4 * 40];
 		for (int i = 0; i < 40; i++)
 		{
-			many[i * 4 + 0] = 100.0f + i * 400.0f;
+			many[i * 4 + 0] = 40.0f * powf(2.0f, i * 0.25f);
 			many[i * 4 + 1] = 6.0f;
-			many[i * 4 + 2] = 1.0f;
+			many[i * 4 + 2] = 4.0f;
 			many[i * 4 + 3] = MBD_FILTER_PEAKING;
 		}
 		MultibandDistSetBands(&g_lib, many, 40);
