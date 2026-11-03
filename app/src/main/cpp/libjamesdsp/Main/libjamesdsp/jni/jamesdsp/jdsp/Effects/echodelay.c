@@ -46,6 +46,35 @@ void EchoDelaySetParam(JamesDSPLib *jdsp, float inputLevel, float timeMs,
 	if (fs < 8000.0f) fs = 48000.0f;
 	e->fs = fs;
 
+	/* Every value held to its knob's range first, written so a NaN lands on
+	   the low end. Most of these had no clamp at all, and in root mode any app
+	   can send them (id 26010): a NaN offset or modulation reached the read
+	   position, which was then converted to an int (undefined) and read the
+	   delay line at a garbage index; found by tools/paramfuzz_harness.cpp. */
+#define ECHO_HOLD(x, lo, hi) do { if (!((x) >= (lo))) (x) = (lo); if ((x) > (hi)) (x) = (hi); } while (0)
+	ECHO_HOLD(inputLevel, 0.0f, 100.0f);
+	ECHO_HOLD(timeMs, 1.0f, 2500.0f);
+	ECHO_HOLD(smoothingPct, 0.0f, 100.0f);
+	ECHO_HOLD(offsetMs, -200.0f, 200.0f);
+	ECHO_HOLD(stereoPct, 0.0f, 100.0f);
+	ECHO_HOLD(feedbackPct, 0.0f, 100.0f);
+	ECHO_HOLD(cutoffHz, 20.0f, 20000.0f);
+	ECHO_HOLD(resonance, 0.0f, 100.0f);
+	ECHO_HOLD(smpRatePct, 1.0f, 100.0f);
+	ECHO_HOLD(bits, 1.0f, 24.0f);
+	ECHO_HOLD(modRateHz, 0.0f, 10.0f);
+	ECHO_HOLD(modTimePct, 0.0f, 100.0f);
+	ECHO_HOLD(modCutoffPct, 0.0f, 100.0f);
+	ECHO_HOLD(diffusionPct, 0.0f, 100.0f);
+	ECHO_HOLD(spreadPct, 0.0f, 100.0f);
+	ECHO_HOLD(distLevel, 0.0f, 100.0f);
+	ECHO_HOLD(knee, 0.0f, 100.0f);
+	ECHO_HOLD(symmetry, -100.0f, 100.0f);
+	ECHO_HOLD(tonePct, -100.0f, 100.0f);
+	ECHO_HOLD(wetPct, 0.0f, 100.0f);
+	ECHO_HOLD(dryPct, 0.0f, 100.0f);
+#undef ECHO_HOLD
+
 	e->inputLevel = inputLevel * 0.01f;
 
 	if (timeMs < 1.0f) timeMs = 1.0f;
