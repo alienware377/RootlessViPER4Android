@@ -514,6 +514,16 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
             return -EINVAL;
         }
 
+        /* The engine picks its working rate with integer arithmetic on this
+           one (48000 % rate) and builds a resampler from the ratio: 0 divided
+           by zero and crashed the audio server, and a rate in the billions
+           overflowed. Real streams are between 8 and 768 kHz. */
+        if (cfg->inputCfg.samplingRate < 8000 || cfg->inputCfg.samplingRate > 768000)
+        {
+            LOGE("SET_CONFIG: refusing sample rate %u", cfg->inputCfg.samplingRate);
+            return -EINVAL;
+        }
+
         c->sampleRate = cfg->inputCfg.samplingRate;
         c->channels = 2;
         c->outAccessMode = cfg->outputCfg.accessMode;
