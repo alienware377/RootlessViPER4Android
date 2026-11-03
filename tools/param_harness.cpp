@@ -81,6 +81,20 @@ int main()
 		sendFloats(1500, ok, 3);
 	}
 
+	// 26022, spectrum extension: bark frequency, strength in percent. The
+	// strength had no limit, and NaN passed the frequency clamps.
+	{
+		const float v[2] = { 7600.0f, 1e35f };
+		sendFloats(26022, v, 2);
+		check("26022 holds a 1e35 % strength to 100 %", g_lib.spectrumExt.strength <= 1.0f);
+		const float w[2] = { NAN, NAN };
+		sendFloats(26022, w, 2);
+		check("26022 turns a NaN strength into a finite one", isfinite(g_lib.spectrumExt.strength));
+		const float ok[2] = { 7600.0f, 10.0f };
+		sendFloats(26022, ok, 2);
+		check("26022 keeps an ordinary strength as sent", fabsf(g_lib.spectrumExt.strength - 0.1f) < 1e-6f);
+	}
+
 	// 116: filter type, interpolation mode, then 15 frequencies and 15 gains.
 	{
 		float v[32];
