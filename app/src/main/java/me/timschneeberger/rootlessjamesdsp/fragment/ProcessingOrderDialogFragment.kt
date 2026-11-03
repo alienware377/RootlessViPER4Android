@@ -31,7 +31,8 @@ class ProcessingOrderDialogFragment : DialogFragment() {
     /** Must stay in sync with enum JdspEffectId in jdsp_header.h */
     private data class ChainEffect(val id: Int, val titleRes: Int)
 
-    private val allEffects = listOf(
+    /** Listed here by id; [allEffects] puts them in the engine's default order. */
+    private val effectsById = listOf(
         ChainEffect(0, R.string.v4a_tube_title),
         ChainEffect(1, R.string.compander_enable_v2),
         ChainEffect(2, R.string.pitchshift_enable),
@@ -45,9 +46,6 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(10, R.string.geq_enable),
         ChainEffect(11, R.string.convolver_enable),
         ChainEffect(12, R.string.v4a_ddc_title),
-        // Listed after the DDC rather than by id: with no saved order this list
-        // is what the screen shows, and the shaper runs right after the DDC.
-        ChainEffect(39, R.string.shaper_enable),
         ChainEffect(13, R.string.liveprog_enable),
         ChainEffect(14, R.string.liveprog_slot_2),
         ChainEffect(15, R.string.liveprog_slot_3),
@@ -55,8 +53,6 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(17, R.string.crossfeed_enable),
         ChainEffect(18, R.string.cure_enable),
         ChainEffect(19, R.string.stereowide_enable),
-        // Listed after the stereo widening rather than by id, where it runs.
-        ChainEffect(40, R.string.binaural_enable),
         ChainEffect(20, R.string.fieldsurround_enable),
         ChainEffect(21, R.string.v4a_hpsurround_title),
         ChainEffect(22, R.string.spectrumext_enable),
@@ -73,8 +69,22 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(33, R.string.transient_enable),
         ChainEffect(34, R.string.lowend_enable),
         ChainEffect(35, R.string.exciter_enable),
-        ChainEffect(36, R.string.tape_enable)
+        ChainEffect(36, R.string.tape_enable),
+        // Missing until now, so the screen could not show or place them, and
+        // every order it saved left them for the engine to run last.
+        ChainEffect(37, R.string.vinyl_enable),
+        ChainEffect(38, R.string.balance_enable),
+        ChainEffect(39, R.string.shaper_enable),
+        ChainEffect(40, R.string.binaural_enable)
     )
+
+    /**
+     * Every effect, in the order the engine runs them when nothing is saved.
+     * With no saved order this is what the screen shows and what a save would
+     * write, and it is also where an effect missing from a saved order goes.
+     */
+    private val allEffects = ChainOrder.DEFAULT.mapNotNull { id -> effectsById.firstOrNull { it.id == id } } +
+        effectsById.filter { it.id !in ChainOrder.DEFAULT }
 
     /** Chained Liveprog slots only appear once they actually hold a script. */
     private fun isSlotUnused(id: Int): Boolean {
