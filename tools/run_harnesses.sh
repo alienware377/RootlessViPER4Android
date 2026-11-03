@@ -28,9 +28,14 @@ OUT=tools/host_build
 # SANITIZE=1: the engine and every harness under AddressSanitizer and UBSan,
 # built into their own directory. A harness passes only if it also prints no
 # sanitizer report.
-SAN=""
+SAN=""; SANC=""
 if [ -n "${SANITIZE:-}" ]; then
     SAN="-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+    # Several engine helpers are plain C99 "inline", which emits no
+    # out-of-line copy: fine while every call is inlined, as at -O2 in the
+    # app, but the sanitizers stop some inlining and the link then misses
+    # them. GNU inline rules always emit one. C only; C++ refuses the flag.
+    SANC="-fgnu89-inline"
     OUT=tools/host_build_san
     export ASAN_OPTIONS="detect_leaks=0:abort_on_error=0:halt_on_error=1"
     export UBSAN_OPTIONS="print_stacktrace=1"
@@ -46,7 +51,7 @@ if [ ! -f $ENGINE ] || [ -n "$(find $J \( -name '*.c' -o -name '*.cpp' \) -newer
     echo "== building engine archive"
     rm -f $OUT/objs/*.o
     find $J -name '*.c' | xargs -P "${JOBS:-$(nproc)}" -I{} sh -c \
-        'o=$(echo "{}" | sed "s|/|_|g; s|\.c$|.o|"); clang -O2 -w -ffp-contract=off -fPIC -std=gnu11 '"$SAN $COMMONC $SHIM"' -I '"$J"' -c "{}" -o '"$OUT"'/objs/$o' \
+        'o=$(echo "{}" | sed "s|/|_|g; s|\.c$|.o|"); clang -O2 -w -ffp-contract=off -fPIC -std=gnu11 '"$SAN $SANC $COMMONC $SHIM"' -I '"$J"' -c "{}" -o '"$OUT"'/objs/$o' \
         || { echo "engine build failed"; exit 1; }
     # The engine's one C++ file (the Signalsmith shim) needs the vendored
     # header-only library from third_party.
@@ -171,7 +176,7 @@ for n in "${names[@]}"; do
         cmd="$cmd -Wl,--allow-multiple-definition" ;; esac
     # The host's libstdc++ <cmath> breaks if the engine's min/max macros are
     # already defined when it is first included; include it up front.
-    case $cmd in clang++*) cmd="$cmd -include cmath" ;; *) cmd="$cmd $COMMONC" ;; esac
+    case $cmd in clang++*) cmd="$cmd -include cmath" ;; *) cmd="$cmd $COMMONC $SANC" ;; esac
     # The archive carries C++ now, so every harness links its runtime.
     cmd="$cmd $SAN $SHIM -lpthread -lstdc++ -o $OUT/$n"
     if ! (eval "$cmd") > $OUT/$n.build.log 2>&1; then
