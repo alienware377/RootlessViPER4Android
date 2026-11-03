@@ -102,6 +102,31 @@ int main(void)
 		if (d) fails++;
 	}
 
+	/* Recovery time, not just recovery. The envelope decays from the spike
+	   at the release rate, so the time to come back grew with the log of the
+	   spike: one 1e10 sample from a misbehaving effect upstream muted 1.4 s,
+	   1e30 about 4 s. The stored envelope is now capped at 36 dB over the
+	   threshold, so a spike still comes out limited but costs a fraction of a
+	   second. */
+	const float spikes[] = { 1e10f, 1e30f };
+	for (int k = 0; k < 2; k++)
+	{
+		fresh(0);
+		double p0; long n0, t0;
+		tone(1.0, &p0, &n0, &t0);
+		spike(spikes[k], 1, 1);
+		double back = -1.0;
+		for (int step = 1; step <= 100 && back < 0.0; step++)
+		{
+			tone(N / 48000.0, &pk, &nf, &tot);
+			if (pk > 0.4 && nf == 0) back = step * (double)N / 48000.0;
+		}
+		const int ok = back >= 0.0 && back <= 0.5;
+		printf("mode0 back to the tone after a %g spike: %.2f s (60 ms release) -> %s\n",
+		       spikes[k], back, ok ? "ok" : "TOO SLOW");
+		if (!ok) fails++;
+	}
+
 	printf(fails ? "FAIL (%d)\n" : "PASS\n", fails);
 	return fails != 0;
 }
