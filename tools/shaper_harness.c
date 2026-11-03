@@ -872,6 +872,34 @@ static int cmpd(const void *a, const void *b)
 	return x < y ? -1 : x > y;
 }
 
+/* Subnormal floats in the shaper's arrays: the actual fault the timing
+   comparison below stands in for. Read straight from the state, so it does not
+   depend on how busy the machine is. */
+static int subnormalsIn(const float *a, int n)
+{
+	int c = 0;
+	if (!a) return 0;
+	for (int i = 0; i < n; i++)
+	{
+		const float v = fabsf(a[i]);
+		if (v != 0.0f && v < 1.17549435e-38f) c++;
+	}
+	return c;
+}
+static int shaperSubnormals(const SpectralShaper *s)
+{
+	const int bins = s->N / 2 + 1;
+	const float *perBin[] = { s->pow, s->ld, s->ref, s->tmp, s->tgt, s->gain, s->gainLin,
+		s->band, s->mag1, s->mag2, s->u1re, s->u1im, s->u2re, s->u2im, s->cSm, s->cPrev,
+		s->tonal, s->age };
+	int c = 0;
+	for (size_t k = 0; k < sizeof(perBin) / sizeof(perBin[0]); k++)
+		c += subnormalsIn(perBin[k], bins);
+	for (int ch = 0; ch < 2; ch++)
+		c += subnormalsIn(s->in[ch], s->N) + subnormalsIn(s->acc[ch], s->N);
+	return c;
+}
+
 static void testSpeed(void)
 {
 	printf("\n[13] cost at 48 kHz\n");
@@ -882,6 +910,7 @@ static void testSpeed(void)
 	for (int i = 48000 * 6; i < n; i++) inL[i] = inR[i] = 0;
 	setupDefault(fs);
 	static double tb[48000 * 10 / 480];
+	long subs = 0;
 	for (int b = 0; b < nb; b++)
 	{
 		memcpy(bufL, inL + b * blk, sizeof(float) * blk);
@@ -889,6 +918,8 @@ static void testSpeed(void)
 		const double t0 = nowSec();
 		SpectralShaperProcess(&g_lib, blk);
 		tb[b] = nowSec() - t0;
+		if (b * blk >= 48000 * 6)
+			subs += shaperSubnormals(&g_lib.shaper);
 	}
 	double total = 0;
 	for (int b = 0; b < nb; b++) total += tb[b];
@@ -904,7 +935,19 @@ static void testSpeed(void)
 	info("median silent block, us", 1e6 * silent[ns / 2]);
 	info("worst silent block, us", 1e6 * silent[ns - 1]);
 	check("share of one core at 48 kHz, %", cpu, 0, 2.0);
-	check("silent tail median against music median, times", silent[ns / 2] / music[nm / 2], 0, 1.5);
+	/* The scan is the real test. The timing ratio stays as a second opinion,
+	   on the lower quartile: on a shared machine the median of either stretch
+	   moved by 2x from run to run with nothing changed, and a burst of other
+	   work inflates the slow blocks, not the fast ones. A state stuck in
+	   denormals would slow every silent block, quartile included. */
+	{
+		float planted[4] = { 0.0f, 1e-40f, 0.5f, 0.0f };
+		check("scan sees a planted subnormal (scanner self-test)", subnormalsIn(planted, 4), 1, 1);
+	}
+	check("subnormal values in the state over the silent tail", (double)subs, 0, 0);
+	info("silent tail median against music median, times", silent[ns / 2] / music[nm / 2]);
+	check("silent tail lower quartile against music lower quartile, times",
+		silent[ns / 4] / music[nm / 4], 0, 1.5);
 }
 
 static void testOnset(void)
