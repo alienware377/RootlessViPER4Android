@@ -86,3 +86,4 @@ tools/*_x86
 
 # Host builds of the harnesses (tools/run_harnesses.sh)
 tools/host_build/
+tools/host_build_san/
