@@ -9,3 +9,7 @@ alignment:nseel-compiler.c
 alignment:glue_port.h
 bounds:glue_port.h
 pointer-overflow:glue_port.h
+# stb_sprintf (used by EEL2's string functions) writes digit pairs with
+# unaligned 2- and 4-byte stores on purpose, for speed; it has a switch to stop
+# (STB_SPRINTF_NOUNALIGNED) but the stores are fine on these CPUs.
+alignment:stb_sprintf.h
