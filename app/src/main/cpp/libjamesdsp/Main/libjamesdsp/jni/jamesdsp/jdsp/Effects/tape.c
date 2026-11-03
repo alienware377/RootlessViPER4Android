@@ -174,32 +174,36 @@ void TapeSetParam(JamesDSPLib *jdsp, float wowPct, float flutterPct,
 	   the same treatment as switching the card on. */
 	const int wasIdle = t->transparent || t->mix <= 0.0f;
 
-	if (wowPct < 0.0f) wowPct = 0.0f;
+	/* Lower bounds written so a NaN fails them and lands on the low end: a
+	   NaN wow or flutter reached the delay line's read position, which was
+	   converted to an int (undefined). Any app can send these in root mode
+	   (id 26018); found by tools/paramfuzz_harness.cpp. */
+	if (!(wowPct >= 0.0f)) wowPct = 0.0f;
 	if (wowPct > 100.0f) wowPct = 100.0f;
-	if (flutterPct < 0.0f) flutterPct = 0.0f;
+	if (!(flutterPct >= 0.0f)) flutterPct = 0.0f;
 	if (flutterPct > 100.0f) flutterPct = 100.0f;
 	t->wowPct = wowPct;
 	t->flutterPct = flutterPct;
 
-	if (saturationPct < 0.0f) saturationPct = 0.0f;
+	if (!(saturationPct >= 0.0f)) saturationPct = 0.0f;
 	if (saturationPct > 100.0f) saturationPct = 100.0f;
 	t->saturation = saturationPct * 0.01f;
 	/* Drive rises with the control so more of it means more harmonics, not
 	   just more of the same shaped signal. */
 	t->drive = 1.0f + t->saturation * 7.0f;
 
-	if (biasPct < -100.0f) biasPct = -100.0f;
+	if (!(biasPct >= -100.0f)) biasPct = -100.0f;
 	if (biasPct > 100.0f) biasPct = 100.0f;
 	t->bias = biasPct;
 
-	if (headBumpDb < 0.0f) headBumpDb = 0.0f;
+	if (!(headBumpDb >= 0.0f)) headBumpDb = 0.0f;
 	if (headBumpDb > 9.0f) headBumpDb = 9.0f;
 	t->headBumpDb = headBumpDb;
 
 	tapeDesign(t, fs);
 
 	t->mix = mixPct * 0.01f;
-	if (t->mix < 0.0f) t->mix = 0.0f;
+	if (!(t->mix >= 0.0f)) t->mix = 0.0f;
 	if (t->mix > 1.0f) t->mix = 1.0f;
 
 	/* Nothing asked for means nothing done - and it has to be a real early
