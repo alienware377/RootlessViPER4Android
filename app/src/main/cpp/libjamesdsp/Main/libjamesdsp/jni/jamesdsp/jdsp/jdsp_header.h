@@ -1066,7 +1066,11 @@ extern void sf_advancereverb(sf_reverb_state_st *rv, int rate, int oversamplefac
 
 typedef struct
 {
-	char subband[2][getMemSizeWarpedPFB(5, 2)];
+	/* Each holds a WarpedPFB (which has 8-byte members) followed by its
+	   arrays. As a plain char array it could start anywhere, and the second
+	   one started wherever the first ended; both are now aligned, with the
+	   size rounded up so the second lands aligned too. */
+	char subband[2][(getMemSizeWarpedPFB(5, 2) + 15) & ~15] __attribute__((aligned(16)));
 	float emaAlpha[5];
 	float sumStates[5];
 	float diffStates[5];
