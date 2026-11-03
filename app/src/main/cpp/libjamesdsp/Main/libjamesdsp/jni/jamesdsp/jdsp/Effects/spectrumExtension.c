@@ -32,7 +32,13 @@ void SpectrumExtensionSetParam(JamesDSPLib *jdsp, float barkFreq, float strength
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f)
 		fs = 48000.0f;
-	if (barkFreq < 3000.0f) barkFreq = 3000.0f;
+	/* Both written so NaN lands on a safe value. The strength had no limit
+	   at all: in root mode any app could send 1e35, and the generated
+	   harmonics drove the output limiter into seconds of silence. The card
+	   offers 0 to 60 %; 100 % is the most accepted here. */
+	if (!(barkFreq >= 3000.0f)) barkFreq = 3000.0f;
+	if (!(strengthPct >= 0.0f)) strengthPct = 0.0f;
+	if (strengthPct > 100.0f) strengthPct = 100.0f;
 	if (barkFreq > 16000.0f) barkFreq = 16000.0f;
 	float preF = barkFreq * 0.5f;
 	if (preF < 1000.0f) preF = 1000.0f;
