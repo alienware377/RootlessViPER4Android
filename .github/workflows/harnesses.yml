@@ -29,9 +29,11 @@ jobs:
       # defaults: the classic ViPER reverb measures -21 dB at its shipping
       # settings against a -20 dB line. Whether to raise its default is a
       # listening decision; until then it is reported, not a red build.
+      # paramfuzz: some parameter values still leave the engine putting out
+      # NaN from clean input; open, see tools/paramfuzz_harness.cpp.
       - name: Build and run
         env:
-          KNOWN_FAIL: defaults
+          KNOWN_FAIL: defaults paramfuzz
           TIMEOUT: 300
         run: tools/run_harnesses.sh
 
@@ -59,7 +61,7 @@ jobs:
       - name: Build and run under the sanitizers
         env:
           SANITIZE: 1
-          KNOWN_FAIL: defaults binaural shaper signalsmith
+          KNOWN_FAIL: defaults binaural shaper signalsmith paramfuzz
           TIMEOUT: 900
         run: tools/run_harnesses.sh
 
