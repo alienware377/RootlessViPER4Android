@@ -65,6 +65,21 @@ int main()
 		check("1500 clamps post gain to +15 dB",
 			  fabsf(g_lib.postGain - ceiling) < 1e-3f);
 	}
+	// NaN slipped through every one of those clamps, since a comparison with
+	// NaN is false, and left the output limiter putting out NaN for good.
+	{
+		const float v[3] = { NAN, NAN, NAN };
+		sendFloats(1500, v, 3);
+		check("1500 turns a NaN post gain into a finite one", isfinite(g_lib.postGain));
+		check("1500 turns a NaN threshold into a finite one", isfinite(g_lib.limiter.threshold));
+		check("1500 turns a NaN release into a finite one", isfinite(g_lib.limiter.relCoef));
+		const float w[3] = { -1e30f, INFINITY, 0.0f };
+		sendFloats(1500, w, 3);
+		check("1500 keeps a -1e30 dB threshold above zero gain", g_lib.limiter.threshold > 0.0f);
+		check("1500 keeps an infinite release finite", isfinite(g_lib.limiter.relCoef));
+		const float ok[3] = { -0.1f, 60.0f, 0.0f };
+		sendFloats(1500, ok, 3);
+	}
 
 	// 116: filter type, interpolation mode, then 15 frequencies and 15 gains.
 	{
