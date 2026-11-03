@@ -1734,6 +1734,12 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	// Init effect
 	LiveProgConstructor(jdsp);
 	CompressorConstructor(jdsp);
+	/* The constructor builds no transform: only SetParam does. Enabled before
+	   any settings arrived, the compander ran with every length at 0 and its
+	   process loop never advanced, hanging the audio thread. In root mode a
+	   single "on" from any app was enough (found by the parameter fuzzer).
+	   These are the app's own defaults: 0.22 s, granularity 2, STFT. */
+	CompressorSetParam(jdsp, 0.22f, 2, 0, 1);
 	CompressorDisable(jdsp);
 	BassBoostConstructor(jdsp);
 	BassBoostSetParam(jdsp, 5.0f);
