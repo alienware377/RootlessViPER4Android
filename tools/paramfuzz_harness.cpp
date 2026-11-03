@@ -20,10 +20,11 @@
 // commands before the first bad block; FUZZ_SCAN=1 tries each id on its own
 // (slow: it builds a fresh engine for every try).
 //
-// Open finding: with seed 1, about 2250 of 8000 blocks of clean input come out
-// with NaN or infinity, so some parameter values leave the engine poisoned.
-// Which ids is not narrowed down yet. Listed as a known failure in CI until
-// it is.
+// What it found is fixed and has its own checks: the GraphicEQ overrun,
+// unchecked float casts, a sample rate of 0, NaN limiter, spectrum extension,
+// echo, tape and compander settings, the limiter's slow recovery, and the
+// compander hanging when switched on before its settings. FUZZ_HANG=<s> dumps
+// the commands before a hang; FUZZ_SLOW=1 the ones before the slowest block.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -118,6 +119,22 @@ static void setParam(int32_t id, uint32_t vsize, bool nasty)
 			at += snprintf(vals + at, sizeof(vals) - at, " %g", f);
 		}
 		trace("SET %d vsize %u:%s", id, vsize, vals);
+	}
+	/* FUZZ_SKIP=<id>[,<id>...]: generate the command (so the random stream
+	   stays the same) but do not send it, for that id and its enable (+100).
+	   Replaying a seed with one effect skipped at a time names the culprit. */
+	static const char *skip = getenv("FUZZ_SKIP");
+	if (skip)
+	{
+		char key[16];
+		for (const char *q = skip; *q;)
+		{
+			int sid = atoi(q);
+			if (sid == id || sid + 100 == id) return;
+			while (*q && *q != ',') q++;
+			if (*q == ',') q++;
+		}
+		(void)key;
 	}
 	command(EFFECT_CMD_SET_PARAM, (uint32_t)g_buf.size(), g_buf.data(), NULL, NULL);
 }
@@ -229,6 +246,10 @@ static void configure()
 }
 
 static long g_blocks = 0, g_badBlocks = 0, g_badSamples = 0;
+/* The slowest block in nanoseconds per frame, and the commands before it. */
+static double g_slowest = 0.0;
+static char g_slowTrace[64][160];
+static double nowNs(void) { struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return t.tv_sec * 1e9 + t.tv_nsec; }
 static void audio()
 {
 	const uint32_t frames = below(4) ? 1 + below(1024) : 1 + below(8192);
@@ -241,7 +262,15 @@ static void audio()
 	ib.frameCount = ob.frameCount = frames;
 	ib.f32 = in;
 	ob.f32 = out;
+	const double t0 = nowNs();
 	int rc = (*h)->process(h, &ib, &ob);
+	const double perFrame = (nowNs() - t0) / frames;
+	if (perFrame > g_slowest && frames >= 256)
+	{
+		g_slowest = perFrame;
+		for (unsigned k = 0; k < 64; k++)
+			memcpy(g_slowTrace[k], g_trace[(g_traceAt + k) & 63], sizeof(g_slowTrace[0]));
+	}
 	if (rc != 0)
 		return;
 	g_blocks++;
@@ -320,8 +349,24 @@ static int scanIds(void)
 	return bad ? 1 : 0;
 }
 
+/* FUZZ_HANG=<seconds>: if the run is still going after that long, print the
+   commands that led up to it and stop. A hang is a finding in itself: in root
+   mode it stalls the audio server's mixer thread. */
+#include <signal.h>
+#include <unistd.h>
+static void onHang(int sig)
+{
+	(void)sig;
+	printf("still running: the commands before the hang:\n");
+	for (unsigned k = 0; k < 64; k++)
+		if (g_trace[(g_traceAt + k) & 63][0]) printf("  %s\n", g_trace[(g_traceAt + k) & 63]);
+	fflush(stdout);
+	_exit(4);
+}
+
 int main(int argc, char **argv)
 {
+	if (getenv("FUZZ_HANG")) { signal(SIGALRM, onHang); alarm((unsigned)atoi(getenv("FUZZ_HANG"))); }
 	if (getenv("FUZZ_SCAN")) { g_rng = 7; return scanIds(); }
 	const long iterations = argc > 1 ? atol(argv[1]) : 60000;
 	g_rng = argc > 2 ? strtoull(argv[2], NULL, 10) : 1;
@@ -359,6 +404,10 @@ int main(int argc, char **argv)
 	}
 	EffectRelease(h);
 	const long reads = (iterations + 996) / 997;
+	printf("  slowest block                      %.0f ns per frame (a 48 kHz stream allows 20833)\n", g_slowest);
+	if (getenv("FUZZ_SLOW"))
+		for (unsigned k = 0; k < 64; k++)
+			if (g_slowTrace[k][0] && strncmp(g_slowTrace[k], "AUDIO", 5)) printf("    %s\n", g_slowTrace[k]);
 	printf("  blocks processed %ld, effect released and re-created %ld times\n", g_blocks, releases);
 	printf("  liveness reads answered            %ld of %ld  %s\n", answered, reads, answered == reads ? "ok" : "FAIL");
 	printf("  blocks with non-finite output      %ld (%ld samples)  %s\n", g_badBlocks, g_badSamples,
