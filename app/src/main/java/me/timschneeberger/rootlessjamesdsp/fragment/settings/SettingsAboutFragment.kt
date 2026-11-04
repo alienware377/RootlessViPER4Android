@@ -6,25 +6,16 @@ import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import me.timschneeberger.rootlessjamesdsp.BuildConfig
 import me.timschneeberger.rootlessjamesdsp.R
-import me.timschneeberger.rootlessjamesdsp.flavor.UpdateManager
 import me.timschneeberger.rootlessjamesdsp.model.Translator
-import me.timschneeberger.rootlessjamesdsp.utils.Result
-import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.toast
+import me.timschneeberger.rootlessjamesdsp.updates.GithubUpdater
 import me.timschneeberger.rootlessjamesdsp.utils.isPlugin
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
-import org.koin.android.ext.android.inject
 import java.util.Locale
 
 
 class SettingsAboutFragment : SettingsBaseFragment() {
-
-    private val updateManager: UpdateManager by inject()
 
     private val version by lazy { findPreference<Preference>(getString(R.string.key_credits_version)) }
     private val buildInfo by lazy { findPreference<Preference>(getString(R.string.key_credits_build_info)) }
@@ -51,9 +42,11 @@ class SettingsAboutFragment : SettingsBaseFragment() {
         buildInfo?.summary = "$type build (${BuildConfig.FLAVOR_dependencies}) @${BuildConfig.COMMIT_SHA} (compiled at ${BuildConfig.BUILD_TIME})"
 
         googlePlay?.isVisible = !isRoot()
-        selfCheckUpdates?.isVisible = isRoot()
+        // The GitHub updater, for the rootless and rootful builds alike. The upstream
+        // checker asked the original author's server and only ever ran on rootful.
+        selfCheckUpdates?.isVisible = GithubUpdater.supported
         selfCheckUpdates?.setOnPreferenceClickListener {
-            checkForUpdates()
+            activity?.let { GithubUpdater.checkNow(it) }
             true
         }
 
@@ -85,27 +78,6 @@ class SettingsAboutFragment : SettingsBaseFragment() {
                     true
                 }
             })
-        }
-    }
-
-    private fun checkForUpdates() {
-        if(!isRoot())
-            return
-
-        CoroutineScope(Dispatchers.Default).launch {
-            updateManager.isUpdateAvailable().collect {
-                when(it) {
-                    is Result.Success -> it.data
-                    else -> false
-                }.let { hasUpdate ->
-                    withContext(Dispatchers.Main) {
-                        if (hasUpdate)
-                            updateManager.installUpdate(requireActivity())
-                        else
-                            context?.toast(getString(R.string.self_update_no_updates))
-                    }
-                }
-            }
         }
     }
 

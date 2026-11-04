@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Downloaded app updates, handed to Android's installer. See updates/UpdateInstaller.kt. -->
+<paths>
+    <files-path
+        name="updates"
+        path="updates/" />
+</paths>

@@ -830,7 +830,7 @@
     <string name="credits_project_play_page">Visit RootlessJamesDSP on Google Play</string>
     <string name="credits_project_play_page_summary">Search for new updates</string>
     <string name="credits_project_check_update">Check for new updates...</string>
-    <string name="credits_project_check_update_summary">Download and install updates if available</string>
+    <string name="credits_project_check_update_summary">Look for a new release on GitHub now</string>
     <string name="credits_project_translate">Contribute translations</string>
     <string name="credits_project_translate_summary">Help us to translate this app into your language</string>
     <string name="credits_version">Application version</string>
@@ -1469,4 +1469,31 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="matcheq_file_is_profile">That file is an EQ profile rather than a measurement, so the measurement is estimated from it and the target you have picked. Expect it to be close, not exact.</string>
     <string name="matcheq_file_profile_no_target">That file is an EQ profile rather than a measurement. Pick a target first, then load it again.</string>
     <string name="matcheq_file_profile_not_target">That file is an EQ profile, not a target curve. A target is the sound you want, such as a CSV of a frequency response.</string>
+
+    <!-- GitHub updater (updates/GithubUpdater.kt, updates/UpdateInstaller.kt) -->
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_check_failed">Could not reach GitHub to check for updates</string>
+    <string name="update_up_to_date">You have the newest version (%1$s)</string>
+    <string name="update_title">ViPER4Android %1$s is out</string>
+    <string name="update_you_have">You have %1$s.</string>
+    <string name="update_you_have_many">You have %1$s. %2$d new versions since then.</string>
+    <string name="update_module_note">Rooted: update the engine module together with the app, then reboot.</string>
+    <string name="update_module_download">Download the engine module</string>
+    <string name="update_turn_off_hint">You can turn off update checks in Settings, Miscellaneous.</string>
+    <string name="update_action_update">Update</string>
+    <string name="update_action_later">Later</string>
+    <string name="update_action_skip">Skip this version</string>
+    <string name="update_already_downloading">The update is already downloading</string>
+    <string name="update_downloading">Downloading ViPER4Android %1$s   %2$d%%</string>
+    <string name="update_download_failed">The update download failed. It will be offered again later.</string>
+    <string name="update_ready_title">ViPER4Android %1$s is ready to install</string>
+    <string name="update_ready_message">Installing updates the app in place: your settings, presets and files are kept. The app closes while Android installs it.</string>
+    <string name="update_ready_module_reminder">Remember to flash the matching engine module and reboot.</string>
+    <string name="update_action_install">Install now</string>
+    <string name="update_action_remind">Remind me later</string>
+    <string name="update_allow_installs">Allow ViPER4Android to install apps, then come back</string>
+    <string name="update_install_failed">Could not open the installer</string>
+    <string name="update_auto_check">Check for updates</string>
+    <string name="update_auto_check_on">Looks for a new release on GitHub when the app opens, at most every six hours</string>
+    <string name="update_auto_check_off">Only when you check from About</string>
 </resources>
