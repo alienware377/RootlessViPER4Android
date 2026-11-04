@@ -140,18 +140,20 @@ void LowEndSetParam(JamesDSPLib *jdsp, float subsonicHz,
 	LowEnd *l = &jdsp->lowEnd;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;
 
-	l->subsonicHz = subsonicHz;
-	l->weightHz = weightHz; l->weightDb = weightDb;
-	l->mudHz = mudHz; l->mudDb = mudDb;
+	/* The card's ranges. None was held, and a NaN or huge frequency or gain
+	   from any app in root mode turned the filters to NaN. */
+	l->subsonicHz = JDSP_HOLD(subsonicHz, 0.0f, 80.0f);
+	l->weightHz = JDSP_HOLD(weightHz, 40.0f, 300.0f);
+	l->weightDb = JDSP_HOLD(weightDb, -12.0f, 12.0f);
+	l->mudHz = JDSP_HOLD(mudHz, 150.0f, 800.0f);
+	l->mudDb = JDSP_HOLD(mudDb, -12.0f, 6.0f);
 	lowEndDesign(l, fs);
 
-	l->mix = mixPct * 0.01f;
-	if (l->mix < 0.0f) l->mix = 0.0f;
-	if (l->mix > 1.0f) l->mix = 1.0f;
+	l->mix = JDSP_HOLD(mixPct * 0.01f, 0.0f, 1.0f);
 	l->fs = fs;
 
-	l->transparent = subsonicHz < 10.0f &&
-		fabsf(weightDb) < 1e-6f && fabsf(mudDb) < 1e-6f;
+	l->transparent = l->subsonicHz < 10.0f &&
+		fabsf(l->weightDb) < 1e-6f && fabsf(l->mudDb) < 1e-6f;
 	jdsp_unlock(jdsp);
 }
 

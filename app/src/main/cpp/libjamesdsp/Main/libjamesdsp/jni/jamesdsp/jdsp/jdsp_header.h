@@ -1089,6 +1089,11 @@ typedef struct
 // the caller omitted, so this has to be at least the number of effects or the
 // append truncates and drops one again - the exact fault it exists to prevent.
 #define JDSP_EFX_MAX 48
+// x held to lo..hi, written so a NaN lands on lo. A plain `if (x < lo)`
+// lets NaN through, and in root mode any app can send one; a NaN setting in
+// a recursive filter put out NaN, which the output stage turns into silence,
+// until the effect was switched off and on again.
+#define JDSP_HOLD(x, lo, hi) ((x) >= (lo) ? ((x) <= (hi) ? (x) : (hi)) : (lo))
 enum JdspEffectId
 {
 	JDSP_EFX_TUBE = 0,

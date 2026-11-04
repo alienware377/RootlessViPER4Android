@@ -167,18 +167,18 @@ void ImagingSetParam(JamesDSPLib *jdsp, float monoBelowHz,
 	Imaging *im = &jdsp->imaging;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;
 
-	im->monoBelow = monoBelowHz;
-	im->freqLow = freqLow;
-	im->freqMid = freqMid;
-	im->freqHigh = freqHigh;
-	im->widthLow = widthLow;
-	im->widthMid = widthMid;
-	im->widthHigh = widthHigh;
+	/* The card's ranges. None was held, and a NaN or huge value from any app
+	   in root mode turned the crossovers to NaN. */
+	im->monoBelow = monoBelowHz = JDSP_HOLD(monoBelowHz, 0.0f, 500.0f);
+	im->freqLow = JDSP_HOLD(freqLow, 20.0f, 2000.0f);
+	im->freqMid = JDSP_HOLD(freqMid, 200.0f, 8000.0f);
+	im->freqHigh = JDSP_HOLD(freqHigh, 1000.0f, 16000.0f);
+	im->widthLow = widthLow = JDSP_HOLD(widthLow, 0.0f, 4.0f);
+	im->widthMid = widthMid = JDSP_HOLD(widthMid, 0.0f, 4.0f);
+	im->widthHigh = widthHigh = JDSP_HOLD(widthHigh, 0.0f, 4.0f);
 	imagingDesign(im, fs);
 
-	im->mix = mixPct * 0.01f;
-	if (im->mix < 0.0f) im->mix = 0.0f;
-	if (im->mix > 1.0f) im->mix = 1.0f;
+	im->mix = JDSP_HOLD(mixPct * 0.01f, 0.0f, 1.0f);
 	im->fs = fs;
 
 	// With nothing to do, do nothing at all. Splitting into mid and side and

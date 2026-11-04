@@ -48,8 +48,7 @@ void BalanceSetParam(JamesDSPLib *jdsp, float balancePct, int swap, float monoPc
 	Balance *b = &jdsp->balance;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;
 
-	if (balancePct < -100.0f) balancePct = -100.0f;
-	if (balancePct > 100.0f) balancePct = 100.0f;
+	balancePct = JDSP_HOLD(balancePct, -100.0f, 100.0f);
 	b->balance = balancePct;
 
 	/* Attenuate the far side; never boost. */
@@ -66,8 +65,7 @@ void BalanceSetParam(JamesDSPLib *jdsp, float balancePct, int swap, float monoPc
 
 	b->swap = swap ? 1 : 0;
 
-	if (monoPct < 0.0f) monoPct = 0.0f;
-	if (monoPct > 100.0f) monoPct = 100.0f;
+	monoPct = JDSP_HOLD(monoPct, 0.0f, 100.0f);
 	b->mono = monoPct;
 	b->targetMono = monoPct * 0.01f;
 

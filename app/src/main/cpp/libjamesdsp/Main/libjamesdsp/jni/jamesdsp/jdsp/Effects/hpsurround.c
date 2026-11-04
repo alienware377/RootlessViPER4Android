@@ -16,8 +16,8 @@ void HpSurroundSetParam(JamesDSPLib *jdsp, float strengthPct, float roomPct)
 		fs = 48000.0f;
 	float s = strengthPct * 0.01f;
 	float r = roomPct * 0.01f;
-	if (s < 0.0f) s = 0.0f; if (s > 1.0f) s = 1.0f;
-	if (r < 0.0f) r = 0.0f; if (r > 1.0f) r = 1.0f;
+	s = JDSP_HOLD(s, 0.0f, 1.0f);
+	r = JDSP_HOLD(r, 0.0f, 1.0f);
 
 	// Crossfeed: much stronger than a subtle blend - this is what pulls the
 	// image out of the middle of your head.
