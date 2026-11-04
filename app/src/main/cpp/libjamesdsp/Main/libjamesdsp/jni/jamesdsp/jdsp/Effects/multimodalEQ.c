@@ -149,16 +149,19 @@ void MultimodalEqualizerAxisInterpolation(JamesDSPLib *jdsp, int interpolationMo
 	/* Under the lock for the whole update: it rewrites the convolver's
 	   segments and the IIR coefficients that the audio thread runs, and the
 	   audio thread also rebuilds the convolver on a block size change. */
+	/* The interpolators need frequencies strictly rising inside 0 to 24 kHz,
+	   which the card always sends. In root mode any app can send anything:
+	   NaN or out of order, they printed a complaint and built a NaN curve.
+	   Such an update is refused and the current curve kept. */
+	for (int i = 0; i < NUMPTS; i++)
+		if (!(freqAx[i] > (i ? freqAx[i - 1] : 0.0) && freqAx[i] < 24000.0))
+			return;
 	jdsp_lock(jdsp);
 	memcpy(jdsp->mEQ.freq + 1, freqAx, NUMPTS * sizeof(double));
 	memcpy(jdsp->mEQ.gain + 1, gaindB, NUMPTS * sizeof(double));
-	for (int i = 0; i < NUMPTS; i++)
-	{
-		if (jdsp->mEQ.gain[i] < -64.0)
-			jdsp->mEQ.gain[i] = -64.0;
-		if (jdsp->mEQ.gain[i] > 64.0)
-			jdsp->mEQ.gain[i] = 64.0;
-	}
+	/* Written so a NaN gain lands on the low end. */
+	for (int i = 1; i <= NUMPTS; i++)
+		jdsp->mEQ.gain[i] = JDSP_HOLD(jdsp->mEQ.gain[i], -64.0, 64.0);
 	jdsp->mEQ.freq[0] = 0.0;
 	jdsp->mEQ.gain[0] = jdsp->mEQ.gain[1];
 	jdsp->mEQ.freq[NUMPTS + 1] = 24000.0;

@@ -139,6 +139,11 @@ void ExciterSetParam(JamesDSPLib *jdsp, float freq1, float freq2, float freq3,
 	Exciter *e = &jdsp->exciter;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;
 
+	/* The card's ranges. None was held, and a NaN or huge corner frequency
+	   from any app in root mode turned the band filters to NaN. */
+	freq1 = JDSP_HOLD(freq1, 50.0f, 500.0f);
+	freq2 = JDSP_HOLD(freq2, 300.0f, 3000.0f);
+	freq3 = JDSP_HOLD(freq3, 2000.0f, 12000.0f);
 	if (freq2 < freq1) freq2 = freq1;
 	if (freq3 < freq2) freq3 = freq2;
 	e->freq[0] = freq1; e->freq[1] = freq2; e->freq[2] = freq3;
@@ -148,8 +153,7 @@ void ExciterSetParam(JamesDSPLib *jdsp, float freq1, float freq2, float freq3,
 	for (int k = 0; k < EXCITER_BANDS; k++)
 	{
 		float a = amounts[k] * 0.01f;
-		if (a < 0.0f) a = 0.0f;
-		if (a > 1.0f) a = 1.0f;
+		a = JDSP_HOLD(a, 0.0f, 1.0f);
 		e->amount[k] = a;
 	}
 
@@ -158,13 +162,10 @@ void ExciterSetParam(JamesDSPLib *jdsp, float freq1, float freq2, float freq3,
 
 	/* How hard the band is pushed into the shaper before being scaled back.
 	   More drive means more harmonics for the same amount of added signal. */
-	if (drive < 1.0f) drive = 1.0f;
-	if (drive > 20.0f) drive = 20.0f;
+	drive = JDSP_HOLD(drive, 1.0f, 20.0f);
 	e->drive = drive;
 
-	e->mix = mixPct * 0.01f;
-	if (e->mix < 0.0f) e->mix = 0.0f;
-	if (e->mix > 1.0f) e->mix = 1.0f;
+	e->mix = JDSP_HOLD(mixPct * 0.01f, 0.0f, 1.0f);
 
 	e->transparent = 1;
 	for (int k = 0; k < EXCITER_BANDS; k++)

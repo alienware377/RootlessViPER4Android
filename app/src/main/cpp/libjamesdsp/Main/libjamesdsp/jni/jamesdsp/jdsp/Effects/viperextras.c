@@ -34,8 +34,7 @@ void ViperClaritySetParam(JamesDSPLib *jdsp, int mode, float gainDb)
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f)
 		fs = 48000.0f;
-	if (gainDb < 0.0f) gainDb = 0.0f;
-	if (gainDb > 14.0f) gainDb = 14.0f;
+	gainDb = JDSP_HOLD(gainDb, 0.0f, 14.0f);
 	vc->mode = mode;
 	// Natural: derivative sharpening strength. The transfer is
 	// 1 + sharp * (1 - z^-1), which reaches 1 + 2 * sharp at Nyquist, so this
@@ -92,6 +91,8 @@ void ViperClarityDisable(JamesDSPLib *jdsp)
 void FieldSurroundSetParam(JamesDSPLib *jdsp, float strengthPct, float midImagePct)
 {
 	FieldSurround *f = &jdsp->fieldSurround;
+	strengthPct = JDSP_HOLD(strengthPct, 0.0f, 100.0f);
+	midImagePct = JDSP_HOLD(midImagePct, 0.0f, 100.0f);
 	f->sideGain = 1.0f + strengthPct * 0.02f;   // 0..100 -> 1..3
 	f->midGain = 0.5f + midImagePct * 0.01f;    // 0..100 -> 0.5..1.5
 }
@@ -130,9 +131,8 @@ void AgcSetParam(JamesDSPLib *jdsp, float targetPct, float maxBoostDb)
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f)
 		fs = 48000.0f;
-	a->target = targetPct * 0.01f;
-	if (a->target < 0.05f) a->target = 0.05f;
-	a->maxGain = powf(10.0f, maxBoostDb / 20.0f);
+	a->target = JDSP_HOLD(targetPct * 0.01f, 0.05f, 1.0f);
+	a->maxGain = powf(10.0f, JDSP_HOLD(maxBoostDb, 0.0f, 20.0f) / 20.0f);
 	// slow envelope (~300ms) and very slow gain glide (~1.5s)
 	a->envCoef = 1.0f - expf(-1.0f / (0.3f * fs));
 	a->gainCoef = 1.0f - expf(-1.0f / (1.5f * fs));
