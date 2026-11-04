@@ -17,7 +17,8 @@
 // answering and that its output stays finite.
 //
 // Arguments: [iterations] [seed]. Defaults: 60000, 1. FUZZ_TRACE=1 prints the
-// commands before the first bad block; FUZZ_SCAN=1 tries each id on its own
+// commands before the first bad block; FUZZ_LOG=<id> prints every command for
+// that id in full; FUZZ_SCAN=1 tries each id on its own
 // (slow: it builds a fresh engine for every try).
 //
 // What it found is fixed and has its own checks: the GraphicEQ overrun,
@@ -119,6 +120,21 @@ static void setParam(int32_t id, uint32_t vsize, bool nasty)
 			at += snprintf(vals + at, sizeof(vals) - at, " %g", f);
 		}
 		trace("SET %d vsize %u:%s", id, vsize, vals);
+	}
+	/* FUZZ_LOG=<id>: every command for that id in full, as it is sent, since
+	   the trace keeps only the last 64 and cuts each to eight values. */
+	{
+		static const char *logId = getenv("FUZZ_LOG");
+		if (logId && atoi(logId) == id)
+		{
+			printf("LOG %d vsize %u:", id, vsize);
+			for (uint32_t i = 0; i + 4 <= vsize; i += 4)
+			{
+				float f; memcpy(&f, v + i, 4);
+				printf(" %.9g", f);
+			}
+			printf("\n");
+		}
 	}
 	/* FUZZ_SKIP=<id>[,<id>...]: generate the command (so the random stream
 	   stays the same) but do not send it, for that id and its enable (+100).
