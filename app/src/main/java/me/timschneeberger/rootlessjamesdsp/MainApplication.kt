@@ -23,7 +23,6 @@ import fr.bipi.tressence.file.FileLoggerTree
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import me.timschneeberger.rootlessjamesdsp.flavor.CrashlyticsImpl
-import me.timschneeberger.rootlessjamesdsp.flavor.UpdateManager
 import me.timschneeberger.rootlessjamesdsp.model.preference.ThemeMode
 import me.timschneeberger.rootlessjamesdsp.model.room.AppBlocklistDatabase
 import me.timschneeberger.rootlessjamesdsp.model.room.AppBlocklistRepository
@@ -206,7 +205,6 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
 
         val appModule = module {
             single { RoutingObserver(androidContext()) }
-            single { UpdateManager(androidContext()) }
             single { DumpManager(androidContext()) }
             single { Preferences(androidContext()).App() }
             single { Preferences(androidContext()).Var() }

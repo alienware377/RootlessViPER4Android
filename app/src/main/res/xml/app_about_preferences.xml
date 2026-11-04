@@ -25,17 +25,7 @@
         android:icon="@drawable/ic_baseline_github_24dp">
         <intent
             android:action="android.intent.action.VIEW"
-            android:data="https://github.com/thepbone/RootlessJamesDSP" />
-    </Preference>
-
-    <Preference
-        android:key="@string/key_credits_google_play"
-        android:title="@string/credits_project_play_page"
-        android:summary="@string/credits_project_play_page_summary"
-        android:icon="@drawable/ic_baseline_google_play_24dp">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:data="https://play.google.com/store/apps/details?id=me.timschneeberger.rootlessjamesdsp" />
+            android:data="https://github.com/alienware377/RootlessViPER4Android" />
     </Preference>
 
     <Preference

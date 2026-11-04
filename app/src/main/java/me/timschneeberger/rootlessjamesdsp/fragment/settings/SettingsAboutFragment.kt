@@ -11,7 +11,6 @@ import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.model.Translator
 import me.timschneeberger.rootlessjamesdsp.updates.GithubUpdater
 import me.timschneeberger.rootlessjamesdsp.utils.isPlugin
-import me.timschneeberger.rootlessjamesdsp.utils.isRoot
 import java.util.Locale
 
 
@@ -19,7 +18,6 @@ class SettingsAboutFragment : SettingsBaseFragment() {
 
     private val version by lazy { findPreference<Preference>(getString(R.string.key_credits_version)) }
     private val buildInfo by lazy { findPreference<Preference>(getString(R.string.key_credits_build_info)) }
-    private val googlePlay by lazy { findPreference<Preference>(getString(R.string.key_credits_google_play)) }
     private val selfCheckUpdates by lazy { findPreference<Preference>(getString(R.string.key_credits_check_update)) }
     private val translatorsGroup by lazy { findPreference<PreferenceGroup>(getString(R.string.key_translators)) }
 
@@ -41,7 +39,6 @@ class SettingsAboutFragment : SettingsBaseFragment() {
 
         buildInfo?.summary = "$type build (${BuildConfig.FLAVOR_dependencies}) @${BuildConfig.COMMIT_SHA} (compiled at ${BuildConfig.BUILD_TIME})"
 
-        googlePlay?.isVisible = !isRoot()
         // The GitHub updater, for the rootless and rootful builds alike. The upstream
         // checker asked the original author's server and only ever ran on rootful.
         selfCheckUpdates?.isVisible = GithubUpdater.supported
