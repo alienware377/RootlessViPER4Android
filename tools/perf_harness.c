@@ -253,6 +253,21 @@ static void dynEqRun(JamesDSPLib *j) { DynamicEqProcess(j, BLOCK); }
 
 int main(void)
 {
+	/* Every block the engine runs now has flush-to-zero on (JamesDSPRunBlock
+	   in jdspController.c). These rows call each effect directly, past that,
+	   so set the same mode here, or silence measures x86 subnormal microcode
+	   rather than the effect: 15 to 60 times the loud cost, and the stall
+	   check failed now and then on scheduler noise riding on top of it.
+	   tools/denormal_harness.c checks the mode itself through the real entry. */
+#if defined(__SSE__) || defined(__x86_64__)
+	__builtin_ia32_ldmxcsr(__builtin_ia32_stmxcsr() | 0x8040u);
+#elif defined(__aarch64__)
+	{
+		unsigned long fpcr;
+		__asm__ __volatile__("mrs %0, fpcr" : "=r"(fpcr));
+		__asm__ __volatile__("msr fpcr, %0" : : "r"(fpcr | (1ul << 24)));
+	}
+#endif
 	printf("== cost, and what silence costs ==\n\n");
 	fillSource();
 
