@@ -199,6 +199,19 @@ int main()
 		check("112 bass boost of 32767 dB held to 24", g_lib.dbb.maxGain <= 24.0f);
 	}
 
+	// Vinyl (26020) turned anything over 100 % into 100 rather than 1, a
+	// hundred times full strength, and let NaN through.
+	{
+		float vv[12]; for (int i = 0; i < 12; i++) vv[i] = 150.0f;
+		sendFloats(26020, vv, 12);
+		check("26020 vinyl: 150 % held to full strength",
+			  g_lib.vinyl.surface <= 1.0f && g_lib.vinyl.crackle <= 1.0f && g_lib.vinyl.mix <= 1.0f);
+		for (int i = 0; i < 12; i++) vv[i] = NAN;
+		sendFloats(26020, vv, 12);
+		check("26020 vinyl: NaN settings held",
+			  isfinite(g_lib.vinyl.surface) && isfinite(g_lib.vinyl.wearDb) && isfinite(g_lib.vinyl.mix));
+	}
+
 	// Maximiser (26019) let NaN through its lower bounds, and dynamic EQ bands
 	// (26013) were not clamped at all; the band mode was a float-to-int cast.
 	{

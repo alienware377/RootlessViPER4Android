@@ -183,11 +183,12 @@ void VinylRefresh(JamesDSPLib *jdsp)
 	vinylDesign(&jdsp->vinyl, jdsp->fs > 0.0f ? jdsp->fs : 48000.0f);
 }
 
+/* Percent to 0..1. Above 100 it returned 100 rather than 1, so 101 % from
+   any app in root mode was a hundred times full strength; and NaN passed
+   both tests. */
 static float vinylPct(float v)
 {
-	if (v < 0.0f) return 0.0f;
-	if (v > 100.0f) return 100.0f;
-	return v * 0.01f;
+	return JDSP_HOLD(v, 0.0f, 100.0f) * 0.01f;
 }
 
 void VinylSetParam(JamesDSPLib *jdsp, float surfacePct, float cracklePct,
@@ -213,8 +214,7 @@ void VinylSetParam(JamesDSPLib *jdsp, float surfacePct, float cracklePct,
 	v->rumble = vinylPct(rumblePct);
 	v->follow = vinylPct(followPct);
 
-	if (wearDb < 0.0f) wearDb = 0.0f;
-	if (wearDb > 24.0f) wearDb = 24.0f;
+	wearDb = JDSP_HOLD(wearDb, 0.0f, 24.0f);
 	v->wearDb = wearDb;
 
 	v->mix = vinylPct(mixPct);
