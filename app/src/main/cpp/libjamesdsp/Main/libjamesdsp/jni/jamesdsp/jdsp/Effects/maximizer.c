@@ -105,28 +105,30 @@ void MaximizerSetParam(JamesDSPLib *jdsp,
 	if (clipShape < 0 || clipShape >= MAXR_CLIP_COUNT) clipShape = MAXR_CLIP_SMOOTH;
 	m->clipShape = clipShape;
 
-	if (gainDb < 0.0f) gainDb = 0.0f;
+	/* Lower bounds written so a NaN fails them and lands on the low end (a
+	   NaN transient amount became a NaN lookahead converted to int). */
+	if (!(gainDb >= 0.0f)) gainDb = 0.0f;
 	if (gainDb > 24.0f) gainDb = 24.0f;
 	m->inGain = powf(10.0f, gainDb / 20.0f);
 
-	if (ceilingDb > 0.0f) ceilingDb = 0.0f;
+	if (!(ceilingDb <= 0.0f)) ceilingDb = 0.0f;
 	if (ceilingDb < -12.0f) ceilingDb = -12.0f;
 	m->ceiling = powf(10.0f, ceilingDb / 20.0f);
 
-	if (releaseMs < 1.0f) releaseMs = 1.0f;
+	if (!(releaseMs >= 1.0f)) releaseMs = 1.0f;
 	if (releaseMs > 1000.0f) releaseMs = 1000.0f;
 
-	if (characterPct < 0.0f) characterPct = 0.0f;
+	if (!(characterPct >= 0.0f)) characterPct = 0.0f;
 	if (characterPct > 100.0f) characterPct = 100.0f;
 	m->character = characterPct * 0.01f;
 
-	if (transientPct < 0.0f) transientPct = 0.0f;
+	if (!(transientPct >= 0.0f)) transientPct = 0.0f;
 	if (transientPct > 100.0f) transientPct = 100.0f;
 	m->transient = transientPct * 0.01f;
 
 	m->truePeak = truePeak ? 1 : 0;
 
-	if (stereoLinkPct < 0.0f) stereoLinkPct = 0.0f;
+	if (!(stereoLinkPct >= 0.0f)) stereoLinkPct = 0.0f;
 	if (stereoLinkPct > 100.0f) stereoLinkPct = 100.0f;
 	m->stereoLink = stereoLinkPct * 0.01f;
 
