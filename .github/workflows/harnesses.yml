@@ -46,8 +46,6 @@ jobs:
   # clean sanitizer report. Three checks time the code (share of a core, how
   # long the audio thread waits on a lock) and cannot pass at sanitizer speed,
   # so they are known failures here only; the job above holds them to account.
-  # paramfuzz still raises two UBSan reports (float to int in the maximiser
-  # and the dynamic EQ) and is a known failure here until they are fixed.
   sanitized:
     runs-on: ubuntu-latest
     steps:
@@ -61,7 +59,7 @@ jobs:
       - name: Build and run under the sanitizers
         env:
           SANITIZE: 1
-          KNOWN_FAIL: defaults binaural shaper signalsmith paramfuzz
+          KNOWN_FAIL: defaults binaural shaper signalsmith
           TIMEOUT: 900
         run: tools/run_harnesses.sh
 

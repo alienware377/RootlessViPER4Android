@@ -126,6 +126,31 @@ int main()
 			  fabsf(g_lib.echoDelay.offsetSamples) <= 0.2f * 48000.0f + 1.0f);
 	}
 
+	// Maximiser (26019) let NaN through its lower bounds, and dynamic EQ bands
+	// (26013) were not clamped at all; the band mode was a float-to-int cast.
+	{
+		float mv[10] = { 0, NAN, NAN, NAN, NAN, NAN, 0, NAN, 0, 0 };
+		sendFloats(26019, mv, 10);
+		check("26019 turns NaN settings into finite ones",
+			  isfinite(g_lib.maximizer.inGain) && isfinite(g_lib.maximizer.ceiling) &&
+			  isfinite(g_lib.maximizer.character) && isfinite(g_lib.maximizer.transient) &&
+			  isfinite(g_lib.maximizer.stereoLink));
+		float dv[3 + 8];
+		dv[0] = 1.0f; dv[1] = 1.0f; dv[2] = 0.0f;
+		for (int i = 0; i < 8; i++) dv[3 + i] = NAN;
+		sendFloats(26013, dv, 11);
+		const DynEqBand *b = &g_lib.dynamicEq.band[0];
+		check("26013 turns NaN band values into ones in range",
+			  b->freq >= 20.0f && b->q >= 0.3f && b->thresholdDb >= -60.0f &&
+			  b->attackMs >= 0.5f && b->releaseMs >= 5.0f && b->rangeDb >= -24.0f &&
+			  (b->mode == 0 || b->mode == 1));
+		for (int i = 0; i < 8; i++) dv[3 + i] = 1e30f;
+		sendFloats(26013, dv, 11);
+		check("26013 holds 1e30 band values to the card's ranges",
+			  b->freq <= 20000.0f && b->q <= 8.0f && b->ratio <= 20.0f &&
+			  b->releaseMs <= 2000.0f && b->rangeDb <= 24.0f && b->mode == 1);
+	}
+
 	// 116: filter type, interpolation mode, then 15 frequencies and 15 gains.
 	{
 		float v[32];
