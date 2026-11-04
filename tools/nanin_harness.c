@@ -155,6 +155,26 @@ int main(void)
 	check("finite again a few seconds later", bad == 0, d);
 	j->tmpBuffer[0] = s0; j->tmpBuffer[1] = s1;
 
+	/* Whatever goes in, nothing non-finite comes out: with the limiter off
+	   at 96 kHz, a run of huge finite samples overflowed the resampler that runs
+	   after the output stage's own check. In root mode that NaN goes
+	   straight into the audio server's mixer. */
+	printf("== huge samples at 96 kHz, limiter off ==\n");
+	static JamesDSPLib c;
+	JamesDSPInit(&c, BLOCK, 48000);
+	JamesDSPSetSampleRate(&c, 96000.0f, 1);
+	JLimiterSetMode(&c, 2);
+	bad = 0;
+	for (int blk = 0; blk < 20; blk++)
+	{
+		for (int i = 0; i < 2 * BLOCK; i++) in[i] = 3e38f;
+		c.processFloatMultiplexd(&c, in, outA, BLOCK);
+		for (int i = 0; i < 2 * BLOCK; i++) if (!isfinite(outA[i])) bad++;
+	}
+	snprintf(d, sizeof(d), "%ld non-finite", bad);
+	check("no NaN or Inf leaves the engine", bad == 0, d);
+	JamesDSPFree(&c);
+
 	JamesDSPFree(&a);
 	JamesDSPFree(&b);
 	printf("%s\n", failures ? "FAIL" : "PASS");

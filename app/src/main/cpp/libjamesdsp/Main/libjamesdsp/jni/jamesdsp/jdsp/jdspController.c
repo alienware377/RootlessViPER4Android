@@ -1114,6 +1114,15 @@ static void JamesDSPRunBlock(JamesDSPLib *jdsp, size_t n)
 	}
 	else
 		jdsp->processInternal(jdsp, n);
+	/* The output stage drops non-finite samples, but the resampler runs after
+	   it: with the limiter off, a huge but finite sample overflowed its sums
+	   to Inf and NaN on the way back to the device rate. Nothing non-finite
+	   leaves the engine; in root mode it would go straight into the mixer. */
+	for (size_t i = 0; i < n; i++)
+	{
+		if (!isfinite(jdsp->tmpBuffer[0][i])) jdsp->tmpBuffer[0][i] = 0.0f;
+		if (!isfinite(jdsp->tmpBuffer[1][i])) jdsp->tmpBuffer[1][i] = 0.0f;
+	}
 #if defined(__SSE__) || defined(__x86_64__)
 	__builtin_ia32_ldmxcsr(saved);
 #elif defined(__aarch64__)
