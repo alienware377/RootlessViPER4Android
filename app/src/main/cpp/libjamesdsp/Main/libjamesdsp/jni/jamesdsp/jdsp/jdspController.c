@@ -1095,6 +1095,17 @@ static void JamesDSPRunBlock(JamesDSPLib *jdsp, size_t n)
 	__asm__ __volatile__("vmrs %0, fpscr" : "=r"(saved));
 	__asm__ __volatile__("vmsr fpscr, %0" : : "r"(saved | (1u << 24)));
 #endif
+	/* A NaN or Inf in the input poisons the state of every recursive filter
+	   it reaches, and most effects have no guard of their own: one bad sample
+	   from a player left them putting out NaN, which the output stage turns
+	   into silence, for as long as they stayed on. Found by
+	   tools/paramfuzz_harness.cpp feeding the odd non-finite block. Such a
+	   sample becomes silence here, before anything can keep it. */
+	for (size_t i = 0; i < n; i++)
+	{
+		if (!isfinite(jdsp->tmpBuffer[0][i])) jdsp->tmpBuffer[0][i] = 0.0f;
+		if (!isfinite(jdsp->tmpBuffer[1][i])) jdsp->tmpBuffer[1][i] = 0.0f;
+	}
 	if (jdsp->enableASRC)
 	{
 		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);

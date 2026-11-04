@@ -61,7 +61,12 @@ void SpectrumExtensionProcess(JamesDSPLib *jdsp, size_t n)
 		for (c = 0; c < 2; c++)
 		{
 			float x = jdsp->tmpBuffer[c][i];
-			float h = spxBqProc(s->pre, s->prez[c], x);
+			/* A NaN or Inf sample passes straight through, but is not fed to
+			   the filters: once in their state it stayed there, and every
+			   sample after it came out NaN for as long as the card was on.
+			   Found by tools/paramfuzz_harness.cpp, hidden until then by the
+			   reverb's own input guard further down the chain. */
+			float h = spxBqProc(s->pre, s->prez[c], isfinite(x) ? x : 0.0f);
 			h = fabsf(h);
 			h = h - s->dcState[c];
 			s->dcState[c] += h * 0.001f;
@@ -70,6 +75,19 @@ void SpectrumExtensionProcess(JamesDSPLib *jdsp, size_t n)
 			h = h * (2.0f - fabsf(h));
 			float air = spxBqProc(s->post, s->postz[c], h);
 			jdsp->tmpBuffer[c][i] = x + s->strength * air;
+		}
+	}
+	/* A finite but huge input can still overflow the filters to Inf; start
+	   them again from silence rather than keep it. */
+	for (c = 0; c < 2; c++)
+	{
+		float sum = s->dcState[c];
+		for (int k = 0; k < 4; k++) sum += s->prez[c][k] + s->postz[c][k];
+		if (!isfinite(sum))
+		{
+			memset(s->prez[c], 0, sizeof(s->prez[c]));
+			memset(s->postz[c], 0, sizeof(s->postz[c]));
+			s->dcState[c] = 0.0f;
 		}
 	}
 }
