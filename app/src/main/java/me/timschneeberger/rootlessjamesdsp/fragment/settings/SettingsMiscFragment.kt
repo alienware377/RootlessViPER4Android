@@ -41,6 +41,8 @@ class SettingsMiscFragment : SettingsBaseFragment() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = Constants.PREF_APP
         setPreferencesFromResource(R.xml.app_misc_preferences, rootKey)
+        findPreference<Preference>(getString(R.string.key_update_auto_check))?.isVisible =
+            me.timschneeberger.rootlessjamesdsp.updates.GithubUpdater.supported
 
         crashReports?.setOnPreferenceChangeListener { _, newValue ->
             CrashlyticsImpl.setCollectionEnabled(newValue as Boolean)

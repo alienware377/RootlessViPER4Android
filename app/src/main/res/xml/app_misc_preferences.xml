@@ -17,6 +17,13 @@
             app:summaryOff="@string/autostart_prompt_at_boot_off"
             app:summaryOn="@string/autostart_prompt_at_boot_on"
             app:iconSpaceReserved="false" />
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            app:key="@string/key_update_auto_check"
+            app:title="@string/update_auto_check"
+            app:defaultValue="@bool/default_update_auto_check"
+            app:summaryOff="@string/update_auto_check_off"
+            app:summaryOn="@string/update_auto_check_on"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/assets"

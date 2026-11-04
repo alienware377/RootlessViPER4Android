@@ -8,4 +8,5 @@
 <full-backup-content>
     <include domain="sharedpref" path="."/>
     <exclude domain="sharedpref" path="variable.xml" />
+    <exclude domain="sharedpref" path="updater.xml" />
 </full-backup-content>

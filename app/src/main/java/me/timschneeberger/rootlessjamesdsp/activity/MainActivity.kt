@@ -42,6 +42,7 @@ import me.timschneeberger.rootlessjamesdsp.databinding.ActivityDspMainBinding
 import me.timschneeberger.rootlessjamesdsp.databinding.ContentMainBinding
 import me.timschneeberger.rootlessjamesdsp.flavor.CrashlyticsImpl
 import me.timschneeberger.rootlessjamesdsp.flavor.UpdateManager
+import me.timschneeberger.rootlessjamesdsp.updates.GithubUpdater
 import me.timschneeberger.rootlessjamesdsp.fragment.DspFragment
 import me.timschneeberger.rootlessjamesdsp.fragment.FileLibraryDialogFragment
 import me.timschneeberger.rootlessjamesdsp.fragment.LibraryLoadErrorFragment
@@ -561,9 +562,8 @@ class MainActivity : BaseActivity() {
 
         showAndroid15Alert()
 
-        dspFragment.setUpdateCardOnClick { updateManager.installUpdate(this) }
-        dspFragment.setUpdateCardOnCloseClick(::dismissUpdate)
-        checkForUpdates()
+        // New releases come from GitHub now, as a popup; the upstream update card stays hidden.
+        GithubUpdater.schedule(this)
 
         // Handle potential incoming file intent
         if(intent?.action == Intent.ACTION_VIEW) {
@@ -673,77 +673,6 @@ class MainActivity : BaseActivity() {
                 prefsVar.set(R.string.key_android15_screenrecord_restriction_seen, checkBox.isChecked)
                 dialog.dismiss()
             }
-            .show()
-    }
-
-    private fun checkForUpdates() {
-        if(!isRoot() ||
-            prefsVar.get<Long>(R.string.key_update_check_timeout) > (System.currentTimeMillis() / 1000L)) {
-            Timber.d("Update check rejected due to flavor or timeout")
-            return
-        }
-
-        CoroutineScope(Dispatchers.Default).launch {
-            updateManager.isUpdateAvailable().collect {
-                when(it) {
-                    is Result.Error -> {
-                        Timber.e("Update check failed")
-                        Timber.d(it.exception)
-                        // Set timeout to +30min
-                        prefsVar.set(R.string.key_update_check_timeout, (System.currentTimeMillis() / 1000L) + 1800L)
-                        false
-                    }
-                    is Result.Success -> {
-                        Timber.d("Is update available? ${it.data}")
-                        if(!it.data) {
-                            // Set timeout to +4h
-                            prefsVar.set(R.string.key_update_check_timeout, (System.currentTimeMillis() / 1000L) + 14400L)
-                        }
-                        it.data
-                    }
-                    else -> false
-                }.let {
-                    withContext(Dispatchers.Main) {
-                        val info = updateManager.getUpdateVersionInfo()
-                        val skipUpdate = info?.second == prefsVar.get<Int>(R.string.key_update_check_skip)
-                        Timber.d("Should skip update ${info?.second}?: $skipUpdate")
-                        if(skipUpdate) {
-                            // Set timeout to +4h
-                            prefsVar.set(R.string.key_update_check_timeout, (System.currentTimeMillis() / 1000L) + 14400L)
-                        }
-                        dspFragment.setUpdateCardTitle(getString(R.string.self_update_notice, info?.first ?: "..."))
-                        dspFragment.setUpdateCardVisible(it && !skipUpdate)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun dismissUpdate() {
-        if(!isRoot())
-            return
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.actions))
-            .setItems(R.array.update_dismiss_dialog) { dialogInterface, i ->
-                when(i) {
-                    0 -> updateManager.installUpdate(this)
-                    1 -> {
-                        prefsVar.set(R.string.key_update_check_skip, updateManager.getUpdateVersionInfo()?.second ?: 0)
-                        dspFragment.setUpdateCardVisible(false)
-                    }
-                    2 -> {
-                        prefsVar.set(
-                            R.string.key_update_check_timeout,
-                            (System.currentTimeMillis() / 1000L) + 43200L /* +12h snooze */
-                        )
-                        dspFragment.setUpdateCardVisible(false)
-                    }
-                }
-                dialogInterface.dismiss()
-            }
-            .setNegativeButton(getString(android.R.string.cancel)){ _, _ -> }
-            .create()
             .show()
     }
 
