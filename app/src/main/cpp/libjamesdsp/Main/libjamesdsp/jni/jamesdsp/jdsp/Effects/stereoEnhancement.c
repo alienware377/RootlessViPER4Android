@@ -76,8 +76,19 @@ void StereoEnhancementProcess(JamesDSPLib *jdsp, size_t n)
 				float diffSq = diff * diff;
 				snh->sumStates[j] = snh->sumStates[j] * (1.0f - snh->emaAlpha[j]) + sumSq * snh->emaAlpha[j];
 				snh->diffStates[j] = snh->diffStates[j] * (1.0f - snh->emaAlpha[j]) + diffSq * snh->emaAlpha[j];
+				/* A huge but finite sample squares to Inf, and an Inf level
+				   never decays: Inf over Inf made every sample after it NaN.
+				   Found by tools/paramfuzz_harness.cpp. Start the levels again. */
+				int restarted = 0;
+				if (!isfinite(snh->sumStates[j]) || !isfinite(snh->diffStates[j]))
+				{
+					snh->sumStates[j] = snh->diffStates[j] = 0.0f;
+					restarted = 1;
+				}
 				float centre = 0.0f;
-				if (sumSq > FLT_EPSILON)
+				/* No ratio on the sample of the restart: 0 over 0 is NaN too.
+				   From the next one the level is above zero again. */
+				if (sumSq > FLT_EPSILON && !restarted)
 					centre = (0.5f - sqrtf(snh->diffStates[j] / snh->sumStates[j]) * 0.5f) * sum;
 				bandLeft[j] = (bandLeft[j] - centre) * snh->mix + centre * snh->minusMix;
 				bandRight[j] = (bandRight[j] - centre) * snh->mix + centre * snh->minusMix;

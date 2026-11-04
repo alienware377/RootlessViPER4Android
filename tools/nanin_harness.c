@@ -129,6 +129,30 @@ int main(void)
 	}
 	snprintf(d, sizeof(d), "%ld non-finite", bad);
 	check("finite again after an overflowing block", bad == 0, d);
+
+	/* Stereo widening squares each band for its level trackers. A huge but
+	   finite sample squared to Inf, an Inf level never decays, and Inf over
+	   Inf made every sample after it NaN. Found by tools/paramfuzz_harness.cpp
+	   with an effect upstream fed a huge setting. */
+	printf("== stereo widening after a huge sample ==\n");
+	StereoEnhancementSetParam(j, 0.6f);
+	for (int i = 0; i < BLOCK; i++)
+	{
+		l[i] = (i & 1) ? 1e20f : -3e19f;
+		r[i] = -0.5f * l[i];
+	}
+	StereoEnhancementProcess(j, BLOCK);
+	bad = 0;
+	for (int blk = 0; blk < 200; blk++)
+	{
+		noise(l, BLOCK); noise(r, BLOCK);
+		StereoEnhancementProcess(j, BLOCK);
+		if (blk < 150) continue;
+		for (int i = 0; i < BLOCK; i++)
+			if (!isfinite(l[i]) || !isfinite(r[i])) bad++;
+	}
+	snprintf(d, sizeof(d), "%ld non-finite", bad);
+	check("finite again a few seconds later", bad == 0, d);
 	j->tmpBuffer[0] = s0; j->tmpBuffer[1] = s1;
 
 	JamesDSPFree(&a);
