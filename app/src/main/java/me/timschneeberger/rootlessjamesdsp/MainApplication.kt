@@ -122,6 +122,9 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
         // Clean up
         Cache.cleanup(this)
 
+        // Offers a downloaded update on whichever screen comes up (updates/UpdateInstaller.kt).
+        me.timschneeberger.rootlessjamesdsp.updates.UpdateInstaller.install(this)
+
         try {
             Timber.plant(
                 FileLoggerTree.Builder()
