@@ -126,6 +126,65 @@ int main()
 			  fabsf(g_lib.echoDelay.offsetSamples) <= 0.2f * 48000.0f + 1.0f);
 	}
 
+	// Fourteen setters let NaN through (`if (x < lo)` passes it) or had no
+	// limits at all; a NaN setting in a recursive filter put out NaN, which
+	// the output stage turns into silence, until the card was switched off.
+	{
+		float nv[12]; for (int i = 0; i < 12; i++) nv[i] = NAN;
+		sendFloats(26003, nv, 2);
+		check("26003 headphone surround: NaN settings held",
+			  isfinite(g_lib.hpSurround.cross) && isfinite(g_lib.hpSurround.fb));
+		sendFloats(26008, nv, 1);
+		bool so = true; for (int i = 0; i < 5; i++) so = so && isfinite(g_lib.speakerOpt.pk[i]) && isfinite(g_lib.speakerOpt.sh[i]);
+		check("26008 speaker optimiser: NaN strength held", so);
+		float cv[2] = { 1.0f, NAN };
+		sendFloats(26000, cv, 2);
+		check("26000 clarity: NaN gain held", isfinite(g_lib.viperClarity.sharp));
+		sendFloats(26001, nv, 2);
+		check("26001 field surround: NaN settings held",
+			  isfinite(g_lib.fieldSurround.sideGain) && isfinite(g_lib.fieldSurround.midGain));
+		sendFloats(26002, nv, 2);
+		check("26002 AGC: NaN settings held", isfinite(g_lib.agc.target) && isfinite(g_lib.agc.maxGain));
+		sendFloats(26004, nv, 5);
+		check("26004 FET compressor: NaN settings held",
+			  isfinite(g_lib.fetComp.thrLin) && isfinite(g_lib.fetComp.slope) && isfinite(g_lib.fetComp.attC) &&
+			  isfinite(g_lib.fetComp.relC) && isfinite(g_lib.fetComp.makeup));
+		float bv[3] = { 1.0f, NAN, NAN };
+		sendFloats(26006, bv, 3);
+		bool vb = isfinite(g_lib.viperBass.harm); for (int i = 0; i < 5; i++) vb = vb && isfinite(g_lib.viperBass.f[i]) && isfinite(g_lib.viperBass.lp[i]);
+		check("26006 ViPER bass: NaN settings held", vb);
+		sendFloats(26014, nv, 8);
+		check("26014 imaging: NaN settings held to the card",
+			  g_lib.imaging.freqLow >= 20.0f && g_lib.imaging.widthLow >= 0.0f && g_lib.imaging.mix >= 0.0f);
+		sendFloats(26016, nv, 6);
+		check("26016 low end: NaN settings held to the card",
+			  g_lib.lowEnd.weightHz >= 40.0f && g_lib.lowEnd.weightDb >= -12.0f && g_lib.lowEnd.mix >= 0.0f);
+		float ev[10]; for (int i = 0; i < 10; i++) ev[i] = NAN; ev[7] = 0.0f;
+		sendFloats(26017, ev, 10);
+		check("26017 exciter: NaN settings held to the card",
+			  g_lib.exciter.freq[0] >= 50.0f && g_lib.exciter.drive >= 1.0f && g_lib.exciter.mix >= 0.0f &&
+			  g_lib.exciter.amount[0] >= 0.0f);
+		float lv[3] = { NAN, 0.0f, NAN };
+		sendFloats(26021, lv, 3);
+		check("26021 balance: NaN settings held",
+			  isfinite(g_lib.balance.targetL) && isfinite(g_lib.balance.targetR) && isfinite(g_lib.balance.targetMono));
+		applyParam(&g_lib, 137, 32767, true, nullptr, 0);
+		check("137 stereo width of 327 held to 1",
+			  g_lib.sterEnh.mix <= 1.0f && g_lib.sterEnh.gain >= 0.0f);
+		/* An EQ curve with a NaN frequency is refused, the last good one kept. */
+		float q[32]; q[0] = 0.0f; q[1] = 0.0f;
+		for (int i = 0; i < 15; i++) { q[2 + i] = 25.0f * powf(1.6f, (float)i); q[17 + i] = 3.0f; }
+		sendFloats(116, q, 32);
+		const double before = g_lib.mEQ.gain[8];
+		q[2 + 7] = NAN; q[17 + 7] = 9.0f;
+		sendFloats(116, q, 32);
+		bool eqok = g_lib.mEQ.gain[8] == before;
+		q[2 + 7] = 25.0f * powf(1.6f, 7.0f); q[17 + 14] = NAN;
+		sendFloats(116, q, 32);
+		for (int i = 1; i <= 15; i++) eqok = eqok && isfinite(g_lib.mEQ.gain[i]);
+		check("116 EQ: NaN frequency refused, NaN gain held", eqok);
+	}
+
 	// Maximiser (26019) let NaN through its lower bounds, and dynamic EQ bands
 	// (26013) were not clamped at all; the band mode was a float-to-int cast.
 	{

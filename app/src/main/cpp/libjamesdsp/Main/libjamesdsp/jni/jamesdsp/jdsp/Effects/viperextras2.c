@@ -59,9 +59,12 @@ void FetCompSetParam(JamesDSPLib *jdsp, float thresholdDb, float ratio, float at
 	FetComp *f = &jdsp->fetComp;
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f) fs = 48000.0f;
-	if (ratio < 1.0f) ratio = 1.0f;
-	if (attackMs < 0.05f) attackMs = 0.05f;
-	if (releaseMs < 5.0f) releaseMs = 5.0f;
+	/* The card's ranges, lower bounds as they were. */
+	thresholdDb = JDSP_HOLD(thresholdDb, -60.0f, 0.0f);
+	ratio = JDSP_HOLD(ratio, 1.0f, 20.0f);
+	attackMs = JDSP_HOLD(attackMs, 0.05f, 100.0f);
+	releaseMs = JDSP_HOLD(releaseMs, 5.0f, 1000.0f);
+	makeupDb = JDSP_HOLD(makeupDb, 0.0f, 24.0f);
 	f->thrLin = powf(10.0f, thresholdDb / 20.0f);
 	f->slope = 1.0f - 1.0f / ratio;
 	f->attC = 1.0f - expf(-1.0f / (attackMs * 0.001f * fs));
@@ -152,10 +155,8 @@ void ViperBassSetParam(JamesDSPLib *jdsp, int mode, float freq, float gainDb)
 	ViperBass *v = &jdsp->viperBass;
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f) fs = 48000.0f;
-	if (freq < 20.0f) freq = 20.0f;
-	if (freq > 300.0f) freq = 300.0f;
-	if (gainDb < 0.0f) gainDb = 0.0f;
-	if (gainDb > 12.0f) gainDb = 12.0f;
+	freq = JDSP_HOLD(freq, 20.0f, 300.0f);
+	gainDb = JDSP_HOLD(gainDb, 0.0f, 12.0f);
 	v->mode = mode;
 	if (mode == 2)
 		vx2Biquad(v->f, fs, freq, 1.2f, gainDb, 1);   // subwoofer: peaking
@@ -1060,7 +1061,7 @@ void SpeakerOptSetParam(JamesDSPLib *jdsp, float strengthPct)
 	SpeakerOpt *s = &jdsp->speakerOpt;
 	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f) fs = 48000.0f;
-	float k = strengthPct * 0.01f;
+	float k = JDSP_HOLD(strengthPct, 0.0f, 100.0f) * 0.01f;
 	/* Tuned for the speakers this actually runs on. The old curve spent most
 	   of its effect removing sub-bass a phone speaker cannot reproduce, so it
 	   measured large but sounded like nothing. Now the work happens where a

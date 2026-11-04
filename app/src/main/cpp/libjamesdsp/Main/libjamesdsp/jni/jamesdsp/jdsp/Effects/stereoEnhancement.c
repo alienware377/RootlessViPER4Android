@@ -23,7 +23,9 @@ void StereoEnhancementRefresh(JamesDSPLib *jdsp)
 void StereoEnhancementSetParam(JamesDSPLib *jdsp, float mix)
 {
   jdsp_lock(jdsp);
-	jdsp->sterEnh.mix = mix;
+	/* 0 to 1; the card sends 0.3 to 0.75. In root mode any app can send up
+	   to 327, and the gain that follows grew without limit. */
+	jdsp->sterEnh.mix = JDSP_HOLD(mix, 0.0f, 1.0f);
 	jdsp->sterEnh.minusMix = 1.0f - jdsp->sterEnh.mix;
 	if (jdsp->sterEnh.mix > 0.5f)
 		jdsp->sterEnh.gain = 3.0f - jdsp->sterEnh.mix * 2.0f;
