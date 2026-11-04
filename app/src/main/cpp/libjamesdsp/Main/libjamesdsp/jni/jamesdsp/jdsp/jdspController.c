@@ -1069,6 +1069,48 @@ static void JamesDSPProcessResampled(JamesDSPLib *jdsp, unsigned int len)
 	jdsp->tmpBuffer[0] = l;
 	jdsp->tmpBuffer[1] = r;
 }
+// Every filter in the chain decays towards zero once the input goes silent,
+// and on the way its state passes through the subnormal range, where x86
+// works in microcode at many times the cost. Some states never leave it: on
+// an x86 host every effect measured by tools/perf_harness.c cost 15 to 60
+// times more per sample in silence than with loud audio (the dynamic EQ 910
+// ns against 41). Subnormals sit some 750 dB down, so flushing them to zero
+// changes nothing audible. The mode is switched on for one block and the
+// caller's own restored afterwards, because in root mode this runs on the
+// audio server's mixer thread, whose floating point state is not ours.
+// arm64 handles subnormals in hardware on most cores, but FZ is set there
+// too so every build computes the same thing; 32-bit ARM NEON is always
+// flush-to-zero already, so its VFP bit is set to match.
+static void JamesDSPRunBlock(JamesDSPLib *jdsp, size_t n)
+{
+#if defined(__SSE__) || defined(__x86_64__)
+	unsigned int saved = __builtin_ia32_stmxcsr();
+	__builtin_ia32_ldmxcsr(saved | 0x8040u); /* FTZ and DAZ */
+#elif defined(__aarch64__)
+	unsigned long saved;
+	__asm__ __volatile__("mrs %0, fpcr" : "=r"(saved));
+	__asm__ __volatile__("msr fpcr, %0" : : "r"(saved | (1ul << 24)));
+#elif defined(__arm__) && defined(__ARM_FP)
+	unsigned int saved;
+	__asm__ __volatile__("vmrs %0, fpscr" : "=r"(saved));
+	__asm__ __volatile__("vmsr fpscr, %0" : : "r"(saved | (1u << 24)));
+#endif
+	if (jdsp->enableASRC)
+	{
+		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
+		JamesDSPProcessResampled(jdsp, curDecimatedLen);
+		DoASRC_bwd(jdsp, curDecimatedLen, n);
+	}
+	else
+		jdsp->processInternal(jdsp, n);
+#if defined(__SSE__) || defined(__x86_64__)
+	__builtin_ia32_ldmxcsr(saved);
+#elif defined(__aarch64__)
+	__asm__ __volatile__("msr fpcr, %0" : : "r"(saved));
+#elif defined(__arm__) && defined(__ARM_FP)
+	__asm__ __volatile__("vmsr fpscr, %0" : : "r"(saved));
+#endif
+}
 void pint16(JamesDSPLib *jdsp, int16_t *x1, int16_t *x2, int16_t *y1, int16_t *y2, size_t n)
 {
 	if (jdsp->blockSizeMax < n)
@@ -1092,14 +1134,7 @@ void pint16(JamesDSPLib *jdsp, int16_t *x1, int16_t *x2, int16_t *y1, int16_t *y
 		jdsp->tmpBuffer[0][i] = x1[i] / scale;
 		jdsp->tmpBuffer[1][i] = x2[i] / scale;
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	for (size_t i = 0; i < n; i++)
 	{
 		u.f = jdsp->tmpBuffer[0][i] + offset;
@@ -1138,14 +1173,7 @@ void pint16Multiplexed(JamesDSPLib *jdsp, int16_t *x, int16_t *y, size_t n)
 		jdsp->tmpBuffer[0][i] = x[i << 1] * 0.000030517578125f;
 		jdsp->tmpBuffer[1][i] = x[(i << 1) + 1] * 0.000030517578125f;
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	for (size_t i = 0; i < n; i++)
 	{
 		u.f = jdsp->tmpBuffer[0][i] + offset;
@@ -1177,14 +1205,7 @@ void pint32(JamesDSPLib *jdsp, int32_t *x1, int32_t *x2, int32_t *y1, int32_t *y
 		jdsp->tmpBuffer[0][i] = (float)((double)x1[i] / scale);
 		jdsp->tmpBuffer[1][i] = (float)((double)x2[i] / scale);
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	float f;
 	for (size_t i = 0; i < n; i++)
 	{
@@ -1223,14 +1244,7 @@ void pint32Multiplexed(JamesDSPLib *jdsp, int32_t *x, int32_t *y, size_t n)
 		jdsp->tmpBuffer[0][i] = (float)((double)x[i << 1] / scale);
 		jdsp->tmpBuffer[1][i] = (float)((double)x[(i << 1) + 1] / scale);
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	float f;
 	for (size_t i = 0; i < n; i++)
 	{
@@ -1271,14 +1285,7 @@ void pint8_24(JamesDSPLib *jdsp, int32_t *x1, int32_t *x2, int32_t *y1, int32_t 
 		jdsp->tmpBuffer[0][i] = (float)((double)x1[i] / scale);
 		jdsp->tmpBuffer[1][i] = (float)((double)x2[i] / scale);
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	float f;
 	for (size_t i = 0; i < n; i++)
 	{
@@ -1305,14 +1312,7 @@ void pint8_24Multiplexed(JamesDSPLib *jdsp, int32_t *x, int32_t *y, size_t n)
 		jdsp->tmpBuffer[0][i] = (float)((double)x[i << 1] / scale);
 		jdsp->tmpBuffer[1][i] = (float)((double)x[(i << 1) + 1] / scale);
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	float f;
 	for (size_t i = 0; i < n; i++)
 	{
@@ -1337,14 +1337,7 @@ void pintp24(JamesDSPLib *jdsp, uint8_t *x1, uint8_t *x2, uint8_t *y1, uint8_t *
 		jdsp->tmpBuffer[0][i] = jdsp->i32_from_p24(x1 + i * 3) * scale;
 		jdsp->tmpBuffer[1][i] = jdsp->i32_from_p24(x2 + i * 3) * scale;
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	for (size_t i = 0; i < n; i++)
 	{
 		jdsp->p24_from_i32(clamp24_from_float(jdsp->tmpBuffer[0][i]), y1 + i * 3);
@@ -1366,14 +1359,7 @@ void pintp24Multiplexed(JamesDSPLib *jdsp, uint8_t *x, uint8_t *y, size_t n)
 		jdsp->tmpBuffer[0][i] = jdsp->i32_from_p24(x + (i << 1) * 3) * scale;
 		jdsp->tmpBuffer[1][i] = jdsp->i32_from_p24(x + ((i << 1) + 1) * 3) * scale;
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	for (size_t i = 0; i < n; i++)
 	{
 		jdsp->p24_from_i32(clamp24_from_float(jdsp->tmpBuffer[0][i]), y + (i << 1) * 3);
@@ -1394,14 +1380,7 @@ void pfloat32(JamesDSPLib *jdsp, float *x1, float *x2, float *y1, float *y2, siz
 		jdsp->tmpBuffer[0][i] = x1[i];
 		jdsp->tmpBuffer[1][i] = x2[i];
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	for (size_t i = 0; i < n; i++)
 	{
 		y1[i] = jdsp->tmpBuffer[0][i];
@@ -1422,14 +1401,7 @@ void pfloat32Multiplexed(JamesDSPLib *jdsp, float *x, float *y, size_t n)
 		jdsp->tmpBuffer[0][i] = x[i << 1];
 		jdsp->tmpBuffer[1][i] = x[(i << 1) + 1];
 	}
-	if (jdsp->enableASRC)
-	{
-		unsigned int curDecimatedLen = DoASRC_fwd(jdsp, n);
-		JamesDSPProcessResampled(jdsp, curDecimatedLen);
-		DoASRC_bwd(jdsp, curDecimatedLen, n);
-	}
-	else
-		jdsp->processInternal(jdsp, n);
+	JamesDSPRunBlock(jdsp, n);
 	for (size_t i = 0; i < n; i++)
 	{
 		y[i << 1] = jdsp->tmpBuffer[0][i];
