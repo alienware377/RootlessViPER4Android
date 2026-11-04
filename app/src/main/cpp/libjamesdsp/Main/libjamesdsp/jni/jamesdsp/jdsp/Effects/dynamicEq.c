@@ -131,14 +131,20 @@ void DynamicEqSetBands(JamesDSPLib *jdsp, const float *bands, int count)
 	{
 		const float *v = bands + i * DYNEQ_VALUES_PER_BAND;
 		DynEqBand *b = &d->band[i];
-		b->freq = v[0];
-		b->q = v[1];
-		b->thresholdDb = v[2];
-		b->ratio = v[3] < 1.0f ? 1.0f : v[3];
-		b->attackMs = v[4];
-		b->releaseMs = v[5];
-		b->rangeDb = v[6];
-		b->mode = (int)v[7];
+		/* Each value held to the card's range, written so a NaN lands on the
+		   low end. None was clamped here (the mode was a plain float-to-int
+		   cast, undefined for NaN or 1e30), and in root mode any app can send
+		   bands (id 26013); found by tools/paramfuzz_harness.cpp. */
+#define DYNEQ_HOLD(x, lo, hi) ((x) >= (lo) ? ((x) <= (hi) ? (x) : (hi)) : (lo))
+		b->freq = DYNEQ_HOLD(v[0], 20.0f, 20000.0f);
+		b->q = DYNEQ_HOLD(v[1], 0.3f, 8.0f);
+		b->thresholdDb = DYNEQ_HOLD(v[2], -60.0f, 0.0f);
+		b->ratio = DYNEQ_HOLD(v[3], 1.0f, 20.0f);
+		b->attackMs = DYNEQ_HOLD(v[4], 0.5f, 200.0f);
+		b->releaseMs = DYNEQ_HOLD(v[5], 5.0f, 2000.0f);
+		b->rangeDb = DYNEQ_HOLD(v[6], -24.0f, 24.0f);
+		b->mode = v[7] > 0.5f ? DYNEQ_MODE_EXPAND : DYNEQ_MODE_COMPRESS;
+#undef DYNEQ_HOLD
 		dynEqRefreshBand(b, fs);
 	}
 	/* Only the newly occupied slots start from silence. Clearing every band
