@@ -185,6 +185,20 @@ int main()
 		check("116 EQ: NaN frequency refused, NaN gain held", eqok);
 	}
 
+	// Transient shaper (26015) held only its range, and NaN passed that; bass
+	// boost (112) took any whole number of dB up to 32767.
+	{
+		float tv[10]; for (int i = 0; i < 10; i++) tv[i] = NAN;
+		sendFloats(26015, tv, 10);
+		bool tok = isfinite(g_lib.transient.rangeDb) && isfinite(g_lib.transient.mix) &&
+			isfinite(g_lib.transient.freqLow) && isfinite(g_lib.transient.freqHigh);
+		for (int k = 0; k < TRANSIENT_BANDS; k++)
+			tok = tok && isfinite(g_lib.transient.band[k].attack) && isfinite(g_lib.transient.band[k].sustain);
+		check("26015 transient shaper: NaN settings held", tok);
+		applyParam(&g_lib, 112, 32767, true, nullptr, 0);
+		check("112 bass boost of 32767 dB held to 24", g_lib.dbb.maxGain <= 24.0f);
+	}
+
 	// Maximiser (26019) let NaN through its lower bounds, and dynamic EQ bands
 	// (26013) were not clamped at all; the band mode was a float-to-int cast.
 	{

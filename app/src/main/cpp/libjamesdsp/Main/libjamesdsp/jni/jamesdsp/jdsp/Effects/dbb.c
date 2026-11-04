@@ -299,8 +299,10 @@ static void DBBParam(DBB *dbb, double fs, float maxG)
 {
 	double maxDetectionSmoothing = 0.5; // 0.5 ms
 	double gainSmoothing = 2.0; // 2.0 ms
-	if (maxG < 0.0f)
-		maxG = 0.0f;
+	/* The card offers 3 to 15 dB. In root mode any app sends a whole number
+	   up to 32767 dB, and the gain it became overflowed the filters to Inf
+	   and NaN; NaN went through `maxG < 0` as well. 24 dB is plenty. */
+	maxG = JDSP_HOLD(maxG, 0.0f, 24.0f);
 	double targetFS = 500.0;
 	dbb->maxGain = maxG;
 	int factor = (int)round(fs / targetFS);

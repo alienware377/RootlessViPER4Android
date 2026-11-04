@@ -130,6 +130,16 @@ void TransientSetParam(JamesDSPLib *jdsp, float freqLow, float freqHigh,
 	Transient *t = &jdsp->transient;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;
 
+	/* The card's ranges. Only the range was held, and NaN passed that too: a
+	   NaN or huge value from any app in root mode turned the bands to NaN. */
+	freqLow = JDSP_HOLD(freqLow, 60.0f, 1000.0f);
+	freqHigh = JDSP_HOLD(freqHigh, 1000.0f, 12000.0f);
+	attackLow = JDSP_HOLD(attackLow, -100.0f, 100.0f);
+	sustainLow = JDSP_HOLD(sustainLow, -100.0f, 100.0f);
+	attackMid = JDSP_HOLD(attackMid, -100.0f, 100.0f);
+	sustainMid = JDSP_HOLD(sustainMid, -100.0f, 100.0f);
+	attackHigh = JDSP_HOLD(attackHigh, -100.0f, 100.0f);
+	sustainHigh = JDSP_HOLD(sustainHigh, -100.0f, 100.0f);
 	if (freqHigh < freqLow) freqHigh = freqLow;
 	t->freqLow = freqLow;
 	t->freqHigh = freqHigh;
@@ -142,13 +152,11 @@ void TransientSetParam(JamesDSPLib *jdsp, float freqLow, float freqHigh,
 	t->band[2].attack = attackHigh * 0.01f;
 	t->band[2].sustain = sustainHigh * 0.01f;
 
-	t->rangeDb = rangeDb < 0.0f ? 0.0f : (rangeDb > 24.0f ? 24.0f : rangeDb);
+	t->rangeDb = JDSP_HOLD(rangeDb, 0.0f, 24.0f);
 
 	transientDesign(t, fs);
 
-	t->mix = mixPct * 0.01f;
-	if (t->mix < 0.0f) t->mix = 0.0f;
-	if (t->mix > 1.0f) t->mix = 1.0f;
+	t->mix = JDSP_HOLD(mixPct * 0.01f, 0.0f, 1.0f);
 	t->fs = fs;
 
 	/* Nothing asked for means nothing done - and it has to be a real early
