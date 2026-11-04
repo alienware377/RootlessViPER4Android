@@ -41,7 +41,6 @@ import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.databinding.ActivityDspMainBinding
 import me.timschneeberger.rootlessjamesdsp.databinding.ContentMainBinding
 import me.timschneeberger.rootlessjamesdsp.flavor.CrashlyticsImpl
-import me.timschneeberger.rootlessjamesdsp.flavor.UpdateManager
 import me.timschneeberger.rootlessjamesdsp.updates.GithubUpdater
 import me.timschneeberger.rootlessjamesdsp.fragment.DspFragment
 import me.timschneeberger.rootlessjamesdsp.fragment.FileLibraryDialogFragment
@@ -100,7 +99,6 @@ class MainActivity : BaseActivity() {
     /* Root version */
     private var hasLoadFailed = false
     private lateinit var runtimePermissionLauncher: ActivityResultLauncher<Array<String>>
-    private val updateManager: UpdateManager by inject()
 
     private var processorService: BaseAudioProcessorService? = null
     private var processorServiceBound: Boolean = false
