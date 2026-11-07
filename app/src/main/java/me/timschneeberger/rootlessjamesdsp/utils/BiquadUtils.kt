@@ -158,7 +158,7 @@ object BiquadUtils {
      * still adds resonance there.
      *
      * A cutoff has no gain, so the band's gain field carries the slope. This
-     * mirrors MultibandDistSetBands in multibandDist.c exactly - if one changes
+     * mirrors MultibandDistSetBands in multibandDist.c exactly: if one changes
      * the other must, or the curve on screen stops being the curve applied.
      */
     fun cascadeFor(band: ParametricEqBand, sampleRate: Double = 48000.0): List<BiquadCoefficients> {

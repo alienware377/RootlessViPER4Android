@@ -37,8 +37,7 @@ class SettingsAppearanceFragment : SettingsBaseFragment() {
         appTheme?.entries = appThemes
 
         // The listener runs before the new value is stored, so it has to use
-        // the value it is handed. Reading the stored one showed or hid Pure
-        // black for the previous theme mode.
+        // the value it is handed.
         themeMode?.setOnPreferenceChangeListener { _, newValue ->
             updateViewStates(newValue as? String)
             true

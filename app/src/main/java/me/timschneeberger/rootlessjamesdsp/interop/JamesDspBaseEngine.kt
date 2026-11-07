@@ -942,7 +942,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
      * Hands the band-select cascade to the engine as a flat array of
      * (frequency, gain, q, type) groups, in the same order the editor shows
      * them. The type codes are [me.timschneeberger.rootlessjamesdsp.model.ParametricEqFilterType.code],
-     * which the engine mirrors as MbdFilterType - the two must not drift.
+     * which the engine mirrors as MbdFilterType; the two must not drift.
      */
     fun setMultibandDistBands(serialized: String): Boolean {
         val bands = ParametricEqBandList()
@@ -1035,7 +1035,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         /**
          * Values per dynamic EQ band: frequency, Q, threshold dB, ratio,
          * attack ms, release ms, range dB, mode. Mirrors
-         * DYNEQ_VALUES_PER_BAND in jdsp_header.h - the two must not drift.
+         * DYNEQ_VALUES_PER_BAND in jdsp_header.h; the two must not drift.
          */
         const val DYNEQ_VALUES_PER_BAND = 8
 

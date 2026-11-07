@@ -13,7 +13,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.Constants
  *
  * Every namespace in EffectCards must appear here. GlobalCardsTest enforces
  * that, so a card added later forces someone to decide, instead of sitting
- * enabled on screen while doing nothing (the V4A-only mode lesson).
+ * enabled on screen while doing nothing.
  */
 object GlobalCards {
     enum class Support { FULL, PARTIAL, NONE }

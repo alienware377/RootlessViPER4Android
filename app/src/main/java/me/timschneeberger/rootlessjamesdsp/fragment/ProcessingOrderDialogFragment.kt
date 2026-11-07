@@ -70,8 +70,6 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(34, R.string.lowend_enable),
         ChainEffect(35, R.string.exciter_enable),
         ChainEffect(36, R.string.tape_enable),
-        // Missing until now, so the screen could not show or place them, and
-        // every order it saved left them for the engine to run last.
         ChainEffect(37, R.string.vinyl_enable),
         ChainEffect(38, R.string.balance_enable),
         ChainEffect(39, R.string.shaper_enable),

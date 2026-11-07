@@ -41,8 +41,7 @@ import timber.log.Timber
  * status channel, which is created silent and hidden.
  *
  * The foreground type is dataSync, whose permission the app already declares
- * for backups, so turning this feature into the app adds no permission for
- * anyone. Android 15 limits dataSync for apps that target it; this app targets
+ * for backups, so this service adds no new permission. Android 15 limits dataSync for apps that target it; this app targets
  * 14, and moving the target up means switching this service to specialUse.
  *
  * Never runs alongside capture mode: capture mode mutes each app with the
@@ -300,8 +299,7 @@ class GlobalEffectService : BaseAudioProcessorService() {
         const val ACTION_SOFT_POWER = BuildConfig.APPLICATION_ID + ".globalfx.SOFT_POWER"
         const val EXTRA_ON = "on"
 
-        // Next to capture mode's 1 to 4 in Notifications, kept here so this
-        // feature stays out of files other work also edits.
+        // Notification ids 5 to 7, after capture mode's 1 to 4 in Notifications.
         const val ID_STATUS = 5
         const val ID_ALERT = 6
         const val ID_RESUME = 7

@@ -49,7 +49,7 @@ abstract class BaseEqualizerSurface(
     /**
      * Overrides the curve, knob and fill colour; used by hand-set themes.
      * The paints take their colour in init and the gradient is rebuilt in
-     * onLayout, so calling onSizeChanged did nothing - both have to be updated
+     * onLayout, so calling onSizeChanged is not enough: both have to be updated
      * here directly, with a re-layout to regenerate the shader.
      */
     fun setAccentColor(color: Int) {

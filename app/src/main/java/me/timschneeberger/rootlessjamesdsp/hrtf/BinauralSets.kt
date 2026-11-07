@@ -192,7 +192,7 @@ object BinauralSets {
      * of [src] made by an older version of the preparation and, for the
      * built-in set, those made for other app versions. Each app version
      * makes its own copy of the built-in set (its key holds the version
-     * code), and before this every one of them stayed behind for good.
+     * code).
      */
     internal fun removeStaleCopies(dir: File, src: Source) {
         val current = "${src.key}-p$PREP_VERSION-"

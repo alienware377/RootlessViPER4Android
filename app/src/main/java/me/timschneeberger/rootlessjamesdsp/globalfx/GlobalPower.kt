@@ -11,9 +11,9 @@ import timber.log.Timber
  *
  * Every switch that starts or stops processing (the power button, the tile,
  * the launcher, device profiles, boot, the session receiver) asks here with
- * one line, so global mode's logic stays in this package and the shared files
- * only gain a call. With global mode off every function here either returns
- * false or does exactly what the caller did before.
+ * one line, so global mode's logic stays in one place. With global mode off
+ * every function here returns false and leaves the caller's normal path to
+ * run.
  */
 object GlobalPower {
 

@@ -30,12 +30,10 @@ import java.util.UUID
  * what gets distorted, not an equaliser curve applied to the output. The rest
  * is a knob panel in the same shape as the delay's.
  *
- * Deliberately its own fragment rather than a parameterised
- * [ParametricEqualizerFragment]. That one carries the equaliser's preamp,
- * EqualizerAPO import and export, its own activity and its own broadcast;
- * bending all of it around a second owner would put a working screen at risk
- * for no gain, since what is worth sharing here - the surface, the band model
- * and the knob view - are already separate components.
+ * Its own fragment rather than a parameterised [ParametricEqualizerFragment],
+ * which carries preamp, EqualizerAPO import and export and its own activity;
+ * the shared parts (surface, band model, knob view) are separate components
+ * already.
  */
 class MultibandDistFragment : Fragment() {
     private lateinit var binding: FragmentMbdPanelBinding
@@ -204,8 +202,7 @@ class MultibandDistFragment : Fragment() {
     private fun syncKnobsFromSelection() {
         val band = selectedBand() ?: return
         suppressBandWrite = true
-        // A cutoff has a corner rather than a centre, and calling both of them
-        // "frequency" is what made the cutoff look like it had no control.
+        // A cutoff has a corner rather than a centre.
         val cutoff = band.filterType == ParametricEqFilterType.LOW_PASS ||
                 band.filterType == ParametricEqFilterType.HIGH_PASS
         binding.mbdBandFreq.label =
@@ -221,7 +218,7 @@ class MultibandDistFragment : Fragment() {
     /**
      * Point the gain dial at whichever quantity the current filter type has.
      *
-     * A cutoff has no gain - the coefficients ignore the term - but it does
+     * A cutoff has no gain (the coefficients ignore the term), but it does
      * have a slope, and without a control for it a cutoff is stuck at
      * 12 dB/octave, which is a tilt across the whole spectrum rather than a
      * corner. The band's gain field is what carries the slope; see
@@ -292,7 +289,7 @@ class MultibandDistFragment : Fragment() {
         binding.mbdAdd.setOnClickListener {
             pushHistory(snapshot())
             // A new handle lands an octave above the highest one there, or at
-            // 250 Hz on an empty graph - somewhere it can be seen and grabbed
+            // 250 Hz on an empty graph: somewhere it can be seen and grabbed
             // rather than stacked under an existing handle.
             val freq = (bands.maxOfOrNull { it.frequency }?.times(2.0) ?: 250.0)
                 .coerceIn(20.0, 20000.0)
@@ -432,8 +429,7 @@ class MultibandDistFragment : Fragment() {
         }
 
         // Mix is the master tap. At zero the engine skips the whole stage, so
-        // every other control on this panel is inert - one dial at one end
-        // killing sixteen others, with nothing to say so.
+        // every other control on this panel is inert and is dimmed to say so.
         val wet = binding.knobMix.value > 0f
 
         val hasSelection = selectedBand() != null
@@ -445,7 +441,7 @@ class MultibandDistFragment : Fragment() {
         val cutoff = currentFilterType().let {
             it == ParametricEqFilterType.LOW_PASS || it == ParametricEqFilterType.HIGH_PASS
         }
-        // Not dimmed on a cutoff any more - there it is the slope control.
+        // On a cutoff this dial is the slope control.
         dim(binding.mbdBandGain, wet && hasSelection)
         // The filter type applies to the selected handle, so with nothing
         // selected the buttons latch and change nothing.
@@ -463,9 +459,7 @@ class MultibandDistFragment : Fragment() {
 
         dim(binding.knobShape, driven)
         dim(binding.knobBias, driven)
-        // Character selects between shapers that are only reached once there
-        // is drive to feed them. Leaving the row lit at zero drive is what
-        // made this look broken: the buttons respond, and nothing happens.
+        // Character only matters once there is drive to feed the shapers.
         dimGroup(binding.mbdModelGroup, driven)
         dimGroup(binding.mbdRoutingGroup, wet)
         dim(binding.knobTone, wet)

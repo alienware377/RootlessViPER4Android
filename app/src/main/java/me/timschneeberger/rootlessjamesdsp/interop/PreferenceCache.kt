@@ -30,8 +30,8 @@ class PreferenceCache(val context: Context) {
         val name = context.getString(nameRes)
         // Remembered per namespace, not per key name. Nothing reads the same key
         // from two namespaces today, but one preference key IS already shared by
-        // two cards - the parametric EQ screen reuses the graphic EQ's
-        // linear-phase key - so it is one line of engine code away from being
+        // two cards (the parametric EQ screen reuses the graphic EQ's
+        // linear-phase key), so it is one line of engine code away from being
         // live, and the failure it produces is silent and very hard to see.
         //
         // What this list decides is whether a namespace's parameters get sent to
