@@ -16,7 +16,7 @@ ui_print "! This module is not ready to install."
 ui_print "  The stock effect service cannot be run under a"
 ui_print "  second name, so taking over its name would leave"
 ui_print "  the device with no working effect HAL."
-ui_print "  See DESIGN.md for what replaces this approach."
+ui_print "  Use rootless mode on this device."
 abort "! Aborting deliberately"
 
 API=$(getprop ro.build.version.sdk)
