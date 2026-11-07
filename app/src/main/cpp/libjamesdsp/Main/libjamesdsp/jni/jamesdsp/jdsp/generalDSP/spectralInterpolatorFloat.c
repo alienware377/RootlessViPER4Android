@@ -122,9 +122,9 @@ void InitSpectralInterpolator(char *octaveSmooth, unsigned int fcLen, unsigned i
 	float *mLevel_1 = (float*)(octaveSmooth + sizeof(unsigned int) + sizeof(float) + sizeof(unsigned int) + (idxLen << 1) * sizeof(unsigned int) + idxLen * sizeof(float));
 	float *mLevel_2 = (float*)(octaveSmooth + sizeof(unsigned int) + sizeof(float) + sizeof(unsigned int) + (idxLen << 1) * sizeof(unsigned int) + idxLen * sizeof(float) + (idxLen + 3) * sizeof(float));
 	/* levels holds idxLen + 3 points, so there are only idxLen + 2 slopes
-	   between them. The last slope used to be worked out from levels[idxLen + 3],
-	   one past the end of the allocation, on every compander setup. The lookup
-	   never reaches that slot (it stops at idxLen + 1), so it is set to 0. */
+	   between them. Working out the last one would read levels[idxLen + 3],
+	   one past the end of the allocation. The lookup never reaches that slot
+	   (it stops at idxLen + 1), so it is set to 0. */
 	for (i = 0; i < idxLen + 3; i++)
 	{
 		mLevel_1[i] = (float)levels[i];

@@ -85,9 +85,9 @@ class ParametricEqBandList : ObservableArrayList<ParametricEqBand>() {
         sb.appendLine("Preamp: ${dfGain.format(preampDb)} dB")
         // A "Channel:" line applies to every filter after it, so one is only
         // written where the channel actually changes, and none at all when
-        // every band is on both. That keeps an ordinary preset byte-identical
-        // to what this used to produce, which matters because other tools read
-        // these files too.
+        // every band is on both. That keeps an ordinary preset in the plain
+        // EqualizerAPO form, which matters because other tools read these
+        // files too.
         var current: ParametricEqChannel? = null
         var n = 0
         for (band in this) {

@@ -1,4 +1,4 @@
-# RootlessViPER4Android engine (Magisk module)
+# RootfulViPER4Android engine (Magisk module)
 
 Installs this fork's DSP engine as a **system-wide audio effect**.
 
@@ -80,16 +80,19 @@ usual cause, and it is reported for other audio modules as well.
 An audio module can leave the audio server crashing on every boot, which looks
 like a bootloop. Recovery, easiest first:
 
-1. **ADB**: with USB debugging on, plug in and run
-   `adb wait-for-device shell magisk --remove-modules`. It runs the moment the
-   device is reachable and disables every module.
+1. **ADB**: with USB debugging on, and su over adb already granted in your
+   root manager, run
+   `adb wait-for-device shell su -c 'touch /data/adb/modules/rv4a_engine/disable'`
+   (KernelSU: `su -c 'ksud module disable rv4a_engine'`, APatch:
+   `su -c 'apd module disable rv4a_engine'`). This turns off only this module.
 2. **Safe Mode**: hold the key combo your device uses at boot. Magisk detects
    Safe Mode and disables all modules; the state persists after a normal
    reboot, so you can then remove this one from the Magisk app.
 3. **Recovery**: delete `/data/adb/modules/rv4a_engine` from a file manager in
    TWRP, or `rm -rf /data/adb/modules/rv4a_engine` from its shell.
 
-The module also defends itself: `post-fs-data.sh` runs before the audio server
+The module also defends itself. It disables itself after two boots that do not
+finish, and `post-fs-data.sh` runs before the audio server
 starts and moves aside any audio config of ours that fails validation, so the
 device boots with the stock configuration instead. It writes `boot.log` in the
 module folder recording what it checked.
@@ -111,11 +114,11 @@ was installed last wins and the others fall silent.
 
 ## Status
 
-The library loads, initialises the engine and processes audio. Parameter
-dispatch (`EFFECT_CMD_SET_PARAM`) is acknowledged but not yet mapped onto the
-engine's setters, so effect *settings* don't cross over yet. That mapping is
-the remaining work, and it is mechanical: the ids already exist in the JNI
-wrapper.
+The library loads, initialises the engine, processes audio and applies the
+effect settings the app sends. Three cards are not wired up in root mode yet and
+do nothing there: Dynamic system, Differential surround and the two-band Bass
+exciter. Please open an issue with your device and Android version if any other
+effect does not respond.
 
 **Do not install alongside the stock JamesDSP module**: two libraries claiming
 the same effect UUID will conflict.

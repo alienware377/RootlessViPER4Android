@@ -74,7 +74,7 @@ jobs:
           cp magisk/aidl/module/module.prop magisk/aidl/module/customize.sh \
              magisk/aidl/module/post-fs-data.sh magisk/aidl/module/service.sh \
              magisk/aidl/module/rv4a-effect.rc "$OUT/"
-          cp magisk/aidl/DESIGN.md "$OUT/README.md"
+          cp magisk/aidl/README.md "$OUT/README.md"
 
       - name: Package module
         run: cd build/module && zip -qr ../rv4a-effect-aidl.zip . && unzip -l ../rv4a-effect-aidl.zip

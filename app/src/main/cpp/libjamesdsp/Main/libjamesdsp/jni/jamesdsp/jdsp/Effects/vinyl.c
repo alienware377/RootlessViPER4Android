@@ -7,10 +7,10 @@
  * recording. So they are separate cards, and both can run at once.
  *
  * Everything here is a NOISE SOURCE mixed alongside the music rather than a
- * filter applied to it, with one exception (wear). That has a consequence
- * worth stating plainly: at every control zero this stage is the exact
- * identity, and it early-returns rather than adding silence, because adding
- * float zeroes to a signal is only approximately harmless.
+ * filter applied to it, with one exception (wear). At every control zero this
+ * stage is the exact identity, and it early-returns rather than adding
+ * silence, because adding float zeroes to a signal is only approximately
+ * harmless.
  *
  *   Surface     The continuous bed a record sits on. Pink-ish noise, band
  *               limited - a groove cannot reproduce much above 10 kHz or
@@ -41,10 +41,10 @@
  * rather than each rolling its own, so the bed sounds like one record rather
  * than nine unrelated noises layered up.
  *
- * `Follow` deserves its own note. Real vinyl noise is constant, and constant
- * is what you want while music plays - but a silent passage full of crackle is
- * obviously synthetic, and worse, it never stops when the music does. So the
- * noise can be made to track the programme level. At zero the bed is constant
+ * Follow: real vinyl noise is constant, and constant is what you want while
+ * music plays, but a silent passage full of crackle is obviously synthetic,
+ * and worse, it never stops when the music does. So the noise can be made to
+ * track the programme level. At zero the bed is constant
  * and honest; turned up it fades with the music, which is a lie but a useful
  * one for a phone that pauses.
  */
@@ -168,8 +168,7 @@ static void vinylDesign(Vinyl *v, float fs)
 
 	/* Event probabilities per sample. Scaled by the rate so a record crackles
 	   at the same speed however fast it is being sampled. They live here, not
-	   in SetParam, so a rate change rescales them too: they used to stay at
-	   the old rate, about 8 % fewer events after a 48 to 44.1 kHz move. */
+	   in SetParam, so a rate change rescales them too. */
 	v->crackleRate = v->crackle * 900.0f / fs;
 	v->popRate = v->pops * 3.0f / fs;
 	v->clickRate = v->clicks * 60.0f / fs;

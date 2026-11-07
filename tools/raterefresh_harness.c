@@ -1,7 +1,7 @@
 // Do the DDC and the compander follow a 44.1 / 48 kHz move?
 //
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
-//   Compile every engine source (the tools/cc86.rsp list) with
+//   Compile every engine source (jdsp/*.c, Effects/**/*.c, generalDSP/*.c) with
 //       $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -fPIC -c
 //   then
 //   $NDK/x86_64-linux-android29-clang -O2 -w -I $J tools/raterefresh_harness.c \

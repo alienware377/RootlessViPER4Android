@@ -101,15 +101,14 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
         val transition = LayoutTransition()
         transition.enableTransitionType(LayoutTransition.CHANGING)
-        // Not DISAPPEARING. Setting a card GONE - which V4A mode, the empty
-        // liveprog slots, the effect search and the layout customiser all do -
+        // Not DISAPPEARING. Setting a card GONE (which V4A mode, the empty
+        // liveprog slots, the effect search and the layout customiser all do)
         // parks it in the container's transitioning views for 300ms, and while
         // it sits there removeView deliberately leaves its parent set. The next
-        // addView then throws "The specified child already has a parent". That
-        // was a rare race while scrolling; loading a preset now exits edit mode
-        // and re-applies the layout in the same looper message, which lands
-        // inside that window every time.
-        // Cards still slide to their new positions - only the fade-out of a
+        // addView then throws "The specified child already has a parent".
+        // Loading a preset exits edit mode and re-applies the layout in the same
+        // looper message, which lands inside that window every time.
+        // Cards still slide to their new positions; only the fade-out of a
         // card being hidden is given up.
         transition.disableTransitionType(LayoutTransition.DISAPPEARING)
         binding.cardContainer.layoutTransition = transition
@@ -300,8 +299,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         // and outside it they follow their own rules, not just !searching:
         // the device profile card only when device profiles are on and not in
         // classic layout (which removes it), the section heading not in classic
-        // layout. Clearing a search used to show both regardless, the profile
-        // card as an empty shell in classic layout.
+        // layout.
         val classic = me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())
         binding.root.findViewById<View>(R.id.v4a_section_header)?.isVisible = !searching && !classic
         binding.root.findViewById<View>(R.id.card_device_profiles)?.let {
@@ -375,23 +373,12 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
      */
     private val PREFETCH_GAP_MS = 140L
 
-    /**
-     * Installs the remaining cards while the UI thread has nothing else to do.
-     *
-     * Scrolling into a card that hasn't been built yet means inflating it right
-     * when frames matter most, which is what the stutter is. An idle handler
-     * only runs when no work is pending - including no pending frame - so the
-     * cards are quietly built during the pauses instead, and by the time the
-     * user scrolls down they already exist. One per pass keeps any single stall
-     * to a single card if the user starts scrolling mid-inflation.
-     */
     private var cardsFinalised = false
 
     /**
      * Runs once, after the last card is installed. Both the scroll-driven and
-     * idle-driven installers can drain the queue, so without this the layout
-     * was applied twice - which is what crashed, since re-parenting views that
-     * had already been re-parented is not a no-op.
+     * idle-driven installers can drain the queue, and re-applying the layout is
+     * not safe: re-parenting views that were already re-parented is not a no-op.
      */
     private fun onAllCardsInstalled() {
         if (cardsFinalised || !isAdded) return
@@ -400,6 +387,16 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         applyLiveprogSlotVisibility()
     }
 
+    /**
+     * Installs the remaining cards while the UI thread has nothing else to do.
+     *
+     * Scrolling into a card that hasn't been built yet means inflating it right
+     * when frames matter most, which is what the stutter is. An idle handler
+     * only runs when no work is pending (including no pending frame), so the
+     * cards are quietly built during the pauses instead, and by the time the
+     * user scrolls down they already exist. One per pass keeps any single stall
+     * to a single card if the user starts scrolling mid-inflation.
+     */
     private fun scheduleIdlePrefetch() {
         if (idlePrefetchQueued || deferredCards.isEmpty()) return
         idlePrefetchQueued = true
@@ -409,12 +406,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
             val spec = deferredCards.first()
             deferredCards.remove(spec)
-            val t0 = android.os.SystemClock.uptimeMillis()
             childFragmentManager.beginTransaction()
                 .setReorderingAllowed(true)
                 .replace(spec.viewId, PreferenceGroupFragment.newInstance(spec.prefName, spec.xmlRes))
                 .commitNowAllowingStateLoss()
-            Timber.d("PERF prefetch ${spec.prefName} commit=${android.os.SystemClock.uptimeMillis() - t0}ms remaining=${deferredCards.size}")
 
             if (deferredCards.isEmpty()) onAllCardsInstalled()
             // Breathe: without this pause the next idle pass fires immediately
@@ -457,13 +452,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
             }
             // Commit now rather than scheduling it. A plain commit only queues
             // the transaction, so several can pile up and inflate together in
-            // one frame - which is the long frame seen while scrolling. Doing
+            // one frame, which is the long frame seen while scrolling. Doing
             // it here bounds the cost to a single card, measured in single-
             // digit milliseconds.
-            val t0 = android.os.SystemClock.uptimeMillis()
             tx.commitNowAllowingStateLoss()
-            val took = android.os.SystemClock.uptimeMillis() - t0
-            if (took > 8) Timber.d("PERF scroll-install ${batch.firstOrNull()?.prefName} ${took}ms")
             deferredCards.removeAll(batch.toSet())
 
             if (deferredCards.isNotEmpty()) {
@@ -478,14 +470,9 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
     }
 
     /**
-     * Extra Liveprog cards exist only while their slot holds a script. Slots keep
-     * their identity, so removing the middle script leaves that card hidden and
-     * the ones after it where they were.
-     */
-    /**
      * A preset carries the card layout too, and this fragment owns the manager
      * holding it. Nothing else re-applies it, so without this the restored
-     * order and hidden cards stay invisible until the app is killed - and are
+     * order and hidden cards stay invisible until the app is killed, and are
      * then overwritten by the first drag.
      */
     private val presetLoadedReceiver = object : android.content.BroadcastReceiver() {
@@ -515,7 +502,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         if (!isAdded) return
         val on = V4aMode.isOn(requireContext())
         // Classic layout drops the "ViPER4Android effects" divider heading and
-        // the gap it occupied - the original had one uninterrupted list.
+        // the gap it occupied: the original had one uninterrupted list.
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) {
             binding.v4aSectionHeader.isVisible = false
             hideDeviceProfileCard()
@@ -527,20 +514,13 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         layoutManager?.setHeadersVisible(!on)
         V4aMode.hiddenCardIds.forEach { id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
-            // Only ever hide here. With the mode off this used to set every
-            // hidden container visible again on each resume, undoing the
-            // user's own hides from the layout editor and an active search.
-            // Turning the mode off recreates the activity, so there is never
-            // anything of ours to undo.
+            // Only ever hide here, so the user's own hides and an active
+            // search stay. Turning the mode off recreates the activity.
             if (on) container?.isVisible = false
         }
         if (on) deferredCards.removeAll { it.viewId in V4aMode.hiddenCardIds }
     }
 
-    /**
-     * Classic layout shows the device profile in the activity's footer, so the
-     * copy in the scrolling list is removed to avoid two live instances.
-     */
     /**
      * Keeps the end of the list clear of whatever is pinned to the bottom of
      * the screen: the bottom bar and the power button cradled in it, or the
@@ -582,6 +562,10 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         return (loc[1] + scroll.height - chromeTop).coerceAtLeast(0)
     }
 
+    /**
+     * Classic layout shows the device profile in the activity's footer, so the
+     * copy in the scrolling list is removed to avoid two live instances.
+     */
     private fun hideDeviceProfileCard() {
         if (!isAdded) return
         val container = binding.root.findViewById<View>(R.id.card_device_profiles) ?: return
@@ -591,6 +575,11 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         }
     }
 
+    /**
+     * Extra Liveprog cards exist only while their slot holds a script. Slots keep
+     * their identity, so removing the middle script leaves that card hidden and
+     * the ones after it where they were.
+     */
     fun applyLiveprogSlotVisibility(rebuild: Boolean = false) {
         // In V4A-only mode all Liveprog cards stay hidden regardless of the
         // configured slots; the slot writes themselves are preserved.
@@ -610,10 +599,8 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         val foldedAway = layoutManager?.foldedAwayKeys() ?: emptySet()
         ids.forEachIndexed { index, id ->
             val container = binding.root.findViewById<View>(id)?.parent as? View
-            // A filled slot shows its card, unless the user hid that card in the
-            // layout editor: this ran on every resume and slot change and used
-            // to bring a hidden card straight back. Edit mode shows everything.
-            // The same goes for a card in a folded group (empty in edit mode).
+            // A filled slot shows its card unless the user hid it or its group
+            // is folded; edit mode shows everything.
             val key = resources.getResourceEntryName(id)
             val userHidden = layoutManager?.isHidden(key) == true
             container?.isVisible = occupied[index + 1].isNotBlank() &&
@@ -621,7 +608,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         }
         if (!rebuild) return
         // The picker wrote these namespaces directly, so the existing preference
-        // screens still hold the old values - rebuild them to re-read.
+        // screens still hold the old values, so rebuild them to re-read.
         val tx = childFragmentManager.beginTransaction().setReorderingAllowed(true)
         ids.forEachIndexed { index, id ->
             if (occupied[index + 1].isNotBlank() && !deferredCards.any { it.viewId == id })

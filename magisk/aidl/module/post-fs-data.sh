@@ -6,8 +6,8 @@
 # effect factory at all. The failsafes therefore go further than that module's,
 # not less far.
 #
-# Nothing of the stock HAL is ever deleted - its binary is untouched and Magisk
-# overlays rather than modifies - so "restoring" means getting out of the way,
+# Nothing of the stock HAL is ever deleted (its binary is untouched and Magisk
+# overlays rather than modifies), so "restoring" means getting out of the way,
 # and the backup exists for the one file we displace.
 
 MODDIR=${0%/*}

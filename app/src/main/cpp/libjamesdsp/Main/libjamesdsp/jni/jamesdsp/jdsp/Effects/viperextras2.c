@@ -163,7 +163,7 @@ void ViperBassSetParam(JamesDSPLib *jdsp, int mode, float freq, float gainDb)
 	else
 		vx2Biquad(v->f, fs, freq, 0.707f, gainDb, 0); // shelf
 	// pure bass+: gentle sub harmonics
-	vx2Biquad(v->lp, fs, freq, 0.7071f, 0.0f, 2);     // reuse as HP? no: need LP
+	vx2Biquad(v->lp, fs, freq, 0.7071f, 0.0f, 2);     // lowpass for the harmonic path
 	// build lowpass manually for harmonic path
 	{
 		float w0 = 2.0f * 3.14159265358979f * freq / fs;

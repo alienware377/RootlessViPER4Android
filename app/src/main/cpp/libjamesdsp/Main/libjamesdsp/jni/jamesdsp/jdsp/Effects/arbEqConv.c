@@ -142,8 +142,7 @@ void ArbitraryResponseEqualizerEnable(JamesDSPLib *jdsp, char enable)
 	{
 		/* Reload what was actually set, which may be two different curves.
 		   Asking the generator again would only ever return the last one it
-		   built, so a per-channel setup used to collapse onto one ear's curve
-		   the first time this refresh ran. */
+		   built, so a per-channel setup would collapse onto one ear's curve. */
 		/* The kept filters and the generator are chosen under the lock too:
 		   the settings thread frees and replaces both. */
 		jdsp_lock(jdsp);

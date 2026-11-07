@@ -139,13 +139,8 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    @SuppressLint("BatteryLife")
-    /**
-     * Classic layout replaces the power FAB with the master limiter switch.
-     * Both drive the same code path - the switch just performs the FAB's click
-     * - so permission handling and root/rootless branching stay in one place.
-     */
     /** Bottom-bar actions, shared with the classic layout's top-right menu. */
+    @SuppressLint("BatteryLife")
     private fun handleMainMenu(itemId: Int): Boolean {
         return when (itemId) {
 
@@ -222,11 +217,15 @@ class MainActivity : BaseActivity() {
     /**
      * Notified whenever power state changes. The processing service reports in
      * asynchronously (service bind, plus started/stopped broadcasts), so any UI
-     * mirroring the FAB must observe rather than read once - reading early is
-     * how the classic layout's switch ended up showing the opposite of reality.
+     * mirroring the FAB must observe rather than read once.
      */
     var onPowerStateChanged: ((Boolean) -> Unit)? = null
 
+    /**
+     * Classic layout replaces the power FAB with the master limiter switch.
+     * Both drive the same code path (the switch just performs the FAB's click),
+     * so permission handling and root/rootless branching stay in one place.
+     */
     fun requestPowerToggle() {
         if (::binding.isInitialized) binding.powerToggle.performClick()
     }
@@ -302,7 +301,7 @@ class MainActivity : BaseActivity() {
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(this))
             title = "ViPER4Android FX"
         // Classic theme: title sits left, as in V4A and the modern RE port.
-        // This must run after setContentView - binding is lateinit and is only
+        // This must run after setContentView: binding is lateinit and is only
         // assigned during inflation, so touching it earlier crashes on launch.
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isEnabled(this))
             binding.toolbar.isTitleCentered = false
@@ -407,7 +406,7 @@ class MainActivity : BaseActivity() {
 
         // Rootless: don't toggle on click, we handle that in the onClickListener
         // Every assignment to isToggled runs through the view's setter, so this
-        // catches all of them - including the async service-bind and broadcast
+        // catches all of them, including the async service-bind and broadcast
         // paths that land after fragments have already been created.
         binding.powerToggle.setOnToggledListener(
             object : FloatingToggleButton.OnToggledListener {

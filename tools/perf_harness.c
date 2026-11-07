@@ -164,19 +164,14 @@ static void measure(const char *name, Fn setup, Fn run)
 	       "   silent: median %6.2f worst %6.2f\n",
 	       name, loudNet, core, median - baseline, worst - baseline);
 
-	/* What is asserted is the SHAPE of the slowdown, not its size. The first
-	   attempt here compared the worst block against the median and tripped on
-	   the tape at 3.2x, which looked like a finding and was not: the slow
-	   blocks were at 30 and 98, scattered, and three more runs put the ratio
-	   between 2.3 and 2.7. This tablet's governor moves the clock around
-	   enough that any threshold loose enough to survive it would be too loose
-	   to catch a stall.
+	/* What is asserted is the SHAPE of the slowdown, not its size: clock
+	   scaling moves block times around too much for a ratio threshold.
 
-	   The shape is unambiguous where the size is not. State decaying at 0.996
-	   per sample spends roughly four thousand samples crossing the denormal
-	   range - four consecutive blocks at this size, and far more for the
-	   longer time constants - whereas the scheduler takes a core away for one
-	   block at a time. So: the longest UNBROKEN run of slow blocks. */
+	   State decaying at 0.996 per sample spends roughly four thousand samples
+	   crossing the denormal range (four consecutive blocks at this size, and
+	   far more for the longer time constants), whereas the scheduler takes a
+	   core away for one block at a time. So the check is the longest UNBROKEN
+	   run of slow blocks. */
 	int longest = 0, current = 0, at = -1;
 	for (int b = 0; b < BLOCKS; b++)
 	{

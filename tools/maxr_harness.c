@@ -86,8 +86,7 @@ static int checkCeiling(const char *name, float ceilingDb)
 #define DEF_OVERSAMPLE  1
 
 // Switch the card on, touch nothing: does anything happen? An effect whose
-// default is "do nothing" reads as broken, and this app has now shipped that
-// twice and had it reported both times.
+// default does nothing reads as broken.
 static int checkDefaultsAreAudible(void)
 {
 	static float ref[N];

@@ -110,10 +110,8 @@ find_disabled() {
   # --- 3. validate our own configs -------------------------------------
   find_configs | while read -r f; do
       bad=0
-      # Checked per format. A blanket grep for "soundfx" used to be applied to
-      # both, and the XML we generate names the library by bare filename, so
-      # every correct XML we ever wrote failed this and was set aside on every
-      # boot for ever, with one line in this log as the only trace.
+      # Checked per format: the XML names the library by bare filename, so
+      # only a .conf file mentions soundfx.
       grep -q "$UUID" "$f" || bad=1
       case "$f" in
         *.xml)

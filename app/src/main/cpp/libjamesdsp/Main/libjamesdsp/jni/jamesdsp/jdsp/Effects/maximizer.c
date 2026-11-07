@@ -262,19 +262,14 @@ void MaximizerProcess(JamesDSPLib *jdsp, size_t n)
 			//
 			// The curve has unity slope at the origin and approaches the
 			// ceiling asymptotically, so it rounds peaks without lifting
-			// everything underneath them. Driving a plain tanh harder as the
-			// control rises, which is what this did, is a level control
-			// wearing a saturator's name - it measured nine decibels of gain
-			// at low level, the opposite of what the dial claims.
+			// everything underneath them.
 			if (m->character > 0.0f)
 			{
 				// Scaled so that a signal already sitting on the ceiling comes
 				// out on the ceiling: a maximiser must not get quieter when a
 				// texture control is turned up. What is left is a 3dB lift of
-				// everything below the peak, which is what saturation is - it
-				// raises the average against a fixed maximum. The previous
-				// curve did that to the tune of nine decibels, which is a
-				// level control rather than a character one.
+				// everything below the peak, which is what saturation is: it
+				// raises the average against a fixed maximum.
 				float c = (ceiling > 1e-6f) ? ceiling : 1e-6f;
 				float yn = y / c;
 				float sat;

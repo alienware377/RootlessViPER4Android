@@ -182,16 +182,14 @@ static int32_t rv4a_process(effect_handle_t self, audio_buffer_t *in, audio_buff
     /* The engine owns tmpBuffer, and owns it as ONE allocation: tmpBuffer[1]
        through [5] are interior pointers into the block tmpBuffer[0] holds, and
        JamesDSPFree frees exactly that pointer. Writing our own buffers into [0]
-       and [1] therefore leaked the engine's block and handed its free() a
-       pointer we still meant to use, so releasing one effect left every other
-       effect on the same mixer thread writing through freed memory, and two of
-       them freed it twice. It fired on ordinary route changes.
+       and [1] would leak the engine's block and hand its free() a pointer that
+       every other effect on the same mixer thread still writes through.
 
        processFloatMultiplexd is the engine's own interleaved entry point, the
-       one the app has always used. It deinterleaves into its own buffers, so
-       nothing here touches tmpBuffer at all. It also runs the resampler, which
-       the old path skipped: anything that was not 44.1 or 48 kHz, a USB DAC
-       most likely, was being filtered at the wrong rate. */
+       one the app uses. It deinterleaves into its own buffers, so nothing here
+       touches tmpBuffer at all. It also runs the resampler, so a stream that is
+       not 44.1 or 48 kHz (a USB DAC, most likely) is filtered at the right
+       rate. */
     const bool accumulate = (c->outAccessMode == EFFECT_BUFFER_ACCESS_ACCUMULATE);
     float *dst = out->f32;
     if (accumulate)
@@ -325,9 +323,9 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
     case 10004:     /* commit: impulse response */
         if (c->irBuf)
         {
-            /* Used to warn and load anyway, which handed the convolver a
-               frame count covering partitions that never arrived. Refuse it:
-               a truncated impulse is not worth a read past the buffer. */
+            /* Loading anyway would hand the convolver a frame count covering
+               partitions that never arrived. Refuse it: a truncated impulse is
+               not worth a read past the buffer. */
             if (c->irPartsSeen != c->irParts)
             {
                 LOGE("impulse committed with %d of %d partitions, discarding",
@@ -448,9 +446,8 @@ static bool handleBufferedPayload(rv4a_context *c, int32_t id,
             else
             {
                 /* The parser returns 1 when the script compiled, 0 when it has
-                   no @init, and negative for the other errors. This used to
-                   test for 0, so every valid script was refused at enable and
-                   only a script with nothing compiled was let through. */
+                   no @init, and negative for the other errors, so only a
+                   positive result is a usable script. */
                 const int rc = LiveProgStringParser(&c->dsp, c->stringBuf);
                 c->haveLiveprog = rc > 0;
                 if (rc <= 0) LOGE("liveprog rejected the script (%d)", rc);
@@ -530,17 +527,13 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
 
         /* EffectCreate has already built the engine, at 48 kHz, and it lives
            as long as the effect does. This arrives again on every route
-           change. It used to build a new engine here instead: the first time
-           over EffectCreate's without freeing it, which leaked about 271 MB of
-           allocations in audioserver per effect instance, and every time after
-           that by freeing the old one first, which put every effect back to
-           off and every setting to its default. Nothing on the app side sends
-           them again after a route change, so root mode silently lost all its
-           processing the first time the output changed.
+           change, so it must not build a new engine: that would either leak
+           the old one in audioserver or reset every effect and setting, and
+           the app does not send them again after a route change.
 
-           So only the rate is followed now, the way the legacy effect does it.
-           The engine keeps its settings and its loaded payloads, so the
-           payload flags and hashes stay true. Same rate: nothing to do. */
+           Only the rate is followed, the way the legacy effect does it. The
+           engine keeps its settings and its loaded payloads, so the payload
+           flags and hashes stay true. Same rate: nothing to do. */
         JamesDSPSetSampleRate(&c->dsp, (float)c->sampleRate, 0);
         if (!JamesDSPGetMutexStatus(&c->dsp))
             LOGW("SET_CONFIG: engine reports no mutex; concurrent access unsafe");
@@ -556,9 +549,8 @@ static int32_t rv4a_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmd
     case EFFECT_CMD_GET_CONFIG:
     {
         /* Some servers query this before enabling; failing it can stop the
-           effect being used at all. It used to report success without writing
-           anything, so the caller read whatever was already in the buffer and
-           believed it was our configuration. */
+           effect being used at all, and reporting success without filling the
+           reply would hand the caller whatever was already in the buffer. */
         if (!pReplyData || !replySize || *replySize < sizeof(effect_config_t))
         {
             if (replySize)
@@ -845,9 +837,7 @@ HAL_EXPORT int32_t EffectGetDescriptor(const effect_uuid_t *uuid, effect_descrip
 {
     if (!pDescriptor || !uuid)
         return -EINVAL;
-    /* Answered for any uuid at all until now, so a config naming our library
-       against somebody else's uuid got our descriptor back and the effect was
-       registered as ours. EffectCreate always compared; this did not. */
+    /* Only our uuid gets our descriptor, as in EffectCreate. */
     if (memcmp(uuid, &rv4a_descriptor.uuid, sizeof(effect_uuid_t)) != 0)
         return -EINVAL;
     memcpy(pDescriptor, &rv4a_descriptor, sizeof(effect_descriptor_t));

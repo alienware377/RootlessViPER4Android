@@ -1,9 +1,8 @@
 /*
  * Balance: which ear the sound sits in, and two things that belong beside it.
  *
- * Small, but genuinely missing - there was no way to trim one ear against the
- * other, which matters to anyone with uneven hearing, a headphone with a tired
- * driver, or earbuds where one has more wax in it than the other.
+ * Trims one ear against the other, for uneven hearing or a headphone with one
+ * weaker driver.
  *
  *   Balance   Cuts the opposite side rather than boosting the near one. That
  *             is the classic balance law and it is the right one here: boosting

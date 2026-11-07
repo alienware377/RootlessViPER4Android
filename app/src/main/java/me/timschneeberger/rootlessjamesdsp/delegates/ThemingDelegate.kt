@@ -62,7 +62,7 @@ class ThemingDelegateImpl : ThemingDelegate, KoinComponent {
                 if (t.amoled)
                     activity.theme.applyStyle(R.style.ThemeOverlay_RootlessJamesDSP_Amoled, true)
                 // This Material version derives the palette from an image, so
-                // hand it a solid swatch of the seed - the extracted source is
+                // hand it a solid swatch of the seed: the extracted source is
                 // then exactly the colour the user chose.
                 // In manual mode the accent the user picked for Primary is what
                 // drives the scheme, so the colour they chose is the colour the

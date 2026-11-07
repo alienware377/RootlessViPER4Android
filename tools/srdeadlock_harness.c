@@ -1,7 +1,7 @@
 // Does JamesDSPSetSampleRate with forceRefresh hang on its own lock?
 //
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
-//   Compile every engine source (the tools/cc86.rsp list) and
+//   Compile every engine source (jdsp/*.c, Effects/**/*.c, generalDSP/*.c) and
 //   app/src/main/cpp/EELStdOutExtension.c with
 //       $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -fPIC -c
 //   with the real jdspController.c, so the real mutex (no lockstub), then

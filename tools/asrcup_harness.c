@@ -3,7 +3,7 @@
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
 //   J=app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp
 //   Compile every engine source (jdsp/*.c, Effects/**/*.c, generalDSP/*.c,
-//   the same list as tools/cc86.rsp) with
+//   as tools/run_harnesses.sh does) with
 //       $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -fPIC -c
 //   then
 //   $NDK/x86_64-linux-android29-clang -O2 -w -I $J -Wl,--wrap=malloc \

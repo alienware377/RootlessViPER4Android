@@ -23,9 +23,9 @@ The "or any later version" clause is what makes this compatible with this
 project's GPLv3. Rubber Band is also available under a separate commercial
 licence from its authors; that is not the licence used here.
 
-Nothing in this directory has been edited. The Android build lives outside it,
-in `android/`, so this tree stays a clean mirror that can be diffed against
-upstream.
+None of upstream's files have been edited. The Android build is kept apart in
+`android/`, so the rest of the tree stays a clean mirror that can be diffed
+against upstream.
 
 ## Rebuilding
 

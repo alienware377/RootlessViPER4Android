@@ -39,8 +39,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     /* --- enable flags --------------------------------------------------- */
     /* XxxEnable(d, 0) only refreshes and never clears the flag, so the off
        branches have to call the Disable functions, as the rootless wrapper
-       does. 1200, 1202, 1208 and 1212 used to call Enable(d, 0) and could
-       never be switched off in root mode. */
+       does, or the effect could never be switched off in root mode. */
     case 1200: if (on) CompressorEnable(d, 1); else CompressorDisable(d); break;
     case 1201: if (on) BassBoostEnable(d); else BassBoostDisable(d); break;
     case 1202: if (on) MultimodalEqualizerEnable(d, 1); else MultimodalEqualizerDisable(d); break;
@@ -228,18 +227,11 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26124: if (on) BinauralUpmixEnable(d); else BinauralUpmixDisable(d); break;
 
-    /* The maximiser. Present in this build all along - the HAL library is
-       compiled from the same source glob as the app's, so maximizer.c has
-       always been linked in here - but with no case to reach it, and a sender
-       on the app side that returned success without sending anything. So in
-       root mode the whole card did nothing, silently, including the clip shape
-       control added to it recently.
-
-       Ten values in the order MaximizerSetParam takes them. The three integer
-       ones travel as floats like every other payload here and are rounded on
-       arrival; only truePeak is a flag, and it arrives as 1 or 0 rather than
-       through the enable id, because it is a setting rather than the effect's
-       own switch. */
+    /* The maximiser. Ten values in the order MaximizerSetParam takes them.
+       The three integer ones travel as floats like every other payload here
+       and are rounded on arrival; only truePeak is a flag, and it arrives as
+       1 or 0 rather than through the enable id, because it is a setting
+       rather than the effect's own switch. */
     case 26019:
         if (fn >= 10)
             MaximizerSetParam(d, pRound(fv[0]), fv[1], fv[2], fv[3],
@@ -251,23 +243,20 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     /* The order arrives as ints, so it is read from the raw payload rather
        than through the float view every other effect uses. */
     case 26012:
-        /* An empty order, or the app's reset marker (a single -1), puts back
-           the default. There used to be no way to reset at all: the app
-           sent nothing for a reset and an empty payload was ignored, so the
-           processing-order dialog's Reset, and leaving V4A mode, left root
-           mode on the old order. JamesDSPSetChainOrder alone will not do:
-           it skips the -1 and appends every effect in declaration order,
-           which is not the default chain. */
+        /* An empty order, or the app's reset marker (a single -1), restores
+           the default chain. JamesDSPSetChainOrder alone would skip the -1
+           and append effects in declaration order, which is not the
+           default. */
         if (fn == 0 || ((const int *)fv)[0] < 0)
             JamesDSPResetChainOrder(d);
         else
             JamesDSPSetChainOrder(d, (const int *)fv, (int)fn);
         break;
 
-    /* --- upstream ids this HAL used to drop ------------------------------
+    /* --- upstream ids -------------------------------------------------
        These are not fork additions; they are the app's own EQ, dynamics and
-       output stage. Leaving them unhandled meant the root build silently lost
-       the equaliser, the compander and the limiter while reporting success. */
+       output stage. Left unhandled, the root build would lose the equaliser,
+       the compander and the limiter while reporting success. */
     case 1500:
         if (fn >= 3)
         {

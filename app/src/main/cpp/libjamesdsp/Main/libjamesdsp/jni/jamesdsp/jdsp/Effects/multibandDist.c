@@ -39,13 +39,9 @@ static inline float mbdShape(int model, float x, float shape, float invTanhK)
 	case MBD_MODEL_CRUSH:
 	default:
 	{
-		// shape sets how hard the knee is, normalised so that moving it
-		// changes the character rather than the level: at full scale in, the
-		// curve reaches the same place whatever shape is set to.
+		// shape sets how hard the knee is, normalised so the curve reaches the
+		// same place at full scale whatever shape is.
 		//
-		// This was a bare tanh(x) ignoring shape entirely, which mattered more
-		// than it looks - soft is the character the card opens on, so the
-		// first dial a user reached for was dead while lit at full brightness.
 		// Crush shares the curve because bit and rate reduction happen after
 		// it, and its own two dials are the character there.
 		float k = 0.6f + shape * 4.0f;
@@ -57,8 +53,8 @@ static inline float mbdShape(int model, float x, float shape, float invTanhK)
 		// shape softens the corner: near 0 this is a true hard clip, near 1
 		// the last stretch before the rail is rounded off. The round is a
 		// quadratic joining slope 1 where it starts to slope 0 where it ends,
-		// so there is no discontinuity in the curve or its first derivative
-		// - a kink in either is audible as a buzz that does not belong to the
+		// so there is no discontinuity in the curve or its first derivative:
+		// a kink in either is audible as a buzz that does not belong to the
 		// distortion being asked for.
 		float knee = 0.02f + shape * 0.4f;
 		float t = 1.0f - knee;
@@ -73,7 +69,7 @@ static inline float mbdShape(int model, float x, float shape, float invTanhK)
 	}
 
 	case MBD_MODEL_TUBE:
-		// Asymmetric, so it generates even harmonics - the "warm" ones.
+		// Asymmetric, so it generates even harmonics (the "warm" ones).
 		// shape leans the asymmetry further.
 		if (x >= 0.0f)
 			return x / (1.0f + (0.6f + shape * 0.5f) * x);
@@ -81,16 +77,10 @@ static inline float mbdShape(int model, float x, float shape, float invTanhK)
 
 	case MBD_MODEL_OVERDRIVE:
 	{
-		// The canonical three-region cubic soft clipper. Its pieces only meet
-		// at 1/3 and 2/3 - the middle one is derived from those breakpoints -
-		// so moving the first breakpoint, as this did, leaves a step in the
-		// transfer curve. Measured, that step reached 0.27 at the ends of the
-		// shape range, which is heard as a buzz laid over the signal rather
-		// than as the gradual breakup an overdrive is supposed to give.
-		//
-		// shape now scales what goes into the curve instead of moving its
-		// joins, which controls how early it breaks up and cannot introduce a
-		// discontinuity.
+		// The canonical three-region cubic soft clipper; its pieces meet only
+		// at 1/3 and 2/3, so shape scales the input rather than moving the
+		// joins, which would leave a step in the curve. Scaling the input
+		// controls how early it breaks up.
 		float v = x * (0.6f + shape * 1.4f);
 		float a = fabsf(v);
 		float s = (v < 0.0f) ? -1.0f : 1.0f;
@@ -113,8 +103,8 @@ static inline float mbdShape(int model, float x, float shape, float invTanhK)
 		// Done by reduction into one period of the triangle rather than by
 		// iterating the reflection. An iterative fold only walks the value
 		// back by two per pass, so a signal the drive stage has pushed to 25
-		// is still at 13 after six passes - it escapes, and the harness
-		// caught it doing exactly that. The reduction is exact for any input.
+		// is still at 13 after six passes. The reduction is exact for any
+		// input.
 		float folds = 1.0f + shape * 3.0f;
 		float y = x * folds;
 		y = y - 4.0f * floorf((y + 2.0f) * 0.25f);
