@@ -53,9 +53,9 @@
 #include "eel2/numericSys/codelet.h"
 #include "stftCommon.h"
 
-/* Coherence above HI is a source, below LO is ambience. Starting values from
-   the design notes, calibrated in the harness: averaging over a few frames
-   biases the coherence of uncorrelated noise upwards. */
+/* Coherence above HI is a source, below LO is ambience. Calibrated in the
+   harness: averaging over a few frames biases the coherence of uncorrelated
+   noise upwards. */
 #ifndef BIN_PHI_HI
 #define BIN_PHI_HI 0.90f
 #endif

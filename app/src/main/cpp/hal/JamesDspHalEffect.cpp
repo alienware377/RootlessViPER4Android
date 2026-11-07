@@ -845,9 +845,7 @@ HAL_EXPORT int32_t EffectGetDescriptor(const effect_uuid_t *uuid, effect_descrip
 {
     if (!pDescriptor || !uuid)
         return -EINVAL;
-    /* Answered for any uuid at all until now, so a config naming our library
-       against somebody else's uuid got our descriptor back and the effect was
-       registered as ours. EffectCreate always compared; this did not. */
+    /* Only our uuid gets our descriptor, as in EffectCreate. */
     if (memcmp(uuid, &rv4a_descriptor.uuid, sizeof(effect_uuid_t)) != 0)
         return -EINVAL;
     memcpy(pDescriptor, &rv4a_descriptor, sizeof(effect_descriptor_t));

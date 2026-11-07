@@ -278,9 +278,9 @@ unsigned int next_pow_2(unsigned int x)
 // pw2BlockMemSize for the output rings. The work areas hold the input, the
 // resampled block and the block resampled back. Above 48 kHz the resampled
 // block is shorter than n, but below 44.1 kHz it is longer: 4096 frames at
-// 8 kHz become 24576 at 48 kHz. The areas used to be sized for n alone, so
-// below 44.1 kHz the two channels overlapped and at 12 kHz and under the
-// block ran off the end of the allocation. The few spare samples cover the
+// 8 kHz become 24576 at 48 kHz, so sizing the areas for n alone would make the
+// two channels overlap below 44.1 kHz and run off the end of the allocation at
+// 12 kHz and under. The few spare samples cover the
 // polyphase filters' phase carry from one block to the next.
 static size_t JamesDSPASRCWorkLength(JamesDSPLib *jdsp, size_t n)
 {
@@ -418,17 +418,10 @@ void JamesDSPResetChainOrder(JamesDSPLib *jdsp)
 		seen[id] = 1;
 		tmp[written++] = id;
 	}
-	/* Anything the list above forgot is appended, exactly as a saved order is
-	   completed. The same reasoning was already written down for saved orders
-	   and not applied here, and this is where it actually bit: the six effects
-	   added most recently were never put in the default list, so every install
-	   that had not customised its chain ran without them. They were enabled,
-	   configured and receiving their parameters - simply never dispatched,
-	   which from the user's side is indistinguishable from six broken cards.
-
-	   Appending rather than asserting because a chain missing an effect is
-	   worse than a chain with one in an unconsidered place; the position can be
-	   argued about afterwards, silence cannot be noticed. */
+	/* Anything the list above leaves out is appended, as for a saved order: an
+	   effect missing from the chain is enabled and configured but never
+	   dispatched. Appending is safer than asserting, since a misplaced effect
+	   is audible and a missing one is not. */
 	for (int id = 0; id < JDSP_EFX_COUNT && written < JDSP_EFX_MAX; id++)
 	{
 		if (!seen[id])
@@ -469,13 +462,10 @@ void JamesDSPSetChainOrder(JamesDSPLib *jdsp, const int *order, int count)
 	// Anything the caller left out is appended in declaration order, so the
 	// chain is always complete.
 	//
-	// This is not defensive tidying. The order is persisted by id, so a list
-	// saved by an older build cannot mention an effect that did not exist when
-	// it was written - and passing that list through verbatim left every newly
-	// added effect enabled, configured, receiving its parameters, and never
-	// dispatched. From the user's side that is indistinguishable from the
-	// effect being broken, and it applied silently to every effect added after
-	// the first time they arranged the chain.
+	// The order is persisted by id, so a list saved by an older build cannot
+	// mention an effect that did not exist when it was written, and passing it
+	// through verbatim would leave that effect enabled, configured and never
+	// dispatched.
 	for (int id = 0; id < JDSP_EFX_COUNT && written < JDSP_EFX_MAX; id++)
 	{
 		if (!seen[id])

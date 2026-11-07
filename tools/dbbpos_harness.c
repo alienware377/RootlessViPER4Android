@@ -70,7 +70,7 @@ int main(void)
 		}
 		if (g.dbb.downsamplerPos > factor || corrupted) bad++;
 	}
-	printf("phases tested=%d, overrun phases=%d (expected 8: pos 88..95; pos==88 wraps? see note)\n", total, bad);
+	printf("phases tested=%d, overrun phases=%d\n", total, bad);
 	if (bad) { printf("FAIL\n"); return 1; }
 	printf("PASS\n"); return 0;
 }

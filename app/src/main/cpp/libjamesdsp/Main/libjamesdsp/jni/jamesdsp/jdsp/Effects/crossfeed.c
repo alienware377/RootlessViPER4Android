@@ -118,10 +118,10 @@ void CrossfeedChangeMode(JamesDSPLib *jdsp, int nMode)
 }
 void CrossfeedProcess(JamesDSPLib *jdsp, size_t n)
 {
-	/* Read the mode once. It used to be read again for every sample, so a
-	   change from BS2B to an HRTF mode in the middle of a block went on
-	   indexing bs2b[] (two entries) with 2 to 5, writing filter state
-	   over the DDC and convolver fields that follow it. */
+	/* Read the mode once. Reading it per sample would let a change from BS2B
+	   to an HRTF mode in the middle of a block index bs2b[] (two entries)
+	   with 2 to 5, writing filter state over the DDC and convolver fields
+	   that follow it. */
 	const int mode = jdsp->advXF.mode;
 	if (mode < 2)
 	{

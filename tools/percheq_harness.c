@@ -27,8 +27,7 @@
 #define N  4096
 /* The test tone is a 0.25 amplitude sine and every measurement here is RMS. A
    sine's RMS is its amplitude over root two, so the reference is 3.01 dB below
-   20*log10(0.25). Getting that wrong is what briefly made an exact EQ look as
-   though it were losing three decibels. */
+   20*log10(0.25). */
 #define SINE_RMS_DB (-15.05)
 
 static JamesDSPLib g_lib;

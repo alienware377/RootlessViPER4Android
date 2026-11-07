@@ -60,9 +60,8 @@ extern "C" void __wrap_free(void *p) { delp(p); __real_free(p); }
 #include "../app/src/main/cpp/hal/JamesDspHalEffect.cpp"
 #include "hal_vdc_blob.h"
 
-// Rubber Band is no longer linked into the engine: Effects/rubberband.c loads
-// it at run time, so the engine objects link as they are and the stubs that
-// used to stand in for it here (with an older signature) are gone.
+// Rubber Band is loaded at run time by Effects/rubberband.c, so the engine
+// objects link as they are.
 
 static int failures = 0;
 static void check(const char *what, bool ok, const char *detail = "")

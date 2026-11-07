@@ -7,10 +7,10 @@
  * recording. So they are separate cards, and both can run at once.
  *
  * Everything here is a NOISE SOURCE mixed alongside the music rather than a
- * filter applied to it, with one exception (wear). That has a consequence
- * worth stating plainly: at every control zero this stage is the exact
- * identity, and it early-returns rather than adding silence, because adding
- * float zeroes to a signal is only approximately harmless.
+ * filter applied to it, with one exception (wear). At every control zero this
+ * stage is the exact identity, and it early-returns rather than adding
+ * silence, because adding float zeroes to a signal is only approximately
+ * harmless.
  *
  *   Surface     The continuous bed a record sits on. Pink-ish noise, band
  *               limited - a groove cannot reproduce much above 10 kHz or
@@ -41,8 +41,8 @@
  * rather than each rolling its own, so the bed sounds like one record rather
  * than nine unrelated noises layered up.
  *
- * `Follow` deserves its own note. Real vinyl noise is constant, and constant
- * is what you want while music plays - but a silent passage full of crackle is
+ * Follow: real vinyl noise is constant, and constant is what you want while
+ * music plays, but a silent passage full of crackle is
  * obviously synthetic, and worse, it never stops when the music does. So the
  * noise can be made to track the programme level. At zero the bed is constant
  * and honest; turned up it fades with the music, which is a lie but a useful

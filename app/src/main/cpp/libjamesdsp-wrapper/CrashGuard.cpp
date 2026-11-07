@@ -1,5 +1,5 @@
-// Debug-fork native crash recorder: writes signal info + module maps
-// to filesDir so the app can display it after restart.
+// Native crash recorder: writes signal info and module maps to filesDir so
+// the app can show them after a restart.
 #include <jni.h>
 #include <signal.h>
 #include <string.h>

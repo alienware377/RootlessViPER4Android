@@ -15,8 +15,8 @@
  * summed back together, and four float additions do not return their input;
  * measured, that floor sat at -140 dBFS. Here, every width at 1.0 means every
  * filter is at 0 dB, where an RBJ peaking or shelving biquad has b equal to a
- * term for term - the recursion returns its input bitwise, so the side signal
- * is untouched and the output is the input. Nothing to argue about.
+ * term for term: the recursion returns its input bitwise, so the side signal
+ * is untouched and the output is the input.
  *
  * A band split also turned out not to isolate: the bands summed correctly but
  * each one carried a phase-shifted residue of its neighbour, so folding the
@@ -159,10 +159,8 @@ void ImagingSetParam(JamesDSPLib *jdsp, float monoBelowHz,
 {
 	/* Held for the whole update. Process runs on the audio thread under this
 	   same lock, so without it a block could be filtered with half the old
-	   coefficients and half the new ones - which for a steep or resonant
-	   setting is not a glitch but a burst. The single-threaded harness cannot
-	   see this, and the one crash this project has shipped came from exactly
-	   this class of problem. */
+	   coefficients and half the new ones, which for a steep or resonant
+	   setting is not a glitch but a burst. */
 	jdsp_lock(jdsp);
 	Imaging *im = &jdsp->imaging;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;

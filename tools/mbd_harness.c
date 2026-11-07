@@ -2,9 +2,7 @@
 //
 // Built for the device rather than the host, because the arm64 build is the
 // one that ships and single-precision behaviour is exactly what is under test.
-// Run it before the effect goes anywhere near an APK: the two worst bugs this
-// project has shipped were both untested DSP, and both silenced audio rather
-// than sounding wrong.
+// Run it before the effect ships.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,10 +60,9 @@ static int check(const char *name)
 // something it likes.
 static int checkTail(const char *name)
 {
-	// Silence has to be re-fed on every pass. Processing in place and running
-	// again feeds the effect its own output, which measures a forty-deep chain
-	// of the effect rather than its decay - the first version of this test did
-	// exactly that and reported ringing on models that do not ring.
+	// Silence is re-fed on every pass: processing in place would feed the
+	// effect its own output and measure a forty-deep chain of it rather than
+	// its decay.
 	for (int k = 0; k < 40; k++)
 	{
 		memset(bufL, 0, sizeof(bufL));
