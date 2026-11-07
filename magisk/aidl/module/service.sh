@@ -2,7 +2,7 @@
 # Late boot: confirm the device is actually healthy, not merely booted.
 #
 # A device can boot perfectly well while audio is broken, which the legacy
-# module could not really cause but this one can - so booting is not enough of a
+# module could not really cause but this one can, so booting is not enough of a
 # test on its own. If our factory did not register, or the audio server is not
 # running, we step aside rather than leave the user with silence.
 

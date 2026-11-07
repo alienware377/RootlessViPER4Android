@@ -1,11 +1,6 @@
 # Builds the Magisk module that makes root mode run this fork's engine.
-#
-# This existed only as a script anybody had to remember to run, so v4.0.0
-# shipped five rootful APKs and no module to pair them with. Anyone who
-# installed the rooted build had nothing of ours to flash, reached for the
-# stock JamesDSP module instead, and got an engine that has never heard of this
-# fork's parameter ids: every fork effect silently does nothing while the
-# upstream ones work. That is issue #12.
+# Without it, rooted installs fall back to the stock JamesDSP module, which
+# ignores this fork's parameter ids.
 name: Build Magisk module
 
 on:
@@ -33,8 +28,7 @@ jobs:
           sed -i "s/^version=.*/version=v$NAME/" magisk/module.prop
           sed -i "s/^versionCode=.*/versionCode=$CODE/" magisk/module.prop
           cat magisk/module.prop
-          # A module whose version silently lags the app is how this drifted to
-          # v3.35.0 while the app was on 4.0.0.
+          # module.prop must carry the app's version.
           grep -q "^version=v$NAME$" magisk/module.prop
           grep -q "^versionCode=$CODE$" magisk/module.prop
 

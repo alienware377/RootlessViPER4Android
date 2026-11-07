@@ -22,8 +22,7 @@ fi
 ui_print "- Root: $ROOT_IMPL, Android API $API"
 
 # A module that disabled itself after two bad boots keeps that flag across an
-# upgrade, so installing the build that fixes the problem produced a cheerful
-# "reboot to load the engine" and a module that was still switched off.
+# upgrade, so clear it here or the new build installs switched off.
 if [ -f /data/adb/modules/rv4a_engine/disable ]; then
   rm -f /data/adb/modules/rv4a_engine/disable
   ui_print "- Cleared a previous self-disable"
@@ -38,11 +37,8 @@ fi
 # and devices that ship only the AIDL path never read those files, so nothing
 # would load the engine no matter where it is placed.
 #
-# Ask the device what it is running rather than guessing from file paths. The
-# old check listed six hardcoded paths, which missed /odm and the Qualcomm sku
-# directories entirely - so it aborted on Snapdragon devices that were fine -
-# and it passed on AIDL devices that still carry a stale xml nobody reads, so
-# those installed something inert and said it had worked.
+# Detect the HAL from the running services rather than from file paths: AIDL
+# devices may still carry an unused xml that nothing reads.
 HAS_AIDL=0
 if command -v service >/dev/null 2>&1; then
   service list 2>/dev/null | grep -q "android.hardware.audio.effect.IFactory" && HAS_AIDL=1
@@ -99,13 +95,9 @@ SO="$MODPATH/libs/$ABI_DIR/libjamesdsp.so"
 # Install to both system and vendor soundfx: which one the audio server loads
 # from depends on where the device's config lives, and this costs one file.
 #
-# The context is set explicitly. The comment here used to claim set_perm leaves
-# the label to the mount point; it does not, it hardcodes system_file in
-# Magisk, KernelSU and APatch alike. system_file happens to be loadable by the
-# audio server, so this has been working by luck rather than design, and
-# system_lib_file is the type that actually describes the file. It does not
-# exist before Android 10, so ask for it only where it exists and fall back
-# rather than leaving set_perm to fail unnoticed.
+# The context is set explicitly: set_perm otherwise hardcodes system_file on
+# Magisk, KernelSU and APatch. system_lib_file is the right type but only exists
+# from Android 10, so fall back where it is missing.
 for D in "$MODPATH/system/$LIBDIR/soundfx" "$MODPATH/system/vendor/$LIBDIR/soundfx"; do
   mkdir -p "$D"
   cp "$SO" "$D/libjamesdsp.so" || abort "! Could not stage the engine into $D"
@@ -143,10 +135,8 @@ ui_print "  which disables every module, or connect it and run:"
 case "$ROOT_IMPL" in
   KernelSU) ui_print "    adb wait-for-device shell su -c 'ksud module disable rv4a_engine'" ;;
   APatch)   ui_print "    adb wait-for-device shell su -c 'apd module disable rv4a_engine'" ;;
-  # Not "magisk --remove-modules": that deletes every module on the device,
-  # and it is refused from an unprivileged adb shell anyway, so the one line
-  # a panicking user would copy used to both fail and, if it worked, take
-  # their unrelated modules with it.
+  # Not "magisk --remove-modules": that deletes every module on the device
+  # and is refused from an unprivileged adb shell.
   *)        ui_print "    adb wait-for-device shell su -c 'touch /data/adb/modules/rv4a_engine/disable'" ;;
 esac
 ui_print "  (su over adb has to be granted in the manager already.)"

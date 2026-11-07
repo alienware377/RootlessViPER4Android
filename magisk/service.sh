@@ -22,10 +22,7 @@ while [ "$(getprop sys.boot_completed)" != "1" ] && [ $i -lt 600 ]; do
 done
 
 if [ "$(getprop sys.boot_completed)" != "1" ]; then
-  # The marker used to be cleared here regardless of the outcome, which meant
-  # that in the one situation this watchdog exists for, a boot that never
-  # completes because of us, it quietly disarmed itself. A timeout is a failed
-  # boot, not a slow success.
+  # A timeout is a failed boot, not a slow success, so the marker stays.
   log "boot did not complete within ${i}s; leaving the marker for post-fs-data"
   exit 0
 fi
