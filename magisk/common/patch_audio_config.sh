@@ -7,17 +7,15 @@
 
 EFFECT_UUID="f27317f4-c984-4de6-9a90-545759495bf2"
 EFFECT_TYPE="f98765f4-c321-5de6-9a45-123459495ab2"
-# The library name the rest of the ecosystem uses. It was "jamesdsp" here,
-# which reads fine but defeats the duplicate protection in both the stock
-# JamesDSP module and AML: they skip a config that already greps "jdsp", so
-# under the old name the same uuid could be registered twice under two
-# different library names. The effect name stays "jamesdsp", as theirs does.
+# The library name the rest of the ecosystem uses. AML and the stock JamesDSP
+# module skip a config that already names "jdsp", so using the same name
+# prevents a duplicate registration. The effect name stays "jamesdsp", as
+# theirs does.
 LIB_NAME="jdsp"
 EFFECT_NAME="jamesdsp"
 
-# Where the legacy effects loader actually looks, in its own order. The old
-# list had six entries and missed /odm and the Qualcomm sku paths, which is
-# most Snapdragon devices.
+# Where the legacy effects loader looks, in its own order. /odm and the vendor
+# audio directory matter on most Snapdragon devices.
 find_configs() {
   for f in \
     /odm/etc/audio_effects.xml \
@@ -48,19 +46,15 @@ module_path_for() {
 }
 
 # A config may already carry our lines, because the file we are reading is the
-# previous version of this module still mounted over the real one. Reading it
-# as-is and then skipping because "it is already present" is what made every
-# upgrade ship an empty module. Strip our own lines and patch the result, so
-# re-running is idempotent either way.
+# previous version of this module still mounted over the real one. Strip our
+# own lines and patch the result, so re-running is idempotent either way.
 strip_ours() {
   case "$1" in
     *.conf)
-      # A .conf entry is a block, not a line. Dropping the lines that mention
-      # us left the block's body and its closing brace behind, which closed
-      # the surrounding section early and lost every effect after it: bass
-      # boost, the equaliser, the lot. Skip whole blocks instead, and include
-      # the old "jamesdsp" library name so a config written by an earlier
-      # version is cleaned up rather than accumulated on top of.
+      # A .conf entry is a block, not a line, so whole blocks are skipped:
+      # leaving a closing brace behind would end the surrounding section early
+      # and lose every effect after it. The old "jamesdsp" library name is
+      # included so a config written by an earlier version is cleaned up.
       awk -v lib="$LIB_NAME" -v eff="$EFFECT_NAME" '
         skip { if ($0 ~ /^  \}/) skip = 0; next }
         $0 ~ "^  (" lib "|jamesdsp|" eff ") \\{" { skip = 1; next }
@@ -92,18 +86,16 @@ validate_conf() {
   grep -q "$EFFECT_UUID" "$1" &&
   grep -q "$LIB_NAME {" "$1" &&
   grep -q "soundfx" "$1" &&
-  # Braces must balance, and must never close below zero on the way. Both
-  # validators used to check only that our entries were present, so a file
-  # with a stray brace that silently truncated the effects list passed.
+  # Braces must balance, and must never close below zero on the way: a stray
+  # brace would silently truncate the effects list.
   awk '{ n += gsub(/{/,"{") - gsub(/}/,"}"); if (n < 0) exit 1 } END { exit (n != 0) }' "$1" &&
   [ "$(wc -c < "$1")" -gt 100 ]
 }
 
-# awk sets a flag for each insertion and prints them at the end, so the caller
-# can tell the difference between "patched" and "found only one of the two
-# sections". The old version inserted each line independently and validated by
-# grepping the uuid, which lives on the effect line only - so a file that got
-# an effect and no library passed and was shipped.
+# awk sets a flag for each insertion and checks them at the end, so the caller
+# can tell "patched" apart from "found only one of the two sections". The uuid
+# lives on the effect line only, so grepping for it would pass a file that got
+# an effect and no library.
 patch_xml() {
   strip_ours "$1" | awk -v lib="        <library name=\"$LIB_NAME\" path=\"libjamesdsp.so\"/>" \
       -v eff="        <effect name=\"$EFFECT_NAME\" library=\"$LIB_NAME\" uuid=\"$EFFECT_UUID\"/>" '
@@ -195,18 +187,11 @@ patch_audio_config() {
 
 # For AML and PIXAML.
 #
-# This used to write a file setting AML_LIB_NAME, AML_LIB_PATH, AML_EFFECT_NAME
-# and AML_EFFECT_UUID. No version of AML has ever read any of those. Worse,
-# AML's loop is "if the module has an aml.sh, source it, otherwise fall back to
-# a built-in scan", and its built-in list already covers libjamesdsp.so under
-# this exact uuid - so the file we shipped did nothing AND suppressed the one
-# thing that would have worked. On any device with AML installed, this module
-# registered the effect nowhere and reported success.
-#
-# AML sources this file in a subshell with patch_cfgs available, after it has
-# gathered the device's configs. Its built-in scan only globs the 32-bit
-# soundfx directories, which is why we cannot simply delete this file and let
-# the scan find us on arm64.
+# AML sources a module's aml.sh instead of running its built-in scan, so this
+# file must do the registration itself. It is sourced in a subshell with
+# patch_cfgs available, after AML has gathered the device's configs. The
+# built-in scan only globs the 32-bit soundfx directories, so on arm64 it would
+# not find us anyway.
 write_effect_fragment() {
   cat > "$MODPATH/aml.sh" << AMLEOF
 #!/system/bin/sh
