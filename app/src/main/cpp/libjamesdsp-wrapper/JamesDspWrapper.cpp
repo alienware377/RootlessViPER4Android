@@ -1168,12 +1168,12 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLiveprog(JNI
     int ret = LiveProgStringParser(dsp, (char*)nativeString); // Ignore constness, libjamesdsp does not modify it
     env->ReleaseStringUTFChars(liveprogContent, nativeString);
 
-    // There used to be a "workaround" jdsp_unlock here, for an upstream parser
-    // that returned with the lock held. This tree's parser unlocks on every
-    // path, so that was a second unlock of a mutex this thread no longer held.
-    // The mutex is a plain one with no owner check, so it silently released
+    // Upstream has a "workaround" jdsp_unlock here, for a parser that returned
+    // with the lock held. This tree's parser unlocks on every path, so that
+    // would be a second unlock of a mutex this thread no longer holds. The
+    // mutex is a plain one with no owner check, so it would silently release
     // the lock of whichever thread took it next, usually the audio thread
-    // inside a locked effect, on every script load.
+    // inside a locked effect.
 
     const char* errorString = NSEEL_code_getcodeerror(dsp->eel.vm);
     if(errorString != nullptr)

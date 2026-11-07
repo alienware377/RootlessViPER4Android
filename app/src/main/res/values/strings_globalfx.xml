@@ -6,7 +6,7 @@
     <string name="global_mode_switch">Global mode</string>
     <string name="global_mode_switch_summary">No recording permission, and it works with apps that block recording. Only the equalizers, bass, compressor and limiter work. May not work on every phone.</string>
     <string name="global_mode_unavailable">This phone does not offer the built-in effect global mode needs</string>
-    <string name="global_mode_info">Normally this app records what your phone plays, changes it, and plays it back. That needs the screen recording permission, and some apps (Spotify, for one) refuse to be recorded.\n\nGlobal mode does not record anything. It sets up Android\'s own sound effect, the one music players use for their equalizers, and fills it with your settings. So it works with every app, with no recording prompt.\n\nThe catch: Android\'s effect can only do equalizing, a compressor and a limiter. The Multiband, Graphic (including AutoEq and Match EQ) and Parametric EQ, Bass boost, FET compressor, Maximiser, Output control and Balance carry over. Every other card is greyed out while global mode is on, and keeps its settings for when you switch back.\n\nIt adds a small delay (about 40 ms) and some phones handle it better than others. The check screen shows what Android did with it.</string>
+    <string name="global_mode_info">Normally this app records what your phone plays, changes it, and plays it back. That needs the screen recording permission, and some apps (Spotify, for one) refuse to be recorded.\n\nGlobal mode does not record anything. It sets up Android\'s own sound effect, the one music players use for their equalizers, and fills it with your settings. So it works with every app, with no recording prompt.\n\nThe catch: Android\'s effect can only do equalizing, a compressor and a limiter. The Multiband, Graphic (including AutoEq and Match EQ) and Parametric EQ, Bass boost, FET compressor, Maximizer, Output control and Balance carry over. Every other card is greyed out while global mode is on, and keeps its settings for when you switch back.\n\nIt adds a small delay (about 40 ms) and some phones handle it better than others. The check screen shows what Android did with it.</string>
     <string name="global_target">What to change</string>
     <string name="global_target_all">All sound</string>
     <string name="global_target_apps">Each app separately</string>
@@ -36,7 +36,7 @@
     <string name="global_card_bass_note">Global mode uses a fixed bass shelf instead</string>
     <string name="global_notice_title">Global mode is on</string>
     <string name="global_notice_body">Only the equalizers, bass, compressor and limiter work. Tap to check it is running.</string>
-    <string name="global_chain_order_note">In global mode Android sets the order: gain, equalizers, compressor, maximiser, limiter. Your saved order comes back when you switch global mode off.</string>
+    <string name="global_chain_order_note">In global mode Android sets the order: gain, equalizers, compressor, maximizer, limiter. Your saved order comes back when you switch global mode off.</string>
 
     <!-- Global mode: service and notifications -->
     <string name="global_notification_title">Global mode is on</string>

@@ -1,7 +1,7 @@
 // Does an out-of-range compander transform setting stay safe?
 //
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
-//   Compile every engine source (the tools/cc86.rsp list) with
+//   Compile every engine source (jdsp/*.c, Effects/**/*.c, generalDSP/*.c) with
 //       $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -fPIC -c
 //   then
 //   $NDK/x86_64-linux-android29-clang -O2 -w -I $J tools/comptfres_harness.c \

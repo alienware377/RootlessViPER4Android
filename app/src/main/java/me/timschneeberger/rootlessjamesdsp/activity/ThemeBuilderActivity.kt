@@ -40,7 +40,7 @@ class ThemeBuilderActivity : BaseActivity() {
         binding.toolbar.setNavigationOnClickListener { finish() }
         title = getString(R.string.theme_builder)
 
-        // Start from the active theme if there is one, else a pleasant default
+        // Start from the active theme if there is one, else the default seed.
         val active = CustomThemeStore.active(this)
         editingId = active?.id
         val seed = active?.seed ?: Color.parseColor("#7C4DFF")
@@ -88,8 +88,8 @@ class ThemeBuilderActivity : BaseActivity() {
         binding.buttonSave.setOnClickListener { saveAndApply() }
         binding.buttonDelete.setOnClickListener { deleteCurrent() }
 
-        // Honest about reach: below Android 12 the generated palette can't be
-        // applied to the whole app, so say so rather than silently doing less.
+        // Below Android 12 the generated palette cannot be applied app-wide, so
+        // say so.
         binding.supportNote.text =
             if (com.google.android.material.color.DynamicColors.isDynamicColorAvailable()) ""
             else getString(R.string.theme_builder_unsupported)
@@ -112,7 +112,7 @@ class ThemeBuilderActivity : BaseActivity() {
     private fun applySeedToControls(color: Int) {
         val hsv = FloatArray(3)
         Color.colorToHSV(color, hsv)
-        // Sliders use stepSize 1, which requires whole-number values - Color's
+        // Sliders use stepSize 1, which requires whole-number values, but Color's
         // HSV conversion returns fractional degrees/percent (the default seed
         // #7C4DFF is 255.84268° hue), so round before assigning or the slider
         // throws on layout.
@@ -131,12 +131,6 @@ class ThemeBuilderActivity : BaseActivity() {
 
     // ---------------------------------------------------------------- preview
 
-    /**
-     * Tapping a swatch. Primary is the base colour, so it is directly editable.
-     * The rest are generated from it and can't be set independently without
-     * abandoning the generator, so they offer to re-centre the palette instead
-     * of pretending to be editable.
-     */
     /**
      * Tapping a swatch. In manual mode it selects that role for the sliders and
      * hex field so it can be set outright; otherwise only the base colour is
@@ -276,11 +270,8 @@ class ThemeBuilderActivity : BaseActivity() {
     }
 
     /**
-     * recreate() only restyles this screen. MainActivity is stopped underneath
-     * in the back stack and keeps whatever theme it was created with - it is
-     * never told to repaint on its own - so applying a theme silently did
-     * nothing once you pressed back. Clearing the task and starting fresh from
-     * MainActivity is what actually makes the change visible everywhere.
+     * recreate() only restyles this screen; MainActivity underneath keeps its
+     * old theme, so clear the task and start again from MainActivity.
      */
     private fun relaunchWithNewTheme() {
         val intent = android.content.Intent(this, MainActivity::class.java).apply {

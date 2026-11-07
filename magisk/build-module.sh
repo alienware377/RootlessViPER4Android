@@ -36,11 +36,11 @@ for ABI in arm64-v8a armeabi-v7a x86_64 x86; do
   echo "built $ABI ($(wc -c < "$OUT/libs/$ABI/libjamesdsp.so") bytes)"
 done
 
-# post-fs-data.sh is the boot safety net - it quarantines a bad audio config
+# post-fs-data.sh is the boot safety net: it quarantines a bad audio config
 # before the audio server starts. Leaving it out of the package would ship the
 # module without its only defence against an unrecoverable bootloop.
 cp magisk/module.prop magisk/customize.sh magisk/service.sh \
-   magisk/post-fs-data.sh magisk/README.md magisk/STOCK-BASELINE.md "$OUT/"
+   magisk/post-fs-data.sh magisk/README.md "$OUT/"
 mkdir -p "$OUT/common"; cp -r magisk/common/. "$OUT/common/"
 
 # A single carriage return in any of these is not cosmetic. post-fs-data.sh

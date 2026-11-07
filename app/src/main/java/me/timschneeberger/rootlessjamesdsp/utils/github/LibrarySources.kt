@@ -5,19 +5,10 @@ import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import java.io.File
 
 /**
- * The sources the user added, kept in a preferences file of their own.
- *
- * They used to live in dsp_filelibrary, and every dsp_* file is copied
- * wholesale into a preset and back out of it. So loading a preset, or a
- * device profile switching on its own, replaced the user's sources with
- * whatever the preset happened to hold (usually none). Now presets never
- * carry them, and a list found in an older preset is merged in rather than
- * replacing anything.
- *
- * Merging alone brought back sources the user had removed, whenever an
- * older preset that still listed them was loaded. So a removal is
- * remembered, and a merged list never brings that source back; only adding
- * it again by hand does.
+ * The sources the user added, in a preferences file of their own so presets
+ * (which copy every dsp_* file) never carry them. A list found in an older
+ * preset is merged in, and a source the user removed is remembered so a
+ * merge never brings it back; only adding it again by hand does.
  */
 object LibrarySources {
     private const val KEY = "filelib_sources"
@@ -66,8 +57,8 @@ object LibrarySources {
 
     /**
      * Moves a list left in the old places into this file: the preset
-     * namespace (from before this change, or from a preset just loaded) and
-     * the app preferences (from before that). Merged, never replaced, and
+     * namespace (from an older build, or from a preset just loaded) and the
+     * app preferences (from an even older build). Merged, never replaced, and
      * never bringing back a source the user removed.
      */
     fun absorbLegacy(ctx: Context) {

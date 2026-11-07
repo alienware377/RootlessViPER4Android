@@ -6,10 +6,9 @@
 // android:defaultValue in its card XML. If a default changes and this is not
 // updated, the test fails, which is the point.
 //
-// This exists because two effects shipped inaudible-by-default and were
-// reported by the user, and every existing test passed both times - they were
-// written against values chosen to make the effect look good rather than the
-// values a user actually gets.
+// Tests written against values chosen to make an effect look good can pass
+// while the shipped defaults do nothing, so this runs the values a user
+// actually gets.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -152,10 +151,8 @@ int main(void)
 
 	printf("\n== the tube drive knob has to survive being enabled ==\n");
 	{
-		// The JNI always calls SetGain and then Enable. Enable used to run
-		// VTInit, which reset the gain, so the knob was inert across its whole
-		// range on both engine paths - the same knob that had already been
-		// reported dead once for a different reason.
+		// The JNI always calls SetGain and then Enable, so Enable must not
+		// reset the gain.
 		// Measured against the drive-0 output, level-matched, not against the
 		// input: the crossover's phase shifts already put the plain difference
 		// above 0 dB at no drive at all, so it could not rise with drive and

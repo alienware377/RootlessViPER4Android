@@ -11,8 +11,7 @@ import android.media.AudioAttributes
  * marked as media and sends it on. The rule compares the track's usage
  * exactly, so a track marked "unknown" is skipped and plays on the phone
  * speaker instead, while the music app's own track (which this app silences)
- * is the only thing sent to the car. The car went quiet and the processed
- * audio came out of the phone.
+ * is the only thing sent to the car.
  *
  * Marking the track as media lets those rules pick it up. On every ordinary
  * output (speaker, wired, USB, Bluetooth) Android puts unknown and media in

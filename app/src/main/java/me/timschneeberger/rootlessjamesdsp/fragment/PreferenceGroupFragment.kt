@@ -148,7 +148,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
      *
      * Nothing here is remembered in preferences. The only thing that decides
      * whether the add-on is installed is whether the verified file is on disk,
-     * and a stored flag would eventually disagree with that - after a reinstall,
+     * and a stored flag would eventually disagree with that: after a reinstall,
      * after clearing app data, after a failed download.
      */
     private fun setupRubberBandAddon() {
@@ -224,8 +224,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         }
 
         // Choosing a method that needs the add-on, without the add-on, would
-        // quietly play as Signalsmith. Saying so and leaving the list alone is
-        // kinder than letting it look like it worked.
+        // quietly play as Signalsmith, so say so and leave the list alone.
         mode?.setOnPreferenceChangeListener { _, value ->
             val wanted = (value as? String)?.toIntOrNull() ?: 0
             if (!RubberBandInstaller.isRubberBandMode(wanted)) return@setOnPreferenceChangeListener true
@@ -271,9 +270,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         })
 
         // The ViPER4Android classic theme tints every effect icon purple.
-        // The mutated drawable must be assigned back - mutate() can hand back
-        // a fresh instance, and tinting that without reassigning left the icon
-        // untinted (and, for shared drawables, blank).
+        // The mutated drawable must be assigned back: mutate() can hand back
+        // a fresh instance, and tinting that without reassigning leaves the
+        // icon untinted (and, for shared drawables, blank).
         if (me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isEnabled(requireContext()) &&
             preferenceScreen.preferenceCount > 0) {
             val pref = preferenceScreen.getPreference(0)
@@ -298,7 +297,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 true
             }
             // Both EQ cards can be on screen together, and a write behind a
-            // live PreferenceScreen doesn't refresh it - so watch this card's
+            // live PreferenceScreen doesn't refresh it, so watch this card's
             // own namespace and move the switch when the other card mirrors in.
             phaseSyncListener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
                 if (key == phaseKey) pref.isChecked = sp.getBoolean(phaseKey, false)
@@ -403,7 +402,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         onUserToggle = {
                             val a = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity
                             a?.requestPowerToggle()
-                            // No optimistic state here - onPowerStateChanged
+                            // No optimistic state here: onPowerStateChanged
                             // reports the real result back to this switch.
                         }
                     }
@@ -411,7 +410,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 val modePref = findPreference<ListPreference>(getString(R.string.key_limiter_mode))
                 if (v4a) {
                     // Original V4A master limiter: output gain, limit threshold,
-                    // limit release - no mode selector (V4A is a peak limiter).
+                    // limit release, and no mode selector (V4A is a peak limiter).
                     (preferenceScreen.getPreference(0) as? Preference)
                         ?.setTitle(R.string.v4a_master_limiter)
                     findPreference<Preference>(getString(R.string.key_output_postgain))
@@ -443,11 +442,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 // Each room type shows only the controls it actually uses, so
                 // the card never shows a slider that does nothing.
                 //
-                // This has to go through the card's visibility filter. Setting
-                // isVisible directly looked right until the card was switched
-                // on, expanded or redrawn: the card re-shows every child at
-                // those moments, so every slider came back whatever the room.
-                // Seen on the tablet, where Classic showed all ten.
+                // This has to go through the card's visibility filter: the card
+                // re-shows every child when it is switched on, expanded or
+                // redrawn, so setting isVisible directly does not stick.
                 val group = findPreference<SwitchPreferenceGroup>(getString(R.string.key_vreverb_enable))
                 val modelPref = findPreference<ListPreference>(getString(R.string.key_vreverb_model))
                 val v4a = me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(requireContext())
@@ -482,7 +479,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     true
                 }
                 // No early return here: icon visibility is applied after this
-                // block, and skipping it hid the reverb icon.
+                // block, so returning early would skip it.
             }
             R.xml.dsp_liveprog_preferences,
             R.xml.dsp_liveprog2_preferences,

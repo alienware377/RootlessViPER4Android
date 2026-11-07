@@ -3,8 +3,7 @@
 //
 // The order is persisted by id. A list written before an effect existed cannot
 // mention it, and passing that list through verbatim left the effect enabled,
-// configured, and never run - which is what "I hear no difference" turned out
-// to mean for two effects in a row.
+// configured and never run.
 //
 // What is asserted here is the composition of the chain, not the audio. The
 // dispatcher is static, and each effect's own harness already proves it changes

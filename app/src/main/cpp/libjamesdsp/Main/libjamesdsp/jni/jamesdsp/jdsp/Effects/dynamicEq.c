@@ -116,10 +116,8 @@ void DynamicEqSetBands(JamesDSPLib *jdsp, const float *bands, int count)
 {
 	/* Same reasoning as the lock in DynamicEqSetParam below: Process runs on the
 	   audio thread under this lock, and this function rewrites both filters of
-	   every band. It was missed when the others were locked because the name
-	   does not end in SetParam - and it is the worst one to leave open, since
-	   changing numBands mid-block would have Process walk bands whose
-	   coefficients are half written. */
+	   every band; changing numBands mid-block would have Process walk bands
+	   whose coefficients are half written. */
 	jdsp_lock(jdsp);
 	DynamicEq *d = &jdsp->dynamicEq;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;
@@ -167,10 +165,8 @@ void DynamicEqSetParam(JamesDSPLib *jdsp, float mixPct, int msMode)
 {
 	/* Held for the whole update. Process runs on the audio thread under this
 	   same lock, so without it a block could be filtered with half the old
-	   coefficients and half the new ones - which for a steep or resonant
-	   setting is not a glitch but a burst. The single-threaded harness cannot
-	   see this, and the one crash this project has shipped came from exactly
-	   this class of problem. */
+	   coefficients and half the new ones, which for a steep or resonant
+	   setting is not a glitch but a burst. */
 	jdsp_lock(jdsp);
 	DynamicEq *d = &jdsp->dynamicEq;
 	d->mix = mixPct * 0.01f;

@@ -50,9 +50,8 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48)
 	// Each section ends where the other one starts, or at the end of the
 	// string. The parse loops below stop there, so a section with too few
 	// numbers can neither take the digits out of the next "SR_" label nor
-	// read past the terminator. The count used to run from SR_48000 to the
-	// end of the string, which counted both sections when SR_48000 came
-	// first.
+	// read past the terminator. Counting to the end of the string instead
+	// would count both sections when SR_48000 comes first.
 	char *end = DDCString + strlen(DDCString);
 	char *end441 = fs48 > fs44_1 ? fs48 : end;
 	char *end48 = fs44_1 > fs48 ? fs44_1 : end;
@@ -62,9 +61,9 @@ int DDCParser(char *DDCString, DirectForm2 **ptrdf441, DirectForm2 **ptrdf48)
 	int sosCount = numberCount / 5;
 	if (!sosCount)
 		return 0;
-	// Parse exactly sosCount * 5 numbers per section. The loops used to run
-	// to numberCount, so a count that was not a multiple of 5 (a trailing
-	// comma, a sixth number on a line) wrote one element past each array.
+	// Parse exactly sosCount * 5 numbers per section. Running to numberCount
+	// would write past each array whenever the count is not a multiple of 5
+	// (a trailing comma, a sixth number on a line).
 	int limit = sosCount * 5;
 	DirectForm2 *df441 = (DirectForm2*)malloc(sosCount * sizeof(DirectForm2));
 	DirectForm2 *df48 = (DirectForm2*)malloc(sosCount * sizeof(DirectForm2));

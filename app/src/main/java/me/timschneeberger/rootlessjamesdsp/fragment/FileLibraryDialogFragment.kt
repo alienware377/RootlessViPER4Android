@@ -215,11 +215,8 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
                     notifySlotsChanged()
                 }
                 else {
-                    // Presets load from here. This listener is installed when
-                    // the dialog shows, which replaces the one AlertController
-                    // wired up from builder.setAdapter - and that lambda was
-                    // the only place the load ever happened, so tapping a
-                    // preset merely closed the dialog and applied nothing.
+                    // Presets load from here: this listener replaces the one
+                    // AlertController wires up from builder.setAdapter.
                     if (fileLibPreference.isPreset())
                         loadPreset(entry)
                     clickedEntryValue = entry.value
@@ -637,10 +634,8 @@ class FileLibraryDialogFragment : ListPreferenceDialogFragmentCompat(), TargetFr
         }
 
         builder.setAdapter(createAdapter()) { _, position ->
-            // Normally unreachable: the listener installed in setOnShowListener
-            // replaces this one. Kept as the fallback for the case where the
-            // dialog is shown without that pass, and sharing loadPreset so the
-            // two paths cannot drift apart again.
+            // Normally unreachable, since the listener set in setOnShowListener
+            // replaces this one. Shares loadPreset with it.
             val item = dialog.listView.adapter.getItem(position) as Entry
 
             if(fileLibPreference.isPreset())

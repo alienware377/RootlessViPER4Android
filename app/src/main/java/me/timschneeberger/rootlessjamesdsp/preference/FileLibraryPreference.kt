@@ -41,7 +41,7 @@ class FileLibraryPreference(context: Context, attrs: AttributeSet?) :
                 directory?.mkdir()
                 // Off the main thread: this runs while the preference inflates,
                 // and listing a populated library over external storage is slow
-                // - the DDC card measured three seconds on its own, which is
+                // (the DDC card measured three seconds on its own), which is
                 // most of the stutter when scrolling in after a cold open. The
                 // dialog paths refresh synchronously before showing, so entries
                 // are always current by the time they are actually needed.

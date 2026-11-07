@@ -121,7 +121,7 @@
     <string name="peq_info">Fully adjustable parametric EQ: drag any point to move its frequency (left/right) and gain (up/down). Pinch with two fingers on a selected point to widen or narrow its bandwidth (Q). Tap the band count to add or remove bands. Each band in the list has an L+R button: tap it to send that band to one ear only, which is how you correct a headphone whose two sides do not match, or hearing that is not even.</string>
     <string name="peq_undo">Undo</string>
     <string name="peq_redo">Redo</string>
-    <string name="peq_hint_interactive">Drag a point to move it - pinch to change its width - long-press empty space to add a band, or a point to delete it</string>
+    <string name="peq_hint_interactive">Drag a point to move it, pinch to change its width, long-press empty space to add a band, or long-press a point to delete it.</string>
     <string name="peq_enable">Parametric equalizer</string>
     <string name="peq_bands">Parametric EQ bands</string>
     <string name="title_activity_peq">Parametric equalizer</string>
@@ -255,7 +255,7 @@
     <string name="limiter_mode_off">Off (may clip!)</string>
     <string name="bassex_enable">Bass exciter (psychoacoustic bass)</string>
     <string name="bassex_info_title">ℹ️ What is this?</string>
-    <string name="bassex_info">Makes bass sound louder and chunkier without using extra volume headroom. It listens to your sub-bass and generates matching overtones your ears interpret as more bass , great with small speakers and for staying loud without clipping.</string>
+    <string name="bassex_info">Makes bass sound louder and chunkier without using extra volume headroom. It listens to your sub-bass and generates matching overtones your ears interpret as more bass. Great with small speakers and for staying loud without clipping.</string>
     <string name="bassex_cutoff">Bass range</string>
     <string name="bassex_cutoff_summary">Sounds below this frequency get enhanced</string>
     <string name="bassex_intensity">Intensity</string>
@@ -264,22 +264,22 @@
     <string name="bassex_mix_summary">How much of the effect is blended into the music</string>
     <string name="compander_enable_v2">Auto-loudness (multiband compressor)</string>
     <string name="compander_info_title">ℹ️ What is this?</string>
-    <string name="compander_info">This is a multiband compressor/expander: it splits the sound into frequency bands and evens out volume differences , quiet parts come up, loud peaks get tamed. Push the graph up to make a frequency range consistently louder and fuller.
+    <string name="compander_info">This is a multiband compressor/expander: it splits the sound into frequency bands and evens out volume differences: quiet parts come up, loud peaks get tamed. Push the graph up to make a frequency range consistently louder and fuller.
 
 * Reaction speed: how fast it responds to volume changes. Faster = punchier but can distort deep bass.
 * Detail level: how finely it analyzes frequencies. Higher = more precise, uses more battery.
-* Analysis engine: the math used to split frequencies. The default is fine , Wavelets treat bass in a more natural, ear-like way.
+* Analysis engine: the math used to split frequencies. The default is fine. Wavelets treat bass in a more natural, ear-like way.
 * Graph: drag bands up (+) to boost leveling loudness in that range, down (-) to reduce.</string>
     <string name="compander_timeconstant_v2">Reaction speed</string>
     <string name="compander_granularity_v2">Detail level</string>
     <string name="compander_tftransforms_v2">Analysis engine (advanced)</string>
     <string name="spectrumext_enable">Spectrum extension (treble exciter)</string>
     <string name="spectrumext_info_title">ℹ️ What is this?</string>
-    <string name="spectrumext_info">Restores sparkle and \"air\" to dull or compressed music. It listens to the upper mids and synthesizes new matching treble overtones above the chosen frequency , like ViPER4Android\'s Spectrum Extension.</string>
+    <string name="spectrumext_info">Restores sparkle and \"air\" to dull or compressed music. It listens to the upper mids and synthesizes new matching treble overtones above the chosen frequency, like ViPER4Android\'s Spectrum Extension.</string>
     <string name="spectrumext_bark">Start frequency</string>
     <string name="spectrumext_bark_summary">New treble gets generated above this point</string>
     <string name="spectrumext_strength">Strength</string>
-    <string name="spectrumext_strength_summary">How much synthesized treble is mixed in , subtle is best</string>
+    <string name="spectrumext_strength_summary">How much synthesized treble is mixed in. Subtle is best</string>
     <string name="bass_info">Boosts low frequencies with a smart filter that adapts to how much bass the music already has, keeping it clean instead of muddy.</string>
     <string name="tube_info">Simulates the warm, slightly saturated sound of vintage tube amplifiers. Adds gentle harmonic color.</string>
     <string name="stereowide_info">Makes the stereo image feel wider (or narrower) by adjusting the difference between the left and right channels.</string>
@@ -287,7 +287,7 @@
     <string name="reverb_info">Adds simulated room echo/space to the sound, from small room to concert hall.</string>
     <string name="output_info">Final volume stage. Post gain makes everything louder/quieter; the limiter decides what happens when audio would get too loud and distort. Soft saturation mode lets you push much louder while staying smooth.</string>
     <string name="ddc_info">Loads ViPER DDC (.vdc) correction files that reshape the sound for specific headphone models.</string>
-    <string name="convolver_info">Applies an impulse response (IRS/WAV) file , a sound \"fingerprint\" that can simulate speakers, rooms, or custom EQ curves with studio-grade accuracy.\n\nAdvanced waveform editing takes six whole numbers split by semicolons, with no spaces:\n1. Start level, in dB below the IR\'s loudest point. Shrink cuts off the quiet lead-in before the IR first gets louder than this.\n2. End level, in dB below the loudest point. Both shrink modes cut off the tail after the IR last gets louder than this.\n3 to 6. Delay for IR channels 1 to 4, in samples at the current processing rate. Each channel starts that many samples later. This works in every mode.\nExample: -60;-90;0;20;0;0 trims more than the default (-80;-100;0;0;0;0) and delays channel 2 by 20 samples. Keep each delay well under the IR\'s length after any shrinking. A delay below 0, or one that is too long for the IR, makes the app ignore all six and use the default instead.</string>
+    <string name="convolver_info">Applies an impulse response (IRS/WAV) file: a sound \"fingerprint\" that can simulate speakers, rooms, or custom EQ curves with studio-grade accuracy.\n\nAdvanced waveform editing takes six whole numbers split by semicolons, with no spaces:\n1. Start level, in dB below the IR\'s loudest point. Shrink cuts off the quiet lead-in before the IR first gets louder than this.\n2. End level, in dB below the loudest point. Both shrink modes cut off the tail after the IR last gets louder than this.\n3 to 6. Delay for IR channels 1 to 4, in samples at the current processing rate. Each channel starts that many samples later. This works in every mode.\nExample: -60;-90;0;20;0;0 trims more than the default (-80;-100;0;0;0;0) and delays channel 2 by 20 samples. Keep each delay well under the IR\'s length after any shrinking. A delay below 0, or one that is too long for the IR, makes the app ignore all six and use the default instead.</string>
     <string name="liveprog_info">Runs custom EEL2 audio scripts for effects the app doesn\'t have built in. For tinkerers!</string>
     <string name="section_info_title">ℹ️ What is this?</string>
     <string name="section_info_tap_hint">Tap to learn what this section does</string>
@@ -305,16 +305,16 @@
     <string name="fieldsurround_strength">Surround strength</string>
     <string name="fieldsurround_mid">Mid image</string>
     <string name="agc_enable">Auto gain control (AGC)</string>
-    <string name="agc_info">Keeps volume consistent automatically , quiet songs get gently boosted toward your target level, loud ones are left alone. Slow and smooth, no pumping.</string>
+    <string name="agc_info">Keeps volume consistent automatically: quiet songs get gently boosted toward your target level, loud ones are left alone. Slow and smooth, no pumping.</string>
     <string name="agc_target">Target level</string>
     <string name="agc_maxboost">Maximum boost</string>
     <string name="hpsurround_enable">Headphone surround+ (lite)</string>
-    <string name="hpsurround_info">Pulls the sound out of the middle of your head and places it in front of you: head-shadowed crossfeed with realistic ear-to-ear timing, multi-tap early reflections with a short room tail, and stereo widening. Headphones only , try 60-90% strength. Inspired by ViPER\'s VHS+.</string>
+    <string name="hpsurround_info">Pulls the sound out of the middle of your head and places it in front of you: head-shadowed crossfeed with realistic ear-to-ear timing, multi-tap early reflections with a short room tail, and stereo widening. Headphones only. Try 60-90% strength. Inspired by ViPER\'s VHS+.</string>
     <string name="hpsurround_strength">Effect strength</string>
     <string name="hpsurround_room">Room reflections</string>
     <string name="about_version_summary">%1$s (based on RootlessJamesDSP %2$s)</string>
     <string name="chain_order_title">Processing order</string>
-    <string name="chain_order_explainer">This is the order effects are applied to the audio , not the card order on screen. The output limiter always runs last.</string>
+    <string name="chain_order_explainer">This is the order effects are applied to the audio, not the card order on screen. The output limiter always runs last.</string>
     <string name="chain_order_reset">Reset</string>
     <string name="chain_order_button">Processing order...</string>
     <string name="liveprog_slot_2">Liveprog script 2</string>
@@ -330,7 +330,7 @@
     <string name="effect_reset_layout_confirm">Restore the default effect order and show all hidden effects?</string>
     <string name="effect_edit_layout">Customize layout</string>
     <string name="effect_edit_done">Done</string>
-    <string name="effect_edit_hint">Drag cards to reorder - tap the eye to hide - move a card past a group heading to change its group</string>
+    <string name="effect_edit_hint">Drag cards to reorder. Tap the eye to hide. Move a card past a group heading to change its group.</string>
     <string name="effect_search_hint">Search effects</string>
     <string name="effect_search_empty">No effects match your search</string>
     <string name="v4a_section_header">〰 ViPER4Android effects 〰</string>
@@ -535,7 +535,7 @@
     <string name="echo_open_panel">Open delay panel</string>
     <string name="echo_open_panel_summary">Knob controls for every parameter</string>
     <string name="echo_enable">Echo / delay</string>
-    <string name="echo_info">A full echo unit: repeats with feedback, a filter inside the feedback loop so each repeat gets darker, tape-style modulation, diffusion to smear the tail, and saturation. Ping-pong bounces repeats between your ears , lovely on headphones.</string>
+    <string name="echo_info">A full echo unit: repeats with feedback, a filter inside the feedback loop so each repeat gets darker, tape-style modulation, diffusion to smear the tail, and saturation. Ping-pong bounces repeats between your ears, which is lovely on headphones.</string>
     <string name="echo_time">Delay time</string>
     <string name="echo_feedback">Feedback</string>
     <string name="echo_model">Delay model</string>
@@ -584,7 +584,7 @@
     <string name="v4a_hpsurround_title">Headphone surround +</string>
     <string name="v4a_vdynbass_title">Dynamic system (ViPER dynamic bass)</string>
     <string name="bassex_band2">Second band</string>
-    <string name="bassex_band2_summary">Adds a second, independent bass harmonic generator , set it lower (sub warmth) while band 1 handles punch</string>
+    <string name="bassex_band2_summary">Adds a second, independent bass harmonic generator. Set it lower (sub warmth) while band 1 handles punch</string>
     <string name="bassex_cutoff2">Band 2 bass range</string>
     <string name="bassex_intensity2">Band 2 intensity</string>
     <string name="bassex_mix2">Band 2 amount</string>
@@ -600,7 +600,7 @@
     <string name="vdynbass_sgy">Custom: side gain Y</string>
     <string name="vdynbass_custom_note">Custom sliders only apply when Mode is set to Custom</string>
     <string name="diffsurround_enable">Differential surround</string>
-    <string name="diffsurround_info">Delays one ear by a few milliseconds (the Haas effect), so your brain reads the tiny timing difference as width and space, like ViPER\'s Differential Surround. ⚠️ Headphones only , on speakers the delayed channel causes comb filtering and a smeared image. Keep one side at 0 and raise the other slightly.</string>
+    <string name="diffsurround_info">Delays one ear by a few milliseconds (the Haas effect), so your brain reads the tiny timing difference as width and space, like ViPER\'s Differential Surround. Headphones only: on speakers the delayed channel causes comb filtering and a smeared image. Keep one side at 0 and raise the other slightly.</string>
     <string name="diffsurround_delay_l">Left delay</string>
     <string name="diffsurround_delay_r">Right delay</string>
     <string name="output_control_postgain">Post gain</string>
@@ -1131,7 +1131,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="peq_filter_type_high_pass">High pass</string>
 
     <string name="mbd_enable">Multiband distortion</string>
-    <string name="mbd_info">Picks a frequency range and distorts only that, leaving the rest of the music alone. The graph is the filter that chooses the range - the card opens with one low-pass corner, so by default it distorts the bass and nothing else. Peaking and shelf handles shape what goes in instead of selecting a range outright, so the full equaliser is still available here. Eight distortion characters, a chorus on the distorted band, and a mix control over the whole thing.</string>
+    <string name="mbd_info">Picks a frequency range and distorts only that, leaving the rest of the music alone. The graph is the filter that chooses the range. The card opens with one low-pass corner, so by default it distorts the bass and nothing else. Peaking and shelf handles shape what goes in instead of selecting a range outright, so the full equaliser is still available here. Eight distortion characters, a chorus on the distorted band, and a mix control over the whole thing.</string>
     <string name="mbd_open_panel">Open distortion panel</string>
     <string name="mbd_open_panel_summary">Band graph, distortion character and chorus</string>
     <string name="title_activity_mbd">Multiband distortion</string>
@@ -1173,7 +1173,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="tape_mix">Mix</string>
     <string name="tape_mix_summary">How much of the tape signal is blended back in. At 0%% nothing is changed at all.</string>
     <string name="balance_enable">Balance</string>
-    <string name="balance_info">Which ear the sound sits in. Useful for uneven hearing, a headphone with a tired driver, or one earbud that is simply quieter than the other. Balance cuts the far side rather than boosting the near one, so it never costs headroom or pushes the limiter. Mono blends the two channels together, which is what you want if you are listening with a single earbud , otherwise anything panned to the other side is lost.</string>
+    <string name="balance_info">Which ear the sound sits in. Useful for uneven hearing, a headphone with a tired driver, or one earbud that is simply quieter than the other. Balance cuts the far side rather than boosting the near one, so it never costs headroom or pushes the limiter. Mono blends the two channels together, which is what you want if you are listening with a single earbud. Otherwise anything panned to the other side is lost.</string>
     <string name="balance_balance">Balance</string>
     <string name="balance_balance_summary">Left at the bottom, right at the top, centred in the middle.</string>
     <string name="balance_swap">Swap left and right</string>
@@ -1181,7 +1181,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="balance_mono">Blend to mono</string>
     <string name="balance_mono_summary">Mixes the channels together. At 100%% both ears hear everything, which is the one to use with a single earbud.</string>
     <string name="vinyl_enable">Vintage vinyl</string>
-    <string name="vinyl_info">The noises a record makes, as separate controls. Vintage tape models a machine that is working badly , drifting in pitch, running out of headroom. This models a worn disc, which fails differently: it adds things that were never in the recording. Everything here except Wear is a noise mixed alongside the music, so with every control at zero nothing is added at all.</string>
+    <string name="vinyl_info">The noises a record makes, as separate controls. Vintage tape models a machine that is working badly: drifting in pitch, running out of headroom. This models a worn disc, which fails differently: it adds things that were never in the recording. Everything here except Wear is a noise mixed alongside the music, so with every control at zero nothing is added at all.</string>
     <string name="vinyl_surface">Surface noise</string>
     <string name="vinyl_surface_summary">The continuous bed a record sits on. Band-limited, because a groove reproduces neither the very top nor the very bottom.</string>
     <string name="vinyl_crackle">Crackle</string>
@@ -1191,23 +1191,23 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="vinyl_pops">Pops</string>
     <string name="vinyl_pops_summary">Rare and much louder, from a scratch or a speck of grit. Rings rather than just ticking.</string>
     <string name="vinyl_clicks">Clicks</string>
-    <string name="vinyl_clicks_summary">Very short and bright , a dust particle rather than a scratch. Reads as an edge instead of an event.</string>
+    <string name="vinyl_clicks_summary">Very short and bright: a dust particle rather than a scratch. Reads as an edge instead of an event.</string>
     <string name="vinyl_sizzle">Frying sizzle</string>
     <string name="vinyl_sizzle_summary">Dense high-frequency frying: a record played wet, or worn smooth. Crackle fast enough to stop being separate events.</string>
     <string name="vinyl_hiss">Hiss</string>
     <string name="vinyl_hiss_summary">Flat, quiet and always there. The noise floor of the cutting chain rather than the disc.</string>
     <string name="vinyl_prickle">Prickle</string>
-    <string name="vinyl_prickle_summary">Sharp, thin, upper-mid ticks , the prickly quality of a dirty stylus.</string>
+    <string name="vinyl_prickle_summary">Sharp, thin, upper-mid ticks: the prickly quality of a dirty stylus.</string>
     <string name="vinyl_rumble">Turntable rumble</string>
     <string name="vinyl_rumble_summary">The motor and bearing underneath everything. Felt more than heard.</string>
     <string name="vinyl_wear">Groove wear</string>
     <string name="vinyl_wear_summary">The only control that touches the music itself: high end lost to a worn groove.</string>
     <string name="vinyl_follow">Follow the music</string>
-    <string name="vinyl_follow_summary">A real record crackles constantly, which is what you want while music plays , but obviously synthetic in a silence. Turn this up and the noise fades with the music.</string>
+    <string name="vinyl_follow_summary">A real record crackles constantly, which is what you want while music plays, but obviously synthetic in a silence. Turn this up and the noise fades with the music.</string>
     <string name="vinyl_mix">Mix</string>
     <string name="vinyl_mix_summary">How much of the record is blended back in. At 0%% nothing is changed at all.</string>
     <string name="exciter_enable">Exciter</string>
-    <string name="exciter_info">Adds harmonics that were never in the recording, which the ear reads as detail and weight. Four ranges, each with its own amount, so you can put air on top without also making the bass fuzzy. Character picks the flavour: Warm, Retro and Tape are symmetrical and add odd harmonics , the transistor end; Tube and Triode are lopsided and add even ones, which is the valve sound. The existing Bass exciter card is the older two-band bass-only version and still works; this replaces it for new setups.</string>
+    <string name="exciter_info">Adds harmonics that were never in the recording, which the ear reads as detail and weight. Four ranges, each with its own amount, so you can put air on top without also making the bass fuzzy. Character picks the flavour: Warm, Retro and Tape are symmetrical and add odd harmonics (the transistor end); Tube and Triode are lopsided and add even ones, which is the valve sound. The existing Bass exciter card is the older two-band bass-only version and still works; this replaces it for new setups.</string>
     <string name="exciter_character">Character</string>
     <string name="exciter_character_summary">Warm, Retro and Tape add odd harmonics; Tube and Triode are asymmetric and add even ones, which sounds fuller and less edgy.</string>
     <string name="exciter_drive">Drive</string>
@@ -1224,7 +1224,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="exciter_mix">Mix</string>
     <string name="exciter_mix_summary">How much of the excited signal is blended back in. At 0%% nothing is changed at all.</string>
     <string name="lowend_enable">Low end</string>
-    <string name="lowend_info">Three things for the bottom of the spectrum. The subsonic filter throws away rumble below anything you can hear, which is pure wasted headroom pushing the limiter around. Weight is one knob for body. Mud eases back the region where recordings pile up and turn thick. Folding bass to mono lives in the stereo imaging card, and putting punch back into a kick lives in Impact , neither is repeated here.</string>
+    <string name="lowend_info">Three things for the bottom of the spectrum. The subsonic filter throws away rumble below anything you can hear, which is pure wasted headroom pushing the limiter around. Weight is one knob for body. Mud eases back the region where recordings pile up and turn thick. Folding bass to mono lives in the stereo imaging card, and putting punch back into a kick lives in Impact. Neither is repeated here.</string>
     <string name="lowend_subsonic">Subsonic filter</string>
     <string name="lowend_subsonic_summary">Removes everything below this, steeply. Set to 0 to switch it off.</string>
     <string name="lowend_weight_header">Weight</string>
@@ -1238,7 +1238,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="lowend_mix">Mix</string>
     <string name="lowend_mix_summary">How much of the treated signal is blended back in. At 0%% nothing is changed at all.</string>
     <string name="transient_enable">Impact (attack &amp; sustain)</string>
-    <string name="transient_info">Shapes how a note starts and how long it takes to die, rather than how loud it is. Two envelope followers chase the signal at different speeds, and the gap between them says which part of a note you are in , so a held tone comes through completely untouched while a drum hit can be sharpened or softened. Use it to put the snap back into over-compressed music, or to take the room off a boomy recording.</string>
+    <string name="transient_info">Shapes how a note starts and how long it takes to die, rather than how loud it is. Two envelope followers chase the signal at different speeds, and the gap between them says which part of a note you are in, so a held tone comes through completely untouched while a drum hit can be sharpened or softened. Use it to put the snap back into over-compressed music, or to take the room off a boomy recording.</string>
     <string name="transient_low_header">Low</string>
     <string name="transient_mid_header">Mid</string>
     <string name="transient_high_header">High</string>
@@ -1273,7 +1273,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="dyneq_threshold_summary">The level this band has to reach before it does anything.</string>
     <string name="dyneq_range_summary">The most it may ever change. Negative cuts, positive lifts; zero switches the band off.</string>
     <string name="dyneq_q_summary">How narrow the band is. Wider sounds gentler, narrower is more surgical.</string>
-    <string name="dyneq1_header">Band 1 , Low</string>
+    <string name="dyneq1_header">Band 1 (Low)</string>
     <string name="dyneq1_freq">Band 1 frequency</string>
     <string name="dyneq1_q">Band 1 width</string>
     <string name="dyneq1_threshold">Band 1 threshold</string>
@@ -1282,7 +1282,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="dyneq1_release">Band 1 release</string>
     <string name="dyneq1_range">Band 1 range</string>
     <string name="dyneq1_mode">Band 1 acts on</string>
-    <string name="dyneq2_header">Band 2 , Mid</string>
+    <string name="dyneq2_header">Band 2 (Mid)</string>
     <string name="dyneq2_freq">Band 2 frequency</string>
     <string name="dyneq2_q">Band 2 width</string>
     <string name="dyneq2_threshold">Band 2 threshold</string>
@@ -1291,7 +1291,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="dyneq2_release">Band 2 release</string>
     <string name="dyneq2_range">Band 2 range</string>
     <string name="dyneq2_mode">Band 2 acts on</string>
-    <string name="dyneq3_header">Band 3 , High</string>
+    <string name="dyneq3_header">Band 3 (High)</string>
     <string name="dyneq3_freq">Band 3 frequency</string>
     <string name="dyneq3_q">Band 3 width</string>
     <string name="dyneq3_threshold">Band 3 threshold</string>
@@ -1484,7 +1484,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="update_action_later">Later</string>
     <string name="update_action_skip">Skip this version</string>
     <string name="update_already_downloading">The update is already downloading</string>
-    <string name="update_downloading">Downloading ViPER4Android %1$s   %2$d%%</string>
+    <string name="update_downloading">Downloading ViPER4Android %1$s (%2$d%%)</string>
     <string name="update_download_failed">The update download failed. It will be offered again later.</string>
     <string name="update_ready_title">ViPER4Android %1$s is ready to install</string>
     <string name="update_ready_message">Installing updates the app in place: your settings, presets and files are kept. The app closes while Android installs it.</string>

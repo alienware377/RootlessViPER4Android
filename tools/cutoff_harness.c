@@ -1,12 +1,8 @@
 // Does a cutoff actually cut off?
 //
-// The complaint that prompted this was precise: the low-pass "goes all the way
-// across the freq spectrum before dropping". That is what one biquad does - it
-// rolls off at 12 dB/octave, which over the ten octaves of the audio band is a
-// tilt, not a corner. So this measures the slope rather than merely checking
-// that a filter was installed, and it measures the coefficients the engine
-// actually loaded rather than recomputing them here, which would only prove
-// this file agrees with itself.
+// One biquad rolls off at 12 dB/octave, which over the ten octaves of the audio
+// band is a tilt, not a corner. This measures the slope of the cascade the
+// engine actually loaded rather than recomputing the coefficients here.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,8 +80,8 @@ static void measure(const char *name, float freq, float slope, int type)
 	check("passband, 2 oct in (dB)", responseDb(m, lo, g_lib.fs), -0.6, 0.3);
 	check("corner (dB)", responseDb(m, freq, g_lib.fs), -4.5, -1.5);
 
-	// The point of the whole change. One octave past the corner the level has
-	// to have fallen by the full slope, not by 12 dB.
+	// One octave past the corner the level must have fallen by the full slope,
+	// not by 12 dB.
 	double d1 = responseDb(m, one, g_lib.fs);
 	check("1 oct past corner (dB)", d1, -perOctave - 9.0, -perOctave + 9.0);
 	double d2 = responseDb(m, two, g_lib.fs);

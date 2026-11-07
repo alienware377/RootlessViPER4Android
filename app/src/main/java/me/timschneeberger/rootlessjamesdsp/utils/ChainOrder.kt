@@ -27,11 +27,8 @@ object ChainOrder {
     /**
      * The engine's default chain (jdspDefaultChain in jdspController.c), as
      * effect ids. This is what runs when no order has been saved, so it is also
-     * what the processing order screen must show then: the screen used to list
-     * the effects by id instead, which put the maximiser ahead of dynamic EQ,
-     * imaging, impact, low end, exciter and tape, and saving from it made that
-     * the running order. ChainOrderTest reads the C array and fails if the two
-     * drift apart.
+     * what the processing order screen shows then. ChainOrderTest reads the C
+     * array and fails if the two drift apart.
      */
     val DEFAULT: List<Int> = listOf(
         0, 1, 2, 3,          // tube, compander, pitch shift, FET compressor
@@ -55,10 +52,9 @@ object ChainOrder {
         // After the stereo widening, so it spreads the image the user set up,
         // and before the surround effects and reverbs that then act on it.
         BINAURAL to STEREOWIDE,
-        // Older than the two above, but the processing order screen never
-        // listed them, so no order it saved has them either. Left to the
-        // engine they ran after the maximiser; in the default chain they sit
-        // just ahead of it, after tape. Vinyl first, so balance can follow it.
+        // Saved orders from older builds lack these two; in the default chain
+        // they sit just ahead of the maximiser, after tape. Vinyl first, so
+        // balance can follow it.
         VINYL to TAPE,
         BALANCE to VINYL,
     )

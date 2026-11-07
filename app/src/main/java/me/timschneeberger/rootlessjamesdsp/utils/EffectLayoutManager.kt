@@ -144,7 +144,7 @@ class EffectLayoutManager(
 
     /**
      * Returns the user's saved order, or null if they've never customised the
-     * layout - in which case the layout is left exactly as declared.
+     * layout, in which case the layout is left exactly as declared.
      */
     private fun storedOrder(): List<String>? {
         val saved = prefs.getString(KEY_ORDER, null)
@@ -152,12 +152,9 @@ class EffectLayoutManager(
             ?.filter { it.isNotBlank() }
             ?: return null
 
-        // Effects added by an app update aren't in the saved order yet. They
+        // Effects added by an app update are not in the saved order yet; they
         // go next to the card declared beside them, wherever the user has
-        // moved that one. Their declared position number was used before, and
-        // in a rearranged layout that lands in whatever group happens to be
-        // there: the spectral shaper ended up among stereo effects and the
-        // binaural upmix under bass.
+        // moved that one (see NewCardPlacement).
         return NewCardPlacement.merge(
             saved = saved,
             declared = declaredOrder,
@@ -189,8 +186,8 @@ class EffectLayoutManager(
     /**
      * Display name for a header, honouring any rename the user made.
      *
-     * Custom groups have no title resource - titleRes is 0 and the name lives
-     * in prefs - so the resource lookup is guarded. getString(0) throws
+     * Custom groups have no title resource (titleRes is 0 and the name lives
+     * in prefs), so the resource lookup is guarded. getString(0) throws
      * Resources.NotFoundException, and a group can genuinely lose its stored
      * name underneath us when a preset replaces the layout file.
      */
@@ -479,7 +476,7 @@ class EffectLayoutManager(
 
         // Detach from whatever currently holds each view, not just from the
         // root container, and do it again immediately before each add rather
-        // than only in one pass up front - an add earlier in the loop can
+        // than only in one pass up front: an add earlier in the loop can
         // re-parent a view that `ordered` names twice. Together this makes a
         // repeated applyLayout harmless.
         ordered.forEach { (it.parent as? ViewGroup)?.removeView(it) }
@@ -513,13 +510,8 @@ class EffectLayoutManager(
         for (i in 0 until container.childCount) {
             itemForView(container.getChildAt(i))?.let { keys.add(it.key) }
         }
-        // Refuse to persist a partial snapshot. Cards are inflated a few at a
-        // time so the first frame is not blocked, so for the first moments the
-        // container holds only some of them - and this used to write exactly
-        // what it saw. Every card missing from that write lost its place and
-        // came back wherever it happened to be inflated next time, which is a
-        // customised order quietly decaying over successive launches. Only
-        // "there is at least one" was checked before, which does not catch it.
+        // Refuse to persist a partial snapshot: cards are inflated a few at a
+        // time, and saving while some are missing would lose their places.
         val placeable = items.count { viewFor(it) != null }
         if (keys.isEmpty() || keys.size < placeable) {
             Timber.w("Not saving card order: have ${keys.size} of $placeable cards")
@@ -556,7 +548,7 @@ class EffectLayoutManager(
      * Re-read the layout from disk and re-apply it.
      *
      * Loading a preset replaces effect_layout.xml underneath a running app, but
-     * [prefs] is the copy this process loaded at startup and keeps serving -
+     * [prefs] is the copy this process loaded at startup and keeps serving,
      * and the next drag or eye-toggle would write that stale copy straight back
      * over what the preset restored. Re-entering getSharedPreferences with
      * MODE_MULTI_PROCESS is what makes the platform notice the file changed;
@@ -607,7 +599,7 @@ class EffectLayoutManager(
     /** Replaces the card's content with a compact one-line editing row. */
     private fun collapseCard(view: View, item: Item, isHidden: Boolean) {
         if (item.isHeader) {
-            // Headers aren't containers - show the editing affordances inline.
+            // Headers aren't containers, so show the editing affordances inline.
             // The tap goes on the whole heading rather than the name inside
             // it, so a long press anywhere on it still reaches the drag.
             headerTitle(view)?.text =
@@ -933,10 +925,8 @@ class EffectLayoutManager(
 
     fun resetLayout() {
         prefs.edit().remove(KEY_ORDER).remove(KEY_HIDDEN).remove(KEY_FOLDED).apply()
-        // With nothing saved, applyLayout leaves the views where they are.
-        // That is right at startup, when they are still in declared order,
-        // but here they are in the user's order, so the reset only showed
-        // after the next launch. Put the declared order back first.
+        // With nothing saved, applyLayout leaves the views where they are, so
+        // put the declared order back first.
         reorder(NewCardPlacement.defaultOrder(declaredOrder, containerOrder()))
         applyLayout()
     }

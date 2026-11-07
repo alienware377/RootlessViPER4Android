@@ -11,12 +11,9 @@ import timber.log.Timber
 import java.io.File
 
 /**
- * Runs file downloads outside any dialog.
- *
- * The parked version launched downloads on the library dialog's scope, so
- * closing the library while its file picker was still open made Download
- * silently do nothing. Downloads now belong to the app, one batch at a time,
- * and report back to whoever is still listening.
+ * Runs file downloads outside any dialog, so closing the library while a
+ * download runs does not cancel it. One batch at a time; results go to
+ * whoever is still listening.
  */
 object LibraryDownloads {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

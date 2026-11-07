@@ -4,9 +4,9 @@
 #
 # Everything here is the same shape of fault: something that compiles, renders,
 # and looks entirely normal, but where a control does nothing or shows the wrong
-# value. None of it needs a device, which matters because the device is usually
-# locked - and two of these are invisible on a device anyway, since a phone that
-# already has preferences written can never show a wrong default.
+# value. None of it needs a device. Two of these are invisible on a device
+# anyway, since a phone that already has preferences written can never show a
+# wrong default.
 #
 # The checks:
 #

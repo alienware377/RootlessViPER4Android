@@ -8,8 +8,7 @@
 #include "jdsp_header.h"
 
 // 50ms at 192kHz is 9600 samples, so the window has to be comfortably longer
-// than the longest delay under test or the impulse simply never arrives inside
-// it - which the first run of this reported as a clamp.
+// than the longest delay under test or the impulse never arrives inside it.
 #define N 16384
 
 static JamesDSPLib g_lib;

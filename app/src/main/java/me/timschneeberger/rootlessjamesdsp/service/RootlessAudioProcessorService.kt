@@ -298,14 +298,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
             sendLocalBroadcast(Intent(Constants.ACTION_DISCARD_AUTHORIZATION))
 
-            // Only the toast was ever meant to be conditional. Returning early
-            // skipped the shutdown with it, so a permission revoked while the
-            // app was open left this service running with a capture that could
-            // never deliver anything AND every muting effect still attached to
-            // the apps it had taken over. Rootless mode mutes the source and
-            // replays it processed, so that state is not "no effect", it is
-            // total silence in every app the service had touched, until
-            // something stops the service by hand.
+            // Always shut down, only the toast is conditional: a capture that
+            // cannot deliver would leave every muted app silent, since rootless
+            // mode mutes the source and replays it processed.
             if(!preferencesVar.get<Boolean>(R.string.key_is_activity_active))
                 this@RootlessAudioProcessorService.toast(getString(R.string.capture_permission_revoked_toast))
 
@@ -539,8 +534,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 val shortBuffer = ShortArray(bufferSize)
                 val shortOutBuffer = ShortArray(bufferSize)
                 // Silence gate: session-based idle never fires while an app
-                // sits paused holding its audio session, so the pipeline used
-                // to process pure silence indefinitely. After 20s of silent
+                // sits paused holding its audio session, so after 20s of silent
                 // input (longer than the longest reverb tail) the DSP chain
                 // and output track are skipped; capture keeps running so the
                 // first non-silent buffer resumes instantly and loses nothing.
@@ -758,9 +752,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // That matters most for apps that forbid being recorded. Capturing one
         // does not fail, it returns silence, and because this effect re-routes
         // the audio the user hears nothing at all rather than hearing it
-        // unprocessed. The ordinary path excludes those automatically; this one
-        // skipped the check entirely, so putting such an app on the list would
-        // have silenced it.
+        // unprocessed. The ordinary path excludes those automatically, so this
+        // one filters them out of the allowlist.
         //
         // Our own uid goes the same way: there is no exclusion to hide behind
         // here, and capturing ourselves is a loop.

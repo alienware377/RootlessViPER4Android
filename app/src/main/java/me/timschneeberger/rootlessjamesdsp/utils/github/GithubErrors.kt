@@ -4,9 +4,8 @@ import java.io.IOException
 
 /**
  * Everything that can go wrong talking to GitHub, one type per message the
- * user needs to see. The parked version turned every 403 into "rate limit"
- * and everything else into "couldn't reach GitHub", which was wrong for a
- * missing repository, an empty one, a blocked one and the secondary limit.
+ * user needs to see. A 403 is not always a rate limit, and a missing, empty
+ * or blocked repository each need their own message.
  */
 sealed class GithubException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     /** [bucket] is "core" (browsing) or "search"; they run out separately. */

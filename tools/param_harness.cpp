@@ -9,8 +9,8 @@
 //
 // This drives applyParam with the same payloads JamesDspRemoteEngine sends and
 // asserts the engine state moved. It cannot prove the audio server delivers
-// them - that needs a rooted device, and the only one here is not rooted - but
-// it does prove every id the app sends has somewhere to land.
+// them, which needs a rooted device, but it does prove every id the app sends
+// has somewhere to land.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -290,12 +290,10 @@ int main()
 		check("26005 Cure sets its filter", g_lib.cure.lpCoef != 0.0f);
 	}
 	{
-		// Since Signalsmith came in, the pitch shifter builds nothing while its
-		// card is off: SetParam only stores the settings, and Enable works out
-		// the bypass and buffers when the card comes on. The old checks sent
-		// 26009 to a card that was off, so the bypass flag never moved and
-		// "re-enters bypass" failed for a reason that was not a bug. Switch it
-		// on first, as the app does, and check the off state on its own.
+		// The pitch shifter builds nothing while its card is off: SetParam only
+		// stores the settings, and Enable works out the bypass and buffers when
+		// the card comes on. So switch it on first, as the app does, and check
+		// the off state on its own.
 		const float unity[2] = { 0.0f, 100.0f };
 		sendFloats(26009, unity, 2);
 		check("26009 with the card off builds nothing",
@@ -325,10 +323,9 @@ int main()
 		check("26010 echo/delay accepted", true, "(state is internal)");
 	}
 
-	// The DEFAULT chain, which is what an install runs until someone reorders
-	// it. Nothing checked this, and the saved-order equivalent below passed
-	// happily throughout - so six effects sat outside the default list and were
-	// never dispatched on any install that had not customised its chain.
+	// The default chain, which is what an install runs until someone reorders
+	// it. An effect missing from it is never dispatched on an install that has
+	// not customised its chain.
 	{
 		JamesDSPResetChainOrder(&g_lib);
 		bool seen[JDSP_EFX_COUNT] = { false };
@@ -361,16 +358,13 @@ int main()
 			1.0f,      // true peak
 			80.0f,     // stereo link %
 			2.0f,      // oversample
-			2.0f       // clip shape - the control this whole path was missing
+			2.0f       // clip shape
 		};
 		sendFloats(26019, v, 10);
 		check("26019 maximizer mode lands", g_lib.maximizer.mode == 1);
 		check("26019 maximizer clip shape lands", g_lib.maximizer.clipShape == 2);
 		check("26019 maximizer true peak lands", g_lib.maximizer.truePeak == 1);
-		// Stored as a linear factor, not as the decibels it arrived as:
-		// 10^(-1.5/20) is 0.841. The output stage's post gain does the same
-		// thing and caught this harness out once before, so it is worth
-		// asserting the converted value rather than the one that was sent.
+		// Stored as a linear factor: 10^(-1.5/20) is 0.841.
 		check("26019 maximizer ceiling lands, converted to linear",
 			  fabsf(g_lib.maximizer.ceiling - 0.84139f) < 0.001f);
 
