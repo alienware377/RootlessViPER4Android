@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- ViPER4Android classic: neutral dark-gray surfaces exactly like the
-         original app (no blue cast anywhere - greys are pure R=G=B), with
+         original app (no blue cast anywhere: greys are pure R=G=B), with
          violet-purple accents. No magenta, no teal, no slate. -->
     <color name="v4a_primary">#A46BFF</color>
     <color name="v4a_onPrimary">#22103F</color>
