@@ -139,12 +139,9 @@ int main(void)
 		check("and match the single-curve path", fabs(stereoL - monoL), 0.0, 0.01);
 	}
 
-	/* A flat curve has to be a straight wire, and it is. This block briefly
-	   claimed the EQ lost three decibels, which it does not: every measurement
-	   here is RMS, and a sine's RMS sits 3.01 dB below its amplitude, so
-	   comparing it against 20*log10(0.25) was comparing RMS against peak. The
-	   filter and the convolver were then both measured exactly, tap by tap, in
-	   tools/arbeq_gain_probe.c. SINE_RMS_DB is the correct reference.
+	/* A flat curve has to be a straight wire. Every measurement here is RMS,
+	   and a sine's RMS sits 3.01 dB below its amplitude, so the reference is
+	   SINE_RMS_DB.
 
 	   Kept rather than deleted, because unity through a flat curve is exactly
 	   the kind of property that would rot unnoticed. */
