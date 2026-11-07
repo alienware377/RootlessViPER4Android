@@ -27,9 +27,7 @@ object RubberBandInstaller {
 
     /**
      * Whether a Method list entry needs this download: the two Rubber Band
-     * entries, 2 and 3. It used to be "2 and up", which stopped being true when
-     * the built-in Signalsmith entries arrived after them as 4 and 5, and would
-     * have refused those without the add-on.
+     * entries, 2 and 3 (4 and 5 are built-in Signalsmith).
      */
     fun isRubberBandMode(mode: Int) = mode == 2 || mode == 3
 
@@ -43,9 +41,8 @@ object RubberBandInstaller {
         "https://github.com/alienware377/RootlessViPER4Android/releases/download/$TAG"
 
     /**
-     * What each architecture's file must hash to. This is not decoration: a
-     * truncated download, a proxy that served an error page, or a substituted
-     * file would otherwise be handed straight to dlopen. A mismatch is treated
+     * What each architecture's file must hash to, so a truncated download, an
+     * error page or a substituted file is never handed to dlopen. A mismatch is treated
      * as a failed download, not as a file to keep.
      */
     private val CHECKSUMS = mapOf(
@@ -151,9 +148,9 @@ object RubberBandInstaller {
 
     /**
      * Delete it again. The engine may still have the library open from earlier
-     * in this session - a mapping the audio thread could be inside cannot safely
-     * be pulled away - so the caller should say it finishes taking effect when
-     * the app next starts. Nothing is left on disk either way.
+     * while the app runs (a mapping the audio thread could be inside cannot
+     * safely be pulled away), so the caller should say it finishes taking
+     * effect when the app next starts. Nothing is left on disk either way.
      */
     fun remove(context: Context): Boolean {
         val folder = dir(context)

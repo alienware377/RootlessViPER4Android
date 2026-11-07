@@ -5,7 +5,7 @@
  *
  * The card list itself lives in DspFragment, keyed by view id, but the keys the
  * layout persists are the resource entry names of those ids. Code outside the
- * fragment - loading a preset, for one - has neither the fragment nor the
+ * fragment (loading a preset, for one) has neither the fragment nor the
  * resources to hand, so the correspondence is written out once here.
  *
  * Keep in step with DspFragment.searchableCards. A namespace missing from this

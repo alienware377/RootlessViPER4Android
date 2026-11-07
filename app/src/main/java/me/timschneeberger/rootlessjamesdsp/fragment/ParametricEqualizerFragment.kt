@@ -322,7 +322,7 @@ class ParametricEqualizerFragment : Fragment() {
             pushHistory(snapshot())
             val band = adapter.bands.getOrNull(index)
             if (band != null) {
-                // Show this band's knobs straight away - no extra tap needed
+                // Show this band's knobs straight away, with no extra tap
                 selectedForEdit = band
                 editorBandUuid = band.uuid
                 editorBandBackup = null
@@ -422,7 +422,7 @@ class ParametricEqualizerFragment : Fragment() {
     /**
      * Point the gain dial at whichever quantity the current filter type has.
      *
-     * A cutoff has no gain - the coefficients ignore the term - but it does have
+     * A cutoff has no gain (the coefficients ignore the term), but it does have
      * a slope, and without a control for it a cutoff is stuck at 12 dB/octave,
      * which reads as a tilt across the whole spectrum rather than a corner. So
      * the dial becomes the slope for those types instead of being dimmed. The
@@ -498,7 +498,7 @@ class ParametricEqualizerFragment : Fragment() {
         binding.emptyView.isVisible = empty && !editorActive
         binding.bandList.isVisible = !empty && !editorActive
         binding.bandEdit.isVisible = editorActive
-        // Knob changes apply live - Undo is the safety net, so no confirm/discard
+        // Knob changes apply live and Undo is the safety net, so no confirm/discard
         binding.bandDetailContextButtons.visibility = View.GONE
         binding.editCardTitle.text = getString(if (editorActive) R.string.peq_band_editor else R.string.peq_band_list)
     }

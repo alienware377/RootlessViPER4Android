@@ -182,17 +182,11 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
         }
 
         pollingMutex.withLock {
-            // The dump itself is the expensive part - it reads and parses the
-            // audio service's state, measured at nearly five seconds on a cold
-            // start - and this scope runs on the main thread, so it froze the
-            // UI for that whole time. Do the reading off the main thread and
-            // hand only the result back, since handleSessionDump touches
-            // session state the UI observes.
+            // The dump is the expensive part (nearly five seconds on a cold
+            // start), so read it off the main thread and hand only the result
+            // back; handleSessionDump touches state the UI observes.
             val dump = withContext(Dispatchers.IO) { dumpManager.dumpSessions() }
-            val t0 = android.os.SystemClock.uptimeMillis()
             handleSessionDump(dump)
-            val took = android.os.SystemClock.uptimeMillis() - t0
-            if (took > 8) Timber.d("PERF handleSessionDump ${took}ms on main")
         }
     }
 

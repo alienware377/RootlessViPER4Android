@@ -15,7 +15,7 @@ object V4aMode {
     /**
      * Cached deliberately. This is read from preference row binding, which runs
      * for every row of every card while scrolling, and MODE_MULTI_PROCESS
-     * re-parses the whole file from disk on each call - the app is single
+     * re-parses the whole file from disk on each call; the app is single
      * process, so that cost bought nothing at all.
      */
     @Volatile private var cached: Boolean? = null
@@ -72,9 +72,6 @@ object V4aMode {
         R.id.card_pitchshift, R.id.card_echo, R.id.card_mbd, R.id.card_maxr,
         R.id.card_dyneq, R.id.card_imaging, R.id.card_transient, R.id.card_lowend,
         R.id.card_exciter, R.id.card_tape,
-        // Vinyl and Balance were missed when their cards were added, which is
-        // the exact failure the comment above warns about: V4A mode switched
-        // their engines off and left both cards sitting on screen.
         R.id.card_vinyl, R.id.card_balance, R.id.card_shaper, R.id.card_binaural,
         R.id.card_geq,
         R.id.card_peq, R.id.card_liveprog, R.id.card_liveprog2,
@@ -123,10 +120,8 @@ object V4aMode {
      * Switches every non-V4A effect off, remembering which ones were on.
      *
      * Each engine frees its buffers on disable, so this is also what guarantees
-     * they take no resources. It used to write false over all twenty-four and
-     * keep no record, so turning the mode on and back off left every one of
-     * them switched off: a carefully built chain was silently flattened and
-     * there was no way back but rebuilding it by hand.
+     * they take no resources. The ones that were on are recorded so leaving the
+     * mode can turn them back on.
      */
     fun disableNonV4aEffects(ctx: Context) {
         val wasOn = mutableListOf<String>()

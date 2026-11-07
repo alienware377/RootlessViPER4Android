@@ -108,17 +108,6 @@ object CustomThemeStore {
     // ---------------------------------------------------------------- preview
 
     /**
-     * A small preview palette derived directly from the slider's HSV, not from
-     * an already-built RGB colour. Two bugs lived in the previous version:
-     * every role but Primary hard-coded its saturation and value, so moving
-     * those sliders visibly changed nothing except a floored Primary; and
-     * building the seed as RGB first and decomposing it back to HSV here lost
-     * the hue entirely at 0% saturation or 0% brightness (hue is mathematically
-     * undefined for pure greys and black), producing a fixed, slider-independent
-     * set of colours. Every role now scales off the real saturation/value across
-     * their full 0-100% range, and hue is never round-tripped through RGB.
-     */
-    /**
      * The palette to display: hand-set colours where the user provided them,
      * derived ones everywhere else. Keeping the derived values underneath means
      * switching manual mode off restores a coherent scheme instead of leaving
@@ -133,6 +122,12 @@ object CustomThemeStore {
         return derived.map { (role, color) -> role to (overrides[role] ?: color) }
     }
 
+    /**
+     * A small preview palette built straight from the sliders' hue, saturation
+     * and value. Hue never goes through RGB, because it is undefined for greys
+     * and black, and every role scales with the full 0-100% saturation and
+     * value range.
+     */
     fun previewRoles(
         hue: Float, saturation: Float, brightness: Float, dark: Boolean, amoled: Boolean
     ): List<Pair<String, Int>> {
@@ -152,7 +147,7 @@ object CustomThemeStore {
         val surface = if (dark) tone(0f, saturation * 0.16f, 0.14f + brightness * 0.08f)
         else tone(0f, saturation * 0.08f, 0.96f - brightness * 0.08f)
         return listOf(
-            // Primary is exactly the colour being chosen - no floor, no override.
+            // Primary is exactly the colour being chosen, with no floor or override.
             // Follows how Material derives a scheme: secondary keeps the hue
             // at much lower chroma, tertiary sits a fixed step around the wheel.
             // Still an approximation of the real generator, which works in HCT.
@@ -160,9 +155,8 @@ object CustomThemeStore {
             "Secondary" to tone(0f, saturation * 0.33f, brightness * 0.85f + 0.10f),
             "Tertiary" to tone(60f, saturation * 0.55f, brightness * 0.85f + 0.08f),
             "Surface" to surface,
-            // Bars: app bar, footer, menus, dialogs and settings screens. These
-            // sit between surface and background in the real scheme, which is
-            // why they looked like a third colour nobody could set.
+            // Bars: app bar, footer, menus, dialogs and settings screens; these
+            // sit between surface and background in the real scheme.
             "Bars" to if (dark) tone(0f, saturation * 0.20f, 0.18f + brightness * 0.10f)
             else tone(0f, saturation * 0.10f, 0.94f - brightness * 0.06f),
             "Background" to bg,

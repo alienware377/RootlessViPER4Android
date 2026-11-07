@@ -34,9 +34,7 @@ class CancelToken {
  * The download is pinned to the commit the user browsed, so the file is the
  * one that was listed and odd branch names never reach a URL. It is written
  * to "name.part" first and only renamed once its size and git blob hash
- * match the tree; anything else deletes the part file. The parked version
- * wrote straight to the final name, so a dropped connection left a broken
- * file that every later run skipped as "already downloaded".
+ * match the tree; anything else deletes the part file.
  *
  * Files kept in Git LFS show up in the tree as a ~130 byte pointer. When
  * the verified download is such a pointer, the real file is fetched from

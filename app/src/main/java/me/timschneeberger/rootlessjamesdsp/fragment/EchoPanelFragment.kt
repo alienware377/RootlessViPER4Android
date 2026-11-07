@@ -80,7 +80,7 @@ class EchoPanelFragment : Fragment() {
 
     /**
      * Dims and locks knobs the current settings make inert, instead of hiding
-     * them - hiding would reflow the panel and move controls mid-gesture.
+     * them: hiding would reflow the panel and move controls mid-gesture.
      * Dead cases, from the engine: filter Off ignores cutoff/res; mod rate 0
      * freezes the LFO so its time/cutoff do nothing; diffusion 0 bypasses
      * spread; distortion level 0 bypasses mode/knee/symmetry; model Off

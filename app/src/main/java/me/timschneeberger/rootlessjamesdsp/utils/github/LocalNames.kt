@@ -1,12 +1,9 @@
 package me.timschneeberger.rootlessjamesdsp.utils.github
 
 /**
- * Decides the local file name for each remote file.
- *
- * The parked version de-duplicated by file name, which silently threw real
- * files away: AutoEq has 2240 of its 10114 files under a name another
- * folder also uses. Now every file is offered, and a clash gets the folder
- * it came from added to its name.
+ * Decides the local file name for each remote file. Every file is offered,
+ * and a name clash gets the folder it came from added to its name (AutoEq
+ * has 2240 of its 10114 files under a name another folder also uses).
  */
 object LocalNames {
 
@@ -40,9 +37,9 @@ object LocalNames {
             // A file of the same name and size is the same file. A Git LFS
             // pointer's size says nothing about the real file, so the name has to do.
             // One library file stands for one remote file only: two folders can
-            // hold different files of the same name and size, and on a second
-            // visit the second one used to match the first one's download and
-            // was shown as already downloaded when it never was.
+            // hold different files of the same name and size, and the second
+            // must not match the first one's download and show as already
+            // downloaded.
             if (have != null && (have == f.size || f.maybeLfs) && claimed.add(key)) return Plan(f, null)
             if (key !in taken) {
                 taken += key

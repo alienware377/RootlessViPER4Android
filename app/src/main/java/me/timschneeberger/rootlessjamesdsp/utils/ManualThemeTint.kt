@@ -18,8 +18,8 @@ import me.timschneeberger.rootlessjamesdsp.R
 /**
  * Paints hand-picked theme colours onto the views themselves.
  *
- * Android has no way to give a theme arbitrary colour values at runtime - theme
- * attributes come from compiled resources - so the generated-palette path can
+ * Android has no way to give a theme arbitrary colour values at runtime (theme
+ * attributes come from compiled resources), so the generated-palette path can
  * only ever be seeded with one colour. That is fine when every role is derived,
  * but it means a hand-set Secondary, Surface or Background has nowhere to go.
  * This walks the view tree instead and applies those colours directly.
@@ -76,8 +76,8 @@ object ManualThemeTint {
 
     /**
      * The power button reports its state through isSelected rather than
-     * isChecked, so it needs its own state list - a flat colour left it looking
-     * identical whether processing was on or off.
+     * isChecked, so it needs its own state list: a flat colour would look the
+     * same whether processing was on or off.
      */
     private fun selectedList(selected: Int, unselected: Int) = ColorStateList(
         arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
@@ -139,7 +139,7 @@ object ManualThemeTint {
             is com.google.android.material.bottomappbar.BottomAppBar ->
                 (roles.bars ?: roles.background)?.let { view.setBackgroundColor(it) }
             // Settings, presets, convolver and DDC lists all draw on a
-            // RecyclerView, which is where that unsettable colour came from.
+            // RecyclerView background.
             is androidx.recyclerview.widget.RecyclerView ->
                 roles.bars?.let { view.setBackgroundColor(it) }
             is com.google.android.material.floatingactionbutton.FloatingActionButton ->
@@ -169,8 +169,8 @@ object ManualThemeTint {
                     view.trackActiveTintList = it
                 }
                 roles.tertiary?.let {
-                    // Was alpha 90, which read as a faint grey line - raised so
-                    // the colour is actually recognisable on the track.
+                    // Strong enough alpha that the colour is recognisable on
+                    // the track.
                     view.trackInactiveTintList =
                         ColorStateList.valueOf(ColorUtils.setAlphaComponent(it, 140))
                 }

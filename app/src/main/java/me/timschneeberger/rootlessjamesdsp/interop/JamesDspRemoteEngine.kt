@@ -129,19 +129,11 @@ class JamesDspRemoteEngine(
         super.close()
     }
 
-    // The three below are not sent in root mode, so their cards do nothing
-    // there. Worth being exact about why, because "unsupported" is what these
-    // comments used to say and it is not true: bassex.c, vdynbass.c and
-    // diffsurround.c are all compiled into the HAL library, which is built from
-    // the same source glob as the app's own. Nothing is missing behind them -
-    // they simply have no parameter id and no case in the dispatch.
-    //
-    // Wiring one up is the same mechanical change the maximiser just had: a
+    // Not sent in root mode, so these cards do nothing there. bassex.c,
+    // vdynbass.c and diffsurround.c are compiled into the HAL library; they only
+    // lack a parameter id and a case in the dispatch. Wiring one up takes a
     // PARAM_ constant, a sendForkEffect call here, a case in EffectParams.h and
-    // an assertion in the parameter harness. Left alone for now because it is a
-    // question of how far root mode should reach rather than a defect - but
-    // stated plainly so nobody concludes from the old wording that the code is
-    // absent. That reading is exactly what left the maximiser dead.
+    // an assertion in the parameter harness.
 
     override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean {
         return true
@@ -225,9 +217,8 @@ class JamesDspRemoteEngine(
         if (enable && set != null && !binauralMissing) {
             binauralSampleRate = set.fs
             // Only a module that knows the head set can say which one it
-            // holds. An older one refuses to answer, and taking that as "a
-            // different set" sent the whole set again on every sync, to be
-            // accepted and ignored each time.
+            // holds; an older one refuses to answer, which is not a reason to
+            // resend.
             val prev = effect.getParameterInt(30004)
             if (prev == null) {
                 Timber.w("Binaural: the root module cannot hold a head set; not sending one")
@@ -314,24 +305,20 @@ class JamesDspRemoteEngine(
     }
 
     override fun setChainOrder(order: IntArray?): Boolean {
-        // No order means the default one. This used to return without
-        // sending anything, so Reset in the processing-order dialog, or
-        // leaving V4A mode, left the HAL on the old order while the app
-        // showed the default. A single -1 is the HAL's reset marker.
+        // No order means the default one; a single -1 is the HAL's reset
+        // marker.
         val payload = if (order == null || order.isEmpty()) intArrayOf(-1) else order
         return effect.setParameterIntArray(PARAM_CHAIN_ORDER, payload) == AudioEffect.SUCCESS
     }
 
     override fun setSpectrumExtension(enable: Boolean, barkFreq: Float, strength: Float): Boolean {
-        // 26022 / 26122 in the HAL. This used to return true and send nothing,
-        // so the card did nothing in root mode while showing as working.
+        // 26022 / 26122 in the HAL.
         return sendForkEffect(PARAM_SPECTRUM_EXT, enable, floatArrayOf(barkFreq, strength))
     }
 
     override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {
-        // The mode goes as a fourth value. It used to be dropped, so root mode
-        // ignored the limiter choice, V4A-only mode's pinned mode 3 included.
-        // A module from before this ignores the fourth value.
+        // The mode goes as a fourth value; a module from before it ignores the
+        // fourth value.
         return effect.setParameterFloatArray(
             1500,
             floatArrayOf(threshold, release, postGain, limiterMode.toFloat())

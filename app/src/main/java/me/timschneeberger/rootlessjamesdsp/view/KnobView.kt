@@ -257,13 +257,9 @@ class KnobView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // A custom View that consumes touches itself never reaches
-        // View.onTouchEvent, which is where Android's disabled early-out lives.
-        // Without this, a dimmed knob still spins under the finger, still
-        // writes its preference and still re-syncs the engine while doing
-        // nothing audible - which turns the one honest signal these panels
-        // have, dimming what cannot currently work, back into the complaint it
-        // exists to prevent.
+        // A custom View that consumes touches never reaches View.onTouchEvent's
+        // disabled check, so a dimmed knob would still turn and write its
+        // preference.
         if (!isEnabled) return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {

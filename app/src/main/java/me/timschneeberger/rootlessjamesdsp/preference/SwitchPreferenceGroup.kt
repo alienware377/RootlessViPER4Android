@@ -33,7 +33,7 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
      *
      * Separate from the switch on purpose. The switch already hides the
      * parameters, but only by turning the effect off, which changes what you
-     * are hearing - no use to someone who wants a dozen effects running and a
+     * are hearing: no use to someone who wants a dozen effects running and a
      * screen they can still scroll. Defaults to expanded, so nothing moves for
      * anyone who does not go looking for it.
      *
@@ -74,7 +74,7 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
         itemView?.background = ContextCompat.getDrawable(context, R.drawable.shape_rounded_highlight)
         // Classic layout keeps every row the same colour whether the effect is
         // on or off; only the switch itself shows state. This must NOT skip the
-        // rest of binding - the switch, the expand behaviour and the row click
+        // rest of binding: the switch, the expand behaviour and the row click
         // listener all live below.
         itemView?.background?.alpha = 0
 
@@ -134,7 +134,7 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
         // appears to do nothing is worse than not showing it.
         // Nor when there is nothing in the group to fold. In classic layout the
         // output control header is selectable but keyless, with its rows as
-        // siblings rather than children, so the chevron flipped and hid nothing.
+        // siblings rather than children.
         collapseToggle?.isVisible = state && isSelectable && key != null && preferenceCount > 0
         (collapseToggle as? androidx.appcompat.widget.AppCompatImageView)?.setImageResource(
             if (collapsed) R.drawable.ic_baseline_keyboard_arrow_down_24dp
@@ -201,7 +201,7 @@ class SwitchPreferenceGroup(context: Context, attrs: AttributeSet) : PreferenceG
     private fun setChildrenVisibility(visible: Boolean) {
         // V4A-only mode has no explanation rows. Enforced here rather than once
         // at setup, because expanding a card re-shows every child and would
-        // otherwise undo it - and here it can't be missed by a card that sets
+        // otherwise undo it, and here it can't be missed by a card that sets
         // its own childVisibilityFilter.
         val hideInfo = context?.let {
             me.timschneeberger.rootlessjamesdsp.utils.V4aMode.isOn(it)

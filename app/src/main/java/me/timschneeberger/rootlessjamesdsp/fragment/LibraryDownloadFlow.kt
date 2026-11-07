@@ -53,9 +53,8 @@ import java.util.Date
  * GitHub search, the file picker and the download itself.
  *
  * Everything that touches the screen first checks the library dialog is
- * still there (the original search crash was a callback reaching for a
- * context after the dialog had closed), and every dialog opened here is
- * closed with it. The download itself is not tied to the dialog; see
+ * still there, since a callback can arrive after the dialog has closed, and
+ * every dialog opened here is closed with it. The download itself is not tied to the dialog; see
  * [LibraryDownloads].
  */
 class LibraryDownloadFlow(
@@ -204,8 +203,7 @@ class LibraryDownloadFlow(
 
     /**
      * Looks the link up first and saves it only once GitHub has confirmed the
-     * branch exists. The parked version saved "main" whenever the lookup
-     * failed, and that broken source then stayed for good.
+     * branch exists, so a failed lookup never leaves a broken source behind.
      */
     private fun addAndBrowse(ref: RepoRef, save: Boolean = true) {
         net(R.string.filelib_loading_list, { client.resolve(ref) }) { c, (branch, folder, head) ->
