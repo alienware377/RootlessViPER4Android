@@ -191,7 +191,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // No need to recreate in this stage
         recreateRecorderRequested = false
 
-        // The foreground call moved to onStartCommand: its type depends on
+        // The foreground call is made in onStartCommand: its type depends on
         // the capture method, which only the start intent says.
     }
 
@@ -790,7 +790,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             } catch (e: IOException) {
                 Timber.w(e)
                 // A closed pipe while nobody asked us to stop means the helper
-                // or Shizuku went away. Screen capture ignores this as before.
+                // or Shizuku went away. Screen capture ignores a closed source.
                 if (shizukuCapture && !isProcessorDisposing && !isServiceDisposing)
                     mainHandler.post { onShizukuCaptureEnded(getString(R.string.capture_shizuku_reason_pipe_closed)) }
             } catch (e: Exception) {
