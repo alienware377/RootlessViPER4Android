@@ -43,7 +43,7 @@ inline int toAndroid(Severity s) {
    while holding the lock the audio thread waits on. liblog alone writes
    VERBOSE, so without this check each of those calls built a string and sent
    a line to logcat; a test run on the emulator produced about 100,000 of
-   them. A tester can still turn them on for one tag with
+   them. Logging for one tag can still be turned on with
    setprop log.tag.<tag> V. */
 inline bool wouldLog(Severity s, const char* tag) {
     return s >= INFO || __android_log_is_loggable(toAndroid(s), tag, ANDROID_LOG_INFO);

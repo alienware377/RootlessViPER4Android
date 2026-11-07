@@ -257,7 +257,7 @@ LOADED=libother.so; svc_case "100" "200"; LOADED=
 grep -q "did not load" "$B/status" && [ -f "$OV" ]; ok "library not loaded: reported, nothing switched off" $?
 svc_case "100 101" "200"
 [ -f "$OV.rejected" ] && [ -f "$B/.boot_incomplete" ] && grep -q "restarted right after boot" "$B/status"; ok "factory restarted within 15s with us loaded: switched off, marker kept" $?
-grep -q "notification" "$T/notify"; ok "the tester gets a notification" $?
+grep -q "notification" "$T/notify"; ok "a notification is posted" $?
 grep -q "umount -l /vendor/etc/audio/sku_pineapple/audio_effects_config.xml" "$T/umount"; ok "our mount is taken away so the restarts stop now" $?
 svc_case "100" "200 201"
 [ -f "$OV.rejected" ]; ok "audioserver restarted within 15s: switched off" $?
