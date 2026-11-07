@@ -228,14 +228,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26124: if (on) BinauralUpmixEnable(d); else BinauralUpmixDisable(d); break;
 
-    /* The maximiser. Present in this build all along - the HAL library is
-       compiled from the same source glob as the app's, so maximizer.c has
-       always been linked in here - but with no case to reach it, and a sender
-       on the app side that returned success without sending anything. So in
-       root mode the whole card did nothing, silently, including the clip shape
-       control added to it recently.
-
-       Ten values in the order MaximizerSetParam takes them. The three integer
+    /* The maximiser. Ten values in the order MaximizerSetParam takes them. The three integer
        ones travel as floats like every other payload here and are rounded on
        arrival; only truePeak is a flag, and it arrives as 1 or 0 rather than
        through the enable id, because it is a setting rather than the effect's
@@ -251,13 +244,10 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     /* The order arrives as ints, so it is read from the raw payload rather
        than through the float view every other effect uses. */
     case 26012:
-        /* An empty order, or the app's reset marker (a single -1), puts back
-           the default. There used to be no way to reset at all: the app
-           sent nothing for a reset and an empty payload was ignored, so the
-           processing-order dialog's Reset, and leaving V4A mode, left root
-           mode on the old order. JamesDSPSetChainOrder alone will not do:
-           it skips the -1 and appends every effect in declaration order,
-           which is not the default chain. */
+        /* An empty order, or the app's reset marker (a single -1), restores
+           the default chain. JamesDSPSetChainOrder alone would skip the -1
+           and append effects in declaration order, which is not the
+           default. */
         if (fn == 0 || ((const int *)fv)[0] < 0)
             JamesDSPResetChainOrder(d);
         else

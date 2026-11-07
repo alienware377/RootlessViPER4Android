@@ -122,10 +122,8 @@ void TransientSetParam(JamesDSPLib *jdsp, float freqLow, float freqHigh,
 {
 	/* Held for the whole update. Process runs on the audio thread under this
 	   same lock, so without it a block could be filtered with half the old
-	   coefficients and half the new ones - which for a steep or resonant
-	   setting is not a glitch but a burst. The single-threaded harness cannot
-	   see this, and the one crash this project has shipped came from exactly
-	   this class of problem. */
+	   coefficients and half the new ones, which for a steep or resonant
+	   setting is not a glitch but a burst. */
 	jdsp_lock(jdsp);
 	Transient *t = &jdsp->transient;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;

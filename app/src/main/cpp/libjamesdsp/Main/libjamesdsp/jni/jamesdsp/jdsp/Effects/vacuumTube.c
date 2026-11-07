@@ -134,10 +134,10 @@ void VacuumTubeSetGain(JamesDSPLib *jdsp, double dbGain)
 	if (dbGain < -3.0)
 		dbGain = -3.0;
 	jdsp->tube.pregain = db2magf(dbGain);
-	// Partial (not full) makeup: full 1/pregain cancelled the drive completely,
-	// leaving only a vanishing amplitude-squared term - which is why the effect
-	// used to be inaudible. Compensating partially keeps loudness roughly
-	// matched while letting the saturation through.
+	// Partial (not full) makeup: full 1/pregain cancels the drive completely,
+	// leaving only a vanishing amplitude-squared term, so the effect would be
+	// inaudible. Compensating partially keeps loudness roughly matched while
+	// letting the saturation through.
 	jdsp->tube.postgain = (float)(1.0 / pow((double)jdsp->tube.pregain, 0.6));
 }
 void VacuumTubeProcess(JamesDSPLib *jdsp, size_t n)

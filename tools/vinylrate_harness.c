@@ -35,9 +35,7 @@ int main(void)
 	printf("after 44.1k refresh: fs(vinyl)=%.0f crackle/s=%.2f pop/s=%.3f click/s=%.2f sizzle/s=%.1f prickle/s=%.2f\n",
 		g.vinyl.fs, c, g.vinyl.popRate*44100, g.vinyl.clickRate*44100,
 		g.vinyl.sizzleRate*44100, g.vinyl.prickleRate*44100);
-	/* Empirical: count crackle triggers over 10 s of 44.1k audio by running the
-	   same RNG/decision sequence: simplest is measuring expected value; also
-	   compare to fresh SetParam at 44.1k. */
+	/* Compared with a fresh SetParam at 44.1 kHz. */
 	JamesDSPLib h; memset(&h, 0, sizeof(h)); h.fs = 44100.0f;
 	VinylSetParam(&h, 0, 100, 50, 100, 100, 100, 0, 100, 0, 0, 0, 100);
 	printf("fresh SetParam at 44.1k: crackle/s=%.2f\n", h.vinyl.crackleRate*44100);

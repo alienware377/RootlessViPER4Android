@@ -1,10 +1,6 @@
-// Answers "why do I hear nothing" numerically, and checks the shaper curves for
-// steps.
-//
-// The curve check drives a ramp through the real effect rather than through a
-// copy of the formula. An earlier version re-implemented the maths here, and
-// when the engine was fixed this file went on testing the old arithmetic and
-// reported a fault that no longer existed.
+// Measures how far the multiband distortion moves the signal at its default
+// settings, and checks the shaper curves for steps. The curve check drives a
+// ramp through the real effect rather than a copy of the formula.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

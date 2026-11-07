@@ -62,8 +62,7 @@ static float exciterRun(ExciterStage *s, int ch, float x)
  *
  * Each is scaled so its slope at zero is one. Without that, "amount" would be
  * a volume control that happens to distort, and switching character would jump
- * the level - which is exactly the mistake the maximiser's character control
- * was found to be making.
+ * the level.
  */
 static float exciterShape(int character, float x)
 {
@@ -77,18 +76,16 @@ static float exciterShape(int character, float x)
 		return x - (x * x * x) * (1.0f / 3.0f);
 
 	case EXCITER_TAPE:
-		/* Odd, but gentler and never quite reaching a limit - the slow
+		/* Odd, but gentler and never quite reaching a limit: the slow
 		   compression a tape gives rather than a clip. */
 		return x / (1.0f + fabsf(x));
 
 	case EXCITER_TUBE:
 		/* Asymmetric: the positive half squashes sooner than the negative one,
 		   which is where the second harmonic comes from. It has to branch on
-		   the sign to do that. The first attempt here summed two tanh terms of
-		   different steepness, which reads as asymmetric but is not - a sum of
-		   odd functions is still odd, and it measured 157 dB down on the second
-		   harmonic, which is to say none at all. Both halves keep unity slope
-		   at the origin because d/dx of tanh(kx)/k is one there whatever k is. */
+		   the sign: a sum of odd functions such as two tanh terms is still odd
+		   and makes no second harmonic. Both halves keep unity slope at the
+		   origin because d/dx of tanh(kx)/k is one there whatever k is. */
 		if (x >= 0.0f) return tanhf(x * 1.35f) / 1.35f;
 		return tanhf(x * 0.8f) / 0.8f;
 
@@ -131,10 +128,8 @@ void ExciterSetParam(JamesDSPLib *jdsp, float freq1, float freq2, float freq3,
 {
 	/* Held for the whole update. Process runs on the audio thread under this
 	   same lock, so without it a block could be filtered with half the old
-	   coefficients and half the new ones - which for a steep or resonant
-	   setting is not a glitch but a burst. The single-threaded harness cannot
-	   see this, and the one crash this project has shipped came from exactly
-	   this class of problem. */
+	   coefficients and half the new ones, which for a steep or resonant
+	   setting is not a glitch but a burst. */
 	jdsp_lock(jdsp);
 	Exciter *e = &jdsp->exciter;
 	const float fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0f;

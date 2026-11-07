@@ -712,9 +712,8 @@ static void pvFrame(PitchShift *p, int c, float ratio, float fs)
 	   Against the recent average, so it fires on a quiet passage as readily as
 	   a loud one. And against the frame's own total, because the ratio test
 	   alone is meaningless when the signal is steady: flux is then almost zero,
-	   and almost-zero divided by almost-zero crosses any threshold you like on
-	   rounding noise. That is not hypothetical - it fired continuously on a
-	   held sine and cost about 20dB of the shifted partial. A real onset moves
+	   and almost-zero divided by almost-zero crosses any threshold on rounding
+	   noise; on a held sine that cost about 20dB of the shifted partial. A real onset moves
 	   a serious fraction of the whole frame. */
 	const int transient = (p->pvFlux[c] > 1e-9f) && (flux > p->pvFlux[c] * 2.5f) &&
 	                      (flux > totalMag * 0.15f);
