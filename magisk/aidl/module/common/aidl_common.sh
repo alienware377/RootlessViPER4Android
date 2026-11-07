@@ -285,8 +285,8 @@ rv4a_prop() { sed -n "s/^$1=//p" "$2" 2>/dev/null | head -n 1; }
 # ---------------------------------------------------------------------------
 RV4A_DESC="Experimental: the RootfulViPER4Android engine for phones with the AIDL audio effect HAL. Test build."
 
-# Shown in the root manager's module list, so a tester can see what the
-# module last decided without reading any log.
+# Shown in the root manager's module list, so whoever installed it can see
+# what the module last decided without reading any log.
 rv4a_set_status() {
   echo "$2" > "$1/status"
   if [ -f "$1/module.prop" ]; then
@@ -433,7 +433,7 @@ rv4a_boot_check() {
 rv4a_log() { echo "$(date 2>/dev/null): $*" >> "$MODDIR/boot.log" 2>/dev/null; }
 
 # Our library has made the audio HAL unusable: set our config aside for the
-# next boot, take our mount away now if we can, and tell the tester.
+# next boot, take our mount away now if we can, and post a notification.
 rv4a_give_up() {
   rv4a_log "$1"
   rv4a_quarantine "$MODDIR" "$2" >> "$MODDIR/boot.log" 2>&1

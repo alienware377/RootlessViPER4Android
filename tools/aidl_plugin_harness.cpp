@@ -438,7 +438,7 @@ int main(int argc, char** argv) {
     // NDK-built plugin must, so another copy of the interface code (the
     // factory's, or audioserver's after a round trip) sees a proxy rather
     // than the object. Recorded here because the factory's destroyEffect
-    // looks effects up by that object; see DESIGN.md.
+    // looks effects up by that object; see magisk/aidl/README.md.
     check("a different copy of the interface code gets a proxy, not the object",
           aidl.remote.get() != aidl.effect.get());
     std::string hash;

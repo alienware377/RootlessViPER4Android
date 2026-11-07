@@ -1,7 +1,7 @@
 # Vendored libfmq
 
 `AidlMessageQueue` is how an AIDL effect moves audio, and it lives in
-`system/libfmq` - which, like the interface definitions, does not ship in the
+`system/libfmq`, which, like the interface definitions, does not ship in the
 NDK.
 
 Rather than reimplement the ring buffer from the grantor descriptors, the real
@@ -11,9 +11,9 @@ clean failure, which is far harder to diagnose than a build error.
 
 ## What's here
 
-- `include/fmq`, `base/fmq` - libfmq headers, unmodified
-- `EventFlag.cpp` - the one source file needed
-- `compat/` - small stand-ins for platform headers libfmq expects but which
+- `include/fmq`, `base/fmq`: libfmq headers, unmodified
+- `EventFlag.cpp`: the one source file needed
+- `compat/`: small stand-ins for platform headers libfmq expects but which
   the NDK does not provide, and `compat/FmqSupport.cpp`, the handful of
   out-of-line functions those headers call (error logging and the
   `native_handle` helpers). On the platform these live in libhidlbase and
