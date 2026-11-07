@@ -39,8 +39,7 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
     /* --- enable flags --------------------------------------------------- */
     /* XxxEnable(d, 0) only refreshes and never clears the flag, so the off
        branches have to call the Disable functions, as the rootless wrapper
-       does. 1200, 1202, 1208 and 1212 used to call Enable(d, 0) and could
-       never be switched off in root mode. */
+       does, or the effect could never be switched off in root mode. */
     case 1200: if (on) CompressorEnable(d, 1); else CompressorDisable(d); break;
     case 1201: if (on) BassBoostEnable(d); else BassBoostDisable(d); break;
     case 1202: if (on) MultimodalEqualizerEnable(d, 1); else MultimodalEqualizerDisable(d); break;
@@ -228,11 +227,11 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26124: if (on) BinauralUpmixEnable(d); else BinauralUpmixDisable(d); break;
 
-    /* The maximiser. Ten values in the order MaximizerSetParam takes them. The three integer
-       ones travel as floats like every other payload here and are rounded on
-       arrival; only truePeak is a flag, and it arrives as 1 or 0 rather than
-       through the enable id, because it is a setting rather than the effect's
-       own switch. */
+    /* The maximiser. Ten values in the order MaximizerSetParam takes them.
+       The three integer ones travel as floats like every other payload here
+       and are rounded on arrival; only truePeak is a flag, and it arrives as
+       1 or 0 rather than through the enable id, because it is a setting
+       rather than the effect's own switch. */
     case 26019:
         if (fn >= 10)
             MaximizerSetParam(d, pRound(fv[0]), fv[1], fv[2], fv[3],
@@ -254,10 +253,10 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
             JamesDSPSetChainOrder(d, (const int *)fv, (int)fn);
         break;
 
-    /* --- upstream ids this HAL used to drop ------------------------------
+    /* --- upstream ids -------------------------------------------------
        These are not fork additions; they are the app's own EQ, dynamics and
-       output stage. Leaving them unhandled meant the root build silently lost
-       the equaliser, the compander and the limiter while reporting success. */
+       output stage. Left unhandled, the root build would lose the equaliser,
+       the compander and the limiter while reporting success. */
     case 1500:
         if (fn >= 3)
         {

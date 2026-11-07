@@ -36,7 +36,7 @@ class LocalNamesTest {
 
     @Test
     fun `a different file under a name the library already uses gets the folder tag`() {
-        // The old code skipped it as "already downloaded"
+        // Same name, different size: not "already downloaded"
         val plans = LocalNames.plan(listOf(f("IRS/Hall.irs", 7000)), mapOf("hall.irs" to 5000L), "u/r")
         assertEquals("Hall (IRS).irs", plans[0].localName)
     }
@@ -55,7 +55,7 @@ class LocalNamesTest {
         assertEquals(listOf("HD 650.wav", "HD 650 (crinacle).wav"),
             LocalNames.plan(files, emptyMap(), "u/AutoEq").map { it.localName })
         // Only the first was downloaded. The second must still be offered,
-        // under the same name as before; it used to match the first one's file.
+        // under the same name as before, not matched to the first one's file.
         val second = LocalNames.plan(files, mapOf("hd 650.wav" to 4000L), "u/AutoEq")
         assertTrue(second[0].alreadyHave)
         assertEquals("HD 650 (crinacle).wav", second[1].localName)
