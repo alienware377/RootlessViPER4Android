@@ -41,8 +41,9 @@ import timber.log.Timber
  * status channel, which is created silent and hidden.
  *
  * The foreground type is dataSync, whose permission the app already declares
- * for backups, so this service adds no new permission. Android 15 limits dataSync for apps that target it; this app targets
- * 14, and moving the target up means switching this service to specialUse.
+ * for backups, so this service adds no new permission. Android 15 limits
+ * dataSync for apps that target it; this app targets 14, and moving the target
+ * up means switching this service to specialUse.
  *
  * Never runs alongside capture mode: capture mode mutes each app with the
  * same kind of effect at the same priority, and two of them on one session

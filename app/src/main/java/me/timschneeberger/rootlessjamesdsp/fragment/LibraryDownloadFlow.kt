@@ -54,8 +54,8 @@ import java.util.Date
  *
  * Everything that touches the screen first checks the library dialog is
  * still there, since a callback can arrive after the dialog has closed, and
- * every dialog opened here is closed with it. The download itself is not tied to the dialog; see
- * [LibraryDownloads].
+ * every dialog opened here is closed with it. The download itself is not tied
+ * to the dialog; see [LibraryDownloads].
  */
 class LibraryDownloadFlow(
     private val fragment: Fragment,

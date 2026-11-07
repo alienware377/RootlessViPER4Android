@@ -42,8 +42,8 @@ object RubberBandInstaller {
 
     /**
      * What each architecture's file must hash to, so a truncated download, an
-     * error page or a substituted file is never handed to dlopen. A mismatch is treated
-     * as a failed download, not as a file to keep.
+     * error page or a substituted file is never handed to dlopen. A mismatch is
+     * treated as a failed download, not as a file to keep.
      */
     private val CHECKSUMS = mapOf(
         "arm64-v8a" to "373884a604ec4b130b854230b79f2253d310a453af299c27ca6fcb5ad2ba63c1",

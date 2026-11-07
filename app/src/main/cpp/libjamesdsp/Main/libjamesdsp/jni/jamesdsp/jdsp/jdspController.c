@@ -280,8 +280,8 @@ unsigned int next_pow_2(unsigned int x)
 // block is shorter than n, but below 44.1 kHz it is longer: 4096 frames at
 // 8 kHz become 24576 at 48 kHz, so sizing the areas for n alone would make the
 // two channels overlap below 44.1 kHz and run off the end of the allocation at
-// 12 kHz and under. The few spare samples cover the
-// polyphase filters' phase carry from one block to the next.
+// 12 kHz and under. The few spare samples cover the polyphase filters' phase
+// carry from one block to the next.
 static size_t JamesDSPASRCWorkLength(JamesDSPLib *jdsp, size_t n)
 {
 	double ratio = (double)jdsp->fs / (double)jdsp->trueSampleRate;
@@ -1824,8 +1824,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	}
 	JamesDSPRefreshBlob(jdsp, jdsp->fs);
 	// The crossfeed's HRTF blobs were just resampled, so its convolvers need
-	// building again the next time it is enabled. Enable used to rebuild every
-	// time whether needed or not, which covered this by accident.
+	// building again the next time it is enabled.
 	jdsp->crossfeedForceRefresh = 1;
 	if (forceRefresh)
 	{
@@ -1833,8 +1832,8 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 		jdsp->ddcForceRefresh = 1;
 		DDCEnable(jdsp, jdsp->ddcEnabled);
 		/* The crossfeed and both EQs take the lock themselves, and it is
-		   not recursive: called here they hung this thread for good, and the
-		   audio thread with it. They are flagged here and run after the
+		   not recursive: called here they would hang this thread for good,
+		   and the audio thread with it. They are flagged here and run after the
 		   unlock below. The stereo widening uses its lock-free design. */
 		jdsp->crossfeedForceRefresh = 1;
 		jdsp->arbMagForceRefresh = 1;

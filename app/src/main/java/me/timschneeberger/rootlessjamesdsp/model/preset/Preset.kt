@@ -191,9 +191,9 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
                 // The card layout is the user's, not the preset's. A preset
                 // carries one so it can still be a complete snapshot for backup
                 // and sharing, but restoring it wholesale would replace the
-                // user's own arrangement. The only thing
-                // it is allowed to do is reveal a card it actually switches on,
-                // so a preset cannot turn on an effect the user then cannot see.
+                // user's own arrangement. The only thing it is allowed to do is
+                // reveal a card it actually switches on, so a preset cannot turn
+                // on an effect the user then cannot see.
                 if(f.name == FILE_EFFECT_LAYOUT) {
                     Timber.d("Keeping the current card layout; preset layout not applied")
                     return@next

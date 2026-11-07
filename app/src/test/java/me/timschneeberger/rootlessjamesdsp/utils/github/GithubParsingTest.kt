@@ -38,7 +38,7 @@ class GithubParsingTest {
     fun `everything after tree is kept so a slash branch survives`() {
         assertEquals(RepoRef("u/r", "feature/x/some/folder"),
             RepoInput.parse("https://github.com/u/r/tree/feature/x/some/folder"))
-        // The old parser cut this to the branch "feature" and lost the folder
+        // Every split point is a candidate, not only the first segment
         assertEquals(
             listOf("feature" to "x/some/folder", "feature/x" to "some/folder",
                 "feature/x/some" to "folder", "feature/x/some/folder" to ""),
@@ -138,7 +138,7 @@ class GithubParsingTest {
         assertEquals(5, t.emptyDropped)
         assertTrue(t.files.none { it.size == 0L })
         assertTrue(t.files.none { it.path.endsWith(".md") || it.path.endsWith(".zip") })
-        // Same name in different folders: both kept (the old code kept one)
+        // Same name in different folders: both kept
         val byName = t.files.groupBy { it.name.lowercase() }
         assertTrue(byName.values.count { it.size > 1 } >= 3)
         // Names outside ASCII come through untouched

@@ -1,7 +1,7 @@
 // Can the EQ curves change while a block size change rebuilds their convolvers?
 //
 //   NDK=$LOCALAPPDATA/Android/Sdk/ndk/<ver>/toolchains/llvm/prebuilt/windows-x86_64/bin
-//   Compile every engine source (the tools/cc86.rsp list) with
+//   Compile every engine source (jdsp/*.c, Effects/**/*.c, generalDSP/*.c) with
 //       $NDK/x86_64-linux-android29-clang -O2 -w -ffp-contract=off -fPIC -c
 //   with the real jdspController.c, so the real mutex (no lockstub), then
 //   $NDK/x86_64-linux-android29-clang -O2 -w -I $J tools/eqrace_harness.c \

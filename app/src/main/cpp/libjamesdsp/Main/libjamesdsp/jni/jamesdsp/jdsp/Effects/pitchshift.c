@@ -713,8 +713,8 @@ static void pvFrame(PitchShift *p, int c, float ratio, float fs)
 	   a loud one. And against the frame's own total, because the ratio test
 	   alone is meaningless when the signal is steady: flux is then almost zero,
 	   and almost-zero divided by almost-zero crosses any threshold on rounding
-	   noise; on a held sine that cost about 20dB of the shifted partial. A real onset moves
-	   a serious fraction of the whole frame. */
+	   noise; on a held sine that costs about 20dB of the shifted partial. A
+	   real onset moves a serious fraction of the whole frame. */
 	const int transient = (p->pvFlux[c] > 1e-9f) && (flux > p->pvFlux[c] * 2.5f) &&
 	                      (flux > totalMag * 0.15f);
 	if (transient) p->pvTransients++;
@@ -1054,9 +1054,8 @@ void PitchShiftDisable(JamesDSPLib *jdsp)
 	SignalsmithDestroy(ss);
 }
 
-// A sample rate change used to leave pvFs at whatever it was built for, which
-// quietly put every partial in the wrong place, and would leave Rubber Band
-// running at the wrong rate entirely. Called with the lock already held, from
+// Follows a sample rate change: a stale pvFs puts every partial in the wrong
+// place, and Rubber Band would run at the wrong rate entirely. Called with the lock already held, from
 // JamesDSPSetSampleRate and nowhere else.
 void PitchShiftRefresh(JamesDSPLib *jdsp)
 {
