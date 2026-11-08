@@ -29,15 +29,17 @@ clean failure, which is far harder to diagnose than a build error.
 | `utils/Log.h` | routes `ALOG*` to the NDK's liblog |
 | `android-base/logging.h` | `LOG(x) <<` on liblog. `LOG(FATAL)` logs but does not abort: this runs inside the audio HAL, where an abort stops every sound on the device |
 | `utils/SystemClock.h` | used only for relative timeouts, so the monotonic clock suffices |
-| `cutils/ashmem.h` | implemented with **memfd** |
+| `cutils/ashmem.h` | `/dev/ashmem` or memfd, chosen as libcutils chooses |
 
 `android-base/unique_fd.h` and `macros.h` are vendored as-is from libbase
 rather than shimmed, since ownership semantics are worth having exactly right.
 
 ### On the ashmem shim
 
-`/dev/ashmem` is not reachable from an unprivileged process on modern Android,
-and libcutils itself moved to `memfd` for the same reason, so this follows the
-platform rather than working around it. The descriptor is sealed against
-resizing, matching what the platform does, so what the framework maps behaves
-identically.
+The queues are shared with audioserver, so they should be the same kind of
+memory the platform's own effects hand it. libcutils uses memfd when the
+vendor API level is 202604 or later (Android 17 vendors) or when
+`sys.use_memfd` is true, and `/dev/ashmem` otherwise, which is the default on
+Android 15 and 16. The shim makes the same choice and falls back to the other
+kind if the first cannot be created. A memfd is sealed against resizing, as
+the platform seals it.
