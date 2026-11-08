@@ -19,6 +19,7 @@ extern "C" {
 int32_t EffectCreate(const effect_uuid_t *uuid, int32_t sessionId, int32_t ioId,
                      effect_handle_t *pHandle);
 int32_t EffectRelease(effect_handle_t handle);
+int32_t EffectGetDescriptor(const effect_uuid_t *uuid, effect_descriptor_t *pDescriptor);
 }
 
 /* The implementation uuid, the same one the legacy descriptor carries. */
@@ -122,6 +123,24 @@ int32_t rv4a_legacy_process(void *h, float *in, float *out, size_t frames)
     ob.frameCount = frames;
     ob.f32 = out;
     return (*e)->process(e, &ib, &ob);
+}
+
+const char *rv4a_legacy_name(void)
+{
+    static char name[EFFECT_STRING_LEN_MAX];
+    static bool done = false;
+    if (!done)
+    {
+        effect_descriptor_t d;
+        memset(&d, 0, sizeof(d));
+        if (EffectGetDescriptor(&kRv4aUuid, &d) == 0 && d.name[0])
+            memcpy(name, d.name, sizeof(name));
+        else
+            strcpy(name, "RootlessViPER4Android engine");
+        name[sizeof(name) - 1] = 0;
+        done = true;
+    }
+    return name;
 }
 
 size_t rv4a_legacy_param_header_size(void)

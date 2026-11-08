@@ -107,8 +107,11 @@ const AudioUuid& implUuid() {
     return u;
 }
 
-/* The app recognises its own engine by "RootlessViPER4Android" in the name,
-   and treats any name containing "v3" as an engine too old to drive. */
+/* The app recognises its own engine by "RootlessViPER4Android" in the name
+   and reads the engine version from "engine v<N>", so the name is the legacy
+   effect's own, with " AIDL" after it to tell the two paths apart in logs and
+   dumps. rv4a_legacy_name is only called from inside this function-local
+   static's initialiser, which C++ runs exactly once. */
 const Descriptor& rv4aDescriptor() {
     static const Descriptor d = [] {
         Descriptor desc;
@@ -123,7 +126,7 @@ const Descriptor& rv4aDescriptor() {
         desc.common.flags.offloadIndication = false;
         desc.common.cpuLoad = 10;
         desc.common.memoryUsage = 1;
-        desc.common.name = "RootlessViPER4Android engine v4 AIDL";
+        desc.common.name = std::string(rv4a_legacy_name()) + " AIDL";
         desc.common.implementor = "alienware377";
         return desc;
     }();
