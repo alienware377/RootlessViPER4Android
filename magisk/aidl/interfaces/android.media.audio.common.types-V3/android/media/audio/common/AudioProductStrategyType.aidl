@@ -13,75 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * Defines the product strategies that are used by the default audio policy
- * engine to determine audio routing.
- *
- * {@hide}
- */
-@Backing(type="byte")
-@VintfStability
+/* @hide */
+@Backing(type="byte") @VintfStability
 enum AudioProductStrategyType {
-    /**
-     * Strategy indicating that there is no corresponding product strategy
-     * defined.
-     *
-     * Value reserved for system use only. HALs must never return this value to
-     * the system or accept it from the system.
-     */
-    SYS_RESERVED_NONE = -1,
-    /**
-     * Strategy corresponding to media usages (this is normally media playback,
-     * gaming, and assistant usages).
-     */
-    MEDIA = 0,
-    /**
-     * Strategy corresponding to voice communication usages.
-     */
-    PHONE = 1,
-    /**
-     * Strategy corresponding to ringtone and alarm usages.
-     */
-    SONIFICATION = 2,
-    /**
-     * Strategy corresponding to notification usages.
-     */
-    SONIFICATION_RESPECTFUL = 3,
-    /**
-     * Dual-Tone Multi-Frequency (DTMF a.k.a. touch tone) is the strategy
-     * corresponding to voice communication signalling usages.
-     */
-    DTMF = 4,
-    /**
-     * Strategy corresponding to the use case where sound must be externally
-     * audible (i.e. for sounds subject to regulatory behaviors in some
-     * countries, such as camera shutter sound).
-     */
-    ENFORCED_AUDIBLE = 5,
-    /**
-     * Strategy corresponding to the usages where audio streams are exclusively
-     * transmitted through the speaker of the device.
-     */
-    TRANSMITTED_THROUGH_SPEAKER = 6,
-    /**
-     * Strategy corresponding to accessibility usages.
-     */
-    ACCESSIBILITY = 7,
-    /**
-     * Strategy corresponding to rerouting usages.
-     *
-     * Value reserved for system use only. HALs must never return this value to
-     * the system or accept it from the system.
-     */
-    SYS_RESERVED_REROUTING = 8,
-    /**
-     * Strategy corresponding to call assistant usages.
-     *
-     * Value reserved for system use only. HALs must never return this value to
-     * the system or accept it from the system.
-     */
-    SYS_RESERVED_CALL_ASSISTANT = 9,
+  SYS_RESERVED_NONE = (-1) /* -1 */,
+  MEDIA = 0,
+  PHONE = 1,
+  SONIFICATION = 2,
+  SONIFICATION_RESPECTFUL = 3,
+  DTMF = 4,
+  ENFORCED_AUDIBLE = 5,
+  TRANSMITTED_THROUGH_SPEAKER = 6,
+  ACCESSIBILITY = 7,
+  SYS_RESERVED_REROUTING = 8,
+  SYS_RESERVED_CALL_ASSISTANT = 9,
 }

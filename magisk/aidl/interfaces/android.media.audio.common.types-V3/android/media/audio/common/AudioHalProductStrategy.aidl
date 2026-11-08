@@ -13,67 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioHalAttributesGroup;
-import android.media.audio.common.AudioProductStrategyType;
-
-/**
- * AudioHalProductStrategy is a grouping of AudioHalAttributesGroups that will
- * share the same audio routing and volume policy.
- *
- * {@hide}
- */
-@SuppressWarnings(value={"redundant-name"}) // for VENDOR_STRATEGY*
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @SuppressWarnings(value={"redundant-name"}) @VintfStability
 parcelable AudioHalProductStrategy {
-    @VintfStability
-    @Backing(type="int")
-    enum ZoneId {
-        /**
-         * Value indicating that there is no explicit zone associated to the product strategy
-         * It is the case for non-automotive products or for default zone for automotive.
-         */
-        DEFAULT = 0,
-    }
-    /**
-     * Defines the start of the vendor-defined product strategies
-     */
-    const int VENDOR_STRATEGY_ID_START = 1000;
-    /**
-     * Identifies the product strategy with a predefined constant. Vendors
-     * using the default audio policy engine must use AudioProductStrategyType.
-     * Vendors using the Configurable Audio Policy (CAP) engine must number
-     * their strategies starting at VENDOR_STRATEGY_ID_START.
-     */
-    int id = AudioProductStrategyType.SYS_RESERVED_NONE;
-    /**
-     * This is the list of use cases that follow the same routing strategy.
-     */
-    AudioHalAttributesGroup[] attributesGroups;
-    /**
-     * Name of the strategy. Nullable for backward compatibility. If null, id
-     * are assigned by the audio policy engine, ensuring uniqueness.
-     *
-     * With complete engine configuration AIDL migration, strategy ids are
-     * preallocated (from `VENDOR_STRATEGY_ID_START` to
-     * `VENDOR_STRATEGY_ID_START+39`). A human readable name must be
-     * defined uniquely (to make dump/debug easier) for all strategies and
-     * must not be null for any.
-     */
-    @nullable @utf8InCpp String name;
-     /**
-      * Audio zone id can be used to independently manage audio routing and volume for different
-      * audio device configurations.
-      * In automotive for example, audio zone id can be used to route different user id to different
-      * audio zones. Thus providing independent audio routing and volume management for each user
-      * in the car.
-      * Note:
-      * 1/ Audio zone id must begin at DEFAULT and increment respectively from DEFAULT
-      * (i.e. DEFAULT + 1...).
-      * 2/ Audio zone id can be held by one or more product strategy(ies).
-      */
-    int zoneId = ZoneId.DEFAULT;
+  int id = android.media.audio.common.AudioProductStrategyType.SYS_RESERVED_NONE /* -1 */;
+  android.media.audio.common.AudioHalAttributesGroup[] attributesGroups;
+  const int VENDOR_STRATEGY_ID_START = 1000;
 }
