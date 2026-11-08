@@ -126,8 +126,9 @@ find_disabled() {
           grep -q "$LIB_NAME {" "$f" || bad=1
           # Braces must balance and must never close below zero. One stray
           # brace closes a section early, and everything after it is lost,
-          # including effects that have nothing to do with us.
-          awk '{ n += gsub(/{/,"{") - gsub(/}/,"}"); if (n < 0) exit 1 } END { exit (n != 0) }' "$f" || bad=1
+          # including effects that have nothing to do with us. Bracketed:
+          # busybox awk refuses a bare { as a pattern and fails the file.
+          awk '{ n += gsub(/[{]/, "{") - gsub(/[}]/, "}"); if (n < 0) exit 1 } END { exit (n != 0) }' "$f" || bad=1
           ;;
       esac
       [ "$(wc -c < "$f" 2>/dev/null || echo 0)" -gt 100 ] || bad=1

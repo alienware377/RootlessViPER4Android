@@ -87,8 +87,10 @@ validate_conf() {
   grep -q "$LIB_NAME {" "$1" &&
   grep -q "soundfx" "$1" &&
   # Braces must balance, and must never close below zero on the way: a stray
-  # brace would silently truncate the effects list.
-  awk '{ n += gsub(/{/,"{") - gsub(/}/,"}"); if (n < 0) exit 1 } END { exit (n != 0) }' "$1" &&
+  # brace would silently truncate the effects list. Bracketed, because a bare
+  # { is not a valid pattern to busybox awk, which is the awk every root
+  # manager runs this with: it fails every file instead.
+  awk '{ n += gsub(/[{]/, "{") - gsub(/[}]/, "}"); if (n < 0) exit 1 } END { exit (n != 0) }' "$1" &&
   [ "$(wc -c < "$1")" -gt 100 ]
 }
 
