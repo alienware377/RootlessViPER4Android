@@ -35,7 +35,7 @@ case "$ROOT_IMPL" in
   *)        ROOT_VER="${MAGISK_VER:-}" ;;
 esac
 
-ui_print "- RootlessViPER4Android AIDL engine (experimental test build)"
+ui_print "- RootfulViPER4Android AIDL engine (experimental test build)"
 ui_print "- $(rv4a_getprop ro.product.model), Android $(rv4a_getprop ro.build.version.release) (API $API)"
 ui_print "- Root: $ROOT_IMPL $ROOT_VER"
 

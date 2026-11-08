@@ -270,6 +270,12 @@ sed 's|</libraries>|    <library name="jdsp" path="libjamesdsp.so"/>\n    </libr
 refused "a config that already lists our uuid is refused" uuid "$R" "$T/d1.props" "already lists this effect"
 R="$T/d7"; mkvintf "$R/vendor/etc/vintf/manifest.xml" 4; mkdir -p "$R/vendor/etc"; cp "$T/min.xml" "$R/vendor/etc/audio_effects_config.xml"; mkfactory "$R" /vendor/bin/hw/x ""
 refused "an unusual layout is refused" minified "$R" "$T/d1.props" "laid out"
+R="$T/d10"; mkvintf "$R/vendor/etc/vintf/manifest.xml" 4; mkfactory "$R" /vendor/bin/hw/x ""
+mkdir -p "$R/vendor/odm/etc"; ln -s vendor/odm "$R/odm"; cp "$T/min.xml" "$R/vendor/odm/etc/audio_effects_config.xml"
+mkcfg "$R/vendor/etc/audio_effects_config.xml"
+expect "primary through the /odm link is named by its real path" \
+  "$(RV4A_ROOT=$R RV4A_PROPS=$T/d1.props run 'rv4a_primary_config ""')" /vendor/odm/etc/audio_effects_config.xml
+refused "an unusual layout in the primary behind /odm is refused, not skipped" odmlink "$R" "$T/d1.props" "laid out"
 R="$T/d8"; mkcfg "$R/vendor/etc/audio_effects_config.xml"; mkfactory "$R" /vendor/bin/hw/x ""
 refused "no version from anywhere is refused" noversion "$R" "$T/d1.props" "Could not tell"
 NO_FACTORY=1 HIDL=1 refused "an HIDL phone is sent to the normal module" hidl "$T/d1" "$T/d1.props" "older (HIDL)"
