@@ -78,10 +78,12 @@ Built and verified against **Magisk**. The module format is understood by
 **KernelSU**, **KernelSU Next** and **APatch** too, and the installer adapts its
 recovery advice to whichever it finds.
 
-One caveat worth knowing before you try: on KernelSU and APatch, mounting files
-into `/vendor` and `/system` can require a **metamodule**. If the module
-installs cleanly but the effect never appears, check that first. It is the
-usual cause, and it is reported for other audio modules as well.
+**KernelSU 3.0 and later, and APatch 11219 and later, only mount module files
+through a metamodule** such as meta-overlayfs. Without one the module would
+install cleanly and the engine would never appear, so the installer refuses
+and says what to install. Install the metamodule first, reboot, then install
+this module. It also refuses KernelSU's **late-load** mode, which starts after
+the audio system has already read its list of effects, and APatch's lite mode.
 
 ## If the device won't boot
 

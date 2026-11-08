@@ -9,6 +9,7 @@
 SKIPUNZIP=0
 
 RV4A_ROOT="${RV4A_ROOT:-}"
+. "$MODPATH/common/root_manager.sh"
 . "$MODPATH/common/patch_audio_config.sh"
 rm -f "$MODPATH/install.log"
 
@@ -16,15 +17,9 @@ rm -f "$MODPATH/install.log"
 API=$(getprop ro.build.version.sdk)
 case "$API" in ''|*[!0-9]*) API=0 ;; esac
 
-if [ -d /data/adb/ksu ] || [ -n "$KSU" ]; then
-  ROOT_IMPL="KernelSU"
-elif [ -d /data/adb/ap ] || [ -n "$APATCH" ]; then
-  ROOT_IMPL="APatch"
-else
-  ROOT_IMPL="Magisk"
-fi
+ROOT_IMPL="$(root_impl)"
 say "- Phone: $(getprop ro.product.model), Android $(getprop ro.build.version.release) (API $API)"
-say "- Root: $ROOT_IMPL"
+say "- Root: $ROOT_IMPL $(root_version "$ROOT_IMPL")"
 
 # A module that disabled itself after two bad boots keeps that flag across an
 # upgrade, so clear it here or the new build installs switched off.
@@ -37,6 +32,51 @@ if [ -f "$OLD/disable" ]; then
       tail -3 | while read -r l; do say "  was: $l"; done
   fi
 fi
+
+# --- will the manager put our files where the audio HAL looks? ------------
+# Checked before anything is staged: on these setups the install would
+# otherwise succeed and the engine would simply never appear.
+if late_load; then
+  say " "
+  say "! KernelSU is running in late-load mode. It starts after"
+  say "  the phone has booted, and by then the audio system has"
+  say "  already read its list of effects, so the engine cannot"
+  say "  be added to it in this mode. Rootless mode still works."
+  abort "! Aborting rather than installing something inert"
+fi
+
+case "$ROOT_IMPL" in
+  KernelSU|APatch)
+    NEED_META="$(needs_metamodule "$ROOT_IMPL")"
+    META="$(metamodule_state)"; META_OK=$?
+    if [ "$META_OK" = 0 ]; then
+      say "- Metamodule: $META"
+    elif [ "$NEED_META" = yes ]; then
+      say " "
+      say "! This $ROOT_IMPL only mounts module files through a"
+      say "  metamodule, and none is active ($META)."
+      say "  Without one this module would install, but the engine"
+      say "  would never reach the audio system. Install a metamodule"
+      say "  such as meta-overlayfs, reboot, then install this again."
+      abort "! Aborting rather than installing something inert"
+    elif [ "$NEED_META" = unknown ]; then
+      case "$ROOT_IMPL" in KernelSU) FROM="KernelSU 3" ;; *) FROM="APatch 11219" ;; esac
+      say "- Metamodule: $META. Could not tell which $ROOT_IMPL"
+      say "  version this is. $FROM and later need a metamodule"
+      say "  (such as meta-overlayfs); without one the engine will not"
+      say "  appear after the reboot."
+    else
+      say "- Metamodule: $META (not needed by this version)"
+      if [ "$ROOT_IMPL" = APatch ] && apatch_lite; then
+        say " "
+        say "! APatch is in lite mode, which does not mount module"
+        say "  files, so the engine would never reach the audio system."
+        say "  Turn lite mode off in APatch, reboot, then install again."
+        abort "! Aborting rather than installing something inert"
+      fi
+    fi
+    ;;
+esac
 
 case "$ARCH" in
   arm64) ABI_DIR="arm64-v8a";   LIBDIR="lib64" ;;
