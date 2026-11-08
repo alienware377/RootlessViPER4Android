@@ -1,8 +1,9 @@
 #!/system/bin/sh
-# Runs once Android is up. Clears the boot marker only when boot completed
-# AND the audio HAL and audioserver stayed up with our library in them, then
-# keeps watching for a crash loop for the rest of this boot (see
-# rv4a_service_check in common/aidl_common.sh).
+# Watches the audio HAL from the late_start stage on: the factory must
+# register, and the HAL and audioserver must not restart three times in three
+# minutes. Once boot has completed and things are quiet, checks that our
+# library is loaded and clears the boot marker. See rv4a_service_check in
+# common/aidl_common.sh.
 
 MODDIR=${0%/*}
 [ -n "$MODDIR" ] && [ -d "$MODDIR" ] || exit 0

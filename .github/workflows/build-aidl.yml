@@ -57,9 +57,10 @@ jobs:
           path: build/aidl/libs
 
       # The installer and boot scripts against sample device trees: VINTF
-      # manifests, Qualcomm sku folders, CRLF configs, Pixel's APEX-only
-      # layout, conflicting modules, system updates, the two-strike watchdog
-      # and crash loop detection. Run with dash, then with busybox's own sh,
+      # manifests and the factory's own version answer, Qualcomm sku folders,
+      # Samsung _sec configs, CRLF and mixed line endings, Pixel's missing
+      # config, KernelSU without a metamodule, conflicting modules, system
+      # updates, the two-strike watchdog and crash loop detection. Run with dash, then with busybox's own sh,
       # awk, sed and grep, which is what Magisk and KernelSU run them with.
       - name: Test the module scripts
         run: |

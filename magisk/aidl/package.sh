@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Packages the experimental AIDL module from libraries built by build.sh.
 #
-#   magisk/aidl/package.sh <libs dir> <output zip> [abis]
+#   magisk/aidl/package.sh <libs dir> <output zip> [abis] [versions]
 #
-# The zip holds every effect HAL version's library for each ABI; the
-# installer copies only the one matching the phone and deletes the rest.
+# By default the zip holds every effect HAL version's library for each ABI;
+# the installer copies only the one matching the phone and deletes the rest.
+# With versions (e.g. "3") it holds only those, and refuses a phone that
+# needs another.
 # This is never part of the normal rv4a_engine release module.
 set -euo pipefail
 
@@ -12,12 +14,13 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 LIBS="$1"
 ZIP="$2"
 ABIS="${3:-arm64-v8a}"
+VERSIONS="${4:-2 3 4}"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 cp -r "$HERE/module/." "$STAGE/"
 for abi in $ABIS; do
-  for v in 2 3 4; do
+  for v in $VERSIONS; do
     f="$LIBS/$abi/librv4a_aidl_v$v.so"
     [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }
     mkdir -p "$STAGE/libs/$abi"
