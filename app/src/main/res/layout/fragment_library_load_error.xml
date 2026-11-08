@@ -23,6 +23,7 @@
                 tools:ignore="ContentDescription" />
 
             <TextView
+                android:id="@+id/header"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginBottom="16dp"
@@ -32,6 +33,7 @@
 
 
             <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:id="@+id/loadFailCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackground="?attr/colorErrorContainer"
@@ -46,6 +48,17 @@
                 app:titleText="@string/load_fail_arch_card_title"
                 app:bodyText="@string/load_fail_arch_card"
                 app:cardMargin="8dp"/>
+
+            <me.timschneeberger.rootlessjamesdsp.view.Card
+                android:id="@+id/aidlIssueNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                app:titleText="@string/load_fail_aidl_issue_card_title"
+                app:bodyText="@string/load_fail_aidl_issue_card"
+                app:cardMargin="8dp" />
 
             <me.timschneeberger.rootlessjamesdsp.view.Card
                 android:id="@+id/rootlessNotice"
