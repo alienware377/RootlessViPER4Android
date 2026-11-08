@@ -13,30 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * AudioHalCapCriterion is a wrapper for a CriterionType and its default value.
- * This is to be used exclusively for the Configurable Audio Policy (CAP) engine
- * configuration.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioHalCapCriterion {
-    @utf8InCpp String name;
-    /**
-     * Used to map the AudioHalCapCriterion to an AudioHalCapCriterionType with
-     * the same name.
-     */
-    @utf8InCpp String criterionTypeName;
-    /**
-     * This is the default value of a criterion represented as a string literal.
-     * An empty string must be used for inclusive criteria (i.e. criteria that
-     * are used to represent a bitfield). The client must never attempt to parse
-     * the value of this field.
-     */
-    @utf8InCpp String defaultLiteralValue;
+  @utf8InCpp String name;
+  @utf8InCpp String criterionTypeName;
+  @utf8InCpp String defaultLiteralValue;
 }

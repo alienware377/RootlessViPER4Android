@@ -13,36 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioDeviceType;
-
-/**
- * AudioHalCapCriterionType contains a criterion's possible numerical values
- * and their corresponding string literal representations. This is to be used
- * exclusively for the Configurable Audio Policy (CAP) engine configuration.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioHalCapCriterionType {
-    /**
-     * Name is used to associate an AudioHalCapCriterionType with an
-     * AudioHalCapCriterion.
-     */
-    @utf8InCpp String name;
-    /**
-     * If true, indicates that the criterion type supports more than one value
-     * at a time (e.g. a criterion type that represents a mask/bitfield).
-     * Otherwise, the criterion type can only have one value at a time.
-     */
-    boolean isInclusive;
-    /**
-     * List of all possible criterion values represented as human-readable
-     * string literals. These strings must only contain alphanumeric characters,
-     * and the client must never attempt to parse them.
-     */
-    @utf8InCpp String[] values;
+  @utf8InCpp String name;
+  boolean isInclusive;
+  @utf8InCpp String[] values;
 }

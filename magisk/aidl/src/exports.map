@@ -1,0 +1,12 @@
+/* The effect factory dlsyms exactly these three. Everything else stays local
+   to the library, so our private copies of the interface code, AOSP's base
+   classes, libc++ and the legacy effect cannot bind to, or be bound by, the
+   factory's own. */
+{
+  global:
+    createEffect;
+    queryEffect;
+    destroyEffect;
+  local:
+    *;
+};

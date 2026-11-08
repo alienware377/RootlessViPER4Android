@@ -13,39 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-/**
- * Structure providing dynamic information on a microphone. This information
- * changes between recording sessions.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable MicrophoneDynamicInfo {
-    /**
-     * Unique alphanumeric id for the microphone. It must match the id of one of
-     * the 'MicrophoneInfo' entries returned by audio HAL method
-     * 'IModule.getMicrophones'.
-     */
-    @utf8InCpp String id;
-
-    @VintfStability
-    @Backing(type="int")
-    enum ChannelMapping {
-        /** Channel not used. */
-        UNUSED = 0,
-        /** Channel is used and the signal is not processed. */
-        DIRECT = 1,
-        /** Channel is used and the signal has some processing. */
-        PROCESSED = 2,
-    }
-    /**
-     * The vector is indexes by zero-based channels of the microphone, thus the
-     * element '0' corresponds to the first channel, '1' is the second, etc. The
-     * vector must contain at least 1 element.
-     */
-    ChannelMapping[] channelMapping;
+  @utf8InCpp String id;
+  android.media.audio.common.MicrophoneDynamicInfo.ChannelMapping[] channelMapping;
+  @Backing(type="int") @VintfStability
+  enum ChannelMapping {
+    UNUSED = 0,
+    DIRECT = 1,
+    PROCESSED = 2,
+  }
 }
