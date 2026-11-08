@@ -245,16 +245,24 @@ rv4a_config_dirs() {
   echo /system/etc
 }
 
-# The one file AOSP's order says the factory reads. Empty when there is none.
+# A device path with its symlinks resolved (/odm/etc/x -> /vendor/odm/etc/x
+# where /odm links into /vendor), so one file always has one name.
+rv4a_real_path() {
+  rp="$(readlink -f "$RV4A_ROOT$1" 2>/dev/null)"; rp="${rp#$RV4A_ROOT}"
+  echo "${rp:-$1}"
+}
+
+# The one file AOSP's order says the factory reads, by its real path, as
+# rv4a_candidate_configs lists it. Empty when there is none.
 rv4a_primary_config() {
   apex="$1"
   if [ -n "$apex" ] && [ -f "$RV4A_ROOT/apex/$apex/etc/audio_effects_config.xml" ]; then
-    echo "/apex/$apex/etc/audio_effects_config.xml"; return
+    rv4a_real_path "/apex/$apex/etc/audio_effects_config.xml"; return
   fi
   sku="$(rv4a_getprop ro.boot.product.vendor.sku)"
   for d in /odm/etc ${sku:+/vendor/etc/audio/sku_$sku} /vendor/etc /system/etc; do
     if [ -r "$RV4A_ROOT$d/audio_effects_config.xml" ]; then
-      echo "$d/audio_effects_config.xml"; return
+      rv4a_real_path "$d/audio_effects_config.xml"; return
     fi
   done
 }
@@ -267,8 +275,7 @@ rv4a_candidate_configs() {
     for n in $names; do
       f="$d/$n"
       [ -f "$RV4A_ROOT$f" ] || continue
-      r="$(readlink -f "$RV4A_ROOT$f" 2>/dev/null)"; r="${r#$RV4A_ROOT}"
-      echo "${r:-$f}"
+      rv4a_real_path "$f"
     done
   done | awk '!seen[$0]++'
 }

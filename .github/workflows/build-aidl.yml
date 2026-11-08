@@ -12,16 +12,14 @@ on:
       - 'magisk/aidl/**'
       - 'app/src/main/cpp/**'
       - 'tools/aidl_plugin_harness.cpp'
+      - 'third_party/signalsmith-*/**'
       - '.github/workflows/build-aidl.yml'
   pull_request:
     paths:
       - 'magisk/aidl/**'
       - 'app/src/main/cpp/**'
       - '.github/workflows/build-aidl.yml'
-      # The service compiles the engine and the hal dispatch too, so a change
-      # there can break it as easily as one here.
-      - 'app/src/main/cpp/libjamesdsp/**'
-      - 'app/src/main/cpp/hal/**'
+      # The plugin also compiles the vendored Signalsmith library.
       - 'third_party/signalsmith-*/**'
   workflow_dispatch:
 
@@ -60,8 +58,9 @@ jobs:
       # manifests and the factory's own version answer, Qualcomm sku folders,
       # Samsung _sec configs, CRLF and mixed line endings, Pixel's missing
       # config, KernelSU without a metamodule, conflicting modules, system
-      # updates, the two-strike watchdog and crash loop detection. Run with dash, then with busybox's own sh,
-      # awk, sed and grep, which is what Magisk and KernelSU run them with.
+      # updates, the two-strike watchdog and crash loop detection. Run with
+      # dash, then with busybox's own sh, awk, sed and grep, which is what
+      # Magisk and KernelSU run them with.
       - name: Test the module scripts
         run: |
           sudo apt-get install -y busybox
