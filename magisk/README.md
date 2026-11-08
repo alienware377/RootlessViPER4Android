@@ -41,9 +41,17 @@ is the filename the audio server expects), then zip the `magisk/` directory.
 ## Installing
 
 Flash in Magisk, then reboot. The installer copies the library into
-`/system/lib*/soundfx/` and registers it in whichever audio effects config the
-device uses (XML on Android 9+, the older `.conf` on some vendor images),
-overlaying the file rather than editing the real one.
+`/system/lib*/soundfx/` and registers it in the audio effects config the
+device actually reads, overlaying the file rather than editing the real one.
+
+Which file that is depends on the phone. The audio HAL's effect loader reads
+exactly one list: the first readable, well-formed file in its folders, or the
+older `.conf` when there is no XML at all. Vendors change the name and the
+folders and write both into the loader itself: Samsung's reads only
+`audio_effects_sec.xml`, and the `audio_effects.xml` beside it is never used.
+So the installer reads the names and folders out of the loader library the
+audio HAL has loaded, and falls back to the AOSP ones. The install log names
+the library, the file it asks for, and the file that was patched.
 
 ## Which devices this works on
 
@@ -93,9 +101,16 @@ like a bootloop. Recovery, easiest first:
 
 The module also defends itself. It disables itself after two boots that do not
 finish, and `post-fs-data.sh` runs before the audio server
-starts and moves aside any audio config of ours that fails validation, so the
-device boots with the stock configuration instead. It writes `boot.log` in the
-module folder recording what it checked.
+starts and moves aside any audio config of ours that fails validation, or that
+was made from a file a system update has since changed, so the device boots
+with the stock configuration instead.
+
+Two logs in the module folder (`/data/adb/modules/rv4a_engine/`) say what
+happened. `install.log` is what the installer found: root manager and
+version, the effect HAL, the loader and the file it reads. `boot.log` is what
+each boot checked and, once the phone is up, whether the engine and our
+config are visible where the audio HAL looks and whether the HAL loaded the
+engine. Please attach both to an issue.
 
 ## Coexisting with other audio mods
 
