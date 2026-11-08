@@ -175,8 +175,8 @@ bit for bit with the legacy effect.
 Everything above runs without an AIDL rooted phone. Not yet known: that a real
 vendor factory reads the configs we patch and accepts our library in its
 linker namespace and SELinux domain; that audioserver may map the queue
-memory the plugin creates (`/dev/ashmem` or memfd, chosen as libcutils
-chooses); that `service call` reaches the factory from a root shell; whether
+memory the plugin creates (ashmem or memfd, chosen and opened as
+libcutils does); that `service call` reaches the factory from a root shell; whether
 post-mount runs before the audio HAL on every KernelSU version; whether
 Pixel's factory adds a created config to its built-in effects or replaces
 them; audio and parameters through the real framework, including large
