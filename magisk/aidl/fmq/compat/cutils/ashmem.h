@@ -5,7 +5,7 @@
  *
  *  - memfd when the vendor API level is 202604 or later (Android 17 vendors);
  *  - memfd when sys.use_memfd is true (off by default on 15 and 16);
- *  - /dev/ashmem otherwise.
+ *  - ashmem otherwise, through /dev/ashmem<boot_id> as libcutils opens it.
  *
  * This does the same, and falls back to the other kind when the first cannot
  * be created, so a device that refuses one still gets working queues. The
@@ -43,8 +43,38 @@ static inline int rv4a_memfd_region(const char* name, size_t size) {
     return fd;
 }
 
+/* libcutils opens /dev/ashmem<boot_id>, never /dev/ashmem itself: SELinux
+   lets every domain open the first (ashmem_libcutils_device) and forbids
+   opening the second outside a few old app domains, so trying it from the
+   audio HAL would only log a denial. */
+static inline int rv4a_ashmem_open(void) {
+    char path[sizeof("/dev/ashmem") + 64] = "/dev/ashmem";
+    const size_t base = strlen(path);
+    int b = open("/proc/sys/kernel/random/boot_id", O_RDONLY | O_CLOEXEC);
+    if (b < 0) return -1;
+    ssize_t n = read(b, path + base, sizeof(path) - base - 1);
+    close(b);
+    if (n <= 0) return -1;
+    path[base + (size_t)n] = 0;
+    for (size_t i = base; path[i]; i++) {
+        if (path[i] == '\n' || path[i] == ' ' || path[i] == '\r' || path[i] == '\t') {
+            path[i] = 0;
+            break;
+        }
+    }
+    if (path[base] == 0) return -1;
+    int fd = open(path, O_RDWR | O_CLOEXEC);
+    if (fd < 0) return -1;
+    struct stat st;
+    if (fstat(fd, &st) < 0 || !S_ISCHR(st.st_mode) || !st.st_rdev) {
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
 static inline int rv4a_ashmem_region(const char* name, size_t size) {
-    int fd = open("/dev/ashmem", O_RDWR | O_CLOEXEC);
+    int fd = rv4a_ashmem_open();
     if (fd < 0) return -1;
     char buf[ASHMEM_NAME_LEN];
     strncpy(buf, name, sizeof(buf) - 1);
