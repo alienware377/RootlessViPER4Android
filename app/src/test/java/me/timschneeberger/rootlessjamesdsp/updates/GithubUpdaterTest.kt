@@ -1,5 +1,6 @@
 package me.timschneeberger.rootlessjamesdsp.updates
 
+import me.timschneeberger.rootlessjamesdsp.utils.isRoot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -49,8 +50,12 @@ class GithubUpdaterTest {
     fun picksTheUniversalFileForThisBuild() {
         val r = GithubUpdater.parseReleases(list, intArrayOf(4, 4, 0))[0]
         val apk = GithubUpdater.apkFor(r)!!.first
-        // Unit tests run the rootless flavour, so the rootless universal file.
-        assertTrue(apk, apk.contains("-rootless-") && apk.contains("universal"))
+        // The unit tests run once per flavour, and each build must be offered
+        // its own file: a rooted install updated to the rootless app would
+        // lose root mode without a word.
+        val expected = if (isRoot()) "ViPER4Android-v4.5.0-rootful-fdroid-universal-release.apk"
+            else "ViPER4Android-v4.5.0-rootless-fdroid-universal-release.apk"
+        assertEquals(expected, apk)
     }
 
     @Test
