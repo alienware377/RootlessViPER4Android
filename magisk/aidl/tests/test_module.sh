@@ -348,6 +348,15 @@ fresh; printf '<!-- extra -->\n' >> "$CF/vendor/etc/audio_effects_config.xml"; b
 fresh; rm -f "$B/system/vendor/lib64/soundfx/librv4a_aidl_v2.so"; boot
 [ -d "$B/configs.rejected" ]; ok "a missing library: configs set aside" $?
 rm -f "$T/mounts"; fresh; boot; grep -q "^ok" "$B/boot.log" && [ -f "$T/mounts" ]; ok "and a fresh install after all that boots and mounts again" $?
+PX="$T/d6"; PB="$T/mod-pixelok"
+pxboot() { ( export RV4A_ROOT="$PX" RV4A_PROPS="$T/d1.props" RV4A_PROC="$PX/proc"
+             $SH -c ". '$MOD/common/aidl_common.sh'; . '$STUB'; rv4a_boot_check '$PB'" ); }
+pxboot; grep -q "^ok: V3" "$PB/boot.log"; ok "Pixel: the created config passes the boot check" $?
+cp "$PB/system/vendor/etc/audio_effects_config.xml" "$PX/vendor/etc/"; rm -f "$PB/.boot_incomplete"; pxboot
+grep -q "^ok: V3" "$PB/boot.log"; ok "Pixel: already mounted by the manager (it carries our uuid): still fine" $?
+mkcfg "$PX/vendor/etc/audio_effects_config.xml"; rm -f "$PB/.boot_incomplete"; pxboot
+[ -f "$PB/created_config.rejected" ] && grep -q "now has its own" "$PB/status"; ok "Pixel: the phone gained its own config: ours set aside" $?
+rm -f "$PX/vendor/etc/audio_effects_config.xml"
 
 echo; echo "[6] the watch from late_start on (service.sh)"
 svc_case() {  # svc_case <factory pids> <audioserver pids>: service check on a fresh install
