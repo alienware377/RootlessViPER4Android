@@ -500,7 +500,7 @@ rv4a_in_init() {
   if [ -n "$RV4A_PROPS" ] || [ "$(readlink /proc/self/ns/mnt)" = "$(readlink /proc/1/ns/mnt)" ]; then
     "$@"
   elif command -v nsenter >/dev/null 2>&1; then
-    nsenter -t 1 -m -- "$@"
+    nsenter -t 1 -m "$@"
   else
     "$@"
   fi
@@ -691,7 +691,9 @@ rv4a_boot_check_body() {
   i=1
   for c in $(rv4a_installed_configs "$P"); do
     if [ "$(rv4a_prop create "$P")" = 1 ]; then
-      if [ -e "$RV4A_ROOT$c" ] && ! rv4a_our_mount "$c"; then
+      # Some managers mount module files before this runs, so a file that
+      # carries our uuid is our own.
+      if [ -e "$RV4A_ROOT$c" ] && ! grep -q "$RV4A_UUID" "$RV4A_ROOT$c" 2>/dev/null; then
         echo "$c exists now, this install created one"
         rv4a_quarantine "$MODDIR" "the phone now has its own $c"
         return 0
@@ -839,8 +841,11 @@ rv4a_service_check() {
   while rv4a_active "$MODDIR"; do
     if [ -n "$RV4A_MONITOR_LIMIT" ] && [ $t -ge "$RV4A_MONITOR_LIMIT" ]; then break; fi
     sleep "$STEP"; t=$((t + 1)); quiet=$((quiet + STEP))
-    h="$(rv4a_pid_of_exe "$exe")"; [ -n "$exe" ] || h="$(rv4a_factory_pid)"
+    h="$(rv4a_pid_of_exe "$exe")"; [ -n "$h" ] || h="$(rv4a_factory_pid)"
     a="$(pidof audioserver 2>/dev/null | awk '{ print $1 }')"
+    # A process that was not up yet at the first look is not a restart.
+    [ -z "$host" ] && [ -n "$h" ] && host="$h"
+    [ -z "$as" ] && [ -n "$a" ] && as="$a"
     if [ -n "$h" ] && [ -n "$a" ] && { [ "$h" != "$host" ] || [ "$a" != "$as" ]; }; then
       now="$(date +%s)"
       rv4a_log "restart: factory $host -> $h, audioserver $as -> $a"
