@@ -15,8 +15,12 @@ MODDIR=${0%/*}
 # rooted at / instead, so stop rather than find out.
 [ -n "$MODDIR" ] && [ -d "$MODDIR" ] || exit 0
 
+# Empty on a phone; a sample device tree in magisk/tests.
+RV4A_ROOT="${RV4A_ROOT:-}"
+
 UUID="f27317f4-c984-4de6-9a90-545759495bf2"
 LIB_NAME="jdsp"
+EFFECT_NAME="jamesdsp"
 LOG="$MODDIR/boot.log"
 MARK="$MODDIR/.boot_incomplete"
 STRIKES="$MODDIR/.boot_strikes"
@@ -43,6 +47,36 @@ find_configs() {
 # flapping between quarantined and restored on every single boot.
 find_disabled() {
   find -L $(roots) -maxdepth 6 -type f -name "audio_effects*.disabled" 2>/dev/null
+}
+
+# The same as strip_ours in common/patch_audio_config.sh, kept here so the
+# boot safety net depends on no other file. The two must stay the same.
+strip_ours() {
+  case "$1" in
+    *.conf)
+      awk -v lib="$LIB_NAME" -v eff="$EFFECT_NAME" '
+        skip { if ($0 ~ /^  \}/) skip = 0; next }
+        $0 ~ "^  (" lib "|jamesdsp|" eff ") \\{" { skip = 1; next }
+        { print }
+      ' "$1"
+      ;;
+    *)
+      grep -v "<effect .*uuid=\"$UUID\"" "$1" |
+        grep -v "<library name=\"$LIB_NAME\"" |
+        grep -v "<library name=\"jamesdsp\"" |
+        grep -v "<effect name=\"$EFFECT_NAME\""
+      ;;
+  esac
+}
+
+# Our copies are renamed aside above, but a KernelSU or APatch metamodule
+# mounts its own copy of the module's files, made at install time, and a
+# rename here never reaches it. skip_mount does: every manager and
+# meta-overlayfs leave a module with it unmounted. Like a rejection, it lasts
+# until the module is installed again.
+stop_mounting() {
+  [ -f "$MODDIR/skip_mount" ] && return 0
+  touch "$MODDIR/skip_mount" && echo "skip_mount set: nothing of this module is mounted until it is reinstalled"
 }
 
 {
@@ -89,21 +123,43 @@ find_disabled() {
   touch "$MARK" || echo "WARNING: could not write the boot marker; watchdog is off"
 
   # --- 2b. has the system been updated under us? ------------------------
-  # This runs before our files are mounted, so the config read here is the
-  # device's own, not our copy of it.
+  # .source_config has one line per config the install patched: its path,
+  # then its size and line count with our own lines left out. Installs before
+  # this format wrote a single line of the same shape, measured as read, which
+  # is the same thing whenever our copy was not mounted at the time.
+  #
+  # On most managers this runs before our files are mounted, so the file read
+  # here is the device's own. APatch with a metamodule mounts first, and then
+  # it is our copy; with our lines left out that is the file as it was at
+  # install. That never fails the check wrongly, though it cannot see an
+  # update underneath either.
   if [ -f "$MODDIR/.source_config" ]; then
-    read -r src osize olines < "$MODDIR/.source_config"
-    if [ -n "$src" ] && [ -f "$src" ]; then
-      nsize=$(wc -c < "$src" 2>/dev/null || echo 0)
-      nlines=$(wc -l < "$src" 2>/dev/null || echo 0)
-      if [ "$nsize" != "$osize" ] || [ "$nlines" != "$olines" ]; then
-        echo "SOURCE CONFIG CHANGED: $src was $osize bytes/$olines lines, now $nsize/$nlines"
-        echo "the system has probably been updated; our overlay is stale"
-        find_configs | while read -r f; do
-          mv "$f" "$f.rejected" 2>/dev/null && echo "rejected $f (stale after a system update)"
-        done
-        echo "reinstall the module to pick up the new configuration"
+    stale=""
+    while read -r src osize olines; do
+      case "$src" in ''|'#'*) continue ;; esac
+      if [ ! -f "$RV4A_ROOT$src" ]; then
+        echo "SOURCE CONFIG GONE: $src"
+        stale=1
+        continue
       fi
+      nsize=$(strip_ours "$RV4A_ROOT$src" | wc -c | tr -dc '0-9')
+      nlines=$(strip_ours "$RV4A_ROOT$src" | wc -l | tr -dc '0-9')
+      rsize=$(wc -c < "$RV4A_ROOT$src" 2>/dev/null | tr -dc '0-9')
+      rlines=$(wc -l < "$RV4A_ROOT$src" 2>/dev/null | tr -dc '0-9')
+      if [ "$nsize $nlines" = "$osize $olines" ] || [ "$rsize $rlines" = "$osize $olines" ]; then
+        echo "source unchanged: $src"
+      else
+        echo "SOURCE CONFIG CHANGED: $src was $osize bytes/$olines lines, now $nsize/$nlines"
+        stale=1
+      fi
+    done < "$MODDIR/.source_config"
+    if [ -n "$stale" ]; then
+      echo "the system has probably been updated; our overlay is stale"
+      find_configs | while read -r f; do
+        mv "$f" "$f.rejected" 2>/dev/null && echo "rejected $f (stale after a system update)"
+      done
+      stop_mounting
+      echo "reinstall the module to pick up the new configuration"
     fi
   fi
 
@@ -136,15 +192,18 @@ find_disabled() {
       if [ "$bad" = "1" ]; then
         mv "$f" "$f.rejected" 2>/dev/null
         echo "rejected $f (failed validation; not restored automatically)"
+        stop_mounting
       else
         echo "ok $f"
       fi
     done
 
+  # These are the module's own copies. Whether the audio HAL can see them is
+  # only known once the manager has mounted them; service.sh reports that.
   for d in "$MODDIR"/system/*/soundfx "$MODDIR"/system/vendor/*/soundfx \
            "$MODDIR"/vendor/*/soundfx; do
     [ -f "$d/libjamesdsp.so" ] &&
-      echo "engine present: $d ($(wc -c < "$d/libjamesdsp.so") bytes)"
+      echo "engine in the module: $d ($(wc -c < "$d/libjamesdsp.so") bytes)"
   done
 } > "$LOG" 2>&1
 
