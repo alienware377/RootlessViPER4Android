@@ -99,5 +99,21 @@ metamodule_state() {
 
 late_load() { [ "$KSU_LATE_LOAD" = 1 ] || [ "$KSU_RUNTIME_MODE" = late-load ]; }
 
-# APatch before metamodules: lite mode skips mounting module files.
-apatch_lite() { [ -f "$RV4A_ROOT/data/adb/.litemode_enable" ]; }
+# APatch before metamodules: true when lite mode leaves module files
+# unmounted. Before 11131 it skips mounting them altogether. From 11131 (first
+# released as 11142) it only skips APatch's own bind mounts, and modules
+# still go in through OverlayFS when that option is on and the kernel has
+# overlayfs. APATCH_LITE_OVERLAY says whether this version would.
+apatch_lite() {
+  [ -f "$RV4A_ROOT/data/adb/.litemode_enable" ] || return 1
+  c="$APATCH_VER_CODE"
+  case "$c" in ''|*[!0-9]*) c=11131 ;; esac
+  APATCH_LITE_OVERLAY=0
+  [ "$c" -ge 11131 ] || return 0
+  APATCH_LITE_OVERLAY=1
+  if [ -f "$RV4A_ROOT/data/adb/.overlayfs_enable" ] &&
+     grep -q overlay "$RV4A_ROOT/proc/filesystems" 2>/dev/null; then
+    return 1
+  fi
+  return 0
+}

@@ -69,9 +69,17 @@ case "$ROOT_IMPL" in
       say "- Metamodule: $META (not needed by this version)"
       if [ "$ROOT_IMPL" = APatch ] && apatch_lite; then
         say " "
-        say "! APatch is in lite mode, which does not mount module"
-        say "  files, so the engine would never reach the audio system."
-        say "  Turn lite mode off in APatch, reboot, then install again."
+        if [ "$APATCH_LITE_OVERLAY" = 1 ]; then
+          say "! APatch is in lite mode with OverlayFS off, which does"
+          say "  not mount module files, so the engine would never reach"
+          say "  the audio system. Turn lite mode off, or APatch's"
+          say "  OverlayFS option on if the kernel supports it, reboot,"
+          say "  then install again."
+        else
+          say "! APatch is in lite mode, which does not mount module"
+          say "  files, so the engine would never reach the audio system."
+          say "  Turn lite mode off in APatch, reboot, then install again."
+        fi
         abort "! Aborting rather than installing something inert"
       fi
     fi
