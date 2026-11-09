@@ -90,6 +90,23 @@ strip_ours() {
   esac
 }
 
+# The same as build_id in common/patch_audio_config.sh.
+build_id() {
+  v="$(sed -n 's/^ro\.vendor\.build\.fingerprint=//p' "$RV4A_ROOT/vendor/build.prop" 2>/dev/null | head -n 1)"
+  s="$(sed -n 's/^ro\.system\.build\.fingerprint=//p; s/^ro\.build\.fingerprint=//p' \
+       "$RV4A_ROOT/system/build.prop" 2>/dev/null | head -n 1)"
+  [ -n "$v$s" ] && echo "${v:-unknown} ${s:-unknown}"
+  return 0
+}
+
+# This module's own copy of a device config.
+our_copy() {
+  case "$1" in
+    /system/*) echo "$MODDIR$1" ;;
+    *)         echo "$MODDIR/system$1" ;;
+  esac
+}
+
 # Our copies are renamed aside above, but a KernelSU or APatch metamodule
 # mounts its own copy of the module's files, made at install time, and a
 # rename here never reaches it. skip_mount does: every manager and
@@ -147,20 +164,36 @@ stop_mounting() {
   # .source_config has one line per config the install patched: its path,
   # then its size and line count with our own lines left out. Installs before
   # this format wrote a single line of the same shape, measured as read, which
-  # is the same thing whenever our copy was not mounted at the time.
+  # is the same thing whenever our copy was not mounted at the time. A
+  # "#build" line holds the builds the install saw, or the last boot that
+  # found every config unchanged.
   #
   # On most managers this runs before our files are mounted, so the file read
   # here is the device's own. APatch with a metamodule mounts first, and then
-  # it is our copy; with our lines left out that is the file as it was at
-  # install. That never fails the check wrongly, though it cannot see an
-  # update underneath either.
+  # it is our copy, which with our lines left out is the file as it was at
+  # install: an update underneath cannot be seen that way. So when the file
+  # is our copy, a different build is taken as an update instead.
   if [ -f "$MODDIR/.source_config" ]; then
-    stale=""
+    stale=""; mounted=""
+    then_build="$(sed -n 's/^#build //p' "$MODDIR/.source_config" | head -n 1)"
+    now_build="$(build_id)"
     while read -r src osize olines; do
       case "$src" in ''|'#'*) continue ;; esac
       if [ ! -f "$RV4A_ROOT$src" ]; then
         echo "SOURCE CONFIG GONE: $src"
         stale=1
+        continue
+      fi
+      if cmp -s "$RV4A_ROOT$src" "$(our_copy "$src")"; then
+        mounted=1
+        if [ -n "$then_build" ] && [ -n "$now_build" ] && [ "$then_build" != "$now_build" ]; then
+          echo "SYSTEM UPDATED: $src is our copy, already mounted, and the build has changed since it was made"
+          echo "  was: $then_build"
+          echo "  now: $now_build"
+          stale=1
+        else
+          echo "source unchanged: $src (our copy is already mounted over it; the build is the same)"
+        fi
         continue
       fi
       nsize=$(strip_ours "$RV4A_ROOT$src" | wc -c | tr -dc '0-9')
@@ -180,7 +213,14 @@ stop_mounting() {
         mv "$f" "$f.rejected" 2>/dev/null && echo "rejected $f (stale after a system update)"
       done
       stop_mounting
+      [ -n "$mounted" ] && echo "it was mounted before this check, so this boot still uses it; the next does not"
       echo "reinstall the module to pick up the new configuration"
+    elif [ -z "$mounted" ] && [ -n "$now_build" ] && [ "$then_build" != "$now_build" ]; then
+      # Every config was the phone's own and unchanged, so this build is
+      # known to match our copies.
+      { grep -v '^#build ' "$MODDIR/.source_config"; echo "#build $now_build"; } > "$MODDIR/.source_config.new" &&
+        mv -f "$MODDIR/.source_config.new" "$MODDIR/.source_config" &&
+        echo "build recorded: $now_build"
     fi
   fi
 

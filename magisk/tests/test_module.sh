@@ -209,8 +209,17 @@ props() {  # props <file> [extra lines]
 # A Galaxy A16/A17 5G: Exynos, HIDL effect HAL 7.0, Samsung's loader asking
 # only for audio_effects_sec.xml. audio_effects.xml next to it is the AOSP
 # list in CRLF, which nothing reads.
+SAM_V="samsung/a17xnsxx/a17x:16/BP4A.251205.006/A176U1UES8BZI4:user/release-keys"
+SAM_S="samsung/a17xnsxx/a17x:16/BP4A.251205.006/A176U1UES8BZI5:user/release-keys"
+buildprops() {  # buildprops <root> <vendor build> <system build>
+  write "$1/vendor/build.prop" "ro.vendor.build.date.utc=1764900000
+ro.vendor.build.fingerprint=$2"
+  write "$1/system/build.prop" "ro.system.build.fingerprint=$3
+ro.build.version.sdk=36"
+}
 samsung() {  # samsung <root> [sec line ending]
   rm -rf "$1"
+  buildprops "$1" "$SAM_V" "$SAM_S"
   write "$1/vendor/etc/audio_effects.xml" "$AOSP_XML" crlf
   write "$1/vendor/etc/audio_effects_sec.xml" "$SEC_XML" "${2:-}"
   write "$1/vendor/etc/audio_effects_spatializer.xml" "$SPATIAL_XML"
@@ -290,7 +299,8 @@ e2="$(grep -n "</effects>" "$O" | cut -d: -f1)"
 [ "$((l1 + 1))" = "$l2" ] && [ "$((e1 + 1))" = "$e2" ]; ok "our lines sit just before </libraries> and </effects>" $?
 expect "indented like their neighbours" "$(grep -c '^        <library name="jdsp"\|^        <effect name="jamesdsp"' "$O")" 2
 sig="$($SH -c ". '$MOD/common/patch_audio_config.sh'; config_sig '$R/vendor/etc/audio_effects_sec.xml'")"
-expect ".source_config: the _sec list, measured without our lines" "$(cat "$MP/.source_config")" "/vendor/etc/audio_effects_sec.xml $sig"
+expect ".source_config: the _sec list, measured without our lines" "$(grep -v '^#' "$MP/.source_config")" "/vendor/etc/audio_effects_sec.xml $sig"
+expect ".source_config: and the vendor and system builds" "$(sed -n 's/^#build //p' "$MP/.source_config")" "$SAM_V $SAM_S"
 expect "stock size measured the same way as wc" "$sig" "$(wc -c < "$R/vendor/etc/audio_effects_sec.xml" | tr -dc 0-9) $(wc -l < "$R/vendor/etc/audio_effects_sec.xml" | tr -dc 0-9)"
 grep -q "audio_effects_sec.xml 0 0 0644 u:object_r:vendor_configs_file:s0" "$MP/.perms"; ok "the copy gets the vendor config label" $?
 [ -f "$MP/system/vendor/lib64/soundfx/libjamesdsp.so" ] && [ -f "$MP/system/lib64/soundfx/libjamesdsp.so" ] && [ ! -d "$MP/libs" ]
@@ -315,7 +325,7 @@ installs "Samsung loader unreadable: installs on a guess" sam4 "$R" "$T/samsung.
 expect "  both the _sec and the plain list are patched" "$(staged)" "/vendor/etc/audio_effects.xml /vendor/etc/audio_effects_sec.xml "
 grep -q "Could not read the effect loader; trying audio_effects_sec.xml audio_effects.xml" "$LOGF" &&
   grep -q "cannot be told, so each is patched" "$LOGF"; ok "  and says it is guessing" $?
-expect "  .source_config tracks both" "$(cut -d' ' -f1 "$MP/.source_config" | tr '\n' ' ')" "/vendor/etc/audio_effects_sec.xml /vendor/etc/audio_effects.xml "
+expect "  .source_config tracks both" "$(grep -v '^#' "$MP/.source_config" | cut -d' ' -f1 | tr '\n' ' ')" "/vendor/etc/audio_effects_sec.xml /vendor/etc/audio_effects.xml "
 R="$T/sam5"; samsung "$R"; rm -rf "$R/proc" "$R/vendor/lib64" "$R/vendor/lib"
 installs "unreadable loader on another brand: audio_effects.xml only" sam5 "$R" "$T/plain.props"
 expect "  the plain list" "$(staged)" "/vendor/etc/audio_effects.xml "
@@ -399,7 +409,8 @@ installs "a loader naming two files (Asus)" asus "$R" "$T/plain.props"
 expect "  both are patched" "$(staged)" "/vendor/etc/audio_effects.xml /vendor/etc/audio_effects_AI2203.xml "
 grep -q "Loader: libeffectsconfig.so asks for audio_effects.xml audio_effects_AI2203.xml" "$LOGF" &&
   grep -q "cannot be told" "$LOGF"; ok "  and the log says why" $?
-expect "  .source_config has a line for each" "$(wc -l < "$MP/.source_config" | tr -dc 0-9)" 2
+expect "  .source_config has a line for each" "$(grep -vc '^#' "$MP/.source_config")" 2
+grep -q '^#build' "$MP/.source_config"; [ $? != 0 ]; ok "  and no build line where build.prop cannot be read" $?
 
 # ---------------------------------------------------------------- .conf
 echo; echo "[3] older phones: .conf only"
@@ -531,6 +542,19 @@ cp "$FRESH/system/vendor/etc/audio_effects_sec.xml" "$R/vendor/etc/audio_effects
 installs "reinstall over this version's own copy" upd2 "$R" "$T/samsung.props"
 cmp -s "$MP/system/vendor/etc/audio_effects_sec.xml" "$FRESH/system/vendor/etc/audio_effects_sec.xml" &&
   cmp -s "$MP/.source_config" "$FRESH/.source_config"; ok "  same copy and record again" $?
+# The list read may be the installed module's copy, still mounted from before
+# a system update when the boot check could not see the real file (APatch
+# with a metamodule mounts before it). A copy of that is the old release's.
+R="$T/ota"; samsung "$R"; mkdir -p "$R/data/adb/modules"; cp -r "$FRESH" "$R/data/adb/modules/rv4a_engine"
+cp "$FRESH/system/vendor/etc/audio_effects_sec.xml" "$R/vendor/etc/audio_effects_sec.xml"
+installs "reinstall over our mounted copy, same build" ota1 "$R" "$T/samsung.props"
+buildprops "$R" new-vendor-build "$SAM_S"
+refused "  after a system update the boot check could not see" ota2 "$R" "$T/samsung.props" "made before a system update"
+grep -q "Reboot once" "$LOGF"; ok "  says to reboot once, then install" $?
+write "$R/vendor/etc/audio_effects_sec.xml" "$SEC_XML"
+installs "  once the copy is no longer mounted it installs" ota3 "$R" "$T/samsung.props"
+expect "  and records the new build" "$(sed -n 's/^#build //p' "$MP/.source_config")" "new-vendor-build $SAM_S"
+rm -rf "$R/data/adb"
 R="$T/sam"; mkdir -p "$R/data/adb/modules/rv4a_engine"; touch "$R/data/adb/modules/rv4a_engine/disable"
 echo "rejected /x (failed validation)" > "$R/data/adb/modules/rv4a_engine/boot.log"
 installs "update over a module that switched itself off" redisable "$R" "$T/samsung.props"
@@ -598,6 +622,8 @@ grep -q "engine in the module: .*lib64/soundfx" "$B/boot.log"; ok "it says the e
 echo "/vendor/etc/audio_effects_sec.xml $(wc -c < "$R/vendor/etc/audio_effects_sec.xml") $(wc -l < "$R/vendor/etc/audio_effects_sec.xml")" > "$B/.source_config"
 rm -f "$B/.boot_incomplete"; pfd
 grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ]; ok "the one-line format of earlier installs still reads" $?
+grep -q "^#build $SAM_V $SAM_S$" "$B/.source_config" && grep -q "^/vendor/etc/audio_effects_sec.xml " "$B/.source_config"
+ok "  and the build it was checked on is added" $?
 # An earlier install measured the file as it read it, which was a copy with
 # our lines when one was mounted; on a manager that mounts before this runs
 # that same copy is what is read now.
@@ -607,6 +633,15 @@ rm -f "$B/.boot_incomplete"; pfd
 grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ]; ok "  also when it was measured on a mounted copy" $?
 fresh; cp "$C" "$R/vendor/etc/audio_effects_sec.xml"; pfd
 grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ]; ok "our own copy already mounted over the source is not a change" $?
+# Mounted before the check (APatch with a metamodule), the list read is our
+# copy, so a system update can only show in the build.
+fresh; cp "$C" "$R/vendor/etc/audio_effects_sec.xml"; buildprops "$R" new-vendor-build "$SAM_S"; pfd
+[ -f "$C.rejected" ] && [ -f "$B/skip_mount" ] && grep -q "SYSTEM UPDATED" "$B/boot.log" && grep -q "this boot still uses it" "$B/boot.log"
+ok "our copy already mounted and a new build: set aside, mounting stopped from the next boot" $?
+fresh; buildprops "$R" "$SAM_V" new-system-build; pfd
+grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ] && [ ! -f "$B/skip_mount" ] &&
+  grep -q "^#build $SAM_V new-system-build$" "$B/.source_config" && [ "$(grep -c . "$B/.source_config")" = 2 ]
+ok "a new build with the real list unchanged: recorded, nothing stopped" $?
 fresh; sed -i 's|</effects>|        <effect name="new" library="bundle" uuid="11111111-2222-3333-4444-555555555555"/>\n    </effects>|' "$R/vendor/etc/audio_effects_sec.xml"; pfd
 [ -f "$C.rejected" ] && [ ! -f "$C" ] && [ -f "$B/skip_mount" ] && grep -q "SOURCE CONFIG CHANGED" "$B/boot.log"
 ok "a system update changed the list: our copy set aside, mounting stopped" $?
@@ -628,11 +663,11 @@ pfd; [ -f "$B/disable" ] && [ -f "$C.disabled" ] && [ ! -f "$C" ]; ok "two unfin
 rm -f "$B/disable"; pfd; [ -f "$C" ] && grep -q "restored" "$B/boot.log"; ok "re-enabled: the copy comes back on the next boot" $?
 shared() {  # the parts post-fs-data.sh keeps its own copy of
   { grep -E '^(XML|CONF)_(LIB|EFF|OLD)=' "$1"
-    for f in drop_entries strip_ours; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'
+    for f in drop_entries strip_ours build_id; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'
 }
 a="$(shared "$MOD/common/patch_audio_config.sh" | sed "s/EFFECT_UUID/UUID/g")"
 b="$(shared "$MOD/post-fs-data.sh")"
-[ "$(printf '%s\n' "$a" | grep -c .)" -gt 30 ] && [ "$a" = "$b" ]; ok "post-fs-data's copies of the entries and strip_ours match the installer's" $?
+[ "$(printf '%s\n' "$a" | grep -c .)" -gt 36 ] && [ "$a" = "$b" ]; ok "post-fs-data's copies of the entries, strip_ours and build_id match the installer's" $?
 
 # ---------------------------------------------------------------- service
 echo; echo "[8] service.sh: what the audio HAL can see"
