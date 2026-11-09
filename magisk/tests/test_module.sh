@@ -613,7 +613,7 @@ rm -rf "$R/data/adb"
 # ---------------------------------------------------------------- post-fs-data
 echo; echo "[7] post-fs-data: watchdog, drift and our copies"
 fresh() { R="$T/sam"; samsung "$R"; install_case boot "$R" "$T/samsung.props" >/dev/null; B="$MP"; C="$B/system/vendor/etc/audio_effects_sec.xml"; }
-pfd() { RV4A_ROOT="$R" $SH "$B/post-fs-data.sh"; }
+pfd() { RV4A_ROOT="$R" APATCH="${APATCH:-}" APATCH_VER_CODE="${APATCH_VER_CODE:-}" $SH "$B/post-fs-data.sh"; }
 fresh; pfd
 grep -q "source unchanged: /vendor/etc/audio_effects_sec.xml" "$B/boot.log" && grep -q "^ok .*audio_effects_sec.xml" "$B/boot.log"
 ok "a clean boot checks the source and our copy" $?
@@ -638,6 +638,9 @@ grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ]; ok "our own copy alread
 fresh; cp "$C" "$R/vendor/etc/audio_effects_sec.xml"; buildprops "$R" new-vendor-build "$SAM_S"; pfd
 [ -f "$C.rejected" ] && [ -f "$B/skip_mount" ] && grep -q "SYSTEM UPDATED" "$B/boot.log" && grep -q "this boot still uses it" "$B/boot.log"
 ok "our copy already mounted and a new build: set aside, mounting stopped from the next boot" $?
+fresh; printf 'junk\n' > "$C"; APATCH=true APATCH_VER_CODE=11282 pfd
+grep -q "failed validation" "$B/boot.log" && grep -q "this boot still uses it" "$B/boot.log"
+ok "APatch 11219 and later: a rejection says it applies from the next boot" $?
 fresh; buildprops "$R" "$SAM_V" new-system-build; pfd
 grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ] && [ ! -f "$B/skip_mount" ] &&
   grep -q "^#build $SAM_V new-system-build$" "$B/.source_config" && [ "$(grep -c . "$B/.source_config")" = 2 ]
@@ -661,6 +664,17 @@ grep -q "^ok .*audio_effects_sec.xml" "$B/boot.log"; ok "KernelSU layout (system
 fresh; pfd >/dev/null; pfd; grep -q "strike 1" "$B/boot.log" && [ -f "$C" ]; ok "one unfinished boot is a strike, nothing more" $?
 pfd; [ -f "$B/disable" ] && [ -f "$C.disabled" ] && [ ! -f "$C" ]; ok "two unfinished boots: disabled, our copy set aside" $?
 rm -f "$B/disable"; pfd; [ -f "$C" ] && grep -q "restored" "$B/boot.log"; ok "re-enabled: the copy comes back on the next boot" $?
+# APatch from 11219 mounts before this runs, so a disable set here only helps
+# the boot after: one unfinished boot is enough there.
+fresh; pfd >/dev/null; APATCH=true APATCH_VER_CODE=11282 pfd
+[ -f "$B/disable" ] && grep -q "strike 1 of 1" "$B/boot.log" && grep -q "off from the next boot" "$B/boot.log"
+ok "APatch 11219 and later: disabled after one unfinished boot" $?
+fresh; mkdir -p "$R/data/adb"; fakebin "$R/data/adb/apd" "post-fs-data" "metamount.sh"; pfd >/dev/null; APATCH=true pfd
+[ -f "$B/disable" ]; ok "  also told by its daemon, with no version code" $?
+fresh; pfd >/dev/null; APATCH=true APATCH_VER_CODE=11142 pfd
+[ ! -f "$B/disable" ] && grep -q "strike 1 of 2" "$B/boot.log"; ok "  older APatch still gets two" $?
+fresh; pfd >/dev/null; RV4A_ROOT="$R" KSU=true KSU_VER_CODE=30500 $SH "$B/post-fs-data.sh"
+[ ! -f "$B/disable" ] && grep -q "strike 1 of 2" "$B/boot.log"; ok "  and so does KernelSU 3, which mounts after" $?
 shared() {  # the parts post-fs-data.sh keeps its own copy of
   { grep -E '^(XML|CONF)_(LIB|EFF|OLD)=' "$1"
     for f in drop_entries strip_ours build_id; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'

@@ -1,7 +1,10 @@
 #!/system/bin/sh
-# Boot watchdog and safety net. Runs before the audio server starts, and before
-# the module's files are mounted, which is what makes a rename here able to
-# stop the current boot rather than the next one.
+# Boot watchdog and safety net. Runs before the audio server starts and, on
+# most root managers, before the module's files are mounted, which is what
+# makes a rename here able to stop the current boot rather than the next one.
+# APatch from 11219 has its metamodule mount first, so there whatever is
+# stopped here takes effect from the next boot, and the watchdog acts one
+# boot sooner to make up for it.
 #
 # Three jobs:
 #  1. Put back anything a previous bad boot set aside, so re-enabling the
@@ -107,14 +110,34 @@ our_copy() {
   esac
 }
 
+# Whether this manager has already mounted the module: APatch from 11219
+# runs its metamodule's mount before the modules' post-fs-data scripts. Its
+# daemon names the mount script when it does, which also covers forks; the
+# version code is the fallback.
+mounted_first() {
+  [ -n "${APATCH:-}" ] && [ "$APATCH" != false ] || return 1
+  if [ -r "$RV4A_ROOT/data/adb/apd" ]; then
+    grep -q 'metamount\.sh' "$RV4A_ROOT/data/adb/apd" 2>/dev/null
+    return
+  fi
+  case "${APATCH_VER_CODE:-}" in ''|*[!0-9]*) return 1 ;; esac
+  [ "$APATCH_VER_CODE" -ge 11219 ]
+}
+MOUNTED_FIRST=0
+mounted_first && MOUNTED_FIRST=1
+
 # Our copies are renamed aside above, but a KernelSU or APatch metamodule
 # mounts its own copy of the module's files, made at install time, and a
 # rename here never reaches it. skip_mount does: every manager and
 # meta-overlayfs leave a module with it unmounted. Like a rejection, it lasts
-# until the module is installed again.
+# until the module is installed again. Where the module was mounted before
+# this ran, it only takes effect from the next boot.
 stop_mounting() {
   [ -f "$MODDIR/skip_mount" ] && return 0
   touch "$MODDIR/skip_mount" && echo "skip_mount set: nothing of this module is mounted until it is reinstalled"
+  [ "$MOUNTED_FIRST" = 1 ] &&
+    echo "  it was mounted before this check ran, so this boot still uses it; the next boot does not"
+  return 0
 }
 
 {
@@ -133,14 +156,19 @@ stop_mounting() {
   if [ -f "$MARK" ]; then
     # Two strikes, not one. A power cut, or a long first boot after an OTA,
     # leaves exactly the same marker as a genuine failure, and disabling the
-    # module over that is a support ticket rather than a save.
+    # module over that is a support ticket rather than a save. Where the
+    # module is already mounted by now, disabling it only helps the boot
+    # after this one, so a second strike would let a loop run a fourth boot;
+    # there one is enough, and a loop still clears by the third.
+    limit=2
+    [ "$MOUNTED_FIRST" = 1 ] && limit=1
     n=$(cat "$STRIKES" 2>/dev/null || echo 0)
     case "$n" in ''|*[!0-9]*) n=0 ;; esac
     n=$((n + 1))
     echo "$n" > "$STRIKES"
-    echo "previous boot did not complete (strike $n)"
+    echo "previous boot did not complete (strike $n of $limit)"
 
-    if [ "$n" -ge 2 ]; then
+    if [ "$n" -ge "$limit" ]; then
       echo "disabling module after $n incomplete boots"
       # Magisk skips any module containing a file named 'disable'
       touch "$MODDIR/disable" || echo "WARNING: could not create the disable flag"
@@ -149,6 +177,8 @@ stop_mounting() {
         mv "$f" "$f.disabled" 2>/dev/null && echo "quarantined $f"
       done
       rm -f "$MARK" "$STRIKES"
+      [ "$MOUNTED_FIRST" = 1 ] &&
+        echo "it was mounted before this check ran, so it is off from the next boot"
       echo "module disabled; reinstall once the cause is known"
       exit 0
     fi
@@ -212,8 +242,10 @@ stop_mounting() {
       find_configs | while read -r f; do
         mv "$f" "$f.rejected" 2>/dev/null && echo "rejected $f (stale after a system update)"
       done
+      # Our copy in place already says the manager mounted first, whatever
+      # it is.
+      [ -n "$mounted" ] && MOUNTED_FIRST=1
       stop_mounting
-      [ -n "$mounted" ] && echo "it was mounted before this check, so this boot still uses it; the next does not"
       echo "reinstall the module to pick up the new configuration"
     elif [ -z "$mounted" ] && [ -n "$now_build" ] && [ "$then_build" != "$now_build" ]; then
       # Every config was the phone's own and unchanged, so this build is
