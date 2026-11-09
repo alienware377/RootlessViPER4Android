@@ -225,39 +225,65 @@ module_path_for() {
   esac
 }
 
-# A config may already carry our lines, because the file we are reading is the
-# previous version of this module still mounted over the real one. Strip our
-# own lines and patch the result, so re-running is idempotent either way.
+# The entries this module writes, and the ones earlier versions wrote (which
+# named the library "jamesdsp"), without their indentation or line ending:
+# one line each in XML, a block in a .conf with its lines joined by \n.
+# post-fs-data.sh has a copy of these; the two must stay the same.
+XML_LIB="<library name=\"$LIB_NAME\" path=\"libjamesdsp.so\"/>"
+XML_EFF="<effect name=\"$EFFECT_NAME\" library=\"$LIB_NAME\" uuid=\"$EFFECT_UUID\"/>"
+XML_OLD="<library name=\"jamesdsp\" path=\"libjamesdsp.so\"/>|<effect name=\"$EFFECT_NAME\" library=\"jamesdsp\" uuid=\"$EFFECT_UUID\"/>"
+CONF_LIB="$LIB_NAME {\npath /system/lib/soundfx/libjamesdsp.so\n}"
+CONF_EFF="$EFFECT_NAME {\nlibrary $LIB_NAME\nuuid $EFFECT_UUID\n}"
+CONF_OLD="jamesdsp {\npath /system/lib/soundfx/libjamesdsp.so\n}|$EFFECT_NAME {\nlibrary jamesdsp\nuuid $EFFECT_UUID\n}"
+
+# Prints a config without the entries in $2 (separated by |). An entry only
+# matches whole, line for line, with indentation and line endings ignored;
+# every other line is printed exactly as it was. A line that merely mentions
+# our names, or carries anything else besides our entry, is kept, so nothing
+# of somebody else's goes with it. With a third argument, fails unless each
+# entry was found exactly once.
+drop_entries() {
+  awk -v entries="$2" -v once="${3:-}" '
+    function bare(s) { sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
+    { raw[NR] = $0; t[NR] = bare($0) }
+    END {
+      n = split(entries, e, "|")
+      for (x = 1; x <= n; x++) {
+        len[x] = split(e[x], part, "\n")
+        for (y = 1; y <= len[x]; y++) want[x, y] = part[y]
+      }
+      i = 1
+      while (i <= NR) {
+        hit = 0
+        for (x = 1; x <= n && !hit; x++) {
+          hit = x
+          for (y = 1; y <= len[x]; y++) if (t[i + y - 1] != want[x, y]) { hit = 0; break }
+        }
+        if (hit) { seen[hit]++; i += len[hit] } else { print raw[i]; i++ }
+      }
+      if (once) for (x = 1; x <= n; x++) if (seen[x] != 1) exit 1
+    }
+  ' "$1"
+}
+
+# A config may already carry our entries, because the file we are reading is
+# the previous version of this module still mounted over the real one. Take
+# them out and patch the result, so re-running is idempotent either way.
+# A .conf entry is a whole block: leaving its closing brace behind would end
+# the surrounding section early and lose every effect after it.
 # post-fs-data.sh has a copy of this; the two must stay the same.
 strip_ours() {
   case "$1" in
-    *.conf)
-      # A .conf entry is a block, not a line, so whole blocks are skipped:
-      # leaving a closing brace behind would end the surrounding section early
-      # and lose every effect after it. The old "jamesdsp" library name is
-      # included so a config written by an earlier version is cleaned up.
-      awk -v lib="$LIB_NAME" -v eff="$EFFECT_NAME" '
-        skip { if ($0 ~ /^  \}/) skip = 0; next }
-        $0 ~ "^  (" lib "|jamesdsp|" eff ") \\{" { skip = 1; next }
-        { print }
-      ' "$1"
-      ;;
-    *)
-      # XML entries really are one line each, so this is safe here. Anchored
-      # to the tags we write so a stream attachment that happens to name the
-      # same uuid elsewhere in the file is left alone.
-      grep -v "<effect .*uuid=\"$EFFECT_UUID\"" "$1" |
-        grep -v "<library name=\"$LIB_NAME\"" |
-        grep -v "<library name=\"jamesdsp\"" |
-        grep -v "<effect name=\"$EFFECT_NAME\""
-      ;;
+    *.conf) drop_entries "$1" "$CONF_LIB|$CONF_EFF|$CONF_OLD" ;;
+    *)      drop_entries "$1" "$XML_LIB|$XML_EFF|$XML_OLD" ;;
   esac
 }
 
 # Checks a generated XML config. With the original as a second argument it
-# also checks that every line of the original is still there unchanged and in
-# order, that our two lines are there once each, and that they sit inside
-# <libraries> and <effects> rather than in a comment or after the root.
+# also checks that the copy is exactly the original, less entries an earlier
+# version of this module left in it, plus our two lines once each, and that
+# those sit inside <libraries> and <effects> rather than in a comment or
+# after the root.
 validate_xml() {
   grep -q "$EFFECT_UUID" "$1" &&
   grep -q "name=\"$LIB_NAME\"" "$1" &&
@@ -266,10 +292,11 @@ validate_xml() {
   grep -q "</effects>" "$1" &&
   [ "$(wc -c < "$1")" -gt 200 ] || return 1
   [ -n "$2" ] || return 0
-  strip_ours "$2" > "$1.orig"; strip_ours "$1" > "$1.ours"
+  strip_ours "$2" > "$1.orig"
+  drop_entries "$1" "$XML_LIB|$XML_EFF" once > "$1.ours"; found=$?
   cmp -s "$1.orig" "$1.ours"; same=$?
   rm -f "$1.orig" "$1.ours"
-  [ "$same" = 0 ] || return 1
+  [ "$found" = 0 ] && [ "$same" = 0 ] || return 1
   [ "$(grep -c "<library name=\"$LIB_NAME\"" "$1")" = 1 ] || return 1
   [ "$(grep -c "uuid=\"$EFFECT_UUID\"" "$1")" = 1 ] || return 1
   awk -v lib="<library name=\"$LIB_NAME\"" -v eff="uuid=\"$EFFECT_UUID\"" '
@@ -294,6 +321,8 @@ validate_xml() {
   ' "$1"
 }
 
+# The same for a .conf: with the original, the copy must be it plus our two
+# blocks, each placed first in its own section.
 validate_conf() {
   grep -q "$EFFECT_UUID" "$1" &&
   grep -q "$LIB_NAME {" "$1" &&
@@ -303,7 +332,20 @@ validate_conf() {
   # { is not a valid pattern to busybox awk, which is the awk every root
   # manager runs this with: it fails every file instead.
   awk '{ n += gsub(/[{]/, "{") - gsub(/[}]/, "}"); if (n < 0) exit 1 } END { exit (n != 0) }' "$1" &&
-  [ "$(wc -c < "$1")" -gt 100 ]
+  [ "$(wc -c < "$1")" -gt 100 ] || return 1
+  [ -n "$2" ] || return 0
+  strip_ours "$2" > "$1.orig"
+  drop_entries "$1" "$CONF_LIB|$CONF_EFF" once > "$1.ours"; found=$?
+  cmp -s "$1.orig" "$1.ours"; same=$?
+  rm -f "$1.orig" "$1.ours"
+  [ "$found" = 0 ] && [ "$same" = 0 ] || return 1
+  awk -v lib="$LIB_NAME {" -v eff="$EFFECT_NAME {" '
+    { t = $0; sub(/^[ \t]+/, "", t); sub(/[ \t\r]+$/, "", t) }
+    t == lib && prev ~ /^libraries[ \t]*[{]/ { l++ }
+    t == eff && prev ~ /^effects[ \t]*[{]/ { e++ }
+    { prev = $0 }
+    END { exit !(l == 1 && e == 1) }
+  ' "$1"
 }
 
 # Two whole lines are added, one before </libraries> and one before
@@ -313,8 +355,7 @@ validate_conf() {
 # else, is not used, so a config laid out some other way is refused (exit 3)
 # rather than given our lines in the wrong place.
 patch_xml() {
-  strip_ours "$1" | awk -v lib="<library name=\"$LIB_NAME\" path=\"libjamesdsp.so\"/>" \
-      -v eff="<effect name=\"$EFFECT_NAME\" library=\"$LIB_NAME\" uuid=\"$EFFECT_UUID\"/>" '
+  strip_ours "$1" | awk -v lib="$XML_LIB" -v eff="$XML_EFF" '
     {
       line = $0; cr = ""; core = line
       if (substr(line, length(line), 1) == "\r") { cr = "\r"; core = substr(line, 1, length(line) - 1) }
@@ -368,11 +409,13 @@ patch_audio_config() {
   : > "$MODPATH/.source_config"
   for cfg in $CONFIGS; do
     src="$RV4A_ROOT$cfg"
-    # Our own lines are taken out first, so what is left is somebody else's.
-    if strip_ours "$src" | grep -q "$EFFECT_UUID"; then
-      say "! $cfg already lists this effect for another library."
-      say "  Another JamesDSP-based mod, or the ROM itself, provides"
-      say "  it, and only one of them can."
+    # Our own entries are taken out first, so anything left that names the
+    # effect or its library is somebody else's, or ours edited by hand or
+    # commented out. Either way it is not ours to remove.
+    if strip_ours "$src" | grep -q -e "$EFFECT_UUID" -e 'libjamesdsp\.so'; then
+      say "! $cfg already lists this engine, in an entry this"
+      say "  module did not write. Another JamesDSP-based mod, or"
+      say "  the ROM itself, provides it, and only one of them can."
       return 1
     fi
     target="$(module_path_for "$cfg")"
@@ -385,7 +428,7 @@ patch_audio_config() {
     ok=
     case "$cfg" in
       *.xml)  patch_xml  "$src" "$tmp" && validate_xml  "$tmp" "$src" && ok=1 ;;
-      *.conf) patch_conf "$src" "$tmp" && validate_conf "$tmp" && ok=1 ;;
+      *.conf) patch_conf "$src" "$tmp" && validate_conf "$tmp" "$src" && ok=1 ;;
     esac
 
     if [ "$ok" != "1" ]; then
