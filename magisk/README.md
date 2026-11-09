@@ -107,7 +107,10 @@ The module also defends itself. It disables itself after two boots that do not
 finish, and `post-fs-data.sh` runs before the audio server
 starts and moves aside any audio config of ours that fails validation, or that
 was made from a file a system update has since changed, so the device boots
-with the stock configuration instead.
+with the stock configuration instead. On APatch with a metamodule the module is
+already mounted when that check runs, so what it stops takes effect from the
+next boot; there it disables itself after one boot that does not finish, so a
+loop still clears by the third boot.
 
 Two logs in the module folder (`/data/adb/modules/rv4a_engine/`) say what
 happened. `install.log` is what the installer found: root manager and
