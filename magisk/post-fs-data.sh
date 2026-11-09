@@ -49,23 +49,44 @@ find_disabled() {
   find -L $(roots) -maxdepth 6 -type f -name "audio_effects*.disabled" 2>/dev/null
 }
 
-# The same as strip_ours in common/patch_audio_config.sh, kept here so the
-# boot safety net depends on no other file. The two must stay the same.
+# The same entries, drop_entries and strip_ours as in
+# common/patch_audio_config.sh, kept here so the boot safety net depends on
+# no other file. The two copies must stay the same.
+XML_LIB="<library name=\"$LIB_NAME\" path=\"libjamesdsp.so\"/>"
+XML_EFF="<effect name=\"$EFFECT_NAME\" library=\"$LIB_NAME\" uuid=\"$UUID\"/>"
+XML_OLD="<library name=\"jamesdsp\" path=\"libjamesdsp.so\"/>|<effect name=\"$EFFECT_NAME\" library=\"jamesdsp\" uuid=\"$UUID\"/>"
+CONF_LIB="$LIB_NAME {\npath /system/lib/soundfx/libjamesdsp.so\n}"
+CONF_EFF="$EFFECT_NAME {\nlibrary $LIB_NAME\nuuid $UUID\n}"
+CONF_OLD="jamesdsp {\npath /system/lib/soundfx/libjamesdsp.so\n}|$EFFECT_NAME {\nlibrary jamesdsp\nuuid $UUID\n}"
+
+drop_entries() {
+  awk -v entries="$2" -v once="${3:-}" '
+    function bare(s) { sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
+    { raw[NR] = $0; t[NR] = bare($0) }
+    END {
+      n = split(entries, e, "|")
+      for (x = 1; x <= n; x++) {
+        len[x] = split(e[x], part, "\n")
+        for (y = 1; y <= len[x]; y++) want[x, y] = part[y]
+      }
+      i = 1
+      while (i <= NR) {
+        hit = 0
+        for (x = 1; x <= n && !hit; x++) {
+          hit = x
+          for (y = 1; y <= len[x]; y++) if (t[i + y - 1] != want[x, y]) { hit = 0; break }
+        }
+        if (hit) { seen[hit]++; i += len[hit] } else { print raw[i]; i++ }
+      }
+      if (once) for (x = 1; x <= n; x++) if (seen[x] != 1) exit 1
+    }
+  ' "$1"
+}
+
 strip_ours() {
   case "$1" in
-    *.conf)
-      awk -v lib="$LIB_NAME" -v eff="$EFFECT_NAME" '
-        skip { if ($0 ~ /^  \}/) skip = 0; next }
-        $0 ~ "^  (" lib "|jamesdsp|" eff ") \\{" { skip = 1; next }
-        { print }
-      ' "$1"
-      ;;
-    *)
-      grep -v "<effect .*uuid=\"$UUID\"" "$1" |
-        grep -v "<library name=\"$LIB_NAME\"" |
-        grep -v "<library name=\"jamesdsp\"" |
-        grep -v "<effect name=\"$EFFECT_NAME\""
-      ;;
+    *.conf) drop_entries "$1" "$CONF_LIB|$CONF_EFF|$CONF_OLD" ;;
+    *)      drop_entries "$1" "$XML_LIB|$XML_EFF|$XML_OLD" ;;
   esac
 }
 

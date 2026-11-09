@@ -38,6 +38,7 @@ pass=0; fail=0
 ok() { if [ "$2" = 0 ]; then pass=$((pass + 1)); printf '  ok    %s\n' "$1"; else fail=$((fail + 1)); printf '  FAIL  %s\n' "$1"; fi; }
 expect() { [ "$2" = "$3" ]; ok "$1 (got '$2')" $?; }
 CR="$(printf '\r')"
+TAB="$(printf '\t')"
 UUID=f27317f4-c984-4de6-9a90-545759495bf2
 
 # ---------------------------------------------------------------- fixtures
@@ -420,7 +421,7 @@ printf '<audio_effects_conf><libraries><library name="a" path="a.so"/></librarie
 refused "a one-line list is not patched" mini "$R" "$T/plain.props" "an unusual layout"
 R="$T/proxy"; aosp "$R" "$AOSP_CFG"
 sed -i "s|</effects>|        <effectProxy name=\"x\" library=\"proxy\" uuid=\"aaaa\">\n            <libsw library=\"other\" uuid=\"$UUID\"/>\n        </effectProxy>\n    </effects>|" "$R/vendor/etc/audio_effects.xml"
-refused "our uuid already used inside an effect proxy" proxy "$R" "$T/plain.props" "already lists this effect for another library"
+refused "our uuid already used inside an effect proxy" proxy "$R" "$T/plain.props" "in an entry this"
 
 R="$T/comment"; aosp "$R" "$AOSP_CFG"
 sed -i 's|^    <effects>|    <!-- old list, kept for reference\n    </effects>\n    -->\n    <effects>|' "$R/vendor/etc/audio_effects.xml"
@@ -443,6 +444,54 @@ sed 's|\(<library name="jdsp".*\)|\1\n\1|' "$G" > "$T/v4.xml"
 val "$T/v4.xml" "$S"; [ $? != 0 ]; ok "our library twice fails" $?
 sed 's|\(<effect name="jamesdsp".*\)|\1\n\1|' "$G" > "$T/v5.xml"
 val "$T/v5.xml" "$S"; [ $? != 0 ]; ok "our effect twice fails" $?
+sed 's|\(<library name="jdsp".*\)|\1\n        <library name="jamesdsp" path="libjamesdsp.so"/>|' "$G" > "$T/v6.xml"
+val "$T/v6.xml" "$S"; [ $? != 0 ]; ok "an extra entry in an older form fails" $?
+
+# ---------------------------------------------------------------- what is ours
+echo; echo "[4b] only entries this module wrote are taken out"
+# Entries left by an earlier version, mounted over the list, go: whole lines
+# and blocks matched exactly, whatever their indentation and line endings.
+R="$T/legacy"; aosp "$R" "$AOSP_CFG"; write "$R/vendor/etc/audio_effects.xml" "$AOSP_XML" crlf
+install_case legacy0 "$R" "$T/plain.props"; L0="$MP/system/vendor/etc/audio_effects.xml"
+sed -i "s|^\(    <libraries>\)\(.*\)$|\1\2\n$TAB<library name=\"jamesdsp\" path=\"libjamesdsp.so\"/>  \2|; s|^\(    <effects>\)\(.*\)$|\1\2\n  <effect name=\"jamesdsp\" library=\"jamesdsp\" uuid=\"$UUID\"/>\2|" "$R/vendor/etc/audio_effects.xml"
+installs "an earlier version's entries (tabs, CRLF, trailing blanks)" legacy "$R" "$T/plain.props"
+cmp -s "$MP/system/vendor/etc/audio_effects.xml" "$L0"; ok "  are taken out: same copy as over the stock list" $?
+R="$T/conflegacy"; rm -rf "$R"; loader "$R" /vendor/lib64 "$AOSP_CFG"; hal "$R" /vendor/lib64 2.0
+write "$R/vendor/etc/audio_effects.conf" "$AOSP_CONF"; install_case conflegacy0 "$R" "$T/plain.props"
+L0="$MP/system/vendor/etc/audio_effects.conf"
+sed -i "s|^libraries {|libraries {\n  jamesdsp {\n    path /system/lib/soundfx/libjamesdsp.so\n  }|; s|^effects {|effects {\n  jamesdsp {\n    library jamesdsp\n    uuid $UUID\n  }|" "$R/vendor/etc/audio_effects.conf"
+installs "an earlier version's .conf blocks" conflegacy "$R" "$T/plain.props"
+cmp -s "$MP/system/vendor/etc/audio_effects.conf" "$L0"; ok "  are taken out whole" $?
+
+# Anything else naming the engine stays where it is, and the install stops.
+# Taking out every line that mentions it would take whatever else shares the
+# line: another library, or the start of a comment.
+R="$T/twoline"; aosp "$R" "$AOSP_CFG"
+sed -i 's|^\(        <library name="visualizer".*\)$|\1\n        <library name="jamesdsp" path="libjamesdsp.so"/><library name="dap" path="libswdap.so"/>|' "$R/vendor/etc/audio_effects.xml"
+refused "our old library sharing its line with another library" twoline "$R" "$T/plain.props" "in an entry this"
+R="$T/opener"; aosp "$R" "$AOSP_CFG"
+sed -i "s|^    </effects>|        <!-- <effect name=\"jamesdsp\" library=\"jdsp\" uuid=\"$UUID\"/>\n        <effect name=\"old\" library=\"bundle\" uuid=\"11111111-2222-3333-4444-555555555555\"/>\n        -->\n    </effects>|" "$R/vendor/etc/audio_effects.xml"
+refused "our effect on the line that opens a comment" opener "$R" "$T/plain.props" "in an entry this"
+HAND_CONF="$(printf '%s\n' "$AOSP_CONF" | sed "s|^libraries {|libraries {\n  jamesdsp {\n${TAB}path /vendor/lib/soundfx/libjamesdsp.so\n$TAB}|")"
+R="$T/confhand"; rm -rf "$R"; loader "$R" /vendor/lib64 "$AOSP_CFG"; hal "$R" /vendor/lib64 2.0
+write "$R/vendor/etc/audio_effects.conf" "$HAND_CONF"
+refused ".conf: a block for our library in some other form" confhand "$R" "$T/plain.props" "in an entry this"
+
+# The copy is compared with the original itself, so a line lost along with
+# one of ours is noticed even where both files would reduce the same way.
+S="$T/opener/vendor/etc/audio_effects.xml"
+grep -v 'name="jamesdsp"' "$S" | sed "s|^    </libraries>|        <library name=\"jdsp\" path=\"libjamesdsp.so\"/>\n    </libraries>|; s|^    </effects>|        <effect name=\"jamesdsp\" library=\"jdsp\" uuid=\"$UUID\"/>\n    </effects>|" > "$T/v7.xml"
+val "$T/v7.xml" "$S"; [ $? != 0 ]; ok "a copy that lost a comment opener with our line fails" $?
+valc() { $SH -c ". '$MOD/common/patch_audio_config.sh'; validate_conf '$1' '$2'"; }
+write "$T/aosp.conf" "$AOSP_CONF"
+valc "$T/mod-conflegacy0/system/vendor/etc/audio_effects.conf" "$T/aosp.conf"; ok ".conf: a good copy passes against its original" $?
+write "$T/hand.conf" "$HAND_CONF"
+printf '%s\n' "$AOSP_CONF" | sed "/^  bundle {/,/^  }/d" |
+  sed "s|^libraries {|libraries {\n  jdsp {\n    path /system/lib/soundfx/libjamesdsp.so\n  }|; s|^effects {|effects {\n  jamesdsp {\n    library jdsp\n    uuid $UUID\n  }|" > "$T/c1.conf"
+valc "$T/c1.conf" "$T/hand.conf"; [ $? != 0 ]; ok ".conf: a copy that lost a stock block fails" $?
+printf '%s\n' "$AOSP_CONF" |
+  sed "s|^libraries {|libraries {\n  jamesdsp {\n    library jdsp\n    uuid $UUID\n  }|; s|^effects {|effects {\n  jdsp {\n    path /system/lib/soundfx/libjamesdsp.so\n  }|" > "$T/c2.conf"
+valc "$T/c2.conf" "$T/aosp.conf"; [ $? != 0 ]; ok ".conf: our blocks in each other's section fail" $?
 
 # ---------------------------------------------------------------- AML, other mods, updates
 echo; echo "[5] AML, other modules, and updating over an earlier install"
@@ -561,9 +610,13 @@ grep -q "^ok .*audio_effects_sec.xml" "$B/boot.log"; ok "KernelSU layout (system
 fresh; pfd >/dev/null; pfd; grep -q "strike 1" "$B/boot.log" && [ -f "$C" ]; ok "one unfinished boot is a strike, nothing more" $?
 pfd; [ -f "$B/disable" ] && [ -f "$C.disabled" ] && [ ! -f "$C" ]; ok "two unfinished boots: disabled, our copy set aside" $?
 rm -f "$B/disable"; pfd; [ -f "$C" ] && grep -q "restored" "$B/boot.log"; ok "re-enabled: the copy comes back on the next boot" $?
-a="$(sed -n '/^strip_ours() {/,/^}/p' "$MOD/common/patch_audio_config.sh" | grep -v '^ *#' | sed "s/EFFECT_UUID/UUID/g")"
-b="$(sed -n '/^strip_ours() {/,/^}/p' "$MOD/post-fs-data.sh" | grep -v '^ *#')"
-[ -n "$a" ] && [ "$a" = "$b" ]; ok "post-fs-data's strip_ours matches the installer's" $?
+shared() {  # the parts post-fs-data.sh keeps its own copy of
+  { grep -E '^(XML|CONF)_(LIB|EFF|OLD)=' "$1"
+    for f in drop_entries strip_ours; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'
+}
+a="$(shared "$MOD/common/patch_audio_config.sh" | sed "s/EFFECT_UUID/UUID/g")"
+b="$(shared "$MOD/post-fs-data.sh")"
+[ "$(printf '%s\n' "$a" | grep -c .)" -gt 30 ] && [ "$a" = "$b" ]; ok "post-fs-data's copies of the entries and strip_ours match the installer's" $?
 
 # ---------------------------------------------------------------- service
 echo; echo "[8] service.sh: what the audio HAL can see"
