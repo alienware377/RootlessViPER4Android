@@ -97,21 +97,20 @@ strip_ours() {
   esac
 }
 
-# The same as build_id in common/patch_audio_config.sh.
+# The same as has_ours and build_id in common/patch_audio_config.sh.
+has_ours() {
+  case "$1" in
+    *.conf) drop_entries "$1" "$CONF_LIB|$CONF_EFF" once > /dev/null ;;
+    *)      drop_entries "$1" "$XML_LIB|$XML_EFF" once > /dev/null ;;
+  esac
+}
+
 build_id() {
   v="$(sed -n 's/^ro\.vendor\.build\.fingerprint=//p' "$RV4A_ROOT/vendor/build.prop" 2>/dev/null | head -n 1)"
   s="$(sed -n 's/^ro\.system\.build\.fingerprint=//p; s/^ro\.build\.fingerprint=//p' \
        "$RV4A_ROOT/system/build.prop" 2>/dev/null | head -n 1)"
   [ -n "$v$s" ] && echo "${v:-unknown} ${s:-unknown}"
   return 0
-}
-
-# This module's own copy of a device config.
-our_copy() {
-  case "$1" in
-    /system/*) echo "$MODDIR$1" ;;
-    *)         echo "$MODDIR/system$1" ;;
-  esac
 }
 
 # Whether this manager has already mounted the module: APatch from 11219
@@ -212,7 +211,10 @@ stop_mounting() {
   # here is the device's own. APatch with a metamodule mounts first, and then
   # it is our copy, which with our lines left out is the file as it was at
   # install: an update underneath cannot be seen that way. So when the file
-  # is our copy, a different build is taken as an update instead.
+  # holds our entries, which only a copy of ours does, a different build is
+  # taken as an update instead. The copy in the module folder may already
+  # have been set aside by then while the mounted one stays in place, so
+  # the file is not compared with it.
   if [ -f "$MODDIR/.source_config" ]; then
     stale=""; mounted=""
     then_build="$(sed -n 's/^#build //p' "$MODDIR/.source_config" | head -n 1)"
@@ -224,7 +226,7 @@ stop_mounting() {
         stale=1
         continue
       fi
-      if cmp -s "$RV4A_ROOT$src" "$(our_copy "$src")"; then
+      if has_ours "$RV4A_ROOT$src"; then
         mounted=1
         if [ -n "$then_build" ] && [ -n "$now_build" ] && [ "$then_build" != "$now_build" ]; then
           echo "SYSTEM UPDATED: $src is our copy, already mounted, and the build has changed since it was made"
