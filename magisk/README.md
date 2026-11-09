@@ -85,7 +85,10 @@ and says what to install. Install the metamodule first, reboot, then install
 this module. It also refuses KernelSU's **late-load** mode, which starts after
 the audio system has already read its list of effects, and APatch's lite mode
 when it leaves module files unmounted: always before APatch 11142, and from
-11142 unless its OverlayFS option is on and the kernel supports it.
+11142 unless its OverlayFS option is on and the kernel supports it. If a phone
+with the module installed is later started in late-load mode, `late-load.sh`
+gives our configs the same checks `post-fs-data.sh` does before they are
+mounted, since the audio system reads them again whenever it restarts.
 
 ## If the device won't boot
 
