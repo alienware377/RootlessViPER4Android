@@ -120,7 +120,7 @@ jobs:
           if grep -qU $'\\\\' <(unzip -l rv4a-engine-module.zip); then
             echo "backslash paths in the archive"; exit 1
           fi
-          for f in module.prop customize.sh post-fs-data.sh service.sh common/patch_audio_config.sh common/root_manager.sh; do
+          for f in module.prop customize.sh post-fs-data.sh late-load.sh service.sh common/patch_audio_config.sh common/root_manager.sh; do
             unzip -l rv4a-engine-module.zip | grep -q " $f$" || { echo "missing $f"; exit 1; }
           done
 

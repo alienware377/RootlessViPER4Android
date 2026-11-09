@@ -245,7 +245,7 @@ EOF
 install_case() {
   MP="$T/mod-$1"; LOGF="$T/install-$1.log"
   rm -rf "$MP"; mkdir -p "$MP/libs/arm64-v8a" "$MP/libs/armeabi-v7a"
-  cp "$MOD/customize.sh" "$MOD/post-fs-data.sh" "$MOD/service.sh" "$MOD/module.prop" "$MP/"
+  cp "$MOD/customize.sh" "$MOD/post-fs-data.sh" "$MOD/late-load.sh" "$MOD/service.sh" "$MOD/module.prop" "$MP/"
   cp -r "$MOD/common" "$MP/"
   echo "engine arm64" > "$MP/libs/arm64-v8a/libjamesdsp.so"
   echo "engine arm" > "$MP/libs/armeabi-v7a/libjamesdsp.so"
@@ -675,6 +675,20 @@ fresh; pfd >/dev/null; APATCH=true APATCH_VER_CODE=11142 pfd
 [ ! -f "$B/disable" ] && grep -q "strike 1 of 2" "$B/boot.log"; ok "  older APatch still gets two" $?
 fresh; pfd >/dev/null; RV4A_ROOT="$R" KSU=true KSU_VER_CODE=30500 $SH "$B/post-fs-data.sh"
 [ ! -f "$B/disable" ] && grep -q "strike 1 of 2" "$B/boot.log"; ok "  and so does KernelSU 3, which mounts after" $?
+# KernelSU's late-load mode runs late-load.sh instead, after the phone has
+# booted but before the mount: the same config checks, and no watchdog.
+late() { RV4A_ROOT="$R" KSU=true KSU_LATE_LOAD=1 $SH "$B/late-load.sh"; }
+fresh; late
+grep -q "late-load" "$B/boot.log" && grep -q "source unchanged" "$B/boot.log" && grep -q "^ok .*audio_effects_sec.xml" "$B/boot.log" &&
+  [ ! -f "$B/.boot_incomplete" ] && [ ! -f "$B/skip_mount" ]
+ok "late-load: our copies are checked, and no boot marker is set" $?
+fresh; sed -i 's|bassboost"|bassboost2"|' "$R/vendor/etc/audio_effects_sec.xml"; late
+[ -f "$C.rejected" ] && [ -f "$B/skip_mount" ] && grep -q "SOURCE CONFIG CHANGED" "$B/boot.log"
+ok "late-load: a list a system update changed keeps our copy out" $?
+fresh; printf 'junk\n' > "$C"; late
+[ -f "$C.rejected" ] && [ -f "$B/skip_mount" ]; ok "late-load: a damaged copy is kept out" $?
+fresh; touch "$B/.boot_incomplete"; echo 1 > "$B/.boot_strikes"; late
+[ ! -f "$B/disable" ] && [ -f "$C" ]; ok "late-load: a marker left by an earlier boot is not a strike" $?
 shared() {  # the parts post-fs-data.sh keeps its own copy of
   { grep -E '^(XML|CONF)_(LIB|EFF|OLD)=' "$1"
     for f in drop_entries strip_ours build_id; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'
@@ -714,7 +728,7 @@ ok "audioserver restarted: marker kept, report still written" $?
 
 # ---------------------------------------------------------------- scripts
 echo; echo "[9] scripts"
-for s in "$MOD"/customize.sh "$MOD"/post-fs-data.sh "$MOD"/service.sh "$MOD"/common/*.sh; do
+for s in "$MOD"/customize.sh "$MOD"/post-fs-data.sh "$MOD"/late-load.sh "$MOD"/service.sh "$MOD"/common/*.sh; do
   $SH -n "$s"; ok "$(basename "$s") parses" $?
   grep -q "$CR" "$s"; [ $? != 0 ]; ok "$(basename "$s") has unix line endings" $?
 done

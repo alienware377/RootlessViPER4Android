@@ -12,6 +12,10 @@
 #  2. If the previous boot never finished, disable this module so the next boot
 #     comes up clean.
 #  3. Sanity-check our own audio configs and reject any that look wrong.
+#
+# KernelSU's late-load mode does not run this script. Its late-load.sh runs
+# it instead, after the phone has booted but still before the mount, with
+# RV4A_LATE_LOAD set: jobs 1 and 3 still apply, the boot watchdog does not.
 
 MODDIR=${0%/*}
 # Every rm and mv below is built from this. If it were empty they would be
@@ -153,7 +157,11 @@ stop_mounting() {
   done
 
   # --- 2. did the last boot finish? ------------------------------------
-  if [ -f "$MARK" ]; then
+  if [ "${RV4A_LATE_LOAD:-}" = 1 ]; then
+    # This boot is over already, and a marker left by an earlier one says
+    # nothing about it; service.sh clears it once the audio server is steady.
+    echo "KernelSU late-load: the phone has already booted, so the boot watchdog is skipped"
+  elif [ -f "$MARK" ]; then
     # Two strikes, not one. A power cut, or a long first boot after an OTA,
     # leaves exactly the same marker as a genuine failure, and disabling the
     # module over that is a support ticket rather than a save. Where the
@@ -188,7 +196,9 @@ stop_mounting() {
 
   # Mark the boot as in progress. service.sh clears this once Android is up
   # AND the audio server has stayed up.
-  touch "$MARK" || echo "WARNING: could not write the boot marker; watchdog is off"
+  if [ "${RV4A_LATE_LOAD:-}" != 1 ]; then
+    touch "$MARK" || echo "WARNING: could not write the boot marker; watchdog is off"
+  fi
 
   # --- 2b. has the system been updated under us? ------------------------
   # .source_config has one line per config the install patched: its path,
