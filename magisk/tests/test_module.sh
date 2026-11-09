@@ -569,8 +569,15 @@ KSU=true KSU_VER=3.2.0 KSU_VER_CODE=30400 KSU_RUNTIME_MODE=late-load refused "la
 APATCH=true APATCH_VER=11219 APATCH_VER_CODE=11219 refused "APatch 11219 without a metamodule" ap "$R" "$T/samsung.props" "This APatch only mounts"
 APATCH=true APATCH_VER_CODE=11142 installs "older APatch mounts by itself" ap2 "$R" "$T/samsung.props"
 touch "$R/data/adb/.litemode_enable"
-APATCH=true APATCH_VER_CODE=11142 refused "  unless it is in lite mode" aplite "$R" "$T/samsung.props" "lite mode"
-rm -f "$R/data/adb/.litemode_enable"
+APATCH=true APATCH_VER_CODE=11142 refused "  unless it is in lite mode" aplite "$R" "$T/samsung.props" "lite mode with OverlayFS off"
+# From 11131 lite mode still mounts modules through OverlayFS when that is on
+# and the kernel has it.
+touch "$R/data/adb/.overlayfs_enable"
+APATCH=true APATCH_VER_CODE=11142 refused "  lite mode, OverlayFS on, but no overlayfs in the kernel" aplite2 "$R" "$T/samsung.props" "lite mode with OverlayFS off"
+printf 'nodev\tsysfs\nnodev\toverlay\n\text4\n' > "$R/proc/filesystems"
+APATCH=true APATCH_VER_CODE=11142 installs "  lite mode with OverlayFS mounts" aplite3 "$R" "$T/samsung.props"
+APATCH=true APATCH_VER_CODE=11107 refused "  but not before 11131" aplite4 "$R" "$T/samsung.props" "is in lite mode, which does not"
+rm -f "$R/data/adb/.litemode_enable" "$R/data/adb/.overlayfs_enable" "$R/proc/filesystems"
 mkdir -p "$R/data/adb/ap"
 KSU=true KSU_VER=1.0.5 KSU_VER_CODE=11872 installs "an APatch folder left behind does not hide KernelSU" leftover "$R" "$T/samsung.props"
 grep -q "^- Root: KernelSU" "$LOGF"; ok "  KernelSU it is" $?
