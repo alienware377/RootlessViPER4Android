@@ -417,6 +417,19 @@ config_sig() {
   echo "$(strip_ours "$1" | wc -c | tr -dc '0-9') $(strip_ours "$1" | wc -l | tr -dc '0-9')"
 }
 
+# The vendor and system builds, read from their build.prop files rather than
+# with getprop, because modules that hide root often change the fingerprint
+# properties. A system update changes at least one of them. Empty when
+# neither can be read. post-fs-data.sh has a copy of this; the two must stay
+# the same.
+build_id() {
+  v="$(sed -n 's/^ro\.vendor\.build\.fingerprint=//p' "$RV4A_ROOT/vendor/build.prop" 2>/dev/null | head -n 1)"
+  s="$(sed -n 's/^ro\.system\.build\.fingerprint=//p; s/^ro\.build\.fingerprint=//p' \
+       "$RV4A_ROOT/system/build.prop" 2>/dev/null | head -n 1)"
+  [ -n "$v$s" ] && echo "${v:-unknown} ${s:-unknown}"
+  return 0
+}
+
 # Patches every file in $CONFIGS (one device path per line, from
 # loader_configs). All of them or none: a file left unpatched may be the one
 # the loader reads.
@@ -425,6 +438,9 @@ patch_audio_config() {
     say "! No audio config to patch; the effect will not load"
     return 1
   fi
+  old_mod="$RV4A_ROOT/data/adb/modules/rv4a_engine"
+  old_build="$(sed -n 's/^#build //p' "$old_mod/.source_config" 2>/dev/null | head -n 1)"
+  now_build="$(build_id)"
   : > "$MODPATH/.source_config"
   for cfg in $CONFIGS; do
     src="$RV4A_ROOT$cfg"
@@ -435,6 +451,21 @@ patch_audio_config() {
       say "! $cfg already lists this engine, in an entry this"
       say "  module did not write. Another JamesDSP-based mod, or"
       say "  the ROM itself, provides it, and only one of them can."
+      return 1
+    fi
+    # What is read here may be the installed module's copy, mounted over the
+    # real file. Made before a system update, it is the old release's list,
+    # and a copy made from it would carry that on. The boot check records
+    # the build once it has seen the real file unchanged, so a build that
+    # still differs means it never could: APatch with a metamodule mounts
+    # before the check runs. That boot's check stops the mount for the next.
+    case "$cfg" in /system/*) oc="$old_mod$cfg" ;; *) oc="$old_mod/system$cfg" ;; esac
+    if [ -n "$old_build" ] && [ -n "$now_build" ] && [ "$old_build" != "$now_build" ] &&
+       cmp -s "$src" "$oc"; then
+      say "! $cfg is still the copy the installed"
+      say "  module made before a system update, so a new one cannot"
+      say "  be made from it. Reboot once, which takes the old copy"
+      say "  out of use, then install this again."
       return 1
     fi
     target="$(module_path_for "$cfg")"
@@ -484,6 +515,8 @@ patch_audio_config() {
     # still perfectly well formed. One line per file: path, size, lines.
     echo "$cfg $(config_sig "$src")" >> "$MODPATH/.source_config"
   done
+  # And the build, for when the boot check cannot read the real file.
+  [ -n "$now_build" ] && echo "#build $now_build" >> "$MODPATH/.source_config"
   return 0
 }
 
