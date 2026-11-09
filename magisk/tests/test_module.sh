@@ -319,6 +319,15 @@ expect "  .source_config tracks both" "$(cut -d' ' -f1 "$MP/.source_config" | tr
 R="$T/sam5"; samsung "$R"; rm -rf "$R/proc" "$R/vendor/lib64" "$R/vendor/lib"
 installs "unreadable loader on another brand: audio_effects.xml only" sam5 "$R" "$T/plain.props"
 expect "  the plain list" "$(staged)" "/vendor/etc/audio_effects.xml "
+# AOSP's loader would take /vendor/etc, a Qualcomm one /vendor/etc/audio.
+write "$R/vendor/etc/audio/audio_effects.xml" "$AOSP_XML"
+installs "unreadable loader, lists in /vendor/etc/audio and /vendor/etc" sam5b "$R" "$T/plain.props"
+expect "  what AOSP's order and Qualcomm's pick are both patched" "$(staged)" "/vendor/etc/audio/audio_effects.xml /vendor/etc/audio_effects.xml "
+write "$R/vendor/etc/audio/sku_kalama/audio_effects.xml" "$AOSP_XML"; write "$R/vendor/etc/audio/sku_kalama_qssi/audio_effects.xml" "$AOSP_XML"
+props "$T/qssi-guess.props" "ro.boot.product.vendor.sku=kalama
+ro.vendor.qti.va_aosp.support=1"
+installs "  and with sku and qssi folders" sam5c "$R" "$T/qssi-guess.props"
+expect "  the sku folder and the qssi one" "$(staged)" "/vendor/etc/audio/sku_kalama/audio_effects.xml /vendor/etc/audio/sku_kalama_qssi/audio_effects.xml "
 
 R="$T/sam6"; samsung "$R"; rm -rf "$R/proc"
 installs "no HAL process found: the loader in /vendor/lib64 is read" sam6 "$R" "$T/samsung.props"
