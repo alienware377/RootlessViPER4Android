@@ -41,7 +41,8 @@ say() {
 # the loader itself. Samsung's asks only for audio_effects_sec.xml, Qualcomm
 # based ones add /vendor/etc/audio and a _qssi sku folder, Asus adds a
 # per-model name. So they are read out of the loader the effect HAL has
-# loaded, and AOSP's are the fallback.
+# loaded. When it cannot be read, the file AOSP's folders lead to and the one
+# the Qualcomm folders lead to are both patched.
 # ---------------------------------------------------------------------------
 
 # The effect HAL's process. Only processes with "audio" in their command line
@@ -74,7 +75,8 @@ has_string() { printf '%s\n' "$LOADER_STRINGS" | grep -qxF "$1"; }
 # when it can be found, which also catches a 32-bit HAL), LOADER_STRINGS,
 # LOADER_NAMES, LOADER_DIRS and LOADER_EXTRA (files loaded on top of the main
 # one, which we never patch). LOADER_GUESS is 1 when no loader could be read
-# and the names and folders are the usual ones rather than this phone's.
+# and the names and folders are the usual ones rather than this phone's;
+# LOADER_AOSP_DIRS is then AOSP's own list, to try beside LOADER_DIRS.
 detect_loader() {
   LOADER_PID="$(effect_hal_pid)"
   LOADER_BINS=""
@@ -122,17 +124,31 @@ $(bin_strings "$b")"
   fi
   LOADER_DIRS="$(loader_dirs | tr '\n' ' ')"
   LOADER_DIRS="${LOADER_DIRS% }"
+  LOADER_AOSP_DIRS=""
+  if [ "$LOADER_GUESS" = 1 ]; then
+    LOADER_AOSP_DIRS="$(loader_dirs aosp | tr '\n' ' ')"
+    LOADER_AOSP_DIRS="${LOADER_AOSP_DIRS% }"
+  fi
   LOADER_EXTRA="$(printf '%s\n' "$LOADER_STRINGS" |
     grep -E '^/.*/audio_effects[A-Za-z0-9_]*\.xml$' | grep -v config | tr '\n' ' ')"
   LOADER_EXTRA="${LOADER_EXTRA% }"
 }
 
-# AOSP's folders, in its order, plus the ones this loader names. Where
-# Xiaomi's /odm sku folder and Honor's /odm/etc/audio sit in their vendors'
-# lists is not known exactly; both are kept ahead of the folders they shadow.
+# The folders the loader searches, in its order: AOSP's, plus the ones this
+# loader names. When it could not be read (LOADER_GUESS), the two Qualcomm
+# adds are included, and "loader_dirs aosp" gives AOSP's alone for the other
+# possibility. Where Xiaomi's /odm sku folder and Honor's /odm/etc/audio sit
+# in their vendors' lists is not known exactly; both are kept ahead of the
+# folders they shadow.
 loader_dirs() {
   sku="$(getprop ro.boot.product.vendor.sku)"
   echo /odm/etc
+  if [ "$1" = aosp ]; then
+    [ -n "$sku" ] && echo "/vendor/etc/audio/sku_$sku"
+    echo /vendor/etc
+    echo /system/etc
+    return 0
+  fi
   if [ -n "$sku" ]; then
     if [ "$LOADER_GUESS" != 1 ] && has_string /odm/etc/audio/sku_; then
       echo "/odm/etc/audio/sku_$sku"
@@ -167,18 +183,21 @@ real_path() {
 
 # The configs to patch, one per line: for each name the loader asks for, the
 # first usable file in its folders. Normally that is one file. Only a loader
-# naming several (Asus) or one that could not be read gives more, because
-# which of them it takes cannot be told from outside, and patching a file
-# the loader ignores costs nothing. With no XML at all, the .conf it falls
-# back to.
+# naming several (Asus) or one that could not be read gives more: for the
+# latter, the first file in AOSP's order and the first in Qualcomm's, which
+# differ when both /vendor/etc/audio and /vendor/etc have one. Which of them
+# the loader takes cannot be told from outside, and patching a file it
+# ignores costs nothing. With no XML at all, the .conf it falls back to.
 loader_configs() {
   found=""
   for n in $LOADER_NAMES; do
-    for d in $LOADER_DIRS; do
-      xml_usable "$RV4A_ROOT$d/$n" || continue
-      f="$(real_path "$d/$n")"
-      case " $found " in *" $f "*) ;; *) found="$found $f"; echo "$f" ;; esac
-      break
+    for dirs in "$LOADER_DIRS" "$LOADER_AOSP_DIRS"; do
+      for d in $dirs; do
+        xml_usable "$RV4A_ROOT$d/$n" || continue
+        f="$(real_path "$d/$n")"
+        case " $found " in *" $f "*) ;; *) found="$found $f"; echo "$f" ;; esac
+        break
+      done
     done
   done
   [ -n "$found" ] && return 0
