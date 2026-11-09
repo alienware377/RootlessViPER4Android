@@ -551,6 +551,10 @@ installs "reinstall over our mounted copy, same build" ota1 "$R" "$T/samsung.pro
 buildprops "$R" new-vendor-build "$SAM_S"
 refused "  after a system update the boot check could not see" ota2 "$R" "$T/samsung.props" "made before a system update"
 grep -q "Reboot once" "$LOGF"; ok "  says to reboot once, then install" $?
+# That boot's check has set the module folder's copy aside already, but the
+# mounted one stays until the next boot.
+mv "$R/data/adb/modules/rv4a_engine/system/vendor/etc/audio_effects_sec.xml" "$R/data/adb/modules/rv4a_engine/system/vendor/etc/audio_effects_sec.xml.rejected"
+refused "  also once the boot check has set its own copy aside" ota2b "$R" "$T/samsung.props" "made before a system update"
 write "$R/vendor/etc/audio_effects_sec.xml" "$SEC_XML"
 installs "  once the copy is no longer mounted it installs" ota3 "$R" "$T/samsung.props"
 expect "  and records the new build" "$(sed -n 's/^#build //p' "$MP/.source_config")" "new-vendor-build $SAM_S"
@@ -638,6 +642,9 @@ grep -q "source unchanged" "$B/boot.log" && [ -f "$C" ]; ok "our own copy alread
 fresh; cp "$C" "$R/vendor/etc/audio_effects_sec.xml"; buildprops "$R" new-vendor-build "$SAM_S"; pfd
 [ -f "$C.rejected" ] && [ -f "$B/skip_mount" ] && grep -q "SYSTEM UPDATED" "$B/boot.log" && grep -q "this boot still uses it" "$B/boot.log"
 ok "our copy already mounted and a new build: set aside, mounting stopped from the next boot" $?
+rm -f "$B/skip_mount"; pfd
+grep -q "SYSTEM UPDATED" "$B/boot.log" && ! grep -q "build recorded" "$B/boot.log"
+ok "  still seen with the module folder's copy set aside and the old one mounted" $?
 fresh; printf 'junk\n' > "$C"; APATCH=true APATCH_VER_CODE=11282 pfd
 grep -q "failed validation" "$B/boot.log" && grep -q "this boot still uses it" "$B/boot.log"
 ok "APatch 11219 and later: a rejection says it applies from the next boot" $?
@@ -691,11 +698,11 @@ fresh; touch "$B/.boot_incomplete"; echo 1 > "$B/.boot_strikes"; late
 [ ! -f "$B/disable" ] && [ -f "$C" ]; ok "late-load: a marker left by an earlier boot is not a strike" $?
 shared() {  # the parts post-fs-data.sh keeps its own copy of
   { grep -E '^(XML|CONF)_(LIB|EFF|OLD)=' "$1"
-    for f in drop_entries strip_ours build_id; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'
+    for f in drop_entries strip_ours has_ours build_id; do sed -n "/^$f() {/,/^}/p" "$1"; done; } | grep -v '^ *#'
 }
 a="$(shared "$MOD/common/patch_audio_config.sh" | sed "s/EFFECT_UUID/UUID/g")"
 b="$(shared "$MOD/post-fs-data.sh")"
-[ "$(printf '%s\n' "$a" | grep -c .)" -gt 36 ] && [ "$a" = "$b" ]; ok "post-fs-data's copies of the entries, strip_ours and build_id match the installer's" $?
+[ "$(printf '%s\n' "$a" | grep -c .)" -gt 36 ] && [ "$a" = "$b" ]; ok "post-fs-data's copies of the entries, strip_ours, has_ours and build_id match the installer's" $?
 
 # ---------------------------------------------------------------- service
 echo; echo "[8] service.sh: what the audio HAL can see"

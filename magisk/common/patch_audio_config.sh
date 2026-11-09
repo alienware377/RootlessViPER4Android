@@ -298,6 +298,16 @@ strip_ours() {
   esac
 }
 
+# Whether a config holds our two entries as this version writes them, which
+# on a phone means it is a copy of ours mounted over the real file.
+# post-fs-data.sh has a copy of this; the two must stay the same.
+has_ours() {
+  case "$1" in
+    *.conf) drop_entries "$1" "$CONF_LIB|$CONF_EFF" once > /dev/null ;;
+    *)      drop_entries "$1" "$XML_LIB|$XML_EFF" once > /dev/null ;;
+  esac
+}
+
 # Checks a generated XML config. With the original as a second argument it
 # also checks that the copy is exactly the original, less entries an earlier
 # version of this module left in it, plus our two lines once each, and that
@@ -459,9 +469,8 @@ patch_audio_config() {
     # the build once it has seen the real file unchanged, so a build that
     # still differs means it never could: APatch with a metamodule mounts
     # before the check runs. That boot's check stops the mount for the next.
-    case "$cfg" in /system/*) oc="$old_mod$cfg" ;; *) oc="$old_mod/system$cfg" ;; esac
     if [ -n "$old_build" ] && [ -n "$now_build" ] && [ "$old_build" != "$now_build" ] &&
-       cmp -s "$src" "$oc"; then
+       has_ours "$src"; then
       say "! $cfg is still the copy the installed"
       say "  module made before a system update, so a new one cannot"
       say "  be made from it. Reboot once, which takes the old copy"
