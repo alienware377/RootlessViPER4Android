@@ -46,5 +46,5 @@ jobs:
       - name: Upload Magisk module
         uses: actions/upload-artifact@v4
         with:
-          name: RootlessViPER4Android-magisk-module
+          name: RootfulViPER4Android-engine-module
           path: build/rv4a-engine-module.zip

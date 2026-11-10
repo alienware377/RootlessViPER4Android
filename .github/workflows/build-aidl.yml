@@ -80,5 +80,5 @@ jobs:
       - name: Upload the experimental module
         uses: actions/upload-artifact@v4
         with:
-          name: rv4a-engine-aidl-EXPERIMENTAL
+          name: RootfulViPER4Android-engine-module-AIDL-EXPERIMENTAL
           path: build/rv4a-engine-aidl-experimental.zip
