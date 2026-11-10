@@ -113,5 +113,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rv4a-engine-module
+          name: RootfulViPER4Android-engine-module
           path: build/rv4a-engine-module.zip
