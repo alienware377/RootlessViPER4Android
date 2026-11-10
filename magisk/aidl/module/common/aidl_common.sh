@@ -21,7 +21,7 @@ RV4A_FACTORY="android.hardware.audio.effect.IFactory/default"
 RV4A_CREATE_FLAG="/data/local/tmp/rv4a-aidl-pixel"
 # What the boot scripts keep from logcat: our plugin, the factory and the
 # framework side of the effect HAL, the linker and SELinux.
-RV4A_LOG_PATTERN='RV4A|RootlessViPER|rv4a_aidl|EffectHalAidl|EffectsFactoryHalAidl|EffectConfig|EffectFactory|AHAL_|TimeCheck|memfd|ashmem|Cannot do a user transaction|linker|dlopen|avc: +denied.*(audio|rv4a|soundfx)'
+RV4A_LOG_PATTERN='RV4A|Root(less|ful)ViPER|rv4a_aidl|EffectHalAidl|EffectsFactoryHalAidl|EffectConfig|EffectFactory|AHAL_|TimeCheck|memfd|ashmem|Cannot do a user transaction|linker|dlopen|avc: +denied.*(audio|rv4a|soundfx)'
 
 rv4a_getprop() {
   if [ -n "$RV4A_PROPS" ]; then

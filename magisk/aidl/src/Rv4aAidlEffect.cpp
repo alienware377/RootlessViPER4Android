@@ -107,7 +107,7 @@ const AudioUuid& implUuid() {
     return u;
 }
 
-/* The app recognises its own engine by "RootlessViPER4Android" in the name
+/* The app recognises its own engine by "RootfulViPER4Android" in the name
    and reads the engine version from "engine v<N>", so the name is the legacy
    effect's own, with " AIDL" after it to tell the two paths apart in logs and
    dumps. rv4a_legacy_name is only called from inside this function-local

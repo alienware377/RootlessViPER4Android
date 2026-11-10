@@ -21,7 +21,12 @@ object EngineName {
      */
     const val REQUIRED_VERSION = 5
 
-    private const val OURS = "RootlessViPER4Android"
+    /**
+     * The module only works with the rooted app, so it calls itself
+     * Rootful; builds up to 4.5.0 said Rootless, and a module is often a
+     * build behind the app.
+     */
+    private val OURS = listOf("RootfulViPER4Android", "RootlessViPER4Android")
     private val VERSION = Regex("""engine v(\d+)""")
 
     /** The version in a name of this fork's engine, 0 when it carries none (the first builds). */
@@ -35,7 +40,7 @@ object EngineName {
         // heard of. Unhandled ids are dropped silently at that end and the app
         // has no way to notice, so the user moved sliders that could not do
         // anything and nothing said why.
-        name.contains(OURS) ->
+        OURS.any { name.contains(it) } ->
             if (version(name) >= REQUIRED_VERSION) PluginState.Available else PluginState.Outdated
         name.contains("v3") -> PluginState.Unsupported
         else -> PluginState.Foreign
