@@ -20,6 +20,13 @@ class EngineNameTest {
     fun `the current module and later ones are available`() {
         assertEquals(PluginState.Available, EngineName.state("RootlessViPER4Android engine v5"))
         assertEquals(PluginState.Available, EngineName.state("RootlessViPER4Android engine v12"))
+        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v5"))
+    }
+
+    @Test
+    fun `a module that still calls itself Rootless is ours`() {
+        assertEquals(PluginState.Outdated, EngineName.state("RootlessViPER4Android engine v4"))
+        assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v4"))
     }
 
     @Test
@@ -33,7 +40,7 @@ class EngineNameTest {
         // Run from the module directory under Gradle, the project root in some IDEs.
         val src = listOf("src/main/cpp/hal/JamesDspHalEffect.cpp", "app/src/main/cpp/hal/JamesDspHalEffect.cpp")
             .map(::File).first { it.isFile }.readText()
-        val name = Regex(""""(RootlessViPER4Android engine[^"]*)"""").find(src)?.groupValues?.get(1)
+        val name = Regex(""""(RootfulViPER4Android engine[^"]*)"""").find(src)?.groupValues?.get(1)
         assertNotNull(name)
         assertEquals(EngineName.REQUIRED_VERSION, EngineName.version(name!!))
         assertEquals(PluginState.Available, EngineName.state(name))

@@ -57,7 +57,7 @@ static effect_descriptor_t rv4a_descriptor =
        whenever the module learns ids an older one would quietly ignore, so
        the app can tell the user to flash the new one.
        v5: the spectral shaper and the binaural upmix. */
-    "RootlessViPER4Android engine v5",
+    "RootfulViPER4Android engine v5",
     "alienware377"
 };
 
@@ -848,7 +848,7 @@ HAL_EXPORT audio_effect_library_t AUDIO_EFFECT_LIBRARY_INFO_SYM =
 {
     .tag = AUDIO_EFFECT_LIBRARY_TAG,
     .version = EFFECT_LIBRARY_API_VERSION,
-    .name = "RootlessViPER4Android Effect Library",
+    .name = "RootfulViPER4Android Effect Library",
     .implementor = "alienware377",
     .create_effect = EffectCreate,
     .release_effect = EffectRelease,
