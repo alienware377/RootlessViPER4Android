@@ -56,6 +56,19 @@ jobs:
           fi
           exit $fail
 
+      # The installer and boot scripts against sample device trees: which
+      # effects list each kind of loader reads, the root manager checks, the
+      # boot checks. Busybox is what Magisk and KernelSU run them with, and
+      # its awk has refused patterns the GNU one takes without a word.
+      - name: Test the module scripts
+        run: |
+          set -eu
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq busybox-static
+          SH=dash bash magisk/tests/test_module.sh
+          SH=bash bash magisk/tests/test_module.sh
+          BUSYBOX="$(command -v busybox)" bash magisk/tests/test_module.sh
+
       - uses: nttld/setup-ndk@v1
         id: ndk
         with:
@@ -107,7 +120,7 @@ jobs:
           if grep -qU $'\\\\' <(unzip -l rv4a-engine-module.zip); then
             echo "backslash paths in the archive"; exit 1
           fi
-          for f in module.prop customize.sh post-fs-data.sh service.sh common/patch_audio_config.sh; do
+          for f in module.prop customize.sh post-fs-data.sh late-load.sh service.sh common/patch_audio_config.sh common/root_manager.sh; do
             unzip -l rv4a-engine-module.zip | grep -q " $f$" || { echo "missing $f"; exit 1; }
           done
 

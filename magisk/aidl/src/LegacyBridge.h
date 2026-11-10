@@ -42,7 +42,7 @@ int32_t rv4a_legacy_get_param(void *h, const void *param, uint32_t size,
    negative errno when it refused the buffer. */
 int32_t rv4a_legacy_process(void *h, float *in, float *out, size_t frames);
 
-/* The legacy descriptor's name, e.g. "RootlessViPER4Android engine v5". The
+/* The legacy descriptor's name, e.g. "RootfulViPER4Android engine v5". The
    app reads the engine version from it, so the plugin reports the same name
    and both paths can never disagree about which engine they carry. Never
    NULL. */

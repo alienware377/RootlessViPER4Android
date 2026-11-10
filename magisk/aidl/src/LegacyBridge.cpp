@@ -136,7 +136,7 @@ const char *rv4a_legacy_name(void)
         if (EffectGetDescriptor(&kRv4aUuid, &d) == 0 && d.name[0])
             memcpy(name, d.name, sizeof(name));
         else
-            strcpy(name, "RootlessViPER4Android engine");
+            strcpy(name, "RootfulViPER4Android engine");
         name[sizeof(name) - 1] = 0;
         done = true;
     }

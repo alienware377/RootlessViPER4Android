@@ -39,8 +39,9 @@ done
 # post-fs-data.sh is the boot safety net: it quarantines a bad audio config
 # before the audio server starts. Leaving it out of the package would ship the
 # module without its only defence against an unrecoverable bootloop.
+# late-load.sh runs its config checks in KernelSU's late-load mode.
 cp magisk/module.prop magisk/customize.sh magisk/service.sh \
-   magisk/post-fs-data.sh magisk/README.md "$OUT/"
+   magisk/post-fs-data.sh magisk/late-load.sh magisk/README.md "$OUT/"
 mkdir -p "$OUT/common"; cp -r magisk/common/. "$OUT/common/"
 
 # A single carriage return in any of these is not cosmetic. post-fs-data.sh

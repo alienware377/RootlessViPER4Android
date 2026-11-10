@@ -19,7 +19,7 @@ MODID=rv4a_engine_aidl
 MOD=/data/adb/modules/$MODID
 UUID=f27317f4-c984-4de6-9a90-545759495bf2
 FACTORY=android.hardware.audio.effect.IFactory/default
-PATTERN='RV4A|RootlessViPER|rv4a_aidl|jamesdsp|EffectHalAidl|EffectsFactoryHalAidl|EffectConfig|EffectFactory|EffectsFactory|AHAL_|TimeCheck|memfd|ashmem|Cannot do a user transaction|soundfx|audio_effects'
+PATTERN='RV4A|Root(less|ful)ViPER|rv4a_aidl|jamesdsp|EffectHalAidl|EffectsFactoryHalAidl|EffectConfig|EffectFactory|EffectsFactory|AHAL_|TimeCheck|memfd|ashmem|Cannot do a user transaction|soundfx|audio_effects'
 
 OUT="$1"
 if [ -z "$OUT" ]; then
@@ -242,12 +242,12 @@ sum "SELinux denials naming our files: ${DEN:-0}"
 # ---------------------------------------------------------------- framework
 sec "audio_flinger: our effect"
 AF="$(dumpsys media.audio_flinger 2>/dev/null)"
-echo "$AF" | grep -n -iE -B3 -A10 "$UUID|RootlessViPER" | head -n 160 >> "$BODY"
+echo "$AF" | grep -n -iE -B3 -A10 "$UUID|Root(less|ful)ViPER" | head -n 160 >> "$BODY"
 INAF=no
-echo "$AF" | grep -qiE "$UUID|RootlessViPER" && INAF=yes
+echo "$AF" | grep -qiE "$UUID|Root(less|ful)ViPER" && INAF=yes
 say "effect lines in the dump: $(echo "$AF" | grep -ciE 'effect')"
 sec "effect list as the framework sees it"
-dumpsys media.audio_policy 2>/dev/null | grep -n -iE -A2 "$UUID|RootlessViPER" | head -n 40 >> "$BODY"
+dumpsys media.audio_policy 2>/dev/null | grep -n -iE -A2 "$UUID|Root(less|ful)ViPER" | head -n 40 >> "$BODY"
 if [ $KIND = aidl ]; then
   sec "factory dump"
   dumpsys $FACTORY 2>/dev/null | head -n 200 >> "$BODY"
