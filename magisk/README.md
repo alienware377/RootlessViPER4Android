@@ -82,13 +82,18 @@ recovery advice to whichever it finds.
 through a metamodule** such as meta-overlayfs. Without one the module would
 install cleanly and the engine would never appear, so the installer refuses
 and says what to install. Install the metamodule first, reboot, then install
-this module. It also refuses KernelSU's **late-load** mode, which starts after
-the audio system has already read its list of effects, and APatch's lite mode
-when it leaves module files unmounted: always before APatch 11142, and from
-11142 unless its OverlayFS option is on and the kernel supports it. If a phone
-with the module installed is later started in late-load mode, `late-load.sh`
-gives our configs the same checks `post-fs-data.sh` does before they are
-mounted, since the audio system reads them again whenever it restarts.
+this module. It also refuses APatch's lite mode when it leaves module files
+unmounted: always before APatch 11142, and from 11142 unless its OverlayFS
+option is on and the kernel supports it.
+
+KernelSU's **late-load** mode (root started after the phone has booted, for
+example by a temporary root tool) works differently. The audio system has
+read its list of effects by then, and only reads it again when it starts, so
+`late-load.sh` gives our configs the same checks `post-fs-data.sh` does, and
+once the module is mounted `service.sh` restarts the audio HAL once, only if
+our list is really in place and the engine is not loaded yet. Sound stops for
+a moment while it comes back. A reboot without root brings the phone back
+exactly as it was.
 
 ## If the device won't boot
 
