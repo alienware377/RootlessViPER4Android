@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Resources
+import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
@@ -36,7 +37,30 @@ class RoutingObserver(val context: Context) : MediaRouter.Callback(), KoinCompon
     private val AudioDeviceInfo.deviceGroup: DeviceGroup
         get() = DeviceGroup.from(type)
 
-    private fun MediaRouter.RouteInfo.findOutputDevice(): Device? {
+    /*
+        The route says what kind of output was picked, and the device of that kind
+        is looked up. Some outputs fit none of the kinds a route can name: Android
+        Auto, for one, plays to a car the route list knows nothing about, and the
+        card then showed "Unknown error". There the device Android sends media to
+        is asked for directly, and failing that the output still gets a profile
+        of its own, under "Unknown".
+     */
+    private fun MediaRouter.RouteInfo.findOutputDevice(): Device =
+        findRouteDevice() ?: findMediaDevice() ?: Device("", "", DeviceGroup.OTHER)
+
+    private fun findMediaDevice(): Device? = sdkAbove(Build.VERSION_CODES.TIRAMISU) {
+        val audioManager = context.getSystemService<AudioManager>()!!
+        val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()
+        runCatching { audioManager.getAudioDevicesForAttributes(attributes) }
+            .onFailure { Timber.w(it, "Media output device not available") }
+            .getOrNull()?.firstOrNull()?.let { target ->
+            val info = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                .find { it.type == target.type && it.address == target.address }
+            Device(info?.productName?.toString() ?: "", target.address, DeviceGroup.from(target.type))
+        }
+    }.valueOrNull()
+
+    private fun MediaRouter.RouteInfo.findRouteDevice(): Device? {
         return context.getSystemService<AudioManager>()!!
             .getDevices(AudioManager.GET_DEVICES_OUTPUTS)
             .filter(AudioDeviceInfo::isSink)
