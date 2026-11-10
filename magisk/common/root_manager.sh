@@ -6,9 +6,7 @@
 # mount. Magisk mounts module files itself. KernelSU from 3.0 and APatch from
 # 11219 leave that to a separate "metamodule" (meta-overlayfs, for one), and
 # with none active nothing under system/ is mounted at all: the install
-# succeeds, the engine never appears and the app reports no module. KernelSU's
-# late-load mode starts after boot, when the audio HAL has already read its
-# effect list.
+# succeeds, the engine never appears and the app reports no module.
 #
 # Device paths go through $RV4A_ROOT, as in patch_audio_config.sh.
 

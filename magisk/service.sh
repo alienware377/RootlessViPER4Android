@@ -63,6 +63,75 @@ report() {
     while read -r l; do log "dmesg: $l"; done
 }
 
+# The audio process that has loaded the effect library list, and so the one
+# holding the list it read at boot. Same rule as report(): only processes
+# with "audio" in their command line.
+effect_hal_pid() {
+  for c in $(grep -l audio "$RV4A_ROOT"/proc/[0-9]*/cmdline 2>/dev/null); do
+    p="${c%/cmdline}"
+    if grep -q -E 'android\.hardware\.audio\.effect@[0-9.]+-impl\.so|/lib(64)?/libeffects\.so$' \
+         "$p/maps" 2>/dev/null; then
+      echo "${p##*/}"; return 0
+    fi
+  done
+  return 1
+}
+
+engine_loaded() {
+  for c in $(grep -l audio "$RV4A_ROOT"/proc/[0-9]*/cmdline 2>/dev/null); do
+    grep -q '/soundfx/libjamesdsp\.so' "${c%/cmdline}/maps" 2>/dev/null && return 0
+  done
+  return 1
+}
+
+# KernelSU's late-load mode mounts this module long after the audio HAL read
+# its effect list, and the HAL only reads it when it starts. So it is
+# restarted, once, and only when our copy of the list really is in place:
+# init brings it back within a second or two and audioserver follows it. A
+# late-load root is gone after a reboot, and so is everything this does.
+late_load_restart() {
+  if engine_loaded; then
+    log "late-load: the engine is already loaded, nothing to restart"
+    return 0
+  fi
+  if [ -f "$MODDIR/skip_mount" ]; then
+    log "late-load: skip_mount is set, so the audio HAL is left alone"
+    return 0
+  fi
+  listed=0
+  if [ -f "$MODDIR/.source_config" ]; then
+    while read -r src rest; do
+      case "$src" in ''|'#'*) continue ;; esac
+      grep -q "$UUID" "$RV4A_ROOT$src" 2>/dev/null && listed=1
+    done < "$MODDIR/.source_config"
+  fi
+  if [ "$listed" != 1 ]; then
+    log "late-load: no effect list the HAL reads names the engine yet, so the audio HAL is left alone"
+    return 0
+  fi
+  old="$(effect_hal_pid)"
+  if [ -z "$old" ]; then
+    log "late-load: could not find the audio HAL's process, so it was not restarted"
+    return 0
+  fi
+  log "late-load: restarting the audio HAL (pid $old) so it reads the effect list again"
+  kill -9 "$old" 2>/dev/null
+  k=0
+  while [ $k -lt 30 ]; do
+    sleep 1
+    k=$((k + 1))
+    new="$(effect_hal_pid)"
+    [ -n "$new" ] && [ "$new" != "$old" ] && break
+  done
+  if [ -z "$new" ] || [ "$new" = "$old" ]; then
+    log "late-load: the audio HAL did not come back within ${k}s; a reboot brings the phone back without this module"
+    return 0
+  fi
+  # Give it a moment to load its libraries before reading the map.
+  sleep 3
+  log "late-load: the audio HAL is back as pid $new"
+}
+
 # Wait for boot to be genuinely complete rather than just for this script to
 # run. Ten minutes, not two: the first boot after an OTA or a factory reset
 # spends a long time in dex2oat, and treating that as a failure would disable a
@@ -76,6 +145,15 @@ done
 if [ "$(getprop sys.boot_completed)" != "1" ]; then
   # A timeout is a failed boot, not a slow success, so the marker stays.
   log "boot did not complete within ${i}s; leaving the marker for post-fs-data"
+  exit 0
+fi
+
+# The boot this module could have upset is long over in late-load mode, and
+# the restart below changes audioserver's pid on purpose, so the watchdog
+# has nothing to watch.
+if [ -f "$MODDIR/.late_load" ]; then
+  late_load_restart
+  report
   exit 0
 fi
 

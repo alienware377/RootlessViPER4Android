@@ -592,8 +592,10 @@ KSU=true installs "KernelSU version unknown: installs" ksuunk "$R" "$T/samsung.p
 grep -q "Could not tell which KernelSU" "$LOGF" && grep -q "^- Root: KernelSU version unknown" "$LOGF"; ok "  with a warning" $?
 KSU=true KSUD_VER=3.1.0 refused "  but a ksud -V of 3.x is enough to know" ksud3 "$R" "$T/samsung.props" "none is active"
 KSU=true KSU_VER=1.0.5 KSU_VER_CODE=11872 installs "KernelSU 1.0.5 mounts by itself" ksu1 "$R" "$T/samsung.props"
-KSU=true KSU_VER=3.2.0 KSU_VER_CODE=30400 KSU_LATE_LOAD=1 refused "late-load mode" late "$R" "$T/samsung.props" "late-load mode"
-KSU=true KSU_VER=3.2.0 KSU_VER_CODE=30400 KSU_RUNTIME_MODE=late-load refused "late-load mode (runtime mode)" late2 "$R" "$T/samsung.props" "late-load mode"
+KSU=true KSU_VER=1.0.5 KSU_VER_CODE=11872 KSU_LATE_LOAD=1 installs "late-load mode installs" late "$R" "$T/samsung.props"
+grep -q "restarts the audio system once" "$LOGF" && [ -s "$MP/.source_config" ]; ok "  and says the audio system will restart" $?
+KSU=true KSU_VER=1.0.5 KSU_VER_CODE=11872 KSU_RUNTIME_MODE=late-load installs "late-load mode (runtime mode) installs" late2 "$R" "$T/samsung.props"
+grep -q "restarts the audio system once" "$LOGF"; ok "  and says so too" $?
 APATCH=true APATCH_VER=11219 APATCH_VER_CODE=11219 refused "APatch 11219 without a metamodule" ap "$R" "$T/samsung.props" "This APatch only mounts"
 APATCH=true APATCH_VER_CODE=11142 installs "older APatch mounts by itself" ap2 "$R" "$T/samsung.props"
 touch "$R/data/adb/.litemode_enable"
@@ -689,6 +691,8 @@ fresh; late
 grep -q "late-load" "$B/boot.log" && grep -q "source unchanged" "$B/boot.log" && grep -q "^ok .*audio_effects_sec.xml" "$B/boot.log" &&
   [ ! -f "$B/.boot_incomplete" ] && [ ! -f "$B/skip_mount" ]
 ok "late-load: our copies are checked, and no boot marker is set" $?
+[ -f "$B/.late_load" ]; ok "late-load: tells service.sh to restart the audio HAL" $?
+pfd; [ ! -f "$B/.late_load" ]; ok "a normal boot clears that again" $?
 fresh; sed -i 's|bassboost"|bassboost2"|' "$R/vendor/etc/audio_effects_sec.xml"; late
 [ -f "$C.rejected" ] && [ -f "$B/skip_mount" ] && grep -q "SOURCE CONFIG CHANGED" "$B/boot.log"
 ok "late-load: a list a system update changed keeps our copy out" $?
@@ -732,6 +736,35 @@ ok "mounted and loaded: all three said" $?
 fresh; pfd; svc "900 900 901"
 [ -f "$B/.boot_incomplete" ] && grep -q "audioserver restarted" "$B/boot.log" && grep -q "engine NOT visible" "$B/boot.log"
 ok "audioserver restarted: marker kept, report still written" $?
+
+# Late-load: the HAL is restarted once, and only with our list in place.
+lsvc() {
+  rm -f "$T/killed"
+  cp "$T/samsung.props" "$T/svc.props"; echo "sys.boot_completed=1" >> "$T/svc.props"
+  ( export RV4A_ROOT="$R" PROPS="$T/svc.props" AS_SEQ="$T/as" LOGCAT="$T/logcat" KILLED="$T/killed" HAL_RESTART="${HAL_RESTART:-}"
+    $SH -c ". '$STUB'; . \"\$0\"" "$B/service.sh" ) >/dev/null 2>&1
+}
+fresh; hal "$R" /vendor/lib64 7.0; late
+grep -q "$UUID" "$R/vendor/etc/audio_effects_sec.xml" && sed -i "/$UUID/d" "$R/vendor/etc/audio_effects_sec.xml"
+lsvc
+[ ! -f "$T/killed" ] && grep -q "late-load: no effect list the HAL reads names the engine" "$B/boot.log"
+ok "late-load, our list not mounted: the audio HAL is left alone" $?
+cp "$C" "$R/vendor/etc/audio_effects_sec.xml"
+HAL_RESTART=1300 lsvc
+[ "$(cat "$T/killed" 2>/dev/null)" = "-9 1234" ] && grep -q "late-load: restarting the audio HAL (pid 1234)" "$B/boot.log" &&
+  grep -q "late-load: the audio HAL is back as pid 1300" "$B/boot.log" && grep -q "engine loaded by pid 1300" "$B/boot.log"
+ok "late-load, our list mounted: the audio HAL is restarted once and loads the engine" $?
+[ ! -f "$B/.boot_incomplete" ] || ! grep -q "audioserver restarted" "$B/boot.log"; ok "  and the restart is not taken for a crash" $?
+HAL_RESTART=1400 lsvc
+[ ! -f "$T/killed" ] && grep -q "late-load: the engine is already loaded" "$B/boot.log"
+ok "late-load, engine already loaded: nothing is restarted" $?
+fresh; hal "$R" /vendor/lib64 7.0; late; cp "$C" "$R/vendor/etc/audio_effects_sec.xml"; touch "$B/skip_mount"
+lsvc
+[ ! -f "$T/killed" ] && grep -q "late-load: skip_mount is set" "$B/boot.log"; ok "late-load, skip_mount set: nothing is restarted" $?
+fresh; hal "$R" /vendor/lib64 7.0; late; cp "$C" "$R/vendor/etc/audio_effects_sec.xml"
+lsvc
+[ "$(cat "$T/killed" 2>/dev/null)" = "-9 1234" ] && grep -q "did not come back" "$B/boot.log"
+ok "late-load, the HAL does not come back: said so" $?
 
 # ---------------------------------------------------------------- scripts
 echo; echo "[9] scripts"

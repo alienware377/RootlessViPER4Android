@@ -37,12 +37,11 @@ fi
 # Checked before anything is staged: on these setups the install would
 # otherwise succeed and the engine would simply never appear.
 if late_load; then
-  say " "
-  say "! KernelSU is running in late-load mode. It starts after"
-  say "  the phone has booted, and by then the audio system has"
-  say "  already read its list of effects, so the engine cannot"
-  say "  be added to it in this mode. Rootless mode still works."
-  abort "! Aborting rather than installing something inert"
+  say "- KernelSU late-load mode: the audio system read its list"
+  say "  of effects before root started, so once the module is"
+  say "  mounted it restarts the audio system once to read it"
+  say "  again. Sound stops for a moment when that happens, and"
+  say "  it happens again each time root is started."
 fi
 
 case "$ROOT_IMPL" in

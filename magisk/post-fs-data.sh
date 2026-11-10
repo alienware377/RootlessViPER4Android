@@ -156,10 +156,13 @@ stop_mounting() {
   done
 
   # --- 2. did the last boot finish? ------------------------------------
+  [ "${RV4A_LATE_LOAD:-}" = 1 ] || rm -f "$MODDIR/.late_load"
   if [ "${RV4A_LATE_LOAD:-}" = 1 ]; then
     # This boot is over already, and a marker left by an earlier one says
     # nothing about it; service.sh clears it once the audio server is steady.
     echo "KernelSU late-load: the phone has already booted, so the boot watchdog is skipped"
+    # service.sh restarts the audio HAL after the mount when it finds this.
+    touch "$MODDIR/.late_load"
   elif [ -f "$MARK" ]; then
     # Two strikes, not one. A power cut, or a long first boot after an OTA,
     # leaves exactly the same marker as a genuine failure, and disabling the

@@ -29,3 +29,15 @@ pidof() {
 
 logcat() { [ -f "${LOGCAT:-}" ] && cat "$LOGCAT"; return 0; }
 dmesg() { :; }
+
+# Each call is recorded in $KILLED. With $HAL_RESTART set, the process init
+# would bring back appears under that pid, with the engine loaded this time.
+kill() {
+  [ -n "${KILLED:-}" ] && echo "$*" >> "$KILLED"
+  for a in "$@"; do pid="$a"; done
+  if [ -n "${HAL_RESTART:-}" ] && [ -d "$RV4A_ROOT/proc/$pid" ]; then
+    mv "$RV4A_ROOT/proc/$pid" "$RV4A_ROOT/proc/$HAL_RESTART"
+    echo "7e00000000-7e00010000 r-xp 00000000 fd:05 99    /vendor/lib64/soundfx/libjamesdsp.so" >> "$RV4A_ROOT/proc/$HAL_RESTART/maps"
+  fi
+  return 0
+}
