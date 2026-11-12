@@ -227,6 +227,34 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26124: if (on) BinauralUpmixEnable(d); else BinauralUpmixDisable(d); break;
 
+    /* Three effects the library always had but the root build never sent,
+       so their cards did nothing on a rooted phone. Every value is clamped
+       again by the setters, NaN included. */
+    /* Bass exciter: cutoff Hz, intensity %, mix %, then the second band's
+       switch (1 or 0), cutoff, intensity and mix. */
+    case 26025:
+        if (fn >= 7)
+        {
+            BassExciterSetParam(d, fv[0], fv[1], fv[2]);
+            BassExciterSetParam2(d, fv[3] > 0.5f ? 1 : 0, fv[4], fv[5], fv[6]);
+        }
+        break;
+    case 26125: if (on) BassExciterEnable(d); else BassExciterDisable(d); break;
+
+    /* Dynamic system: gain %, x1, x2, y1, y2 in Hz, side gain x and y %. */
+    case 26026:
+        if (fn >= 7)
+            VDynBassSetParam(d, fv[0], fv[1], fv[2], fv[3], fv[4], fv[5], fv[6]);
+        break;
+    case 26126: if (on) VDynBassEnable(d); else VDynBassDisable(d); break;
+
+    /* Differential surround: left and right delay in ms. */
+    case 26027:
+        if (fn >= 2)
+            DiffSurroundSetParam(d, fv[0], fv[1]);
+        break;
+    case 26127: if (on) DiffSurroundEnable(d); else DiffSurroundDisable(d); break;
+
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here
        and are rounded on arrival; only truePeak is a flag, and it arrives as

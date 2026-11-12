@@ -11,12 +11,20 @@ import me.timschneeberger.rootlessjamesdsp.utils.isRoot
  * changes: the card's settings stay as they are for when it is flashed.
  */
 object OutdatedEngineCardUi {
-    /** The cards that need the module version EngineName.REQUIRED_VERSION. */
-    val needsCurrentModule = setOf(Constants.PREF_SHAPER, Constants.PREF_BINAURAL)
+    /** The cards an older module ignores, and the module version each needs. */
+    val needsModuleVersion = mapOf(
+        Constants.PREF_SHAPER to 5,
+        Constants.PREF_BINAURAL to 5,
+        Constants.PREF_BASSEX to 6,
+        Constants.PREF_VDYNBASS to 6,
+        Constants.PREF_DIFFSURROUND to 6,
+    )
 
     fun apply(fragment: PreferenceFragmentCompat, namespace: String?) {
-        if (!isRoot() || namespace !in needsCurrentModule) return
+        if (!isRoot()) return
+        val needs = needsModuleVersion[namespace] ?: return
         if (JamesDspRemoteEngine.isPluginInstalled() != JamesDspRemoteEngine.PluginState.Outdated) return
+        if (JamesDspRemoteEngine.installedEngineVersion() >= needs) return
         val ctx = fragment.context ?: return
         val screen = fragment.preferenceScreen ?: return
         if (screen.preferenceCount == 0) return
