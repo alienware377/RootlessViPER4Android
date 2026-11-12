@@ -57,24 +57,51 @@ static void vdbPolesProc(VPolesFilter *p, float s)
 	p->out2 = p->y3 - p->x3;
 }
 
+static float vdbClamp(float v, float lo, float hi)
+{
+	if (!(v == v)) return lo;
+	if (v < lo) return lo;
+	if (v > hi) return hi;
+	return v;
+}
+
+static void vdbDesign(VDynamicBass *d, float fs)
+{
+	if (fs < 8000.0f)
+		fs = 48000.0f;
+	d->lowFreqX = d->set[0];
+	vdbPolesSet(&d->fXL, fs, d->set[0], d->set[1]);
+	vdbPolesSet(&d->fXR, fs, d->set[0], d->set[1]);
+	vdbPolesSet(&d->fYL, fs, d->set[2], d->set[3]);
+	vdbPolesSet(&d->fYR, fs, d->set[2], d->set[3]);
+	vdbLowpassSet(d, fs, 55.0f, d->qPeak / 666.0f + 0.5f);
+}
+
+/* Every value is clamped to the card's range, NaN included: in root mode any
+   app can send them, and a pole angle past pi makes the filters run away. The
+   design runs under the lock, since Process may be on the audio thread. */
 void VDynBassSetParam(JamesDSPLib *jdsp, float gainPct, float x1, float x2, float y1, float y2, float sgxPct, float sgyPct)
 {
 	VDynamicBass *d = &jdsp->vdynBass;
-	float fs = (float)jdsp->fs;
-	if (fs < 8000.0f)
-		fs = 48000.0f;
-	d->bassGain = (gainPct * 20.0f + 100.0f) * 0.01f;
+	jdsp_lock(jdsp);
+	d->bassGain = (vdbClamp(gainPct, 0.0f, 100.0f) * 20.0f + 100.0f) * 0.01f;
 	d->qPeak = (d->bassGain - 1.0f) / 20.0f * 1600.0f;
 	if (d->qPeak > 1600.0f)
 		d->qPeak = 1600.0f;
-	d->sideGainX = sgxPct * 0.01f;
-	d->sideGainY = sgyPct * 0.01f;
-	d->lowFreqX = x1;
-	vdbPolesSet(&d->fXL, fs, x1, x2);
-	vdbPolesSet(&d->fXR, fs, x1, x2);
-	vdbPolesSet(&d->fYL, fs, y1, y2);
-	vdbPolesSet(&d->fYR, fs, y1, y2);
-	vdbLowpassSet(d, fs, 55.0f, d->qPeak / 666.0f + 0.5f);
+	d->sideGainX = vdbClamp(sgxPct, 0.0f, 100.0f) * 0.01f;
+	d->sideGainY = vdbClamp(sgyPct, 0.0f, 100.0f) * 0.01f;
+	d->set[0] = vdbClamp(x1, 20.0f, 2000.0f);
+	d->set[1] = vdbClamp(x2, 1000.0f, 8000.0f);
+	d->set[2] = vdbClamp(y1, 20.0f, 200.0f);
+	d->set[3] = vdbClamp(y2, 40.0f, 400.0f);
+	vdbDesign(d, (float)jdsp->fs);
+	jdsp_unlock(jdsp);
+}
+
+/* For a sample rate change; the caller holds the lock. */
+void VDynBassRefresh(JamesDSPLib *jdsp)
+{
+	vdbDesign(&jdsp->vdynBass, (float)jdsp->fs);
 }
 
 void VDynBassProcess(JamesDSPLib *jdsp, size_t n)

@@ -543,6 +543,90 @@ int main()
 		check("default chain: binaural right after the stereo widening", sw >= 0 && bin == sw + 1);
 	}
 
+	// ---- the three library effects the root build used to drop -------------
+	printf("\nbass exciter, dynamic system, differential surround\n");
+	{
+		BassExciter *b = &g_lib.bassEx;
+		const float v[7] = { 120.0f, 50.0f, 60.0f, 1.0f, 70.0f, 30.0f, 40.0f };
+		sendFloats(26025, v, 7);
+		check("26025 sets drive, mix and the second band",
+			  fabsf(b->drive - 4.5f) < 1e-4f && fabsf(b->mix - 0.6f) < 1e-6f &&
+			  b->band2 == 1 && fabsf(b->drive2 - 3.1f) < 1e-4f && fabsf(b->mix2 - 0.4f) < 1e-6f);
+		const float shortv[6] = { 50.0f, 0.0f, 0.0f, 0.0f, 50.0f, 0.0f };
+		sendFloats(26025, shortv, 6);
+		check("26025 with too few values changes nothing", fabsf(b->mix - 0.6f) < 1e-6f);
+		const float junk[7] = { NAN, 1e30f, NAN, NAN, -1e30f, NAN, 1e30f };
+		sendFloats(26025, junk, 7);
+		bool finite = isfinite(b->drive) && isfinite(b->mix) && isfinite(b->drive2) && isfinite(b->mix2);
+		for (int i = 0; i < 5; i++) finite = finite && isfinite(b->lp[i]) && isfinite(b->bp[i]);
+		check("26025 clamps NaN and nonsense", finite && b->drive <= 8.0f && b->mix2 <= 1.0f);
+		sendEnable(26125, true);
+		check("26125 switches it on", g_lib.bassExEnabled == 1);
+		sendEnable(26125, false);
+		check("26125 switches it off", g_lib.bassExEnabled == 0);
+	}
+	{
+		VDynamicBass *d = &g_lib.vdynBass;
+		const float v[7] = { 50.0f, 1000.0f, 6200.0f, 50.0f, 90.0f, 30.0f, 10.0f };
+		sendFloats(26026, v, 7);
+		check("26026 sets gain, bands and side gains",
+			  fabsf(d->bassGain - 11.0f) < 1e-4f && fabsf(d->sideGainX - 0.3f) < 1e-6f &&
+			  fabsf(d->sideGainY - 0.1f) < 1e-6f && d->lowFreqX == 1000.0f);
+		const float shortv[6] = { 0.0f, 100.0f, 2000.0f, 20.0f, 40.0f, 0.0f };
+		sendFloats(26026, shortv, 6);
+		check("26026 with too few values changes nothing", fabsf(d->bassGain - 11.0f) < 1e-4f);
+		const float junk[7] = { NAN, 1e30f, NAN, -1e30f, NAN, 1e30f, NAN };
+		sendFloats(26026, junk, 7);
+		check("26026 keeps every pole angle finite and under pi",
+			  isfinite(d->bassGain) && isfinite(d->sideGainX) && isfinite(d->sideGainY) &&
+			  isfinite(d->fXL.upperAngle) && d->fXL.upperAngle < 3.1416f &&
+			  isfinite(d->fYL.upperAngle) && d->fYL.upperAngle < 3.1416f &&
+			  isfinite(d->lpB0) && isfinite(d->lpA1));
+		sendEnable(26126, true);
+		check("26126 switches it on", g_lib.vdynBassEnabled == 1);
+		sendEnable(26126, false);
+		check("26126 switches it off", g_lib.vdynBassEnabled == 0);
+	}
+	{
+		DiffSurround *ds = &g_lib.diffSurround;
+		const float v[2] = { 10.0f, 20.0f };
+		sendFloats(26027, v, 2);
+		check("26027 sets both delays in samples at 48 kHz",
+			  fabsf(ds->delayL - 480.0f) < 0.01f && fabsf(ds->delayR - 960.0f) < 0.01f);
+		const float junk[2] = { NAN, 1e30f };
+		sendFloats(26027, junk, 2);
+		check("26027 turns NaN into no delay and holds the top at 50 ms",
+			  ds->delayL == 0.0f && fabsf(ds->delayR - 2400.0f) < 0.01f);
+		sendEnable(26127, true);
+		check("26127 switches it on", g_lib.diffSurroundEnabled == 1 && ds->bufL && ds->bufR);
+		sendEnable(26127, false);
+		check("26127 switches it off and lets the buffers go",
+			  g_lib.diffSurroundEnabled == 0 && !ds->bufL && !ds->bufR);
+	}
+	// All three kept the rate they were set at, so after the engine moved
+	// from 48 to 44.1 kHz 10 ms of surround delay played as 10.9 ms and the
+	// filters sat 9 % off.
+	{
+		const float s[2] = { 10.0f, 10.0f };
+		sendFloats(26027, s, 2);
+		const float x[7] = { 100.0f, 40.0f, 50.0f, 0.0f, 60.0f, 40.0f, 40.0f };
+		sendFloats(26025, x, 7);
+		const float v[7] = { 33.0f, 1000.0f, 6200.0f, 50.0f, 90.0f, 30.0f, 10.0f };
+		sendFloats(26026, v, 7);
+		const float angle48 = g_lib.vdynBass.fXL.lowerAngle;
+		const float lp48 = g_lib.bassEx.lp[0];
+		JamesDSPSetSampleRate(&g_lib, 44100.0f, 0);
+		check("a rate change keeps the surround delay in ms",
+			  fabsf(g_lib.diffSurround.delayL - 441.0f) < 0.01f);
+		check("and redesigns the dynamic system for it",
+			  fabsf(g_lib.vdynBass.fXL.lowerAngle - angle48 * 48000.0f / 44100.0f) < 1e-6f);
+		check("and the bass exciter", fabsf(g_lib.bassEx.lp[0] - lp48) > 1e-6f &&
+			  isfinite(g_lib.bassEx.lp[0]));
+		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
+		check("and back", fabsf(g_lib.diffSurround.delayL - 480.0f) < 0.01f &&
+			  fabsf(g_lib.vdynBass.fXL.lowerAngle - angle48) < 1e-6f);
+	}
+
 	// ---- an id with no mapping is tolerated, not refused --------------------
 	printf("\nunknown ids\n");
 	{

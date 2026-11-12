@@ -18,8 +18,10 @@ object EngineName {
      * would accept and then ignore.
      * 5: the spectral shaper (26023/26123) and the binaural upmix (26024/26124
      * and its head set, 9997/12002/10011/25004/30004).
+     * 6: the bass exciter (26025/26125), dynamic system (26026/26126) and
+     * differential surround (26027/26127).
      */
-    const val REQUIRED_VERSION = 5
+    const val REQUIRED_VERSION = 6
 
     /**
      * The module only works with the rooted app, so it calls itself

@@ -61,6 +61,9 @@ typedef struct
 	float drive2;
 	float mix2;
 	int band2;
+	/* The settings as last given, so a sample rate change can design the
+	   filters again: cutoff, intensity, mix, then the same for band 2. */
+	float set[6];
 } BassExciter;
 typedef struct
 {
@@ -85,12 +88,16 @@ typedef struct
 	float lpB0, lpB1, lpB2, lpA1, lpA2;
 	float lpX1, lpX2, lpY1, lpY2;
 	float bassGain, qPeak, sideGainX, sideGainY, lowFreqX;
+	/* x1, x2, y1, y2 as last given, for a sample rate change. */
+	float set[4];
 } VDynamicBass;
 typedef struct
 {
 	float *bufL, *bufR;
 	int widx;
 	float delayL, delayR;
+	/* The delays in ms as last given, for a sample rate change. */
+	float setL, setR;
 } DiffSurround;
 typedef struct
 {
@@ -1420,16 +1427,19 @@ extern void SpectrumExtensionProcess(JamesDSPLib *jdsp, size_t n);
 extern void SpectrumExtensionEnable(JamesDSPLib *jdsp);
 extern void SpectrumExtensionDisable(JamesDSPLib *jdsp);
 extern void BassExciterSetParam2(JamesDSPLib *jdsp, int band2On, float cutoff2, float intensity2, float mixPct2);
+extern void BassExciterRefresh(JamesDSPLib *jdsp);
 // ViPER dynamic bass
 extern void VDynBassSetParam(JamesDSPLib *jdsp, float gainPct, float x1, float x2, float y1, float y2, float sgxPct, float sgyPct);
 extern void VDynBassProcess(JamesDSPLib *jdsp, size_t n);
 extern void VDynBassEnable(JamesDSPLib *jdsp);
 extern void VDynBassDisable(JamesDSPLib *jdsp);
+extern void VDynBassRefresh(JamesDSPLib *jdsp);
 // Differential surround
 extern void DiffSurroundSetParam(JamesDSPLib *jdsp, float delayLms, float delayRms);
 extern void DiffSurroundProcess(JamesDSPLib *jdsp, size_t n);
 extern void DiffSurroundEnable(JamesDSPLib *jdsp);
 extern void DiffSurroundDisable(JamesDSPLib *jdsp);
+extern void DiffSurroundRefresh(JamesDSPLib *jdsp);
 // ViPER clarity
 extern void ViperClaritySetParam(JamesDSPLib *jdsp, int mode, float gainDb);
 extern void ViperClarityProcess(JamesDSPLib *jdsp, size_t n);

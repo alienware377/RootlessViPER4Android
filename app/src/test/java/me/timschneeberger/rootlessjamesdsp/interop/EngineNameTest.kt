@@ -12,16 +12,16 @@ import java.io.File
 class EngineNameTest {
 
     @Test
-    fun `a module from before the shaper and binaural upmix is outdated, not available`() {
+    fun `a module from before the root bass exciter, dynamic system and surround is outdated, not available`() {
+        assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v5"))
         assertEquals(PluginState.Outdated, EngineName.state("RootlessViPER4Android engine v4"))
         assertEquals(PluginState.Outdated, EngineName.state("RootlessViPER4Android engine"))
     }
 
     @Test
     fun `the current module and later ones are available`() {
-        assertEquals(PluginState.Available, EngineName.state("RootlessViPER4Android engine v5"))
+        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v6"))
         assertEquals(PluginState.Available, EngineName.state("RootlessViPER4Android engine v12"))
-        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v5"))
     }
 
     @Test
@@ -57,7 +57,7 @@ class EngineNameTest {
             .map(::File).first { it.isFile }.readText()
         assertTrue(src.contains("""desc.common.name = std::string(rv4a_legacy_name()) + " AIDL";"""))
         assertFalse(Regex("""common\.name = """").containsMatchIn(src))
-        assertEquals(PluginState.Available, EngineName.state("RootlessViPER4Android engine v5 AIDL"))
-        assertEquals(PluginState.Outdated, EngineName.state("RootlessViPER4Android engine v4 AIDL"))
+        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v6 AIDL"))
+        assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v5 AIDL"))
     }
 }
