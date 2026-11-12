@@ -129,23 +129,15 @@ class JamesDspRemoteEngine(
         super.close()
     }
 
-    // Not sent in root mode, so these cards do nothing there. bassex.c,
-    // vdynbass.c and diffsurround.c are compiled into the HAL library; they only
-    // lack a parameter id and a case in the dispatch. Wiring one up takes a
-    // PARAM_ constant, a sendForkEffect call here, a case in EffectParams.h and
-    // an assertion in the parameter harness.
+    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean =
+        sendForkEffect(PARAM_BASS_EXCITER, enable,
+            floatArrayOf(cutoff, intensity, mix, if (band2) 1f else 0f, cutoff2, intensity2, mix2))
 
-    override fun setBassExciter(enable: Boolean, cutoff: Float, intensity: Float, mix: Float, band2: Boolean, cutoff2: Float, intensity2: Float, mix2: Float): Boolean {
-        return true
-    }
+    override fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean =
+        sendForkEffect(PARAM_VDYN_BASS, enable, floatArrayOf(gain, x1, x2, y1, y2, sgx, sgy))
 
-    override fun setVDynBass(enable: Boolean, gain: Float, x1: Float, x2: Float, y1: Float, y2: Float, sgx: Float, sgy: Float): Boolean {
-        return true
-    }
-
-    override fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean {
-        return true
-    }
+    override fun setDiffSurround(enable: Boolean, delayLms: Float, delayRms: Float): Boolean =
+        sendForkEffect(PARAM_DIFF_SURROUND, enable, floatArrayOf(delayLms, delayRms))
 
     override fun setViperClarity(enable: Boolean, mode: Int, gain: Float): Boolean =
         sendForkEffect(PARAM_CLARITY, enable, floatArrayOf(mode.toFloat(), gain))
@@ -582,6 +574,9 @@ class JamesDspRemoteEngine(
         private const val PARAM_SPECTRUM_EXT = PARAM_FORK_BASE + 22
         private const val PARAM_SHAPER = PARAM_FORK_BASE + 23
         private const val PARAM_BINAURAL = PARAM_FORK_BASE + 24
+        private const val PARAM_BASS_EXCITER = PARAM_FORK_BASE + 25
+        private const val PARAM_VDYN_BASS = PARAM_FORK_BASE + 26
+        private const val PARAM_DIFF_SURROUND = PARAM_FORK_BASE + 27
         /** The head set's payload: geometry, 4096-float parts, commit, hash. */
         private const val PARAM_HRIR_INFO = 9997
         private const val PARAM_HRIR_PART = 12002
@@ -593,6 +588,16 @@ class JamesDspRemoteEngine(
 
         private val EFFECT_TYPE_CUSTOM = UUID.fromString("f98765f4-c321-5de6-9a45-123459495ab2")
         private val EFFECT_JAMESDSP = UUID.fromString("f27317f4-c984-4de6-9a90-545759495bf2")
+
+        /** The version in the installed engine's name, 0 when there is none or it is not ours. */
+        fun installedEngineVersion(): Int = try {
+            AudioEffect.queryEffects().orEmpty()
+                .firstOrNull { it.uuid == EFFECT_JAMESDSP }
+                ?.let { EngineName.version(it.name) } ?: 0
+        } catch (e: Exception) {
+            Timber.w(e, "installedEngineVersion: could not query effects")
+            0
+        }
 
         fun isPluginInstalled(): PluginState {
             return try {

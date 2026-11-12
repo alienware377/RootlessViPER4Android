@@ -146,6 +146,9 @@ void ImagingRefresh(void) {}
 void PitchShiftRefresh(void) {}
 void TransientRefresh(void) {}
 void VReverbRefresh(void) {}
+void BassExciterRefresh(void) {}
+void VDynBassRefresh(void) {}
+void DiffSurroundRefresh(void) {}
 void VinylRefresh(void) {}
 void SpectralShaperProcess(void) {}
 void SpectralShaperSetParam(void) {}
