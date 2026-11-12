@@ -1868,6 +1868,9 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	BinauralUpmixRefresh(jdsp);
 	PitchShiftRefresh(jdsp);
 	VReverbRefresh(jdsp);
+	BassExciterRefresh(jdsp);
+	VDynBassRefresh(jdsp);
+	DiffSurroundRefresh(jdsp);
 	// The stereo widening's band split and envelope times follow the rate too.
 	// Its own Refresh takes the lock, so the design is called directly.
 	StereoEnhancementDesign(jdsp);
