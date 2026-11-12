@@ -57,7 +57,7 @@ static effect_descriptor_t rv4a_descriptor =
        whenever the module learns ids an older one would quietly ignore, so
        the app can tell the user to flash the new one.
        v5: the spectral shaper and the binaural upmix. */
-    "RootfulViPER4Android engine v5",
+    "RootfulViPER4Android engine v6",
     "alienware377"
 };
 

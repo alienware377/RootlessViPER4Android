@@ -58,7 +58,7 @@ static const AudioUuid kEffectType = {
    it: both run the same dispatch, EffectParams.h. Without the number this
    service counted as an outdated module that no flash could ever bring up to
    date. */
-static constexpr const char *kEngineName = "RootfulViPER4Android engine v5";
+static constexpr const char *kEngineName = "RootfulViPER4Android engine v6";
 
 /* The engine sizes its internals from the block given at init, so never hand
    it more than this in one call regardless of what arrives. */
