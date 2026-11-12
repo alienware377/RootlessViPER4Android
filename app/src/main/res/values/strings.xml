@@ -1006,9 +1006,9 @@
     <string name="app_compat_unknown_pkg_name">Unknown package name</string>
 
     <!-- Root: Library load failure -->
-    <string name="load_fail_header">Magisk module not installed</string>
+    <string name="load_fail_header">Engine module not loaded</string>
     <string name="load_fail_card_title">Failed to load libjamesdsp.so</string>
-    <string name="load_fail_card">Please install the JamesDSP magisk module and reboot your Android device to use this application. You may also need to reinstall this app after rebooting.</string>
+    <string name="load_fail_card">Install the RootfulViPER4Android engine module from the releases page with your root manager (Magisk, KernelSU or APatch), then reboot. With KernelSU in late-load mode, start root again after the reboot and give it a minute before opening this app.</string>
     <string name="load_fail_rootless_card_title">Looking for a rootless alternative?</string>
     <string name="load_fail_rootless_card">This flavor of JamesDSP was designed to be used with a rooted/modified device. A non-root alternative with some limitations is also available. Tap here for details.</string>
     <string name="load_fail_arch_card_title">Module already installed?</string>
@@ -1018,7 +1018,7 @@
     <string name="load_fail_aidl_issue_card_title">Want to help test it?</string>
     <string name="load_fail_aidl_issue_card">The test build, how to install and remove it, and what to send back are on GitHub. Tap here to open the issue.</string>
     <string name="load_fail_aidl_toast">The root engine is not loaded. This phone needs the AIDL engine module, not the normal one.</string>
-    <string name="load_fail_arch_card">If you already installed the magisk module, you may have chosen the wrong settings during installation. Please re-install and try to enable Huawei compatibility (even if your phone is not from that manufacturer).</string>
+    <string name="load_fail_arch_card">The module keeps two logs in /data/adb/modules/rv4a_engine: install.log, and boot.log, which says whether the engine was mounted and whether the audio system loaded it. Please attach both when you report an issue.</string>
 
     <!-- Enhanced processing -->
     <string name="enhanced_processing_feature_unavailable">Feature unavailable</string>

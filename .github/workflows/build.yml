@@ -16,6 +16,10 @@ concurrency:
 jobs:
   build:
     name: Build app
+    # The original project's signed build. Its Root flavour does not exist in
+    # this fork, so on a tag here it only ever failed; releases are built and
+    # signed separately.
+    if: github.repository == 'timschneeb/RootlessJamesDSP'
     runs-on: ubuntu-latest
 
     strategy:

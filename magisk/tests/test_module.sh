@@ -305,6 +305,10 @@ expect "stock size measured the same way as wc" "$sig" "$(wc -c < "$R/vendor/etc
 grep -q "audio_effects_sec.xml 0 0 0644 u:object_r:vendor_configs_file:s0" "$MP/.perms"; ok "the copy gets the vendor config label" $?
 [ -f "$MP/system/vendor/lib64/soundfx/libjamesdsp.so" ] && [ -f "$MP/system/lib64/soundfx/libjamesdsp.so" ] && [ ! -d "$MP/libs" ]
 ok "engine staged in vendor and system lib64/soundfx, package libs removed" $?
+[ "$(cat "$MP/system/vendor/lib/soundfx/libjamesdsp.so")" = "engine arm" ] &&
+  [ "$(cat "$MP/system/lib/soundfx/libjamesdsp.so")" = "engine arm" ] &&
+  [ "$(cat "$MP/system/vendor/lib64/soundfx/libjamesdsp.so")" = "engine arm64" ]
+ok "and the 32-bit engine in lib/soundfx, for a 32-bit audio HAL" $?
 
 R="$T/sam2"; samsung "$R" crlf; write "$R/vendor/etc/audio_effects.xml" "$EMPTY_XML"
 installs "_sec list in CRLF, empty plain list next to it" sam2 "$R" "$T/samsung.props"
@@ -346,7 +350,12 @@ grep -q "^- Effect HAL: no effect HAL process found" "$LOGF"; ok "  and the log 
 
 R="$T/sam7"; samsung "$R"; hal "$R" /vendor/lib 7.0
 installs "32-bit audio HAL" sam7 "$R" "$T/samsung.props"
-grep -q "audio HAL is 32-bit" "$LOGF"; ok "  the log says so" $?
+grep -q "audio HAL is 32-bit; the armeabi-v7a engine is installed for it" "$LOGF"; ok "  the log says so" $?
+[ "$(cat "$MP/system/vendor/lib/soundfx/libjamesdsp.so")" = "engine arm" ]; ok "  and the 32-bit engine is where it looks" $?
+R="$T/sam8"; samsung "$R"; hal "$R" /vendor/lib 7.0
+ARCH=arm installs "32-bit phone" sam8 "$R" "$T/samsung.props"
+[ "$(cat "$MP/system/vendor/lib/soundfx/libjamesdsp.so")" = "engine arm" ] && [ ! -d "$MP/system/vendor/lib64" ] &&
+  grep -q "^- Engine installed to lib/soundfx$" "$LOGF"; ok "  only the 32-bit engine, in lib/soundfx" $?
 
 # ---------------------------------------------------------------- AOSP and vendor lists
 echo; echo "[2] which folder wins"
