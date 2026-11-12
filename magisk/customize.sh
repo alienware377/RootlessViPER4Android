@@ -85,11 +85,13 @@ case "$ROOT_IMPL" in
     ;;
 esac
 
+# A 64-bit phone can still run a 32-bit audio HAL, which only looks in the
+# 32-bit soundfx folders, so those phones get the 32-bit engine as well.
 case "$ARCH" in
-  arm64) ABI_DIR="arm64-v8a";   LIBDIR="lib64" ;;
-  arm)   ABI_DIR="armeabi-v7a"; LIBDIR="lib"   ;;
-  x64)   ABI_DIR="x86_64";      LIBDIR="lib64" ;;
-  x86)   ABI_DIR="x86";         LIBDIR="lib"   ;;
+  arm64) ABI_DIR="arm64-v8a";   LIBDIR="lib64"; ABI32="armeabi-v7a" ;;
+  arm)   ABI_DIR="armeabi-v7a"; LIBDIR="lib";   ABI32="" ;;
+  x64)   ABI_DIR="x86_64";      LIBDIR="lib64"; ABI32="x86" ;;
+  x86)   ABI_DIR="x86";         LIBDIR="lib";   ABI32="" ;;
   *)     abort "! Unsupported architecture: $ARCH" ;;
 esac
 
@@ -129,7 +131,7 @@ else
   [ "$NAMED" = 1 ] || say "- Loader: names no config; using audio_effects.xml"
   case "$LOADER_BINS:$LIBDIR" in
     *"/lib/libeffects.so"*:lib64)
-      say "! The audio HAL is 32-bit and this installs the $ABI_DIR engine only" ;;
+      say "- The audio HAL is 32-bit; the $ABI32 engine is installed for it" ;;
   esac
 fi
 
@@ -179,8 +181,7 @@ done
 
 say "- Architecture: $ARCH ($ABI_DIR)"
 
-SO="$MODPATH/libs/$ABI_DIR/libjamesdsp.so"
-[ -f "$SO" ] || abort "! No engine build for $ABI_DIR in this package"
+[ -f "$MODPATH/libs/$ABI_DIR/libjamesdsp.so" ] || abort "! No engine build for $ABI_DIR in this package"
 
 # Install to both system and vendor soundfx: which one the audio server loads
 # from depends on where the device's config lives, and this costs one file.
@@ -188,21 +189,29 @@ SO="$MODPATH/libs/$ABI_DIR/libjamesdsp.so"
 # The context is set explicitly: set_perm otherwise hardcodes system_file on
 # Magisk, KernelSU and APatch. system_lib_file is the right type but only exists
 # from Android 10, so fall back where it is missing.
-for D in "$MODPATH/system/$LIBDIR/soundfx" "$MODPATH/system/vendor/$LIBDIR/soundfx"; do
-  mkdir -p "$D"
-  cp "$SO" "$D/libjamesdsp.so" || abort "! Could not stage the engine into $D"
-  set_perm "$D" 0 0 0755
-  if [ "$API" -ge 29 ]; then
-    set_perm "$D/libjamesdsp.so" 0 0 0644 u:object_r:system_lib_file:s0 ||
+stage_engine() {  # stage_engine <abi> <lib dir>
+  for D in "$MODPATH/system/$2/soundfx" "$MODPATH/system/vendor/$2/soundfx"; do
+    mkdir -p "$D"
+    cp "$MODPATH/libs/$1/libjamesdsp.so" "$D/libjamesdsp.so" || abort "! Could not stage the engine into $D"
+    set_perm "$D" 0 0 0755
+    if [ "$API" -ge 29 ]; then
+      set_perm "$D/libjamesdsp.so" 0 0 0644 u:object_r:system_lib_file:s0 ||
+        set_perm "$D/libjamesdsp.so" 0 0 0644 ||
+        say "! Could not set permissions on $D/libjamesdsp.so"
+    else
       set_perm "$D/libjamesdsp.so" 0 0 0644 ||
-      say "! Could not set permissions on $D/libjamesdsp.so"
-  else
-    set_perm "$D/libjamesdsp.so" 0 0 0644 ||
-      say "! Could not set permissions on $D/libjamesdsp.so"
-  fi
-done
+        say "! Could not set permissions on $D/libjamesdsp.so"
+    fi
+  done
+}
+stage_engine "$ABI_DIR" "$LIBDIR"
+if [ -n "$ABI32" ] && [ -f "$MODPATH/libs/$ABI32/libjamesdsp.so" ]; then
+  stage_engine "$ABI32" lib
+  say "- Engine installed to $LIBDIR/soundfx, and lib/soundfx for a 32-bit HAL"
+else
+  say "- Engine installed to $LIBDIR/soundfx"
+fi
 rm -rf "$MODPATH/libs"
-say "- Engine installed to $LIBDIR/soundfx"
 
 AML=0
 for m in aml AML pixaml PIXAML; do
