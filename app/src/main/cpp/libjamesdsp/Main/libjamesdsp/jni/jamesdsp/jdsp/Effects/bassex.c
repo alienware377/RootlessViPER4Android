@@ -36,36 +36,59 @@ static float bassExBqProc(const float *c, float *z, float x)
 
 static float bassExClampF(float v, float lo, float hi)
 {
+	if (!(v == v)) return lo;
 	if (v < lo) return lo;
 	if (v > hi) return hi;
 	return v;
 }
 
+static void bassExDesign(BassExciter *b, float fs)
+{
+	if (fs < 8000.0f)
+		fs = 48000.0f;
+	/* Held again here: a rate change before the first SetParam finds zeros. */
+	b->set[0] = bassExClampF(b->set[0], 40.0f, 200.0f);
+	b->set[3] = bassExClampF(b->set[3], 30.0f, 200.0f);
+	bassExBiquad(b->lp, fs, b->set[0], 0.7071f, 0);
+	bassExBiquad(b->bp, fs, b->set[0] * 2.5f, 0.8f, 1);
+	b->drive = 1.0f + b->set[1] * 0.07f;
+	b->mix = b->set[2] * 0.01f;
+	bassExBiquad(b->lp2, fs, b->set[3], 0.7071f, 0);
+	bassExBiquad(b->bp2, fs, b->set[3] * 2.5f, 0.8f, 1);
+	b->drive2 = 1.0f + b->set[4] * 0.07f;
+	b->mix2 = b->set[5] * 0.01f;
+}
+
+/* Every value is clamped here, NaN included: in root mode any app can send
+   them. The design runs under the lock, since Process may be filtering on the
+   audio thread with these coefficients. */
 void BassExciterSetParam(JamesDSPLib *jdsp, float cutoff, float intensity, float mixPct)
 {
 	BassExciter *b = &jdsp->bassEx;
-	float fs = (float)jdsp->fs;
-	if (fs < 8000.0f)
-		fs = 48000.0f;
-	cutoff = bassExClampF(cutoff, 40.0f, 200.0f);
-	bassExBiquad(b->lp, fs, cutoff, 0.7071f, 0);
-	bassExBiquad(b->bp, fs, cutoff * 2.5f, 0.8f, 1);
-	b->drive = 1.0f + intensity * 0.07f;
-	b->mix = mixPct * 0.01f;
+	jdsp_lock(jdsp);
+	b->set[0] = bassExClampF(cutoff, 40.0f, 200.0f);
+	b->set[1] = bassExClampF(intensity, 0.0f, 100.0f);
+	b->set[2] = bassExClampF(mixPct, 0.0f, 100.0f);
+	bassExDesign(b, (float)jdsp->fs);
+	jdsp_unlock(jdsp);
 }
 
 void BassExciterSetParam2(JamesDSPLib *jdsp, int band2On, float cutoff2, float intensity2, float mixPct2)
 {
 	BassExciter *b = &jdsp->bassEx;
-	float fs = (float)jdsp->fs;
-	if (fs < 8000.0f)
-		fs = 48000.0f;
-	cutoff2 = bassExClampF(cutoff2, 30.0f, 200.0f);
-	bassExBiquad(b->lp2, fs, cutoff2, 0.7071f, 0);
-	bassExBiquad(b->bp2, fs, cutoff2 * 2.5f, 0.8f, 1);
-	b->drive2 = 1.0f + intensity2 * 0.07f;
-	b->mix2 = mixPct2 * 0.01f;
-	b->band2 = band2On;
+	jdsp_lock(jdsp);
+	b->set[3] = bassExClampF(cutoff2, 30.0f, 200.0f);
+	b->set[4] = bassExClampF(intensity2, 0.0f, 100.0f);
+	b->set[5] = bassExClampF(mixPct2, 0.0f, 100.0f);
+	b->band2 = band2On ? 1 : 0;
+	bassExDesign(b, (float)jdsp->fs);
+	jdsp_unlock(jdsp);
+}
+
+/* For a sample rate change; the caller holds the lock. */
+void BassExciterRefresh(JamesDSPLib *jdsp)
+{
+	bassExDesign(&jdsp->bassEx, (float)jdsp->fs);
 }
 
 void BassExciterProcess(JamesDSPLib *jdsp, size_t n)

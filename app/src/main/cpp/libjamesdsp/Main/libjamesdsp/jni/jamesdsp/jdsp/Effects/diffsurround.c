@@ -13,21 +13,41 @@
 // holding for an effect that is switched off.
 #define DSUR_BUFLEN 16384
 
-void DiffSurroundSetParam(JamesDSPLib *jdsp, float delayLms, float delayRms)
+static void dsurDesign(DiffSurround *ds, float fs)
 {
-	DiffSurround *ds = &jdsp->diffSurround;
-	float fs = (float)jdsp->fs;
 	if (fs < 8000.0f)
 		fs = 48000.0f;
 	float maxDelay = (float)(DSUR_BUFLEN - 4);
-	float dl = delayLms * 0.001f * fs;
-	float dr = delayRms * 0.001f * fs;
-	if (dl < 0.0f) dl = 0.0f;
-	if (dr < 0.0f) dr = 0.0f;
+	float dl = ds->setL * 0.001f * fs;
+	float dr = ds->setR * 0.001f * fs;
 	if (dl > maxDelay) dl = maxDelay;
 	if (dr > maxDelay) dr = maxDelay;
 	ds->delayL = dl;
 	ds->delayR = dr;
+}
+
+/* The card goes to 50 ms; NaN would have reached the read index as an int
+   conversion of NaN, so it counts as no delay. */
+void DiffSurroundSetParam(JamesDSPLib *jdsp, float delayLms, float delayRms)
+{
+	DiffSurround *ds = &jdsp->diffSurround;
+	if (!(delayLms == delayLms) || delayLms < 0.0f) delayLms = 0.0f;
+	if (!(delayRms == delayRms) || delayRms < 0.0f) delayRms = 0.0f;
+	if (delayLms > 50.0f) delayLms = 50.0f;
+	if (delayRms > 50.0f) delayRms = 50.0f;
+	jdsp_lock(jdsp);
+	ds->setL = delayLms;
+	ds->setR = delayRms;
+	dsurDesign(ds, (float)jdsp->fs);
+	jdsp_unlock(jdsp);
+}
+
+/* For a sample rate change; the caller holds the lock. The delays are in
+   samples, so without this 10 ms set at 48 kHz stayed 480 samples, 10.9 ms,
+   once the engine moved to 44.1 kHz. */
+void DiffSurroundRefresh(JamesDSPLib *jdsp)
+{
+	dsurDesign(&jdsp->diffSurround, (float)jdsp->fs);
 }
 
 void DiffSurroundProcess(JamesDSPLib *jdsp, size_t n)
