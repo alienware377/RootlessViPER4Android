@@ -186,6 +186,7 @@ class JamesDspRemoteEngine(
      * calls that could be interleaved with anything else.
      */
     private var pendingDyneqBands: FloatArray? = null
+    private var pendingMbdBands: FloatArray? = null
 
     override fun setTape(enable: Boolean, wow: Float, flutter: Float, saturation: Float, bias: Float, headBump: Float, mix: Float): Boolean =
         sendForkEffect(PARAM_TAPE, enable, floatArrayOf(wow, flutter, saturation, bias, headBump, mix))
@@ -271,9 +272,21 @@ class JamesDspRemoteEngine(
         return sendForkEffect(PARAM_DYNAMIC_EQ, enable, payload)
     }
 
-    override fun setMultibandDistBandsInternal(bands: FloatArray?): Boolean = true
+    override fun setMultibandDistBandsInternal(bands: FloatArray?): Boolean {
+        pendingMbdBands = bands
+        return true
+    }
 
-    override fun setMultibandDist(enable: Boolean, routing: Int, model: Int, drive: Float, bias: Float, shape: Float, bits: Float, downsample: Float, tone: Float, bandGain: Float, chorusRate: Float, chorusDepth: Float, chorusFeedback: Float, chorusSpread: Float, chorusVoices: Int, chorusMix: Float, mix: Float): Boolean = true
+    // The bands are held until the settings follow and then go in the same
+    // payload, as the dynamic EQ's do.
+    override fun setMultibandDist(enable: Boolean, routing: Int, model: Int, drive: Float, bias: Float, shape: Float, bits: Float, downsample: Float, tone: Float, bandGain: Float, chorusRate: Float, chorusDepth: Float, chorusFeedback: Float, chorusSpread: Float, chorusVoices: Int, chorusMix: Float, mix: Float): Boolean {
+        val bands = pendingMbdBands ?: FloatArray(0)
+        val head = floatArrayOf(
+            routing.toFloat(), model.toFloat(), drive, bias, shape, bits, downsample,
+            tone, bandGain, chorusRate, chorusDepth, chorusFeedback, chorusSpread,
+            chorusVoices.toFloat(), chorusMix, mix, (bands.size / 4).toFloat())
+        return sendForkEffect(PARAM_MULTIBAND_DIST, enable, head + bands)
+    }
 
     override fun setEchoDelay(enable: Boolean, input: Float, time: Float, smoothing: Float, offset: Float, keepPitch: Boolean, model: Int, stereo: Float, feedback: Float, cutoff: Float, res: Float, filter: Int, smpRate: Float, bits: Float, modRate: Float, modTime: Float, modCutoff: Float, diffusion: Float, spread: Float, distMode: Int, distLevel: Float, knee: Float, symmetry: Float, tone: Float, wet: Float, dry: Float): Boolean =
         sendForkEffect(PARAM_ECHO_DELAY, enable, floatArrayOf(
@@ -577,6 +590,7 @@ class JamesDspRemoteEngine(
         private const val PARAM_BASS_EXCITER = PARAM_FORK_BASE + 25
         private const val PARAM_VDYN_BASS = PARAM_FORK_BASE + 26
         private const val PARAM_DIFF_SURROUND = PARAM_FORK_BASE + 27
+        private const val PARAM_MULTIBAND_DIST = PARAM_FORK_BASE + 28
         /** The head set's payload: geometry, 4096-float parts, commit, hash. */
         private const val PARAM_HRIR_INFO = 9997
         private const val PARAM_HRIR_PART = 12002
