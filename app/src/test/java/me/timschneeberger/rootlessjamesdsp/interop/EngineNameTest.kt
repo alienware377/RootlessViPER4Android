@@ -11,7 +11,8 @@ import java.io.File
 class EngineNameTest {
 
     @Test
-    fun `a module from before the root bass exciter, dynamic system and surround is outdated, not available`() {
+    fun `a module from before the root multiband distortion is outdated, not available`() {
+        assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v6"))
         assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v5"))
         assertEquals(PluginState.Outdated, EngineName.state("RootlessViPER4Android engine v4"))
         assertEquals(PluginState.Outdated, EngineName.state("RootlessViPER4Android engine"))
@@ -19,7 +20,7 @@ class EngineNameTest {
 
     @Test
     fun `the current module and later ones are available`() {
-        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v6"))
+        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v7"))
         assertEquals(PluginState.Available, EngineName.state("RootlessViPER4Android engine v12"))
     }
 

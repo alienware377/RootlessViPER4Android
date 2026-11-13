@@ -627,6 +627,55 @@ int main()
 			  fabsf(g_lib.vdynBass.fXL.lowerAngle - angle48) < 1e-6f);
 	}
 
+	// ---- multiband distortion, the last card root mode used to drop --------
+	printf("\nmultiband distortion\n");
+	{
+		MultibandDist *m = &g_lib.multibandDist;
+		// Split routing, tube, drive 50, bias 0, shape 50, 16 bits, no
+		// downsample, tone 50, band gain 100, chorus 0.5 Hz / 2 ms / 0 / 0 /
+		// 2 voices / 0, mix 80; one 48 dB/oct low pass at 200 Hz.
+		const float v[21] = { 0, 1, 50, 0, 50, 16, 0, 50, 100, 0.5f, 2, 0, 0, 2, 0, 80,
+							  1, 200.0f, 48.0f, 0.7071f, 3.0f };
+		sendFloats(26028, v, 21);
+		check("26028 sets the settings", m->model == 1 && fabsf(m->mix - 0.8f) < 1e-6f &&
+			  fabsf(m->drive - powf(10.0f, 0.75f)) < 1e-3f);
+		check("26028 builds the low pass as a 4-stage cascade", m->numBands == 4 && m->setBandCount == 1);
+		const float shortv[16] = { 0 };
+		sendFloats(26028, shortv, 16);
+		check("26028 with too few values changes nothing", fabsf(m->mix - 0.8f) < 1e-6f);
+		// A band count that claims more bands than were sent takes only those sent.
+		float liar[21];
+		memcpy(liar, v, sizeof(v));
+		liar[16] = 50.0f;
+		sendFloats(26028, liar, 21);
+		check("26028 never reads past the bands it was sent", m->setBandCount == 1 && m->numBands == 4);
+		const float junk[21] = { NAN, 1e30f, NAN, NAN, 1e30f, NAN, -1e30f, NAN, 1e30f, NAN,
+								 1e30f, NAN, 1e30f, -1e9f, NAN, NAN,
+								 1, NAN, 1e30f, NAN, 1e30f };
+		sendFloats(26028, junk, 21);
+		bool finite = isfinite(m->drive) && isfinite(m->mix) && isfinite(m->bitStep) &&
+					  isfinite(m->chInc) && isfinite(m->chDepth) && isfinite(m->tilt);
+		for (int i = 0; i < m->numBands; i++)
+			finite = finite && isfinite(m->b0[i]) && isfinite(m->a1[i]) && isfinite(m->a2[i]);
+		check("26028 holds NaN and nonsense, settings and bands", finite && m->numBands >= 1 &&
+			  m->chVoices >= 1 && m->model >= 0 && m->model < MBD_MODEL_COUNT);
+		sendFloats(26028, v, 21);
+		sendEnable(26128, true);
+		check("26128 switches it on", g_lib.multibandDistEnabled == 1 && m->chBufL && m->chBufR);
+		sendEnable(26128, false);
+		check("26128 switches it off and lets the chorus buffers go",
+			  g_lib.multibandDistEnabled == 0 && !m->chBufL && !m->chBufR);
+
+		// The chorus speed and every band follow a rate change.
+		const float inc48 = m->chInc, b0_48 = m->b0[0];
+		JamesDSPSetSampleRate(&g_lib, 44100.0f, 0);
+		check("a rate change redesigns the multiband distortion",
+			  fabsf(m->chInc - inc48 * 48000.0f / 44100.0f) < 1e-9f && fabsf(m->b0[0] - b0_48) > 1e-9f &&
+			  m->numBands == 4);
+		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
+		check("and back", fabsf(m->chInc - inc48) < 1e-9f && fabsf(m->b0[0] - b0_48) < 1e-9f);
+	}
+
 	// ---- an id with no mapping is tolerated, not refused --------------------
 	printf("\nunknown ids\n");
 	{
