@@ -59,7 +59,7 @@ fmq/, compat/            libfmq and the platform headers the NDK lacks
   and `IEffect` gained `reopen()` in V2. V2 is Android 15, V3 is 16, V4 is 17.
   A phone runs its vendor's version, which can be older than its Android.
 - **The same name.** The descriptor's name is the legacy effect's own
-  (`RootfulViPER4Android engine v6`) with ` AIDL` after it, read from the
+  (`RootfulViPER4Android engine v7`) with ` AIDL` after it, read from the
   legacy descriptor at run time, so the app's engine version check treats
   both paths alike and they cannot drift apart.
 - **Linking.** Only `createEffect`, `queryEffect` and `destroyEffect` are

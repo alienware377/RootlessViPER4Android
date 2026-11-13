@@ -255,6 +255,27 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26127: if (on) DiffSurroundEnable(d); else DiffSurroundDisable(d); break;
 
+    /* Multiband distortion: routing, model, drive, bias, shape, bits,
+       downsample, tone, band gain, chorus rate, depth, feedback, spread and
+       voices, chorus mix, mix; then the band count and four values per band
+       (frequency, gain or slope, q, type). The settings and the bands travel
+       together, like the dynamic EQ's, so the two can never be out of step.
+       Clamped again by the setters, NaN included. */
+    case 26028:
+        if (fn >= 17)
+        {
+            int nb = pInt(fv[16]);
+            if (nb < 0) nb = 0;
+            if (nb > (int)((fn - 17) / 4)) nb = (int)((fn - 17) / 4);
+            MultibandDistSetBands(d, nb > 0 ? fv + 17 : nullptr, nb);
+            MultibandDistSetParam(d, pRound(fv[0]), pRound(fv[1]), fv[2], fv[3],
+                                  fv[4], fv[5], fv[6], fv[7], fv[8], fv[9],
+                                  fv[10], fv[11], fv[12], pRound(fv[13]),
+                                  fv[14], fv[15]);
+        }
+        break;
+    case 26128: if (on) MultibandDistEnable(d); else MultibandDistDisable(d); break;
+
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here
        and are rounded on arrival; only truePeak is a flag, and it arrives as

@@ -190,6 +190,12 @@ typedef struct
 	int chPos[2], chVoices;
 	float chPhase, chInc, chBase, chDepth, chFeedback, chSpread, chMix;
 	float fs;
+	/* The settings and bands as last given, so a sample rate change can
+	   design everything again. setInts holds routing, model and voices. */
+	int setInts[3], paramsSet;
+	float setP[13];
+	float setBands[MBD_MAX_BANDS * 4];
+	int setBandCount;
 } MultibandDist;
 // A power of two so the read index can wrap with a mask. 8192 is 170ms at
 // 48kHz and still 42ms at 192kHz, which is far more than the modulation and
@@ -1616,6 +1622,7 @@ extern void MultibandDistSetParam(JamesDSPLib *jdsp,
 extern void MultibandDistProcess(JamesDSPLib *jdsp, size_t n);
 extern void MultibandDistEnable(JamesDSPLib *jdsp);
 extern void MultibandDistDisable(JamesDSPLib *jdsp);
+extern void MultibandDistRefresh(JamesDSPLib *jdsp);
 extern void MaximizerSetParam(JamesDSPLib *jdsp,
 	int mode, float gainDb, float ceilingDb, float releaseMs,
 	float characterPct, float transientPct, int truePeak,

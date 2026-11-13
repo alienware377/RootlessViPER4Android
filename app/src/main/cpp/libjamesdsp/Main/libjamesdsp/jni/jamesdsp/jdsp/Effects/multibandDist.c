@@ -234,7 +234,7 @@ static inline float mbdBiquadRun(MultibandDist *m, int ch, int idx, float x)
 
 // ---------------------------------------------------------------- params
 
-void MultibandDistSetBands(JamesDSPLib *jdsp, const float *bands, int count)
+static void mbdApplyBands(JamesDSPLib *jdsp, const float *bands, int count)
 {
 	MultibandDist *m = &jdsp->multibandDist;
 	float fs = (float)jdsp->fs;
@@ -302,7 +302,7 @@ void MultibandDistSetBands(JamesDSPLib *jdsp, const float *bands, int count)
 	m->numBands = written;
 }
 
-void MultibandDistSetParam(JamesDSPLib *jdsp,
+static void mbdApplyParams(JamesDSPLib *jdsp,
 	int routing, int model,
 	float drivePct, float biasPct, float shapePct,
 	float bits, float downsamplePct,
@@ -417,6 +417,88 @@ void MultibandDistSetParam(JamesDSPLib *jdsp,
 		(m->shaperBlend <= 0.0f && m->chMix <= 0.0001f &&
 		 fabsf(m->tilt) < 1e-6f && fabsf(m->bandGain - 1.0f) < 1e-6f &&
 		 fabsf(m->bias) < 1e-9f && m->routing == MBD_ROUTING_SPLIT);
+}
+
+/* NaN and the infinities fail every clamp above, since any comparison with
+   NaN is false, and one NaN coefficient leaves the band putting out NaN for
+   good. In root mode any app can send these, so they become a neutral value
+   before anything else sees them. */
+static float mbdFinite(float v, float fallback)
+{
+	return (v == v && v < 3.0e38f && v > -3.0e38f) ? v : fallback;
+}
+
+static float mbdHold(float v, float lo, float hi)
+{
+	v = mbdFinite(v, lo);
+	return v < lo ? lo : (v > hi ? hi : v);
+}
+
+static void mbdApplyStored(JamesDSPLib *jdsp)
+{
+	MultibandDist *m = &jdsp->multibandDist;
+	const float *p = m->setP;
+	mbdApplyParams(jdsp, m->setInts[0], m->setInts[1], p[0], p[1], p[2], p[3],
+		p[4], p[5], p[6], p[7], p[8], p[9], p[10], m->setInts[2], p[11], p[12]);
+}
+
+/* Frequency, gain (or slope, for a cutoff), q and type for each band. The
+   coefficients are written under the lock: Process filters with them on the
+   audio thread, and a block that read half the old set and half the new one
+   can ring at a steep or resonant setting. */
+void MultibandDistSetBands(JamesDSPLib *jdsp, const float *bands, int count)
+{
+	MultibandDist *m = &jdsp->multibandDist;
+	if (!bands || count < 0) count = 0;
+	if (count > MBD_MAX_BANDS) count = MBD_MAX_BANDS;
+	jdsp_lock(jdsp);
+	for (int i = 0; i < count; i++)
+	{
+		const float *b = bands + i * 4;
+		float *s = m->setBands + i * 4;
+		s[0] = mbdHold(b[0], 0.0f, 1.0e6f);
+		s[1] = mbdHold(b[1], -60.0f, 120.0f);
+		s[2] = mbdHold(b[2], 0.0f, 100.0f);
+		s[3] = mbdHold(b[3], 0.0f, (float)MBD_FILTER_HIGH_PASS);
+	}
+	m->setBandCount = count;
+	mbdApplyBands(jdsp, m->setBands, count);
+	jdsp_unlock(jdsp);
+}
+
+void MultibandDistSetParam(JamesDSPLib *jdsp,
+	int routing, int model,
+	float drivePct, float biasPct, float shapePct,
+	float bits, float downsamplePct,
+	float tonePct, float bandGainPct,
+	float chorusRateHz, float chorusDepthMs, float chorusFeedbackPct,
+	float chorusSpreadPct, int chorusVoices, float chorusMixPct,
+	float mixPct)
+{
+	MultibandDist *m = &jdsp->multibandDist;
+	const float p[13] = { drivePct, biasPct, shapePct, bits, downsamplePct,
+		tonePct, bandGainPct, chorusRateHz, chorusDepthMs, chorusFeedbackPct,
+		chorusSpreadPct, chorusMixPct, mixPct };
+	jdsp_lock(jdsp);
+	m->setInts[0] = routing;
+	m->setInts[1] = model;
+	m->setInts[2] = chorusVoices;
+	for (int i = 0; i < 13; i++)
+		m->setP[i] = mbdFinite(p[i], 0.0f);
+	m->paramsSet = 1;
+	mbdApplyStored(jdsp);
+	jdsp_unlock(jdsp);
+}
+
+/* For a sample rate change; the caller holds the lock. The chorus rate and
+   depth and every band's coefficients are worked out from the rate, so
+   without this they stayed tuned for the rate they were set at. */
+void MultibandDistRefresh(JamesDSPLib *jdsp)
+{
+	MultibandDist *m = &jdsp->multibandDist;
+	if (m->paramsSet)
+		mbdApplyStored(jdsp);
+	mbdApplyBands(jdsp, m->setBands, m->setBandCount);
 }
 
 // ---------------------------------------------------------------- process

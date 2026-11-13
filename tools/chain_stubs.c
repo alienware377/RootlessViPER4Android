@@ -74,6 +74,7 @@ void JLimiterSetCoefficients(void) {}
 void LiveProgConstructor(void) {}
 void MaximizerSetParam(void) {}
 void MultibandDistSetParam(void) {}
+void MultibandDistRefresh(void) {}
 void PitchShiftSetParam(void) {}
 void SpeakerOptSetParam(void) {}
 void VDynBassSetParam(void) {}

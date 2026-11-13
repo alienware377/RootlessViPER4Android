@@ -57,7 +57,7 @@ static effect_descriptor_t rv4a_descriptor =
        the app can tell the user to flash the new one. The AIDL plugin
        (magisk/aidl) reads this same name and adds " AIDL" to it.
        v5: the spectral shaper and the binaural upmix. */
-    "RootfulViPER4Android engine v6",
+    "RootfulViPER4Android engine v7",
     "alienware377"
 };
 

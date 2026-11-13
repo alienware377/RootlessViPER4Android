@@ -1871,6 +1871,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	BassExciterRefresh(jdsp);
 	VDynBassRefresh(jdsp);
 	DiffSurroundRefresh(jdsp);
+	MultibandDistRefresh(jdsp);
 	// The stereo widening's band split and envelope times follow the rate too.
 	// Its own Refresh takes the lock, so the design is called directly.
 	StereoEnhancementDesign(jdsp);
