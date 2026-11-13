@@ -20,8 +20,9 @@ object EngineName {
      * and its head set, 9997/12002/10011/25004/30004).
      * 6: the bass exciter (26025/26125), dynamic system (26026/26126) and
      * differential surround (26027/26127).
+     * 7: the multiband distortion (26028/26128).
      */
-    const val REQUIRED_VERSION = 6
+    const val REQUIRED_VERSION = 7
 
     /**
      * The module only works with the rooted app, so it calls itself
