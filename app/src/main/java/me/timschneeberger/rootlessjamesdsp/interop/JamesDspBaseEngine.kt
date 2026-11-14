@@ -634,7 +634,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         // switching on starts from the right correction.
                         val follow = ldEnabled && ldFollow
                         followMediaVolume(follow)
-                        setLoudnessVolume(if (follow) MediaVolume.currentDb(context).toFloat() else ldVolume)
+                        setLoudnessVolume(if (follow) MediaVolume.listeningDb(context).toFloat() else ldVolume)
                         setLoudness(
                             ldEnabled, ldMode, ldRefLevel, ldRefOffset, ldStrength,
                             ldBassHz, ldBassSlope, ldBassAmount, ldTrebleHz, ldTrebleSlope,
