@@ -17,6 +17,11 @@ import kotlin.math.roundToInt
  * note that divider can make from the band being followed. A divider that can
  * only ever land below what the engine plays is drawn faint, since its slider
  * does nothing at this band setting.
+ *
+ * The bar per divider follows ExpanderSurface in evoeram's
+ * Loudness-PEQ-RootlessJamesDSP
+ * (https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, GNU GPL
+ * version 3), see THIRD_PARTY_NOTICES.md. The drawing is written here.
  */
 class SubHarmonicSurface(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 

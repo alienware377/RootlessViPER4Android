@@ -11,6 +11,10 @@ import me.timschneeberger.rootlessjamesdsp.view.SubHarmonicSurface
 /**
  * The bar chart at the top of the sub-harmonic expander card. It only reads
  * the card's own settings and redraws when one of them moves.
+ *
+ * After ExpanderGraphPreference in evoeram's Loudness-PEQ-RootlessJamesDSP
+ * (https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, GNU GPL
+ * version 3), see THIRD_PARTY_NOTICES.md.
  */
 class SubHarmonicPreviewPreference @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null,
