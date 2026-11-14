@@ -43,8 +43,9 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         // handle was cleared.
         Timer().schedule(100) {
             cancelAndAwaitSyncs()
-            // A sync that was already running may have started the stage again.
-            stopVoiceIsolation()
+            // A sync that was already running may have started the stage again, and said so.
+            if (stopVoiceIsolation())
+                VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Off)
             JamesDspWrapper.free(oldHandle)
             Timber.d("Handle $oldHandle has been freed")
         }
@@ -143,46 +144,69 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         )
         val rate = sampleRate.toInt()
         val current = voiceIsolation
-        if (current != null && current.sampleRate == rate && current.failure == null) {
-            current.settings = settings
-            return true
+        if (current != null && current.sampleRate == rate) {
+            if (current.failure == null) {
+                current.settings = settings
+                return true
+            }
+            // It stopped on a block that failed. Free it, and treat it like a failed load: the card
+            // keeps saying why, and only switching it off and on tries again at this rate.
+            voiceIsolationFailedRate = rate
+            stopVoiceIsolation()
+            return false
         }
         stopVoiceIsolation()
         if (rate <= 0) {
             // Before the first stream; the rate change that follows brings this back.
-            VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Waiting)
+            publishVoiceIsolation(VoiceIsolationStatus.State.Waiting)
             return true
         }
         if (rate == voiceIsolationFailedRate) return false
 
-        VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Loading)
+        publishVoiceIsolation(VoiceIsolationStatus.State.Loading)
         val stage = try {
             VoiceIsolationLoader.open(context, rate)
         } catch (e: VoiceIsolationLoader.Failure) {
             Timber.e(e, "Voice isolation could not start at $rate Hz")
             voiceIsolationFailedRate = rate
-            VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Failed(e.reason, e.detail))
+            publishVoiceIsolation(VoiceIsolationStatus.State.Failed(e.reason, e.detail))
             return false
         }
         stage.settings = settings
         stage.onFailure = { e ->
-            // On the audio thread: leave the clean-up to the next sync, just say so.
+            // On the audio thread, which must not close the stage: say why on the card, then
+            // have a sync free it.
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Failed(
+                publishVoiceIsolation(VoiceIsolationStatus.State.Failed(
                     VoiceIsolationStatus.Reason.Stopped, e.message ?: e.javaClass.simpleName))
+                syncWithPreferences(arrayOf(Constants.PREF_VOICEISOLATION))
             }
         }
         voiceIsolation = stage
         Timber.i("Voice isolation running at $rate Hz, %.1f ms of delay".format(stage.latencyMs))
-        VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Running(stage.latencyMs))
+        publishVoiceIsolation(VoiceIsolationStatus.State.Running(stage.latencyMs))
+        if (handle == 0L) {
+            // The engine was closed while the model loaded.
+            stopVoiceIsolation()
+            return false
+        }
         return true
     }
 
-    /** Takes the stage out of the audio path first, then frees it once any block in it is done. */
-    private fun stopVoiceIsolation() {
-        val stage = voiceIsolation ?: return
+    /** Status from a sync or the audio thread; once the engine is closed the card only hears Off. */
+    private fun publishVoiceIsolation(state: VoiceIsolationStatus.State) {
+        VoiceIsolationStatus.update(context, if (handle == 0L) VoiceIsolationStatus.State.Off else state)
+    }
+
+    /**
+     * Takes the stage out of the audio path first, then frees it once any block in it is done.
+     * Returns whether there was one.
+     */
+    private fun stopVoiceIsolation(): Boolean {
+        val stage = voiceIsolation ?: return false
         voiceIsolation = null
         stage.close()
+        return true
     }
 
     private var voiceIsolationLoggedAt = 0L
