@@ -276,6 +276,11 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26128: if (on) MultibandDistEnable(d); else MultibandDistDisable(d); break;
 
+    /* Smooth volume: one value, the level in dB. The engine clamps it to
+       0 .. -100 dB and keeps the level it had for a NaN. */
+    case 26032: if (fn >= 1) SmoothVolumeSetParam(d, fv[0]); break;
+    case 26132: if (on) SmoothVolumeEnable(d); else SmoothVolumeDisable(d); break;
+
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here
        and are rounded on arrival; only truePeak is a flag, and it arrives as
