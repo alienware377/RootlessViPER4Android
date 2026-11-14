@@ -50,6 +50,16 @@ object VoiceIsolationStatus {
         Stopped,
     }
 
+    /**
+     * The reasons the engine gets past by itself once the add-on is installed or updated. All of
+     * them are found before any of the add-on's code is loaded; past that, a new add-on ends the
+     * app's process instead of being picked up.
+     */
+    val RETRIED_WHEN_ADDON_CHANGES = setOf(
+        Reason.AddonMissing, Reason.AddonSignature, Reason.AddonTooOld, Reason.AppTooOld,
+        Reason.ModelMissing, Reason.ModelDamaged,
+    )
+
     @Volatile
     var state: State = State.Off
         private set

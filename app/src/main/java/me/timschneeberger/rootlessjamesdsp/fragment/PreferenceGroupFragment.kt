@@ -896,12 +896,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 is VoiceIsolationStatus.State.Failed -> getString(
                     when (state.reason) {
                         // The engine tries again by itself when the add-on changes.
-                        VoiceIsolationStatus.Reason.AddonMissing,
-                        VoiceIsolationStatus.Reason.AddonSignature,
-                        VoiceIsolationStatus.Reason.AddonTooOld,
-                        VoiceIsolationStatus.Reason.AppTooOld,
-                        VoiceIsolationStatus.Reason.ModelMissing,
-                        VoiceIsolationStatus.Reason.ModelDamaged -> R.string.voice_isolation_status_failed_addon
+                        in VoiceIsolationStatus.RETRIED_WHEN_ADDON_CHANGES -> R.string.voice_isolation_status_failed_addon
                         // Nothing to try again: this phone, or this build of the app, cannot run it.
                         VoiceIsolationStatus.Reason.Device,
                         VoiceIsolationStatus.Reason.App32Bit -> R.string.voice_isolation_status_failed_final
