@@ -23,8 +23,78 @@ class SmoothVolumeMathTest {
     }
 
     @Test
-    fun `switching on while muted holds the lowest index at the bottom of the gain`() {
-        assertEquals(Level(1, SmoothVolumeMath.MIN_GAIN_DB), SmoothVolumeMath.seed(0, max))
+    fun `switching on while muted holds the lowest index and unmuting comes back at the new index`() {
+        val muted = SmoothVolumeMath.seed(0, max)
+        assertEquals(Level(1, 0.0), muted)
+        // Turned up to 7 through the system: index 7 at 0 dB, as if it had
+        // never been held.
+        assertEquals(Level(7, 0.0), SmoothVolumeMath.fold(muted, 0, 7, max, even))
+    }
+
+    @Test
+    fun `starting again picks up the level it had`() {
+        // Held at 10 and turned down 13.5 dB, then processing stopped.
+        val before = SmoothVolumeMath.step(Level(10, 0.0), -13.5, max, even)
+        val again = SmoothVolumeMath.reseed(10, max, even, eff(before))
+        assertEquals(before, again)
+        // Above the index it is at again: that index goes up, as it had.
+        val raised = SmoothVolumeMath.step(Level(10, 0.0), 6.0, max, even)
+        assertEquals(raised, SmoothVolumeMath.reseed(10, max, even, eff(raised)))
+    }
+
+    @Test
+    fun `starting again without a usable level starts at the index`() {
+        assertEquals(Level(10, 0.0), SmoothVolumeMath.reseed(10, max, even, null))
+        assertEquals(Level(10, 0.0), SmoothVolumeMath.reseed(10, max, even, Double.NaN))
+        assertEquals(Level(10, 0.0), SmoothVolumeMath.reseed(10, max, even, Double.NEGATIVE_INFINITY))
+        assertEquals(Level(1, 0.0), SmoothVolumeMath.reseed(0, max, even, -50.0))
+        // Never below the bottom of the gain or above full volume.
+        assertEquals(Level(10, SmoothVolumeMath.MIN_GAIN_DB), SmoothVolumeMath.reseed(10, max, even, -500.0))
+        assertEquals(Level(15, 0.0), SmoothVolumeMath.reseed(10, max, even, 12.0))
+    }
+
+    @Test
+    fun `a held key raises the index as it goes, each raise one lag after its level`() {
+        // Rootless: 250 ms from the engine to the speaker, longer than the
+        // 100 ms between steps of a key held for a while. Every step needs
+        // the next index up.
+        val lag = 250L
+        val q = SmoothVolumeMath.RaiseQueue()
+        var written = 5
+        val wantedAt = mutableMapOf<Long, Int>()
+        var t = 0L
+        var hold = 5
+        while (t <= 2000) {
+            q.takeDue(t)?.let { written = maxOf(written, it) }
+            if (t <= 1500 && t % 100 == 0L) {
+                hold++
+                wantedAt[t] = hold
+                q.add(t + lag, hold)
+            }
+            // What is written is never ahead of what the engine was told a
+            // lag ago, and never further behind than that.
+            val sent = wantedAt.filterKeys { it <= t - lag }.values.maxOrNull() ?: 5
+            assertEquals("at $t ms", sent, written)
+            t += 10
+        }
+        // The raises happened while the key was held, not all at the end.
+        assertEquals(hold, written)
+        assertEquals(null, q.nextDueMs())
+    }
+
+    @Test
+    fun `a raise already waiting is not queued again`() {
+        val q = SmoothVolumeMath.RaiseQueue()
+        q.add(100, 8)
+        q.add(150, 8)
+        q.add(160, 7)
+        assertEquals(100L, q.nextDueMs())
+        assertEquals(null, q.takeDue(99))
+        assertEquals(8, q.takeDue(500))
+        assertEquals(null, q.nextDueMs())
+        q.add(600, 9)
+        q.clear()
+        assertEquals(null, q.takeDue(10_000))
     }
 
     @Test
