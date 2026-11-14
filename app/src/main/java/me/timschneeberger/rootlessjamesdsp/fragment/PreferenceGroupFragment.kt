@@ -808,6 +808,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             true
         }
         voiceIsolationChanged = { key ->
+            // The Off line depends on the switch, and no status is broadcast while processing is off.
+            if (key == kEnable) voiceIsolationStatusUpdater?.invoke()
             if (!applyingPreset && (key == kReduction || key == kVoice || key == kBoost)) {
                 val matching = if (sp.getFloat(kVoice, 0f) > 0f) VoiceIsolationPreset.Custom
                     else VoiceIsolationPreset.matching(sp.getFloat(kReduction, 65f), sp.getFloat(kBoost, 1.5f))
