@@ -10,6 +10,9 @@
         <Preference android:key="section_info" android:title="@string/section_info_title"
             android:summary="@string/subharmonic_info" android:persistent="false"
             app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.SubHarmonicPreviewPreference
+            android:key="subharmonic_preview"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
 
         <PreferenceCategory android:title="@string/subharmonic_amounts_header"
             app:iconSpaceReserved="false">
