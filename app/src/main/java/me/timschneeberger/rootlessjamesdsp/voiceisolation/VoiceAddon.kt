@@ -20,6 +20,11 @@ import java.util.function.BiConsumer
  * same certificate as the app, and both sides check the interface version ([API_VERSION], from
  * AndroidConfig.voiceAddonApi) before a session is opened. The add-on's classes come from its own
  * class loader and are not the app's classes, so only platform types cross: see [Entry].
+ *
+ * The signature check keeps out an add-on from anyone who does not hold the app's key. A build
+ * signed with the debug key in this repository has no such key: anyone can sign an add-on it
+ * accepts, just as anyone can sign an update of it. Releases signed with a private key (see
+ * buildSrc ReleaseSigning.kt) are what make the check mean something.
  */
 internal object VoiceAddon {
     const val PACKAGE = "com.alienware377.viper4android.voiceaddon"

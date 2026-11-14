@@ -84,3 +84,7 @@ tools/*_x86
 # Host builds of the harnesses (tools/run_harnesses.sh)
 tools/host_build/
 tools/host_build_san/
+
+# A private release key and its passwords (buildSrc ReleaseSigning.kt)
+keystore/release.properties
+keystore/*.jks

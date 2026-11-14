@@ -37,7 +37,8 @@ jobs:
 
       # Voice isolation's speech model and ONNX Runtime ship as a separate
       # add-on APK, published next to the app, so the app itself stays small.
-      # Signed with the same key as the app, which only loads an add-on that is.
+      # Signed with the same key as the app, which only loads an add-on that is
+      # (the private release key when one is set up, see buildSrc ReleaseSigning.kt).
       - name: Build voice isolation add-on APK
         run: ./gradlew :voiceaddon:assembleRelease --no-daemon
 

@@ -59,6 +59,16 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // A private key for releases when one is set up (buildSrc ReleaseSigning.kt);
+        // the voice isolation add-on reads the same one.
+        project.releaseKey()?.let { key ->
+            create("release") {
+                storeFile = key.storeFile
+                storePassword = key.storePassword
+                keyAlias = key.keyAlias
+                keyPassword = key.keyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -80,7 +90,7 @@ android {
             //proguardFiles("proguard-android-optimize.txt", "proguard-rules.pro")
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
         create("preview") {
             initWith(getByName("release"))
