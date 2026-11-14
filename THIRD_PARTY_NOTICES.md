@@ -225,10 +225,23 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   can give, and the key service can be switched on through Shizuku.
   Upstream's mute state, readout styling and readout settings are not
   carried over.
+- **Sub-harmonic expander:** `Effects/subHarmonic.c` and its card,
+  `app/src/main/res/xml/dsp_subharmonic_preferences.xml`, with the bar chart
+  at its top (`app/src/main/java/me/timschneeberger/rootlessjamesdsp/preference/SubHarmonicPreviewPreference.kt`
+  and `app/src/main/java/me/timschneeberger/rootlessjamesdsp/view/SubHarmonicSurface.kt`),
+  after `Effects/subHarmonicExpander.c` in the engine and the app's
+  `preference/ExpanderGraphPreference.kt` and `view/ExpanderSurface.kt`. The
+  idea and the controls come from there: an amount per divider from f/2 to
+  f/10, the band the bass is taken from and a mix, with the bass found in a
+  low-passed band, and a bar per divider to show them.
+  The pitch tracking (crossings counted with hysteresis, periods over whole
+  cycles), the phase-locked synthesis, the level follower, the output level,
+  the fades and the rate handling are written here, and so is the chart's
+  drawing; its total harmonic distortion bar is left out.
 - **Also by way of this fork:** the loudness correction and voice isolation,
   each listed below with its own origin.
 - **Used by:** To parametric EQ on the Graphic EQ screen, the LUFS normalizer
-  card and the Smooth volume card.
+  card, the Smooth volume card and the Sub-harmonic expander card.
 
 ### libmysofa
 

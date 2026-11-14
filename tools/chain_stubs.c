@@ -132,3 +132,6 @@ void LoudnessRefresh(void) {}
 void SmoothVolumeProcess(void) {}
 void SmoothVolumeSetParam(void) {}
 void SmoothVolumeRefresh(void) {}
+void SubHarmonicProcess(void) {}
+void SubHarmonicSetParam(void) {}
+void SubHarmonicRefresh(void) {}

@@ -271,6 +271,16 @@ class JamesDspRemoteEngine(
         sendForkEffect(PARAM_LOWEND, enable, floatArrayOf(
             subsonic, weightHz, weightDb, mudHz, mudDb, mix))
 
+    // Nine amounts, f/2 first, then the band, mix and output level: 26033.
+    override fun setSubHarmonic(enable: Boolean, amounts: FloatArray, bandHz: Float, mix: Float, outputDb: Float): Boolean {
+        val payload = FloatArray(SUBHARMONIC_DIVIDERS + 3)
+        amounts.copyInto(payload, 0, 0, minOf(amounts.size, SUBHARMONIC_DIVIDERS))
+        payload[SUBHARMONIC_DIVIDERS] = bandHz
+        payload[SUBHARMONIC_DIVIDERS + 1] = mix
+        payload[SUBHARMONIC_DIVIDERS + 2] = outputDb
+        return sendForkEffect(PARAM_SUBHARMONIC, enable, payload)
+    }
+
     override fun setTransient(enable: Boolean, freqLow: Float, freqHigh: Float, attackLow: Float, sustainLow: Float, attackMid: Float, sustainMid: Float, attackHigh: Float, sustainHigh: Float, range: Float, mix: Float): Boolean =
         sendForkEffect(PARAM_TRANSIENT, enable, floatArrayOf(
             freqLow, freqHigh, attackLow, sustainLow, attackMid, sustainMid,
@@ -618,6 +628,8 @@ class JamesDspRemoteEngine(
         private const val PARAM_LOUDNESS_VOLUME = PARAM_FORK_BASE + 30
         private const val PARAM_LUFS = PARAM_FORK_BASE + 31
         private const val PARAM_SMOOTH_VOLUME = PARAM_FORK_BASE + 32
+        private const val PARAM_SUBHARMONIC = PARAM_FORK_BASE + 33
+        private const val SUBHARMONIC_DIVIDERS = 9
         /** The head set's payload: geometry, 4096-float parts, commit, hash. */
         private const val PARAM_HRIR_INFO = 9997
         private const val PARAM_HRIR_PART = 12002

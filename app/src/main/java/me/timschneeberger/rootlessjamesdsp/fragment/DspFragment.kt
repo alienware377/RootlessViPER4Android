@@ -230,6 +230,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
         CardEntry(R.id.card_compressor, R.string.compander_enable_v2),
         CardEntry(R.id.card_bass, R.string.bass_enable),
         CardEntry(R.id.card_bassex, R.string.bassex_enable),
+        CardEntry(R.id.card_subharmonic, R.string.subharmonic_enable),
         CardEntry(R.id.card_vdynbass, R.string.v4a_vdynbass_title),
         CardEntry(R.id.card_diffsurround, R.string.diffsurround_enable),
         CardEntry(R.id.card_clarity, R.string.clarity_enable),
@@ -319,6 +320,7 @@ class DspFragment : Fragment(), SharedPreferences.OnSharedPreferenceChangeListen
 
     /** Cards not shown on first paint; installed lazily as the user scrolls. */
     private val deferredCardSpecs = listOf(
+        CardSpec(R.id.card_subharmonic, Constants.PREF_SUBHARMONIC, R.xml.dsp_subharmonic_preferences),
         CardSpec(R.id.card_diffsurround, Constants.PREF_DIFFSURROUND, R.xml.dsp_diffsurround_preferences),
         CardSpec(R.id.card_clarity, Constants.PREF_CLARITY, R.xml.dsp_clarity_preferences),
         CardSpec(R.id.card_fieldsurround, Constants.PREF_FIELDSURROUND, R.xml.dsp_fieldsurround_preferences),

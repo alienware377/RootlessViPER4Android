@@ -15,9 +15,11 @@ package me.timschneeberger.rootlessjamesdsp.utils
  */
 object ChainOrder {
     /** JdspEffectId values, as in jdsp_header.h. */
+    const val BASSBOOST = 5
     const val DDC = 12
     const val STEREOWIDE = 19
     const val MAXIMIZER = 30
+    const val TRANSIENT = 33
     const val TAPE = 36
     const val VINYL = 37
     const val BALANCE = 38
@@ -25,6 +27,7 @@ object ChainOrder {
     const val BINAURAL = 40
     const val LUFS = 41
     const val LOUDNESS = 42
+    const val SUBHARMONIC = 43
 
     /**
      * The engine's default chain (jdspDefaultChain in jdspController.c), as
@@ -34,7 +37,8 @@ object ChainOrder {
      */
     val DEFAULT: List<Int> = listOf(
         0, 1, 2, 3,          // tube, compander, pitch shift, FET compressor
-        33,                  // impact
+        TRANSIENT,           // impact
+        SUBHARMONIC,         // sub-harmonic expander
         4, 5, 6, 7, 8,       // differential surround, bass boost, ViPER bass x3
         34, 35,              // low end, exciter
         9, 10, 31,           // equaliser, graphic EQ, dynamic EQ
@@ -67,13 +71,27 @@ object ChainOrder {
         // volume the finished sound is played at, and the normalizer does not
         // measure its cut and boost it back.
         LOUDNESS to LUFS,
+        // With the dynamics, ahead of the bass processors and the maximiser.
+        SUBHARMONIC to TRANSIENT,
+    )
+
+    /**
+     * Where an effect goes when the one it follows is missing too: ahead of
+     * this one, if that is there. Orders saved before Impact existed lack it,
+     * and the sub-harmonic expander still has to run before the bass boost
+     * rather than after everything else.
+     */
+    private val placeBefore = mapOf(
+        SUBHARMONIC to BASSBOOST,
     )
 
     /**
      * Returns [saved] with every effect from [placeAfter] that it lacks put in
-     * after its anchor. With the anchor missing too, it goes in just ahead of
-     * the maximiser, and with neither it is left for the engine to append. An
-     * empty list stays empty, since that means "use the default chain".
+     * after its anchor. With the anchor missing too, it goes in ahead of its
+     * [placeBefore] effect if it has one and that is there, otherwise just
+     * ahead of the maximiser, and with neither it is left for the engine to
+     * append. An empty list stays empty, since that means "use the default
+     * chain".
      */
     fun complete(saved: List<Int>): List<Int> {
         if (saved.isEmpty()) return saved
@@ -83,6 +101,11 @@ object ChainOrder {
             val at = out.indexOf(anchor)
             if (at >= 0) {
                 out.add(at + 1, id)
+                continue
+            }
+            val before = placeBefore[id]?.let { out.indexOf(it) } ?: -1
+            if (before >= 0) {
+                out.add(before, id)
                 continue
             }
             val maxr = out.indexOf(MAXIMIZER)

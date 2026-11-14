@@ -22,6 +22,7 @@ object OutdatedEngineCardUi {
         Constants.PREF_LUFS to 8,
         Constants.PREF_LOUDNESS to 8,
         Constants.PREF_SMOOTH_VOLUME to 8,
+        Constants.PREF_SUBHARMONIC to 8,
     )
 
     fun apply(fragment: PreferenceFragmentCompat, namespace: String?) {
