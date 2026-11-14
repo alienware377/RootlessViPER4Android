@@ -56,6 +56,7 @@ object JamesDspWrapper {
     external fun setVinyl(self: JamesDspHandle, enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean
     external fun setExciter(self: JamesDspHandle, enable: Boolean, f1: Float, f2: Float, f3: Float, a1: Float, a2: Float, a3: Float, a4: Float, character: Int, drive: Float, mix: Float): Boolean
     external fun setLowEnd(self: JamesDspHandle, enable: Boolean, subsonic: Float, weightHz: Float, weightDb: Float, mudHz: Float, mudDb: Float, mix: Float): Boolean
+    external fun setSubHarmonic(self: JamesDspHandle, enable: Boolean, amounts: FloatArray, bandHz: Float, mix: Float, outputDb: Float): Boolean
     external fun setTransient(self: JamesDspHandle, enable: Boolean, freqLow: Float, freqHigh: Float, attackLow: Float, sustainLow: Float, attackMid: Float, sustainMid: Float, attackHigh: Float, sustainHigh: Float, range: Float, mix: Float): Boolean
     external fun setImaging(self: JamesDspHandle, enable: Boolean, monoBelow: Float, freqLow: Float, freqMid: Float, freqHigh: Float, widthLow: Float, widthMid: Float, widthHigh: Float, mix: Float): Boolean
     external fun setDynamicEq(self: JamesDspHandle, enable: Boolean, mix: Float, msMode: Int): Boolean

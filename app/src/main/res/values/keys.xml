@@ -383,6 +383,19 @@
     <string name="key_lowend_mud_freq" translatable="false">lowend_mud_freq</string>
     <string name="key_lowend_mud_gain" translatable="false">lowend_mud_gain</string>
     <string name="key_lowend_mix" translatable="false">lowend_mix</string>
+    <string name="key_subharmonic_enable" translatable="false">subharmonic_enable</string>
+    <string name="key_subharmonic_amount2" translatable="false">subharmonic_amount2</string>
+    <string name="key_subharmonic_amount3" translatable="false">subharmonic_amount3</string>
+    <string name="key_subharmonic_amount4" translatable="false">subharmonic_amount4</string>
+    <string name="key_subharmonic_amount5" translatable="false">subharmonic_amount5</string>
+    <string name="key_subharmonic_amount6" translatable="false">subharmonic_amount6</string>
+    <string name="key_subharmonic_amount7" translatable="false">subharmonic_amount7</string>
+    <string name="key_subharmonic_amount8" translatable="false">subharmonic_amount8</string>
+    <string name="key_subharmonic_amount9" translatable="false">subharmonic_amount9</string>
+    <string name="key_subharmonic_amount10" translatable="false">subharmonic_amount10</string>
+    <string name="key_subharmonic_band" translatable="false">subharmonic_band</string>
+    <string name="key_subharmonic_mix" translatable="false">subharmonic_mix</string>
+    <string name="key_subharmonic_output" translatable="false">subharmonic_output</string>
     <string name="key_transient_enable" translatable="false">transient_enable</string>
     <string name="key_transient_freq_low" translatable="false">transient_freq_low</string>
     <string name="key_transient_freq_high" translatable="false">transient_freq_high</string>

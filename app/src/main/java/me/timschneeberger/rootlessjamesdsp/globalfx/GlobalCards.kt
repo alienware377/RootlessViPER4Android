@@ -30,6 +30,7 @@ object GlobalCards {
 
         Constants.PREF_COMPANDER to Support.NONE,
         Constants.PREF_BASSEX to Support.NONE,
+        Constants.PREF_SUBHARMONIC to Support.NONE,
         Constants.PREF_VDYNBASS to Support.NONE,
         Constants.PREF_DIFFSURROUND to Support.NONE,
         Constants.PREF_CLARITY to Support.NONE,

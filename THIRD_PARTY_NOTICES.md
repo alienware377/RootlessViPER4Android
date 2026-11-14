@@ -197,6 +197,23 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   to the app as a separate file. Debian ships the same data in its main archive
   under the same text.
 
+### Sub-Harmonic Expander (Loudness-PEQ fork of RootlessJamesDSP)
+
+- **Author:** evoeram
+- **Licence:** GNU GPL version 3, the same as this app, so no further text is
+  needed
+- **Upstream:** https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, with
+  its engine in https://github.com/evoeram/JamesDSPManager (branch
+  `extensions`, `Main/libjamesdsp/jni/jamesdsp/jdsp/Effects/subHarmonicExpander.c`)
+- **Files:** `Effects/subHarmonic.c` and its card,
+  `app/src/main/res/xml/dsp_subharmonic_preferences.xml`. The idea and the
+  controls come from there: an amount per divider from f/2 to f/10, the band
+  the bass is taken from and a mix, with the bass found in a low-passed band.
+  The pitch tracking (crossings counted with hysteresis, periods over whole
+  cycles), the phase-locked synthesis, the level follower, the output level,
+  the fades and the rate handling are written here.
+- **Used by:** the Sub-harmonic expander card.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular
