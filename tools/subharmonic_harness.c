@@ -544,6 +544,68 @@ int main(void)
 			  maxStep(d, 2 * S - 1, 3 * S) / (after > steady ? after : steady), 0.0, 1.05);
 	}
 
+	/* Each divider is pulled towards where the count says it should be, never
+	   faster than 1.5 or slower than 0.5 times its own speed, so a sub that has
+	   lost its place gets back without a jump. On every input above the
+	   tracker keeps that error small (a new note starts the relation afresh),
+	   so here it is put there directly, at a crest of the sub where a jump
+	   would step furthest: 0.9 of half a cycle ahead, then behind. The band is
+	   at 300 Hz so that the output lowpass would let a jump through as one. */
+	for (int dir = 0; dir < 2; dir++)
+	{
+		const double moved = dir ? -0.9 * M_PI : 0.9 * M_PI;
+		printf("\nf/2 put %s, band at 300 Hz\n", dir ? "0.45 of a cycle behind" : "0.45 of a cycle ahead");
+		prepare(48000.0f);
+		setOnly(2, 100.0f, 300.0f, 100.0f, 0.0f);
+		SubHarmonicEnable(&g_lib);
+		const int n = 3 * S;
+		sine(0, n, 60.0, 0.25, fs);
+		run(0, 2 * S, BLOCK);
+		SubHarmonic *s = &g_lib.subHarmonic;
+		int at = 2 * S;
+		while (fabsf(sinf(s->phase[0])) < 0.999f && at < 2 * S + 1600)
+		{
+			run(at, at + 1, 1);
+			at++;
+		}
+		s->refOff[0] += (float)moved;
+		if (s->refOff[0] >= (float)(2.0 * M_PI)) s->refOff[0] -= (float)(2.0 * M_PI);
+		if (s->refOff[0] < 0.0f) s->refOff[0] += (float)(2.0 * M_PI);
+		/* A sample at a time for half a second, to see how far the oscillator
+		   moves on each one against its own speed. */
+		double fastest = 0, slowest = 1e9;
+		for (; at < 2 * S + S / 2; at++)
+		{
+			const float before = s->phase[0];
+			run(at, at + 1, 1);
+			double step = (double)s->phase[0] - (double)before;
+			if (step < 0.0) step += 2.0 * M_PI;
+			const double r = step / (M_PI / (2.0 * (double)s->half));
+			if (r > fastest) fastest = r;
+			if (r < slowest) slowest = r;
+		}
+		run(at, n, BLOCK);
+		check("fastest it runs, share of its own speed", fastest, 1.0, 1.501);
+		check("slowest it runs, share of its own speed", slowest, 0.499, 1.0);
+		/* 1.5 for the speed, and a little for the output filters ringing as
+		   the frequency moves. */
+		check("largest step while it catches up, share of steady",
+			  maxStep(d, 2 * S - 1, n) / maxStep(d, S, 2 * S), 0.0, 1.75);
+		/* One 30 Hz cycle before against one a third of a second on: 11 whole
+		   cycles apart, so what is left is how far it moved. */
+		double ps = 0, pc = 0, qs = 0, qc = 0;
+		for (int i = 0; i < 1600; i++)
+		{
+			const double w = 2.0 * M_PI * 30.0 * (double)i / fs;
+			ps += d[2 * S - 1600 + i] * sin(w); pc += d[2 * S - 1600 + i] * cos(w);
+			qs += d[2 * S + 16000 + i] * sin(w); qc += d[2 * S + 16000 + i] * cos(w);
+		}
+		check("a third of a second on it has moved that far, rad (0.9 pi)",
+			  fabs(remainder(atan2(qc, qs) - atan2(pc, ps), 2.0 * M_PI)), 0.9 * M_PI - 0.05, 0.9 * M_PI + 0.05);
+		check("at its level again, dB re prediction",
+			  20.0 * log10(fitAmp(d, 2 * S + S / 2, n, 30.0, fs, NULL) / expected(0.25, 60.0, 2, 1.0, 300.0, 1.0)), -0.5, 0.5);
+	}
+
 	printf("\nNaN and nonsense settings\n");
 	{
 		prepare(48000.0f);
