@@ -16,35 +16,53 @@ internal object VoiceIsolationLoader {
     class Failure(val reason: Reason, val detail: String? = null, cause: Throwable? = null) :
         Exception(detail ?: reason.name, cause)
 
+    /** What the loader needs from the installed add-on, kept apart so the order can be tested. */
+    interface Source {
+        fun check(): VoiceAddon.Check
+
+        /** The model from the add-on's assets, read without loading any of its code. */
+        fun readModel(): ByteArray
+
+        /**
+         * The add-on's class loader. Making it registers the app as depending on the add-on, and
+         * from then on Android stops the app's process if the add-on is replaced or removed.
+         */
+        fun classLoader(): ClassLoader
+    }
+
     fun open(context: Context, sampleRate: Int): VoiceIsolationProcessor {
         if (!isRootless()) throw Failure(Reason.NotInThisBuild)
+        return open(SystemSource(context), sampleRate)
+    }
+
+    fun open(source: Source, sampleRate: Int, entryClass: String = VoiceAddon.ENTRY_CLASS): VoiceIsolationProcessor {
         if (!SincResampler.supports(sampleRate, GtcrnModel.SAMPLE_RATE))
             throw Failure(Reason.Rate, "$sampleRate Hz")
 
-        requireReady(VoiceAddon.check(context))
-        val addon = try {
-            context.createPackageContext(VoiceAddon.PACKAGE,
-                Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY)
-        } catch (e: PackageManager.NameNotFoundException) {
-            throw Failure(Reason.AddonMissing)
-        }
-        // Making the class loader registers the app as depending on the add-on, and from then on
-        // Android stops the app if the add-on is replaced or removed. Checking again after that
-        // point makes sure the code loaded below is the package that passed the check.
-        val classLoader = addon.classLoader
-        requireReady(VoiceAddon.check(context))
-
+        requireReady(source.check())
+        // The model is read and checked before any code is loaded. A missing or damaged model is
+        // fixed by installing the add-on again, which the engine notices and retries; once the
+        // class loader exists, the same install would end the app's process instead.
         val model = try {
-            addon.assets.open(GtcrnModel.ASSET).use { it.readBytes() }
+            source.readModel()
         } catch (e: IOException) {
             throw Failure(Reason.ModelMissing, e.message, e)
         }
         if (sha256(model) != GtcrnModel.ASSET_SHA256) throw Failure(Reason.ModelDamaged)
 
+        // Checked again once the class loader exists, so the code loaded below is the package
+        // that passed: from here on Android stops the app rather than let it be swapped.
+        val classLoader = source.classLoader()
+        requireReady(source.check())
+
         val entry = try {
-            VoiceAddon.load(classLoader)
+            VoiceAddon.load(classLoader, entryClass)
         } catch (e: VoiceAddon.VersionMismatch) {
-            throw Failure(if (e.addonVersion < VoiceAddon.API_VERSION) Reason.AddonTooOld else Reason.AppTooOld)
+            // The add-on's code and its manifest disagree, so the build itself is broken. Not one
+            // of the add-on reasons either: their promise to retry when the add-on changes does
+            // not hold past the class loader.
+            throw Failure(Reason.Runtime,
+                "the add-on's code is interface ${e.addonVersion}, its manifest ${VoiceAddon.API_VERSION}", e)
         } catch (e: Throwable) {
             throw Failure(Reason.Runtime, e.message ?: e.javaClass.simpleName, e)
         }
@@ -71,4 +89,23 @@ internal object VoiceIsolationLoader {
 
     fun sha256(bytes: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    private class SystemSource(private val context: Context) : Source {
+        override fun check() = VoiceAddon.check(context)
+
+        // The add-on's resources come without its code, so reading them registers no dependency.
+        override fun readModel(): ByteArray = try {
+            context.packageManager.getResourcesForApplication(VoiceAddon.PACKAGE)
+                .assets.open(GtcrnModel.ASSET).use { it.readBytes() }
+        } catch (e: PackageManager.NameNotFoundException) {
+            throw Failure(Reason.AddonMissing)
+        }
+
+        override fun classLoader(): ClassLoader = try {
+            context.createPackageContext(VoiceAddon.PACKAGE,
+                Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY).classLoader
+        } catch (e: PackageManager.NameNotFoundException) {
+            throw Failure(Reason.AddonMissing)
+        }
+    }
 }
