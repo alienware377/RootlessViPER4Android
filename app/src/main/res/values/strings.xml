@@ -950,6 +950,7 @@
     <string name="geq_import_error_too_large">That file is too large to be a graphic EQ curve.</string>
     <string name="geq_import_error_no_curve">That file has no \"GraphicEQ:\" line, so it is not a graphic EQ curve.</string>
     <string name="geq_import_error_no_nodes">The GraphicEQ line in that file has no nodes.</string>
+    <string name="geq_import_error_too_many_nodes">That curve has %1$s nodes. Up to %2$d can be imported.</string>
     <string name="geq_import_error_bad_entry">Not a frequency and a gain: \"%1$s\". Nothing was imported.</string>
     <string name="geq_import_error_out_of_range">Outside 0 to 24000 Hz or -48 to 48 dB: \"%1$s\". Nothing was imported.</string>
     <string name="geq_export_success">Exported successfully</string>

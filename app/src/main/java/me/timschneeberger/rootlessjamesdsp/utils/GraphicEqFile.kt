@@ -22,6 +22,14 @@ object GraphicEqFile {
     const val MAX_BYTES = 1 shl 20
 
     /**
+     * AutoEq writes 127 nodes and Match EQ about as many. A file of thousands
+     * fits in [MAX_BYTES] easily (a measurement at 1 Hz steps is 20000), but
+     * the screen keeps every node as a row and saves the whole list on each
+     * change, so a curve like that would stall it.
+     */
+    const val MAX_NODES = 1000
+
+    /**
      * Everything the app itself can store, so its own exports always come
      * back. The node editor takes 0 to 24000 Hz, and Match EQ can go well
      * below the editor's -32 dB: up to 30 dB of cut, then the whole curve
@@ -40,6 +48,7 @@ object GraphicEqFile {
         TOO_LARGE,
         NO_GRAPHIC_EQ_LINE,
         NO_NODES,
+        TOO_MANY_NODES,
         BAD_ENTRY,
         OUT_OF_RANGE,
     }
@@ -73,6 +82,7 @@ object GraphicEqFile {
         val body = line.substring(PREFIX.length).replace('\t', ' ')
         val entries = body.split(";").map { it.trim() }.filter(String::isNotBlank)
         if (entries.isEmpty()) return Parsed.Error(Reason.NO_NODES)
+        if (entries.size > MAX_NODES) return Parsed.Error(Reason.TOO_MANY_NODES, entries.size.toString())
 
         for (entry in entries) {
             val parts = entry.split(" ").filter(String::isNotBlank)
