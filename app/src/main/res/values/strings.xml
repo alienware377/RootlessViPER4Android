@@ -1181,7 +1181,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="balance_mono">Blend to mono</string>
     <string name="balance_mono_summary">Mixes the channels together. At 100%% both ears hear everything, which is the one to use with a single earbud.</string>
     <string name="lufs_enable">LUFS normalizer</string>
-    <string name="lufs_info">Keeps the volume even from one song to the next. It listens to the last few seconds the way streaming services measure loudness (LUFS, ITU-R BS.1770) and slowly turns the volume up or down towards the target. It never turns up during a pause or near silence: between songs a boost eases back to normal and a cut is kept, so the next song never starts with a jump. The slower the speed, the more of the loud and quiet parts within a song it leaves alone.</string>
+    <string name="lufs_info">Keeps the volume even from one song to the next. It listens to the last few seconds the way streaming services measure loudness (LUFS, ITU-R BS.1770) and slowly turns the volume up or down towards the target. It never turns up during a pause or near silence. When there is a gap of about half a second or more between songs, a boost is let go and a cut is kept, so the next song is judged on its own and a loud one never starts boosted. Songs that run straight into each other (gapless albums, crossfade) leave no gap to notice, so there the volume follows more slowly. The slower the speed, the more of the loud and quiet parts within a song it leaves alone.</string>
     <string name="lufs_target">Target loudness</string>
     <string name="lufs_target_summary">-14 LUFS is where most streaming services put music. Lower is quieter.</string>
     <string name="lufs_max_boost">Most boost</string>
