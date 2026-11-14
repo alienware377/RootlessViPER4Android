@@ -10,6 +10,11 @@
         <Preference android:key="section_info" android:title="@string/section_info_title"
             android:summary="@string/voice_isolation_info" android:persistent="false"
             app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="voice_isolation_addon"
+            android:title="@string/voice_isolation_addon_title"
+            android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
         <ListPreference
             android:key="@string/key_voice_isolation_preset"
             android:title="@string/voice_isolation_preset"
