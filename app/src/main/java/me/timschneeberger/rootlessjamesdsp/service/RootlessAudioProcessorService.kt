@@ -43,6 +43,7 @@ import me.timschneeberger.rootlessjamesdsp.session.rootless.OnRootlessSessionCha
 import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatabase
 import me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionManager
 import me.timschneeberger.rootlessjamesdsp.session.rootless.SessionRecordingPolicyManager
+import me.timschneeberger.rootlessjamesdsp.smoothvolume.RootlessOutputLag
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.ProcessedTrackUsage
 import me.timschneeberger.rootlessjamesdsp.utils.Constants.ACTION_PREFERENCES_UPDATED
@@ -540,6 +541,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 // first non-silent buffer resumes instantly and loses nothing.
                 var bufferGated = false
                 val bufferSecs = (bufferSize / 2.0) / sampleRate.toDouble()
+                // How long the output takes to be heard, for smooth volume.
+                val outputLag = RootlessOutputLag.Probe(sampleRate, bufferSize / 2)
                 while (!isProcessorDisposing) {
                     if(recreateRecorderRequested) {
                         recreateRecorderRequested = false
@@ -587,6 +590,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                     }
                     // Resume track if suspended
                     if(track.playState != AudioTrack.PLAYSTATE_PLAYING) {
+                        outputLag.restarted()
                         track.play()
                     }
 
@@ -600,9 +604,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         if (updateSilenceGate(silent, bufferSecs)) {
                             if (!bufferGated) { bufferGated = true; track.stop() }
                         } else {
-                            if (bufferGated) { bufferGated = false; track.play() }
+                            if (bufferGated) { bufferGated = false; outputLag.restarted(); track.play() }
                             engine.processInt16(shortBuffer, shortOutBuffer)
-                            track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            val n = track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            if (n > 0) outputLag.wrote(track, n / 2)
                         }
                     }
                     else {
@@ -614,9 +619,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         if (updateSilenceGate(silent, bufferSecs)) {
                             if (!bufferGated) { bufferGated = true; track.stop() }
                         } else {
-                            if (bufferGated) { bufferGated = false; track.play() }
+                            if (bufferGated) { bufferGated = false; outputLag.restarted(); track.play() }
                             engine.processFloat(floatBuffer, floatOutBuffer)
-                            track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            val n = track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            if (n > 0) outputLag.wrote(track, n / 2)
                         }
                     }
                 }

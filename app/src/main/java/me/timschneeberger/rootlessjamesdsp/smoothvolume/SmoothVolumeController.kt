@@ -565,7 +565,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     }
 
     /** How long the engine's output takes to be heard after a system volume change would be. */
-    private fun engineLagMs(): Long = if (isRoot()) ROOT_LAG_MS else ROOTLESS_LAG_MS
+    private fun engineLagMs(): Long = if (isRoot()) ROOT_LAG_MS else RootlessOutputLag.lagMs()
 
     private fun setStreamVolume(index: Int) {
         try {
@@ -639,8 +639,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         private const val EXTRA_VOLUME_STREAM_TYPE = "android.media.EXTRA_VOLUME_STREAM_TYPE"
         private const val EXTRA_VOLUME_STREAM_VALUE = "android.media.EXTRA_VOLUME_STREAM_VALUE"
 
-        /** Rootless audio goes through a capture and a playback buffer first. */
-        private const val ROOTLESS_LAG_MS = 250L
+        /** Rootless mode measures its own; see [RootlessOutputLag]. */
         private const val ROOT_LAG_MS = 80L
         private const val ROOT_LINGER_MS = 15_000L
     }
