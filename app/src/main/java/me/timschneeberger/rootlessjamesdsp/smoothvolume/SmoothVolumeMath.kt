@@ -42,14 +42,27 @@ object SmoothVolumeMath {
 
     /**
      * Where smooth volume starts: the index the phone was at, held, with the
-     * gain at 0 dB, so switching on changes nothing that can be heard. At
-     * index 0 (muted) the lowest audible index is held with the gain at the
-     * bottom of its range instead, since a muted stream cannot be turned up by
-     * a gain.
+     * gain at 0 dB, so switching on changes nothing that can be heard. Muted
+     * (index 0) counts as index 1, the way [fold] sees it, and stays muted
+     * until the system volume is turned up again; unmuting to an index then
+     * comes back at that index.
      */
     fun seed(index: Int, maxIndex: Int): Level =
-        if (index <= 0) Level(1.coerceAtMost(maxIndex), MIN_GAIN_DB)
-        else Level(index.coerceAtMost(maxIndex), MAX_GAIN_DB)
+        Level(index.coerceIn(1, maxIndex.coerceAtLeast(1)), MAX_GAIN_DB)
+
+    /**
+     * Where smooth volume starts again after it stopped holding for a while
+     * (processing stopped, or a root playback ended): the level it had,
+     * [rememberedDb], under the index the phone is at. The caller only passes
+     * a level when nothing has changed the system volume since, so starting
+     * again sounds the way it did when it stopped. Without one, or muted, it
+     * is [seed].
+     */
+    fun reseed(index: Int, maxIndex: Int, curve: Curve, rememberedDb: Double?): Level {
+        val base = seed(index, maxIndex)
+        if (index <= 0 || rememberedDb == null || !rememberedDb.isFinite()) return base
+        return moveTo(base, rememberedDb, maxIndex, curve)
+    }
 
     /**
      * The next grid point from [db] in the direction of [deltaDb], then the
@@ -192,6 +205,38 @@ object SmoothVolumeMath {
         heldMs < 3000 -> STEP_DB * 4 to 150L
         heldMs < 5000 -> STEP_DB * 8 to 120L
         else -> STEP_DB * 16 to 100L
+    }
+
+    /**
+     * Raises of the held index that are waiting for the engine. A raise is only
+     * safe once the engine's attenuation for the new level is being heard, so
+     * each one is due [lagMs] after the level that needed it, and the index
+     * written at any moment is the one the level had that long ago. Each raise
+     * keeps its own due time: a held key moves the level more often than the
+     * lag in rootless mode, and pushing one raise back on every step would put
+     * them all off until the key is let go, then do them at once.
+     */
+    class RaiseQueue {
+        private val pending = ArrayDeque<Pair<Long, Int>>()
+
+        /** Queues a raise to [index], due at [dueMs]; nothing if one at least as high is queued. */
+        fun add(dueMs: Long, index: Int) {
+            if ((pending.lastOrNull()?.second ?: Int.MIN_VALUE) >= index) return
+            pending.addLast(dueMs to index)
+        }
+
+        /** The highest index due by [nowMs], or null; what it returns is gone from the queue. */
+        fun takeDue(nowMs: Long): Int? {
+            var best: Int? = null
+            while (pending.isNotEmpty() && pending.first().first <= nowMs)
+                best = maxOf(best ?: Int.MIN_VALUE, pending.removeFirst().second)
+            return best
+        }
+
+        /** When the next raise is due, or null when none is waiting. */
+        fun nextDueMs(): Long? = pending.firstOrNull()?.first
+
+        fun clear() = pending.clear()
     }
 
     /** "-12.5 dB", "0 dB": one decimal only when it is not whole. */

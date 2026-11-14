@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import me.timschneeberger.rootlessjamesdsp.R
@@ -18,8 +19,10 @@ import me.timschneeberger.rootlessjamesdsp.interop.OutdatedEngineCardUi
 import me.timschneeberger.rootlessjamesdsp.smoothvolume.SmoothVolumeMath.Level
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.RoutingObserver
+import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
+import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -40,11 +43,19 @@ import timber.log.Timber
  * switching on is silent and apps this app does not process keep playing at the
  * level they had. The held index only moves up, when a step up needs more than
  * the gain can give. Switching off, or processing stopping, puts the index the
- * phone had back.
+ * phone had back. When processing stops (in root mode, also when every player
+ * has let go of its audio for a while) the level is kept, and holding starts
+ * from it again when processing comes back, as long as nothing changed the
+ * system volume or the output in between. Switching off forgets it.
  *
  * Volume changes made elsewhere (the volume panel's slider, a key while nothing
  * plays, another app) are folded into the level and the held index is put back,
- * so the system volume never drifts from what the card says.
+ * so the system volume never drifts from what the card says. Muting is the one
+ * exception: the media volume stays at 0 until it is turned up again.
+ *
+ * Every output keeps its own media volume, and Android only lets an app set
+ * the current one's. An output left at a raised index is remembered and put
+ * back the next time it is the current output, if it is still at that index.
  *
  * Every change of the system volume is ordered so that it can only ever make
  * things briefly quieter, never briefly louder: the engine's audio reaches the
@@ -84,7 +95,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     private val listeners = mutableSetOf<Listener>()
 
     /** Why it is on but not working, for the card. */
-    enum class Blocked { NONE, OFF, NOT_PROCESSING, ROOT_POWERED_OFF, ROOT_MODULE_OLD, VOLUME_FIXED }
+    enum class Blocked { NONE, OFF, MODE, NOT_PROCESSING, ROOT_POWERED_OFF, ROOT_MODULE_OLD, VOLUME_FIXED }
 
     var active = false
         private set
@@ -104,11 +115,16 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     private var curve: SmoothVolumeMath.Curve = SmoothVolumeMath.defaultCurve(15)
     /** The index the system volume is believed to be at, to tell our own writes from others'. */
     private var believedIndex = -1
+    /** Muted through the system while holding: the index stays at 0 and is not put back. */
+    private var muted = false
+    /** The output being held, by its profile id; null while it is not known. */
+    private var holdOutput: String? = null
     private var hud: SmoothVolumeHud? = null
     private var moduleTooOld: Boolean? = null
     private var volumeReceiverRegistered = false
 
-    private val raiseHold = Runnable { writeSystemIndex() }
+    private val raises = SmoothVolumeMath.RaiseQueue()
+    private val raiseHold = Runnable { raiseDue() }
     private val releaseEngine = Runnable { pushEngine(false, 0f) }
     private val enginesGone = Runnable { lingering = false; refresh() }
     private var lingering = false
@@ -125,7 +141,8 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     }
 
     private val appPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == context.getString(R.string.key_powered_on)) refresh()
+        if (key == context.getString(R.string.key_powered_on) || key == V4aMode.KEY ||
+            key == context.getString(R.string.key_global_mode)) refresh()
     }
 
     private val routingCallback = object : RoutingObserver.RoutingChangedCallback {
@@ -133,13 +150,6 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     }
 
     init {
-        // A held volume left behind by a process that died while holding it.
-        val stale = state.getInt(KEY_PREVIOUS_INDEX, -1)
-        if (stale >= 0) {
-            Timber.i("Putting back the media volume a previous run held: index $stale")
-            setStreamVolume(stale)
-            state.edit().remove(KEY_PREVIOUS_INDEX).apply()
-        }
         context.registerLocalReceiver(localReceiver, IntentFilter().apply {
             addAction(Constants.ACTION_PREFERENCES_UPDATED)
             addAction(Constants.ACTION_PRESET_LOADED)
@@ -147,6 +157,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         })
         prefsApp.registerOnSharedPreferenceChangeListener(appPrefsListener)
         routing.registerOnRoutingChangeListener(routingCallback)
+        putBackStaleHold(false)
         refresh()
     }
 
@@ -156,6 +167,19 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
 
     val enabled: Boolean
         get() = settings.getBoolean(context.getString(R.string.key_smooth_volume_enable), false)
+
+    /**
+     * V4A-only mode hides the card and global mode greys it out, so neither may
+     * leave it running where it cannot be seen or switched off. Read from the
+     * file rather than the cached copies: this runs from the change listener,
+     * which can come before the caches are dropped.
+     */
+    val modeAllows: Boolean
+        get() {
+            val app = context.getSharedPreferences(Constants.PREF_APP, Context.MODE_PRIVATE)
+            return !app.getBoolean(V4aMode.KEY, false) &&
+                !(isRootless() && app.getBoolean(context.getString(R.string.key_global_mode), false))
+        }
 
     val hudEnabled: Boolean
         get() = settings.getBoolean(context.getString(R.string.key_smooth_volume_hud), false)
@@ -189,8 +213,8 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     fun detach(engine: Listener) = handler.post {
         if (!engines.remove(engine) || engines.isNotEmpty()) return@post
         // In root mode every app's playback gets its own engine, which goes
-        // when that app stops. Letting go at once would put the volume back and
-        // start over at 0 dB between two songs; a while later is soon enough.
+        // when that app stops. Letting go at once would move the system volume
+        // back and forth between two songs; a while later is soon enough.
         // An engine closed because processing was switched off is handled by
         // the power switch at once.
         if (isRoot() && active) {
@@ -211,6 +235,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     fun refresh() {
         blocked = when {
             !enabled -> Blocked.OFF
+            !modeAllows -> Blocked.MODE
             isRoot() && !prefsApp.get<Boolean>(R.string.key_powered_on) -> Blocked.ROOT_POWERED_OFF
             engines.isEmpty() && !lingering -> Blocked.NOT_PROCESSING
             isRoot() && isModuleTooOld() -> Blocked.ROOT_MODULE_OLD
@@ -232,32 +257,60 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
 
     private fun startHolding() {
         handler.removeCallbacks(releaseEngine)
+        putBackStaleHold(true)
         maxIndex = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
         curve = readCurve()
+        holdOutput = outputId()
+        putBackRaisedOutput(holdOutput)
         val index = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         previousIndex = index
-        believedIndex = index
-        state.edit().putInt(KEY_PREVIOUS_INDEX, index).apply()
+        muted = index == 0
+        raises.clear()
+        val remembered = rememberedDb(index, holdOutput)
+        state.edit()
+            .putInt(KEY_PREVIOUS_INDEX, index)
+            .putInt(KEY_LEVEL_INDEX, index)
+            .putString(KEY_OUTPUT, holdOutput)
+            .apply()
+        setBelieved(index)
         active = true
         registerVolumeReceiver(true)
-        Timber.i("Smooth volume holding media volume at index $index of $maxIndex")
-        apply(SmoothVolumeMath.seed(index, maxIndex), null)
+        Timber.i("Smooth volume holding media volume at index $index of $maxIndex" +
+            (remembered?.let { ", starting from the level it had, $it dB" } ?: ""))
+        apply(SmoothVolumeMath.reseed(index, maxIndex, curve, remembered), null)
     }
 
     private fun stopHolding() {
         active = false
+        raises.clear()
         handler.removeCallbacks(raiseHold)
         registerVolumeReceiver(false)
         // Lowering the index first and the engine after it never gets louder
-        // on the way; the index never needs raising here, since holding only
-        // ever moved it up from where it was found.
-        if (previousIndex >= 0 && audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) != previousIndex)
-            setStreamVolume(previousIndex)
-        Timber.i("Smooth volume let go, media volume back at index $previousIndex")
+        // on the way. Where the index has to go up (it was turned down
+        // elsewhere and not put back yet), the engine is still attenuating
+        // under it until it lets go a moment later, so that is no louder than
+        // the level either. Muted stays muted.
+        val now = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val leftAt = if (muted || previousIndex < 0) now else previousIndex
+        if (leftAt != now) setStreamVolume(leftAt)
+        Timber.i("Smooth volume let go, media volume back at index $leftAt")
+        // Switched off: the next time starts over. Otherwise the level is
+        // kept for when processing comes back, along with the index it goes
+        // with, so it is only used if nothing moved the volume in between.
+        state.edit().apply {
+            remove(KEY_PREVIOUS_INDEX)
+            remove(KEY_HELD_INDEX)
+            if (blocked == Blocked.OFF) {
+                remove(KEY_LEVEL_DB)
+                remove(KEY_LEVEL_INDEX)
+            }
+            else putInt(KEY_LEVEL_INDEX, leftAt)
+        }.apply()
         previousIndex = -1
         believedIndex = -1
+        muted = false
+        holdOutput = null
         level = null
-        state.edit().remove(KEY_PREVIOUS_INDEX).apply()
         handler.removeCallbacks(releaseEngine)
         if (engines.isEmpty()) releaseEngine.run()
         else handler.postDelayed(releaseEngine, engineLagMs())
@@ -272,6 +325,8 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     fun adjust(deltaDb: Double, source: Source): Boolean {
         val l = level ?: return false
         if (!active) return false
+        // Moving the level by hand unmutes, as Android's own controls do.
+        muted = false
         apply(SmoothVolumeMath.step(l, deltaDb, maxIndex, curve), source)
         return true
     }
@@ -280,36 +335,64 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     fun setLevel(db: Double): Boolean {
         val l = level ?: return false
         if (!active) return false
+        muted = false
         apply(SmoothVolumeMath.moveTo(l, db, maxIndex, curve), Source.APP)
         return true
     }
 
-    /** Where the volume keys go: only while holding, during ordinary playback. */
+    /**
+     * Where the volume keys go: only while holding, during ordinary playback.
+     * Muted, they go to the system, so turning up unmutes the way it always
+     * does, and that is then folded in.
+     */
     fun takesVolumeKeys(): Boolean =
-        active && audioManager.mode == AudioManager.MODE_NORMAL && audioManager.isMusicActive
+        active && !muted && audioManager.mode == AudioManager.MODE_NORMAL && audioManager.isMusicActive
 
     enum class Source { KEY, APP, SYSTEM }
 
     private fun apply(new: Level, source: Source?) {
         level = new
+        state.edit().putFloat(KEY_LEVEL_DB, SmoothVolumeMath.effectiveDb(new, curve).toFloat()).apply()
         pushEngine(true, new.gainDb.toFloat())
-        if (new.holdIndex != believedIndex) {
+        if (!muted && new.holdIndex != believedIndex) {
             if (new.holdIndex > believedIndex) {
-                // Up: once the engine's extra attenuation is on its way out.
-                handler.removeCallbacks(raiseHold)
-                handler.postDelayed(raiseHold, engineLagMs())
+                // Up: once the engine's extra attenuation for this level is
+                // being heard.
+                raises.add(SystemClock.uptimeMillis() + engineLagMs(), new.holdIndex)
+                scheduleRaise()
             }
-            else writeSystemIndex()
+            else writeSystemIndex(new.holdIndex)
         }
         if (source == Source.KEY || source == Source.SYSTEM) showHud()
         notifyListeners()
     }
 
-    private fun writeSystemIndex() {
-        val l = level ?: return
+    private fun scheduleRaise() {
+        handler.removeCallbacks(raiseHold)
+        raises.nextDueMs()?.let { handler.postAtTime(raiseHold, it) }
+    }
+
+    private fun raiseDue() {
+        val due = raises.takeDue(SystemClock.uptimeMillis())
+        val l = level
+        if (due != null && l != null && active && !muted) {
+            // Never past the level's own index, in case it has settled lower
+            // since.
+            val index = minOf(due, l.holdIndex)
+            if (index > believedIndex) writeSystemIndex(index)
+        }
+        scheduleRaise()
+    }
+
+    private fun writeSystemIndex(index: Int) {
         if (!active) return
-        believedIndex = l.holdIndex
-        setStreamVolume(l.holdIndex)
+        setBelieved(index)
+        setStreamVolume(index)
+    }
+
+    private fun setBelieved(index: Int) {
+        believedIndex = index
+        state.edit().putInt(KEY_HELD_INDEX, index).apply()
     }
 
     private fun onSystemVolumeChanged(index: Int) {
@@ -317,24 +400,117 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         if (!active || index < 0 || index == believedIndex) return
         Timber.d("Media volume moved from $believedIndex to $index elsewhere; folding it in")
         val folded = SmoothVolumeMath.fold(l, believedIndex, index, maxIndex, curve)
-        believedIndex = index
+        setBelieved(index)
+        // Muted from the volume panel or by another app: left muted. The level
+        // still drops by what the move to the lowest index would have, so
+        // unmuting to some index comes back at about that index.
+        muted = index == 0
+        if (muted) {
+            raises.clear()
+            handler.removeCallbacks(raiseHold)
+        }
         apply(folded, Source.SYSTEM)
     }
 
     /**
      * A different output keeps its own media volume, and its own curve. Holding
      * starts over from the index the new output is at, with the gain as it
-     * was, and that index is what is put back later.
+     * was, and that index is what is put back later. The output left behind
+     * cannot be set from here any more; if holding raised it, that is
+     * remembered and put right when it is the current output again.
      */
     private fun onOutputChanged() {
+        val id = outputId()
+        putBackStaleHold(false)
+        if (!active) {
+            putBackRaisedOutput(id)
+            return
+        }
+        // The same output announced again: a profile switch or a restored
+        // backup asks every listener to look at the current one again.
+        if (id != null && id == holdOutput) return
+        val unchanged = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == believedIndex
+        if (holdOutput == null && unchanged) {
+            // Only now known, and nothing says it is a different one.
+            holdOutput = id
+            state.edit().putString(KEY_OUTPUT, id).apply()
+            return
+        }
         val l = level ?: return
-        if (!active) return
+        holdOutput?.let { old ->
+            if (!muted && believedIndex > previousIndex)
+                state.edit().putString(KEY_RAISED_PREFIX + old, "$previousIndex:$believedIndex").apply()
+        }
+        holdOutput = id
         curve = readCurve()
         val index = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        previousIndex = index
-        believedIndex = index
-        state.edit().putInt(KEY_PREVIOUS_INDEX, index).apply()
+        // Back on an output this left raised, and still at that index: what is
+        // put back later is the index it had before that.
+        previousIndex = takeRaised(id)?.takeIf { it.second == index }?.first ?: index
+        muted = index == 0
+        raises.clear()
+        handler.removeCallbacks(raiseHold)
+        state.edit()
+            .putInt(KEY_PREVIOUS_INDEX, previousIndex)
+            .putInt(KEY_LEVEL_INDEX, previousIndex)
+            .putString(KEY_OUTPUT, id)
+            .apply()
+        setBelieved(index)
         apply(Level(index.coerceAtLeast(1), l.gainDb), null)
+    }
+
+    /** The current output's profile id, or null before the router has said. */
+    private fun outputId(): String? = routing.currentDevice?.id
+
+    /** An output's index from before holding raised it, and the index it was left at; forgotten once read. */
+    private fun takeRaised(id: String?): Pair<Int, Int>? {
+        if (id == null) return null
+        val raw = state.getString(KEY_RAISED_PREFIX + id, null) ?: return null
+        state.edit().remove(KEY_RAISED_PREFIX + id).apply()
+        val parts = raw.split(':').mapNotNull { it.toIntOrNull() }
+        return if (parts.size == 2) parts[0] to parts[1] else null
+    }
+
+    /** Lowers an output holding left raised back to where it was, unless it was moved since. */
+    private fun putBackRaisedOutput(id: String?) {
+        val (original, leftAt) = takeRaised(id) ?: return
+        if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) != leftAt) return
+        Timber.i("Putting the media volume of $id back to index $original from $leftAt")
+        setStreamVolume(original)
+    }
+
+    /**
+     * A media volume left held by a process that ended while holding it is put
+     * back, but only on the same output and only if it is still at the index
+     * that was held; anything else means someone has set the volume since.
+     * The output is not known straight after start, so this waits for it
+     * unless [final].
+     */
+    private fun putBackStaleHold(final: Boolean) {
+        if (active) return
+        val stale = state.getInt(KEY_PREVIOUS_INDEX, -1)
+        if (stale < 0) return
+        val id = outputId()
+        if (id == null && !final) return
+        val held = state.getInt(KEY_HELD_INDEX, -1)
+        val heldOutput = state.getString(KEY_OUTPUT, null)
+        val now = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val sameOutput = id == null || heldOutput == null || id == heldOutput
+        if (held > 0 && now == held && sameOutput) {
+            Timber.i("Putting back the media volume a previous run held: index $stale")
+            setStreamVolume(stale)
+            state.edit().putInt(KEY_LEVEL_INDEX, stale).apply()
+        }
+        else Timber.i("Not putting back index $stale: the volume or the output changed since it was held")
+        state.edit().remove(KEY_PREVIOUS_INDEX).remove(KEY_HELD_INDEX).apply()
+    }
+
+    /** The level to start from again, if it goes with this index on this output. */
+    private fun rememberedDb(index: Int, output: String?): Double? {
+        if (!state.contains(KEY_LEVEL_DB)) return null
+        if (state.getInt(KEY_LEVEL_INDEX, -1) != index) return null
+        if (state.getString(KEY_OUTPUT, null) != output) return null
+        return state.getFloat(KEY_LEVEL_DB, 0f).toDouble().takeIf { it.isFinite() }
     }
 
     private fun pushEngine(on: Boolean, gainDb: Float) {
@@ -402,7 +578,16 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
 
     companion object {
         private const val STATE_PREFS = "smooth_volume_state"
+        /** While holding: the index to put back, and the one held. */
         private const val KEY_PREVIOUS_INDEX = "previous_index"
+        private const val KEY_HELD_INDEX = "held_index"
+        /** The output held, or the one the remembered level goes with. */
+        private const val KEY_OUTPUT = "output"
+        /** The level, and the index the phone is at under it when not holding. */
+        private const val KEY_LEVEL_DB = "level_db"
+        private const val KEY_LEVEL_INDEX = "level_index"
+        /** Per output: "original:leftAt", for an output left at a raised index. */
+        private const val KEY_RAISED_PREFIX = "raised_"
 
         // Hidden in AudioManager, but sent to every app that listens for it.
         private const val ACTION_VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION"

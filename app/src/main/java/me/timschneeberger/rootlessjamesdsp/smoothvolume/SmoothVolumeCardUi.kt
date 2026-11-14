@@ -78,6 +78,7 @@ class SmoothVolumeCardUi(private val fragment: PreferenceFragmentCompat) {
         val c = controller
         status?.summary = when (c?.blocked) {
             null, SmoothVolumeController.Blocked.OFF -> ctx.getString(R.string.smooth_volume_status_off)
+            SmoothVolumeController.Blocked.MODE -> ctx.getString(R.string.smooth_volume_status_mode)
             SmoothVolumeController.Blocked.NOT_PROCESSING -> ctx.getString(R.string.smooth_volume_status_waiting)
             SmoothVolumeController.Blocked.ROOT_POWERED_OFF -> ctx.getString(R.string.smooth_volume_status_powered_off)
             SmoothVolumeController.Blocked.ROOT_MODULE_OLD -> ctx.getString(R.string.outdated_engine_card)

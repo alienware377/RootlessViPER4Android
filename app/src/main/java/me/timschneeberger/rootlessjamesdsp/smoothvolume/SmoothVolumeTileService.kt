@@ -31,6 +31,9 @@ class SmoothVolumeTileService : TileService() {
     override fun onClick() {
         super.onClick()
         val c = controller ?: return
+        // Not in V4A-only or global mode, where the card cannot be reached
+        // to see it or switch it off again.
+        if (!c.modeAllows) return
         @Suppress("DEPRECATION")
         getSharedPreferences(Constants.PREF_SMOOTH_VOLUME, Context.MODE_MULTI_PROCESS).edit()
             .putBoolean(getString(R.string.key_smooth_volume_enable), !c.enabled)
@@ -43,13 +46,13 @@ class SmoothVolumeTileService : TileService() {
         val tile = qsTile ?: return
         val c = controller
         tile.state = when {
-            c == null -> Tile.STATE_UNAVAILABLE
+            c == null || !c.modeAllows -> Tile.STATE_UNAVAILABLE
             c.enabled -> Tile.STATE_ACTIVE
             else -> Tile.STATE_INACTIVE
         }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             tile.subtitle = when {
-                c == null || !c.enabled -> null
+                c == null || !c.enabled || !c.modeAllows -> null
                 c.active -> c.effectiveDb?.let { SmoothVolumeMath.formatDb(it) }
                 else -> getString(R.string.smooth_volume_tile_waiting)
             }
