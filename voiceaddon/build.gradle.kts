@@ -6,7 +6,8 @@ plugins {
 // their own, so the rootless app does not carry 30 MB of native code for a card
 // most people never switch on. The app loads the code in here into its own
 // process, which it only does when the add-on is signed with the app's key, so
-// both builds below are signed exactly like the app.
+// both builds below are signed exactly like the app. That check is only as good
+// as the key: see buildSrc ReleaseSigning.kt for why releases want a private one.
 //
 // Written in Java on purpose: the add-on's classes live in their own class
 // loader inside the app's process, and without Kotlin it carries no second
@@ -20,9 +21,9 @@ android {
     project.setProperty("archivesBaseName", "RootlessViPER4Android-voice-isolation-addon-v${AndroidConfig.versionName}")
 
     defaultConfig {
-        // No .debug suffix for debug builds: debug and release are signed with the
-        // same key, so either app build can use either add-on build, and the app
-        // only has one name to look for.
+        // No .debug suffix for debug builds, so the app only has one name to look
+        // for. While releases use the debug key too, either app build can use
+        // either add-on build; with a private release key, each takes its own.
         applicationId = "com.alienware377.viper4android.voiceaddon"
         // Voice isolation only runs in the rootless app, which needs Android 10.
         minSdk = 29
@@ -47,13 +48,22 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // The app's private release key when one is set up (buildSrc ReleaseSigning.kt).
+        project.releaseKey()?.let { key ->
+            create("release") {
+                storeFile = key.storeFile
+                storePassword = key.storePassword
+                keyAlias = key.keyAlias
+                keyPassword = key.keyPassword
+            }
+        }
     }
 
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
