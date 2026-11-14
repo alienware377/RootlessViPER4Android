@@ -1302,7 +1302,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="dyneq3_mode">Band 3 acts on</string>
     <string name="dyneq_ms_mode">Works on</string>
     <string name="loudness_enable">Loudness correction</string>
-    <string name="loudness_info">As the volume goes down, your ears lose the bass first and some of the treble with it, so quiet music sounds thin. This puts them back by as much as the volume went down, following the phone\'s media volume as you change it. At the reference volume it does nothing at all. It never boosts: the bass is left where it is and everything else is turned down a little more, so turn the phone up a step or two if it gets too quiet.</string>
+    <string name="loudness_info">As the volume goes down, your ears lose the bass first and some of the treble with it, so quiet music sounds thin. This puts them back by as much as the volume went down, following the phone\'s media volume as you change it. At the reference volume it does nothing at all. It never boosts, so it brings the bass and treble forward by turning the rest down, and that is a lot quieter: 30 dB under the reference, the middle loses about 35 dB more with the Classic method and about 16 dB with ISO. Set the reference first, by playing something at the volume you usually listen at and tapping the button below, then turn the phone up to make up the level.</string>
     <string name="loudness_graph_summary">Now, at %1$s dB volume</string>
     <string name="loudness_graph_muted">Media volume muted</string>
     <string name="loudness_mode">Method</string>

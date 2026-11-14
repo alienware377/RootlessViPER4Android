@@ -326,8 +326,15 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     true
                 }
                 findPreference<Preference>(getString(R.string.key_loudness_set_reference))?.setOnPreferenceClickListener {
-                    val db = me.timschneeberger.rootlessjamesdsp.utils.MediaVolume.currentDb(requireContext())
-                        .coerceIn(-60.0, 0.0).roundToInt()
+                    // The volume being corrected for: the listening volume
+                    // when the media volume is not followed.
+                    val prefs = preferenceManager.sharedPreferences
+                    val follow = prefs?.getBoolean(getString(R.string.key_loudness_follow_volume), true) ?: true
+                    val volume = if (follow)
+                        me.timschneeberger.rootlessjamesdsp.utils.MediaVolume.currentDb(requireContext())
+                    else
+                        (prefs?.getFloat(getString(R.string.key_loudness_volume), 0f) ?: 0f).toDouble()
+                    val db = volume.coerceIn(-60.0, 0.0).roundToInt()
                     // The offset goes back to 0, or the sound would not be
                     // left alone at this volume after all.
                     findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_offset))
