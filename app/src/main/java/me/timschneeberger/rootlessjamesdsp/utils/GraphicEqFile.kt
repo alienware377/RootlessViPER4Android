@@ -21,10 +21,15 @@ object GraphicEqFile {
     /** Far above any real curve (AutoEq's are about 3 KB); stops a wrong pick of a huge file. */
     const val MAX_BYTES = 1 shl 20
 
-    /** The node editor's ranges, so everything imported can also be edited. */
-    const val MIN_FREQ = 1.0
+    /**
+     * Everything the app itself can store, so its own exports always come
+     * back. The node editor takes 0 to 24000 Hz, and Match EQ can go well
+     * below the editor's -32 dB: up to 30 dB of cut, then the whole curve
+     * lowered by its largest boost (up to 12 dB) for headroom.
+     */
+    const val MIN_FREQ = 0.0
     const val MAX_FREQ = 24000.0
-    const val MAX_GAIN = 32.0
+    const val MAX_GAIN = 48.0
 
     sealed class Parsed {
         class Ok(val nodes: List<GraphicEqNode>) : Parsed()
