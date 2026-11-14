@@ -354,6 +354,37 @@ typedef struct
 	float smooth, fs;
 	int transparent;
 } Balance;
+#define LOUDNESS_MODE_CLASSIC 0
+#define LOUDNESS_MODE_ISO 1
+// ISO 226 third-octave bands, 20 Hz to 12.5 kHz
+#define LOUD_ISO_BANDS 29
+// The subsonic filter's second-order sections; a first-order one comes first
+// for odd orders
+#define LOUD_SUB_SECTIONS 4
+#define LOUD_SECTIONS (LOUD_SUB_SECTIONS + LOUD_ISO_BANDS)
+typedef struct
+{
+	// The settings and the volume as last given, so a rate change can design
+	// everything again.
+	int mode, subsonic, subOrder;
+	float refLevel, refOffset, strength;
+	float lsFreq, lsSlope, lsRatio, hsFreq, hsSlope, hsRatio, basePhon;
+	float subFreq, subQ, volumeDb;
+	// State-variable sections in the order they run, the subsonic filter's
+	// first: g, k, m0, m1, m2. cur is what runs and tgt the latest design; for
+	// glide more samples cur moves towards tgt by step. a holds the integrator
+	// coefficients worked out from cur.
+	double cur[LOUD_SECTIONS][5], tgt[LOUD_SECTIONS][5], step[LOUD_SECTIONS][5];
+	double a[LOUD_SECTIONS][3];
+	double z[2][LOUD_SECTIONS][2];
+	// The first-order stage: g and how much of its high-pass is taken
+	double fo[2], foTgt[2], foStep[2], foZ[2];
+	double gain, gainTgt, gainStep;
+	// Only sections that are not flat are run.
+	int live[LOUD_SECTIONS], isLive[LOUD_SECTIONS], liveCount, foLive;
+	int glide;
+	float fs;
+} LoudnessCorrection;
 #define DYNEQ_MAX_BANDS 8
 // freq, Q, threshold dB, ratio, attack ms, release ms, range dB, mode
 #define DYNEQ_VALUES_PER_BAND 8
@@ -1150,6 +1181,7 @@ enum JdspEffectId
 	JDSP_EFX_BALANCE,
 	JDSP_EFX_SHAPER,
 	JDSP_EFX_BINAURAL,
+	JDSP_EFX_LOUDNESS,
 	JDSP_EFX_COUNT
 };
 typedef struct
@@ -1346,6 +1378,8 @@ typedef struct dspsys
 	SpectralShaper shaper;
 	int binauralEnabled;
 	BinauralUpmix binaural;
+	int loudnessEnabled;
+	LoudnessCorrection loudness;
 	Maximizer maximizer;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
@@ -1584,6 +1618,17 @@ extern void BalanceProcess(JamesDSPLib *jdsp, size_t n);
 extern void BalanceEnable(JamesDSPLib *jdsp);
 extern void BalanceDisable(JamesDSPLib *jdsp);
 extern void BalanceRefresh(JamesDSPLib *jdsp);
+// Loudness correction. The volume is the media volume in dB, 0 at full; the
+// ratios and the strength are in percent. Refresh follows the rule above.
+extern void LoudnessSetParam(JamesDSPLib *jdsp, int mode, float refLevelDb, float refOffsetDb,
+	float strengthPct, float bassHz, float bassSlope, float bassPct,
+	float trebleHz, float trebleSlope, float treblePct, float phon,
+	int subsonic, float subsonicHz, int subsonicOrder, float subsonicQ);
+extern void LoudnessSetVolume(JamesDSPLib *jdsp, float volumeDb);
+extern void LoudnessProcess(JamesDSPLib *jdsp, size_t n);
+extern void LoudnessEnable(JamesDSPLib *jdsp);
+extern void LoudnessDisable(JamesDSPLib *jdsp);
+extern void LoudnessRefresh(JamesDSPLib *jdsp);
 // Spectral shaper. Refresh follows the rule above (lock already held); Free is
 // for engine teardown only. Latency is in samples, 0 while switched off.
 extern void SpectralShaperSetParam(JamesDSPLib *jdsp, float amountDb, float sensitivityPct,
