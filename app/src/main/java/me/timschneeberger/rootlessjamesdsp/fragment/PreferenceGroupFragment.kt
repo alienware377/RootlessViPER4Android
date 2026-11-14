@@ -89,6 +89,15 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     if (arguments?.getInt(BUNDLE_XML_RES) == R.xml.dsp_graphiceq_preferences)
                         (preferenceScreen.getPreference(0) as? SwitchPreferenceGroup)?.setValue(true)
                 }
+                Constants.ACTION_EQ_SWITCHES_CHANGED -> {
+                    // Converting the graphic EQ to the PEQ set both switches
+                    // behind these cards; show what is stored now.
+                    val xml = arguments?.getInt(BUNDLE_XML_RES)
+                    if (xml == R.xml.dsp_graphiceq_preferences || xml == R.xml.dsp_parametriceq_preferences)
+                        (preferenceScreen.getPreference(0) as? SwitchPreferenceGroup)?.let { sw ->
+                            sw.setValue(preferenceManager.sharedPreferences?.getBoolean(sw.key, false) ?: false)
+                        }
+                }
                 Constants.ACTION_BINAURAL_SET_READY,
                 Constants.ACTION_BINAURAL_STATUS_CHANGED -> binauralStatusUpdater?.invoke()
                 Constants.ACTION_REPORT_SAMPLE_RATE -> {
@@ -265,6 +274,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             addAction(Constants.ACTION_PRESET_LOADED)
             addAction(Constants.ACTION_REPORT_SAMPLE_RATE)
             addAction(Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON)
+            addAction(Constants.ACTION_EQ_SWITCHES_CHANGED)
             addAction(Constants.ACTION_BINAURAL_SET_READY)
             addAction(Constants.ACTION_BINAURAL_STATUS_CHANGED)
         })
