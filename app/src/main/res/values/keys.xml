@@ -345,6 +345,25 @@
     <string name="key_balance_balance" translatable="false">balance_balance</string>
     <string name="key_balance_swap" translatable="false">balance_swap</string>
     <string name="key_balance_mono" translatable="false">balance_mono</string>
+    <string name="key_loudness_enable" translatable="false">loudness_enable</string>
+    <string name="key_loudness_mode" translatable="false">loudness_mode</string>
+    <string name="key_loudness_follow_volume" translatable="false">loudness_follow_volume</string>
+    <string name="key_loudness_volume" translatable="false">loudness_volume</string>
+    <string name="key_loudness_set_reference" translatable="false">loudness_set_reference</string>
+    <string name="key_loudness_reference_level" translatable="false">loudness_reference_level</string>
+    <string name="key_loudness_reference_offset" translatable="false">loudness_reference_offset</string>
+    <string name="key_loudness_strength" translatable="false">loudness_strength</string>
+    <string name="key_loudness_bass_freq" translatable="false">loudness_bass_freq</string>
+    <string name="key_loudness_bass_slope" translatable="false">loudness_bass_slope</string>
+    <string name="key_loudness_bass_amount" translatable="false">loudness_bass_amount</string>
+    <string name="key_loudness_treble_freq" translatable="false">loudness_treble_freq</string>
+    <string name="key_loudness_treble_slope" translatable="false">loudness_treble_slope</string>
+    <string name="key_loudness_treble_amount" translatable="false">loudness_treble_amount</string>
+    <string name="key_loudness_phon" translatable="false">loudness_phon</string>
+    <string name="key_loudness_subsonic" translatable="false">loudness_subsonic</string>
+    <string name="key_loudness_subsonic_freq" translatable="false">loudness_subsonic_freq</string>
+    <string name="key_loudness_subsonic_order" translatable="false">loudness_subsonic_order</string>
+    <string name="key_loudness_subsonic_q" translatable="false">loudness_subsonic_q</string>
     <string name="key_shaper_enable" translatable="false">shaper_enable</string>
     <string name="key_shaper_amount" translatable="false">shaper_amount</string>
     <string name="key_shaper_sensitivity" translatable="false">shaper_sensitivity</string>

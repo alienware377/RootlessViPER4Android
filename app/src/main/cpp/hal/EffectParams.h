@@ -276,6 +276,21 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26128: if (on) MultibandDistEnable(d); else MultibandDistDisable(d); break;
 
+    /* Loudness correction: mode, reference level, reference offset,
+       strength, bass frequency, slope and amount, treble frequency, slope
+       and amount, loudness at the reference, subsonic switch, frequency,
+       order and Q. The media volume changes far more often than any of these,
+       so it travels on its own as 26030, one value in dB, with no switch.
+       Clamped again by the setters, NaN included. */
+    case 26029:
+        if (fn >= 15)
+            LoudnessSetParam(d, pRound(fv[0]), fv[1], fv[2], fv[3], fv[4], fv[5],
+                             fv[6], fv[7], fv[8], fv[9], fv[10], pRound(fv[11]),
+                             fv[12], pRound(fv[13]), fv[14]);
+        break;
+    case 26129: if (on) LoudnessEnable(d); else LoudnessDisable(d); break;
+    case 26030: if (fn >= 1) LoudnessSetVolume(d, fv[0]); break;
+
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here
        and are rounded on arrival; only truePeak is a flag, and it arrives as

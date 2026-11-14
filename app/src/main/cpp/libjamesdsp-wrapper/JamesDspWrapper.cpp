@@ -615,6 +615,32 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBalance(JNIE
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLoudness(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jint mode, jfloat refLevel, jfloat refOffset, jfloat strength,
+        jfloat bassHz, jfloat bassSlope, jfloat bassAmount, jfloat trebleHz, jfloat trebleSlope,
+        jfloat trebleAmount, jfloat phon, jboolean subsonic, jfloat subsonicHz, jint subsonicOrder,
+        jfloat subsonicQ)
+{
+    DECLARE_DSP_B
+    LoudnessSetParam(dsp, mode, refLevel, refOffset, strength, bassHz, bassSlope, bassAmount,
+                     trebleHz, trebleSlope, trebleAmount, phon, subsonic ? 1 : 0, subsonicHz,
+                     subsonicOrder, subsonicQ);
+    if (enable) LoudnessEnable(dsp); else LoudnessDisable(dsp);
+    return true;
+}
+
+// The media volume, in dB. Sent on its own whenever it changes; the engine
+// glides to the new correction.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLoudnessVolume(JNIEnv *env, jobject obj, jlong self,
+        jfloat volumeDb)
+{
+    DECLARE_DSP_B
+    LoudnessSetVolume(dsp, volumeDb);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectralShaper(JNIEnv *env, jobject obj, jlong self,
         jboolean enable, jfloat amount, jfloat sensitivity, jfloat lowHz, jfloat highHz,
         jfloat speed, jint focus, jboolean catchTones, jboolean listen, jint msMode)
