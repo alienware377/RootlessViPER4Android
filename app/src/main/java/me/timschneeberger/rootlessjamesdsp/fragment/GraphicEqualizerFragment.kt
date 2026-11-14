@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,10 +24,12 @@ import me.timschneeberger.rootlessjamesdsp.databinding.FragmentGraphicEqBinding
 import me.timschneeberger.rootlessjamesdsp.model.GraphicEqNode
 import me.timschneeberger.rootlessjamesdsp.model.GraphicEqNodeList
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.GraphicEqFile
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showInputAlert
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showYesNoAlert
+import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.toast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
 import timber.log.Timber
 import java.util.UUID
@@ -51,6 +54,8 @@ class GraphicEqualizerFragment : Fragment() {
             binding.autoeq.isEnabled = !value
             binding.match.isEnabled = !value
             binding.editString.isEnabled = !value
+            binding.importFile.isEnabled = !value
+            binding.exportFile.isEnabled = !value
         }
 
     private val autoEqSelectorLauncher =
@@ -60,6 +65,58 @@ class GraphicEqualizerFragment : Fragment() {
                 save()
             }
         }
+
+    private val importFileLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri ?: return@registerForActivityResult
+            val ctx = requireContext()
+            val text = try {
+                val stream = ctx.contentResolver.openInputStream(uri)
+                    ?: throw java.io.FileNotFoundException(uri.toString())
+                stream.use { GraphicEqFile.read(it) }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to read GraphicEQ file")
+                ctx.toast(R.string.geq_import_error_read)
+                return@registerForActivityResult
+            }
+            if (text == null) {
+                ctx.toast(R.string.geq_import_error_too_large)
+                return@registerForActivityResult
+            }
+
+            when (val parsed = GraphicEqFile.parse(text)) {
+                is GraphicEqFile.Parsed.Ok -> {
+                    adapter.nodes.clear()
+                    adapter.nodes.addAll(parsed.nodes)
+                    updateViewState()
+                    save()
+                    ctx.toast(getString(R.string.geq_import_success, parsed.nodes.size))
+                }
+                is GraphicEqFile.Parsed.Error -> ctx.toast(importError(parsed))
+            }
+        }
+
+    private val exportFileLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+            uri ?: return@registerForActivityResult
+            try {
+                requireContext().contentResolver.openOutputStream(uri)?.bufferedWriter()?.use {
+                    it.write(GraphicEqFile.format(adapter.nodes))
+                }
+                requireContext().toast(R.string.geq_export_success)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to export GraphicEQ file")
+                requireContext().toast(getString(R.string.geq_export_error, e.message ?: e.javaClass.simpleName))
+            }
+        }
+
+    private fun importError(error: GraphicEqFile.Parsed.Error): String = when (error.reason) {
+        GraphicEqFile.Reason.TOO_LARGE -> getString(R.string.geq_import_error_too_large)
+        GraphicEqFile.Reason.NO_GRAPHIC_EQ_LINE -> getString(R.string.geq_import_error_no_curve)
+        GraphicEqFile.Reason.NO_NODES -> getString(R.string.geq_import_error_no_nodes)
+        GraphicEqFile.Reason.BAD_ENTRY -> getString(R.string.geq_import_error_bad_entry, error.entry.orEmpty())
+        GraphicEqFile.Reason.OUT_OF_RANGE -> getString(R.string.geq_import_error_out_of_range, error.entry.orEmpty())
+    }
 
     private val matchEqLauncher =
         registerForActivityResult(MatchEqActivity.Contract()) { result ->
@@ -195,6 +252,14 @@ class GraphicEqualizerFragment : Fragment() {
         binding.match.setOnClickListener {
             editorDiscard()
             matchEqLauncher.launch(Unit)
+        }
+
+        binding.importFile.setOnClickListener {
+            importFileLauncher.launch(arrayOf("text/plain", "text/*"))
+        }
+
+        binding.exportFile.setOnClickListener {
+            exportFileLauncher.launch("graphic_eq.txt")
         }
 
         // Load node data

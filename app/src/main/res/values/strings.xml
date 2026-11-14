@@ -943,6 +943,17 @@
     <string name="geq_gain_range">Value between -32dB and 32dB</string>
     <string name="geq_gain">Gain</string>
     <string name="geq_frequency">Frequency</string>
+    <string name="geq_import">Import</string>
+    <string name="geq_export">Export</string>
+    <string name="geq_import_success">Imported %1$d nodes</string>
+    <string name="geq_import_error_read">Could not read that file.</string>
+    <string name="geq_import_error_too_large">That file is too large to be a graphic EQ curve.</string>
+    <string name="geq_import_error_no_curve">That file has no \"GraphicEQ:\" line, so it is not a graphic EQ curve.</string>
+    <string name="geq_import_error_no_nodes">The GraphicEQ line in that file has no nodes.</string>
+    <string name="geq_import_error_bad_entry">Not a frequency and a gain: \"%1$s\". Nothing was imported.</string>
+    <string name="geq_import_error_out_of_range">Outside 1 to 24000 Hz or -32 to 32 dB: \"%1$s\". Nothing was imported.</string>
+    <string name="geq_export_success">Exported successfully</string>
+    <string name="geq_export_error">Export failed: %1$s</string>
 
     <!-- AutoEQ GraphicEQ selector -->
     <string name="geq_api_network_error">Failed to connect to server. %1$s</string>
