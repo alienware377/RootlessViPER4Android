@@ -45,6 +45,12 @@ internal object VoiceAddon {
     sealed class Check {
         /** The add-on only has ARM libraries, and this process is not ARM. */
         object Unsupported : Check()
+        /**
+         * The app runs as a 32-bit process on a phone that has 64-bit ARM, which only happens with
+         * the armeabi-v7a build of the app installed there. The add-on is unpacked for the phone's
+         * own ABI, so its libraries are 64-bit and cannot load into this process.
+         */
+        object Needs64BitApp : Check()
         object NotInstalled : Check()
         /** Installed, but not signed like the app: its code is never loaded. */
         object WrongSignature : Check()
@@ -55,10 +61,15 @@ internal object VoiceAddon {
 
     /**
      * Whether the add-on can be loaded. Reads only what the package manager says about it, never
-     * its code. [processAbi] is the ABI this process runs as.
+     * its code. [processAbi] is the ABI this process runs as, [device64BitAbis] the phone's 64-bit
+     * ones.
      */
-    fun check(packages: Packages, processAbi: String?): Check {
+    fun check(packages: Packages, processAbi: String?, device64BitAbis: List<String>): Check {
         if (processAbi != "arm64-v8a" && processAbi != "armeabi-v7a") return Check.Unsupported
+        // Android unpacks an add-on that is not multiArch for the first ABI it has in the phone's
+        // list, 64-bit first. Unpacking both would cost every 64-bit phone another 12 MB of
+        // libraries for the sake of a mismatched install, so that install is told what to change.
+        if (processAbi == "armeabi-v7a" && "arm64-v8a" in device64BitAbis) return Check.Needs64BitApp
         val addon = packages.addon() ?: return Check.NotInstalled
         val own = packages.ownSigners()
         if (own.isEmpty() || addon.signers != own) return Check.WrongSignature
@@ -69,7 +80,8 @@ internal object VoiceAddon {
         }
     }
 
-    fun check(context: Context): Check = check(SystemPackages(context), processAbi())
+    fun check(context: Context): Check =
+        check(SystemPackages(context), processAbi(), Build.SUPPORTED_64_BIT_ABIS.toList())
 
     private fun processAbi(): String? =
         (if (Process.is64Bit()) Build.SUPPORTED_64_BIT_ABIS else Build.SUPPORTED_32_BIT_ABIS).firstOrNull()

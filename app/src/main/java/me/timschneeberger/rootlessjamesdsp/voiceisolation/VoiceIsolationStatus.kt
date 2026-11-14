@@ -31,6 +31,8 @@ object VoiceIsolationStatus {
         NotInThisBuild,
         /** The add-on only has ARM libraries, and this phone runs the app as something else. */
         Device,
+        /** The 32-bit build of the app on a 64-bit phone, where the add-on's libraries are 64-bit. */
+        App32Bit,
         /** The voice isolation add-on, which carries the model and its runtime, is not installed. */
         AddonMissing,
         /** The add-on is not signed like the app, so none of its code is loaded. */

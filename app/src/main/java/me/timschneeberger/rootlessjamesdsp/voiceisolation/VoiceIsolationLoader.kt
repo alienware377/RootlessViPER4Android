@@ -61,6 +61,7 @@ internal object VoiceIsolationLoader {
         when (check) {
             is VoiceAddon.Check.Ready -> return
             VoiceAddon.Check.Unsupported -> throw Failure(Reason.Device)
+            VoiceAddon.Check.Needs64BitApp -> throw Failure(Reason.App32Bit)
             VoiceAddon.Check.NotInstalled -> throw Failure(Reason.AddonMissing)
             VoiceAddon.Check.WrongSignature -> throw Failure(Reason.AddonSignature)
             is VoiceAddon.Check.AddonTooOld -> throw Failure(Reason.AddonTooOld, check.versionName)
