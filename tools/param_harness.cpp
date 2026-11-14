@@ -676,6 +676,62 @@ int main()
 		check("and back", fabsf(m->chInc - inc48) < 1e-9f && fabsf(m->b0[0] - b0_48) < 1e-9f);
 	}
 
+	// ---- LUFS normalizer -----------------------------------------------------
+	printf("\nLUFS normalizer\n");
+	{
+		LufsNormalizer *ln = &g_lib.lufsNorm;
+		check("off by default, nothing allocated",
+			  g_lib.lufsNormEnabled == 0 && !ln->histPow && !ln->histPeak);
+		// Target -18 LUFS, 9 dB of boost, 4 of cut, slow, no peak guard.
+		const float v[5] = { -18.0f, 9.0f, 4.0f, 0.0f, 0.0f };
+		sendFloats(26031, v, 5);
+		check("26031 sets the settings", ln->target == -18.0f && ln->maxBoost == 9.0f &&
+			  ln->maxCut == 4.0f && ln->speed == 0 && ln->peakGuard == 0);
+		check("26031 slow keeps 20 s of history", ln->histLen == 200);
+		const float shortv[4] = { -10.0f, 1.0f, 1.0f, 2.0f };
+		sendFloats(26031, shortv, 4);
+		check("26031 with too few values changes nothing", ln->target == -18.0f && ln->speed == 0);
+		const float junk[5] = { NAN, 1e30f, NAN, 1e9f, NAN };
+		sendFloats(26031, junk, 5);
+		check("26031 holds NaN and nonsense", ln->target == -30.0f && ln->maxBoost == 12.0f &&
+			  ln->maxCut == 0.0f && ln->speed == 1 && ln->peakGuard == 0);
+		const float inf[5] = { INFINITY, -INFINITY, INFINITY, -1e9f, 1.0f };
+		sendFloats(26031, inf, 5);
+		check("26031 holds infinities", ln->target == -5.0f && ln->maxBoost == 0.0f &&
+			  ln->maxCut == 24.0f && ln->speed == 1 && ln->peakGuard == 1);
+		sendFloats(26031, v, 5);
+		sendEnable(26131, true);
+		check("26131 switches it on and allocates the history",
+			  g_lib.lufsNormEnabled == 1 && ln->histPow && ln->histPeak);
+		// A rate change redesigns the K-weighting from what was kept.
+		const double b0_48 = ln->kb[0][0], a1_48 = ln->ka[1][0];
+		const int sub48 = ln->subLen;
+		JamesDSPSetSampleRate(&g_lib, 44100.0f, 0);
+		check("a rate change redesigns the K-weighting",
+			  fabs(ln->kb[0][0] - b0_48) > 1e-4 && fabs(ln->ka[1][0] - a1_48) > 1e-6 &&
+			  sub48 == 4800 && ln->subLen == 4410 && ln->target == -18.0f);
+		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
+		check("and back", fabs(ln->kb[0][0] - b0_48) < 1e-12 && ln->subLen == 4800);
+		// BS.1770's published 48 kHz pre-filter b0.
+		check("48 kHz K-weighting is the published one", fabs(ln->kb[0][0] - 1.53512485958697) < 1e-8);
+		sendEnable(26131, false);
+		check("26131 switches it off and lets the history go",
+			  g_lib.lufsNormEnabled == 0 && !ln->histPow && !ln->histPeak);
+
+		// Late in the default chain: after vinyl, before balance and the maximiser.
+		JamesDSPResetChainOrder(&g_lib);
+		int vinyl = -1, lufs = -1, bal = -1, maxr = -1;
+		for (int i = 0; i < g_lib.chainCount; i++)
+		{
+			if (g_lib.chainOrder[i] == JDSP_EFX_VINYL) vinyl = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_LUFSNORM) lufs = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_BALANCE) bal = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_MAXIMIZER) maxr = i;
+		}
+		check("default chain: after vinyl, ahead of balance and the maximiser",
+			  lufs == vinyl + 1 && bal == lufs + 1 && maxr > bal);
+	}
+
 	// ---- an id with no mapping is tolerated, not refused --------------------
 	printf("\nunknown ids\n");
 	{

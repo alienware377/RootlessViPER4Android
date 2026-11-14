@@ -162,6 +162,9 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean =
         JamesDspWrapper.setBalance(handle, enable, balance, swap, mono)
 
+    override fun setLufsNormalizer(enable: Boolean, target: Float, maxBoost: Float, maxCut: Float, speed: Int, peakGuard: Boolean): Boolean =
+        JamesDspWrapper.setLufsNormalizer(handle, enable, target, maxBoost, maxCut, speed, peakGuard)
+
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         JamesDspWrapper.setSpectralShaper(handle, enable, amount, sensitivity, lowHz, highHz, speed, focus, catchTones, listen, msMode)
 

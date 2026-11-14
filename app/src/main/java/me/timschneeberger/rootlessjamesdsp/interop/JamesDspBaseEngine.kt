@@ -234,6 +234,14 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val balSwap = cache.get(R.string.key_balance_swap, false)
             val balMono = cache.get(R.string.key_balance_mono, 0f)
 
+            cache.select(Constants.PREF_LUFS)
+            val lufsEnabled = cache.get(R.string.key_lufs_enable, false)
+            val lufsTarget = cache.get(R.string.key_lufs_target, -14f)
+            val lufsMaxBoost = cache.get(R.string.key_lufs_max_boost, 6f)
+            val lufsMaxCut = cache.get(R.string.key_lufs_max_cut, 12f)
+            val lufsSpeed = cache.get(R.string.key_lufs_speed, "1").toInt()
+            val lufsPeakGuard = cache.get(R.string.key_lufs_peak_guard, true)
+
             cache.select(Constants.PREF_SHAPER)
             val shEnabled = cache.get(R.string.key_shaper_enable, false)
             val shAmount = cache.get(R.string.key_shaper_amount, 6f)
@@ -519,6 +527,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     )
                     Constants.PREF_BALANCE -> setBalance(
                         balEnabled, balBalance, balSwap, balMono
+                    )
+                    Constants.PREF_LUFS -> setLufsNormalizer(
+                        lufsEnabled, lufsTarget, lufsMaxBoost, lufsMaxCut, lufsSpeed, lufsPeakGuard
                     )
                     Constants.PREF_SHAPER -> setSpectralShaper(
                         shEnabled, shAmount, shSensitivity, shLow, shHigh, shSpeed,
@@ -961,6 +972,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
     abstract fun setTape(enable: Boolean, wow: Float, flutter: Float, saturation: Float, bias: Float, headBump: Float, mix: Float): Boolean
     abstract fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean
+    abstract fun setLufsNormalizer(enable: Boolean, target: Float, maxBoost: Float, maxCut: Float, speed: Int, peakGuard: Boolean): Boolean
     abstract fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean
     abstract fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean
     abstract fun setExciter(enable: Boolean, f1: Float, f2: Float, f3: Float, a1: Float, a2: Float, a3: Float, a4: Float, character: Int, drive: Float, mix: Float): Boolean
