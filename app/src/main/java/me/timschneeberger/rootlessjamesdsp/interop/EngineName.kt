@@ -21,8 +21,11 @@ object EngineName {
      * 6: the bass exciter (26025/26125), dynamic system (26026/26126) and
      * differential surround (26027/26127).
      * 7: the multiband distortion (26028/26128).
+     * 8: the loudness correction (26029/26129 and the volume, 26030), the LUFS
+     * normalizer (26031/26131) and smooth volume (26032/26132); 26033/26133
+     * are kept for the sub-harmonic expander.
      */
-    const val REQUIRED_VERSION = 7
+    const val REQUIRED_VERSION = 8
 
     /**
      * The module only works with the rooted app, so it calls itself
