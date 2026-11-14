@@ -15,6 +15,7 @@ import me.timschneeberger.rootlessjamesdsp.model.ParametricEqFilterType
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.exp
+import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.log10
 import kotlin.math.pow
@@ -216,8 +217,11 @@ object GraphicEqToPeq {
             sumSq += err * err
             maxGain = maxOf(maxGain, got)
         }
-        val preamp = minOf(level, -maxGain, 0.0).coerceAtLeast(MIN_PREAMP)
-        return Result(bands, rounded(preamp, 100.0), maxError, sqrt(sumSq / freqs.size))
+        // Rounded down to the tenth of a decibel the parametric EQ screen
+        // keeps: it shows the preamp to one decimal and writes that back as
+        // soon as it opens, so a finer value rounded up there would clip.
+        val preamp = (floor(minOf(level, -maxGain, 0.0) * 10.0 + 1e-9) / 10.0).coerceAtLeast(MIN_PREAMP)
+        return Result(bands, preamp, maxError, sqrt(sumSq / freqs.size))
     }
 
     private fun band(params: DoubleArray, i: Int): ParametricEqBand {

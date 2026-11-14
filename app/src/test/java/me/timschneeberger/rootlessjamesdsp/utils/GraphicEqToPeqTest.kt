@@ -6,6 +6,9 @@ import me.timschneeberger.rootlessjamesdsp.model.ParametricEqFilterType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -149,6 +152,28 @@ class GraphicEqToPeqTest {
         val r = GraphicEqToPeq.convert(target, 8)
         val applied = BiquadUtils.computeCombinedResponse(r.bands, 2048)
         for ((_, g) in applied) assertTrue("$g", g + r.preampDb <= 0.05)
+    }
+
+    @Test
+    fun `the preamp survives the parametric EQ screen's one decimal`() {
+        // That screen shows the preamp to one decimal and saves what it shows,
+        // so the preamp has to be one it can show exactly, rounded down.
+        val screen = DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH))
+            .apply { maximumFractionDigits = 1 }
+        val targets = listOf(
+            filterCurve(ParametricEqBand(80.0, 9.0, 0.8), ParametricEqBand(6000.0, 4.0, 2.0)),
+            filterCurve(ParametricEqBand(1000.0, 5.95, 1.4)),
+            filterCurve(ParametricEqBand(300.0, 3.33, 1.1), ParametricEqBand(2500.0, -4.0, 3.0)),
+            filterCurve(ParametricEqBand(60.0, 7.77, 0.7), ParametricEqBand(9000.0, 2.21, 4.0)),
+        )
+        for (target in targets) {
+            val r = GraphicEqToPeq.convert(target, 8)
+            val stored = r.preampDb.toFloat()
+            val shown = screen.format(stored).toFloat()
+            assertEquals(stored, shown, 0f)
+            val peak = BiquadUtils.computeCombinedResponse(r.bands, 2048).maxOf { it.second }
+            assertTrue("peak $peak preamp $shown", peak + shown <= 0.05)
+        }
     }
 
     @Test
