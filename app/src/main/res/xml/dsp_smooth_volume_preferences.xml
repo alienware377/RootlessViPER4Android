@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_smooth_volume_enable"
+        android:disableDependentsState="false"
+        android:title="@string/smooth_volume_enable"
+        android:icon="@drawable/ic_twotone_volume_up_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/smooth_volume_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="smooth_volume_status"
+            android:title="@string/smooth_volume_status_title"
+            android:summary="@string/smooth_volume_status_off"
+            android:persistent="false"
+            android:selectable="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <!-- Not stored: the level lives in the controller, and moving this
+             only sends it there. -->
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="smooth_volume_level"
+            android:title="@string/smooth_volume_level"
+            android:persistent="false"
+            android:defaultValue="0"
+            app:minValue="-100" app:maxValue="0"
+            app:unit="dB" app:precision="1"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="smooth_volume_keys"
+            android:title="@string/smooth_volume_keys_title"
+            android:summary="@string/smooth_volume_keys_off"
+            android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_smooth_volume_hud"
+            android:title="@string/smooth_volume_hud"
+            android:summary="@string/smooth_volume_hud_summary"
+            android:defaultValue="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

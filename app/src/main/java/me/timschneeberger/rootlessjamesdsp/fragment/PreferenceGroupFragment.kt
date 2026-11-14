@@ -37,6 +37,7 @@ import me.timschneeberger.rootlessjamesdsp.preference.EqualizerPreference
 import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
 import me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
 import me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+import me.timschneeberger.rootlessjamesdsp.smoothvolume.SmoothVolumeCardUi
 import me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetector
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
@@ -59,6 +60,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     private var reportedProcessingSampleRate: Int? = null
     private var convolverStatusUpdater: (() -> Unit)? = null
     private var binauralStatusUpdater: (() -> Unit)? = null
+    private var smoothVolumeUi: SmoothVolumeCardUi? = null
 
     private val listener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
@@ -122,6 +124,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
 
     override fun onResume() {
         super.onResume()
+        smoothVolumeUi?.update()
         if (arguments?.getInt(BUNDLE_XML_RES) != R.xml.dsp_output_control_preferences) return
         if (!me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) return
         val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity ?: return
@@ -341,6 +344,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             }
             R.xml.dsp_convolver_preferences -> setupConvolverSampleRateFiles()
             R.xml.dsp_binaural_preferences -> setupBinaural()
+            R.xml.dsp_smooth_volume_preferences ->
+                smoothVolumeUi = SmoothVolumeCardUi(this).also { it.attach() }
             R.xml.dsp_compander_preferences -> {
                 findPreference<MaterialSeekbarPreference>(getString(R.string.key_compander_granularity))?.valueLabelOverride =
                     fun(it: Float): String {
@@ -793,6 +798,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     override fun onDestroy() {
         convolverStatusUpdater = null
         binauralStatusUpdater = null
+        smoothVolumeUi?.detach()
+        smoothVolumeUi = null
         super.onDestroy()
         requireContext().unregisterLocalReceiver(receiver)
         prefsApp.unregisterOnSharedPreferenceChangeListener(listener)
