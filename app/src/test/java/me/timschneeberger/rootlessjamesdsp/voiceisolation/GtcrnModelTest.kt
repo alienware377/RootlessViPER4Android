@@ -6,11 +6,12 @@ import java.io.File
 
 class GtcrnModelTest {
     private fun asset(): File =
-        // Gradle runs unit tests from the module directory, some IDE setups from the project root.
-        listOf("src/rootless/assets/${GtcrnModel.ASSET}", "app/src/rootless/assets/${GtcrnModel.ASSET}")
+        // The model ships in the voice isolation add-on. Gradle runs unit tests from the module
+        // directory, some IDE setups from the project root.
+        listOf("../voiceaddon/src/main/assets/${GtcrnModel.ASSET}", "voiceaddon/src/main/assets/${GtcrnModel.ASSET}")
             .map(::File).first { it.isFile }
 
-    /** The app refuses a model that is not this file, so the two must not drift apart. */
+    /** The app refuses a model that is not the add-on's file, so the two must not drift apart. */
     @Test
     fun theShippedModelIsTheOneTheAppChecksFor() {
         val bytes = asset().readBytes()

@@ -36,6 +36,9 @@ android {
         buildConfigField("String", "BUILD_TIME", "\"${getBuildTime()}\"")
         buildConfigField("boolean", "PREVIEW", "false")
         buildConfigField("boolean", "PLUGIN", "false")
+        // Voice isolation's speech model and its runtime come in a separate add-on APK
+        // (:voiceaddon); this is the interface version the app expects of it.
+        buildConfigField("int", "VOICE_ADDON_API", "${AndroidConfig.voiceAddonApi}")
 
         externalNativeBuild {
             cmake {
@@ -143,19 +146,6 @@ android {
     sourceSets {
         // Use different app icon for non-release builds
         getByName("debug").res.srcDirs("src/debug/res")
-    }
-
-    androidResources {
-        // Voice isolation's model is read whole from assets; storing it as is saves inflating it.
-        noCompress += "onnx"
-    }
-
-    packaging {
-        jniLibs {
-            // ONNX Runtime for x86 would put 40 MB into the universal APK for emulators and a
-            // handful of x86 tablets. Voice isolation says it cannot run there instead.
-            excludes += listOf("**/x86/libonnxruntime*.so", "**/x86_64/libonnxruntime*.so")
-        }
     }
 
     // Export multiple CPU architecture split apks
@@ -297,10 +287,6 @@ dependencies {
 
     // Root APIs
     "rootfulImplementation"("com.github.topjohnwu.libsu:core:5.0.4")
-
-    // Voice isolation's speech model. Only the rootless build can run it, so only it pays for
-    // the runtime's native libraries.
-    "rootlessImplementation"("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
 
     // Hidden APIs
     implementation("dev.rikka.tools.refine:runtime:${AndroidConfig.rikkaRefineVersion}")

@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Voice isolation's model and runtime come in a separate add-on APK; see VoiceAddon. -->
+    <queries>
+        <package android:name="com.alienware377.viper4android.voiceaddon" />
+    </queries>
+</manifest>

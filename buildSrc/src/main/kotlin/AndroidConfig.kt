@@ -11,6 +11,11 @@
     // Upstream RootlessJamesDSP release this fork is based on
     const val upstreamVersionName = "1.6.14"
 
+    // The interface between the rootless app and the voice isolation add-on
+    // (:voiceaddon). Both sides refuse the other unless the numbers match, so
+    // raise it whenever the add-on's entry point or the hop it runs changes.
+    const val voiceAddonApi = 1
+
     const val kotlinVersion = "2.1.0"
     const val kspVersion = "2.1.0-1.0.29"
     const val shizukuVersion = "12.2.0"

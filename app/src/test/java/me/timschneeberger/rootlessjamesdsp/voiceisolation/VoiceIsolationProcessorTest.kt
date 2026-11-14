@@ -28,7 +28,6 @@ class VoiceIsolationProcessorTest {
             input.copyInto(previous)
         }
         override fun inferenceMs() = 0f
-        override fun reset() = previous.fill(0f)
         override fun close() { closed = true }
     }
 
@@ -129,7 +128,6 @@ class VoiceIsolationProcessorTest {
             inside = false
         }
         override fun inferenceMs() = 0f
-        override fun reset() {}
         override fun close() { if (inside) closedWhileRunning = true }
     }
 
