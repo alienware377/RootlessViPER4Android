@@ -884,8 +884,13 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 VoiceIsolationStatus.State.Loading -> getString(R.string.voice_isolation_status_loading)
                 is VoiceIsolationStatus.State.Running ->
                     getString(R.string.voice_isolation_status_running, state.latencyMs.roundToInt())
-                is VoiceIsolationStatus.State.Failed ->
-                    getString(R.string.voice_isolation_status_failed, voiceIsolationFailureText(state))
+                is VoiceIsolationStatus.State.Failed -> getString(
+                    when (state.reason) {
+                        // Nothing to try again: this phone cannot run it.
+                        VoiceIsolationStatus.Reason.Device -> R.string.voice_isolation_status_failed_final
+                        else -> R.string.voice_isolation_status_failed
+                    },
+                    voiceIsolationFailureText(state))
             }
         }
         voiceIsolationStatusUpdater = ::update
@@ -897,6 +902,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         val detail = (state.detail ?: "").take(120)
         return when (state.reason) {
             VoiceIsolationStatus.Reason.NotInThisBuild -> getString(R.string.voice_isolation_failed_build)
+            VoiceIsolationStatus.Reason.Device -> getString(R.string.voice_isolation_failed_device)
+            VoiceIsolationStatus.Reason.AddonMissing -> getString(R.string.voice_isolation_failed_addon_missing)
+            VoiceIsolationStatus.Reason.AddonSignature -> getString(R.string.voice_isolation_failed_addon_signature)
+            VoiceIsolationStatus.Reason.AddonTooOld -> getString(R.string.voice_isolation_failed_addon_too_old)
+            VoiceIsolationStatus.Reason.AppTooOld -> getString(R.string.voice_isolation_failed_app_too_old)
             VoiceIsolationStatus.Reason.ModelMissing -> getString(R.string.voice_isolation_failed_model_missing)
             VoiceIsolationStatus.Reason.ModelDamaged -> getString(R.string.voice_isolation_failed_model_damaged)
             VoiceIsolationStatus.Reason.Runtime -> getString(R.string.voice_isolation_failed_runtime, detail)

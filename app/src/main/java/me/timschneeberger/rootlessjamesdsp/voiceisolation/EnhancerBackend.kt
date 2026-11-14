@@ -20,8 +20,5 @@ internal interface EnhancerBackend : AutoCloseable {
     /** Smoothed wall-clock time of one inference, in milliseconds. */
     fun inferenceMs(): Float
 
-    /** Drops the recurrent state and filter history, as if freshly made. */
-    fun reset()
-
     override fun close()
 }

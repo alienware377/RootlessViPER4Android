@@ -194,7 +194,7 @@
     </Preference>
     <Preference
         android:title="GTCRN"
-        android:summary="Rong Xiaobin: the speech model behind voice isolation (MIT)"
+        android:summary="Rong Xiaobin: the speech model behind voice isolation, in the voice isolation add-on (MIT)"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"
@@ -202,7 +202,7 @@
     </Preference>
     <Preference
         android:title="ONNX Runtime"
-        android:summary="Microsoft: runs the voice isolation model on the phone (MIT)"
+        android:summary="Microsoft: runs the voice isolation model on the phone, from the voice isolation add-on (MIT)"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"

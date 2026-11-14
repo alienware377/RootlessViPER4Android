@@ -27,8 +27,18 @@ object VoiceIsolationStatus {
     }
 
     enum class Reason {
-        /** The rooted and plugin builds carry neither the runtime nor the model. */
+        /** The rooted and plugin builds cannot host the stage. */
         NotInThisBuild,
+        /** The add-on only has ARM libraries, and this phone runs the app as something else. */
+        Device,
+        /** The voice isolation add-on, which carries the model and its runtime, is not installed. */
+        AddonMissing,
+        /** The add-on is not signed like the app, so none of its code is loaded. */
+        AddonSignature,
+        /** The add-on speaks an older interface than the app; updating the add-on fixes it. */
+        AddonTooOld,
+        /** The add-on speaks a newer interface than the app; updating the app fixes it. */
+        AppTooOld,
         ModelMissing,
         ModelDamaged,
         /** ONNX Runtime would not load or would not open the model. */

@@ -16,6 +16,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "RootlessJamesDSP"
 include ':app'
+include ':voiceaddon'
 include ':codeview'
 include ':hidden-api-stubs'
 include ':hidden-api-impl'

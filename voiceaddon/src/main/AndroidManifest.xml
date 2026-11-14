@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The page below offers to open the app, debug build included. -->
+    <queries>
+        <package android:name="com.alienware377.viper4android.rootless" />
+        <package android:name="com.alienware377.viper4android.rootless.debug" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/addon_label"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault.DayNight">
+
+        <!-- The interface version. The app reads it before it loads any code from here. -->
+        <meta-data
+            android:name="com.alienware377.viper4android.voiceaddon.API_VERSION"
+            android:value="${apiVersion}" />
+
+        <!-- INFO rather than LAUNCHER: the installer's Open button finds it, the app drawer does not. -->
+        <activity
+            android:name=".AddonActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.INFO" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -36,7 +36,6 @@ class HopPipelineTest {
             input.copyInto(previous)
         }
         override fun inferenceMs() = 0f
-        override fun reset() = previous.fill(0f)
         override fun close() {}
     }
 

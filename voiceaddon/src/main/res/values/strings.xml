@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="addon_label">RootlessViPER4Android voice isolation add-on</string>
+    <string name="addon_title">Voice isolation add-on</string>
+    <string name="addon_body">This is not an app of its own. It carries the speech model and the engine that runs it for the Voice isolation card in RootlessViPER4Android, so the app itself stays small for everyone who never switches that card on.\n\nThere is nothing to set up here. Open RootlessViPER4Android and switch on Voice isolation; the card says when it has found the add-on.\n\nTo remove it, uninstall it like any other app. The card then offers to get it again.</string>
+    <string name="addon_open_app">Open RootlessViPER4Android</string>
+    <string name="addon_get_app">Get RootlessViPER4Android</string>
+    <string name="addon_version">Version %1$s, interface %2$d. Needs RootlessViPER4Android of the same release.</string>
+    <string name="addon_licences_title">Licences</string>
+</resources>

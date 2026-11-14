@@ -1489,9 +1489,15 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="voice_isolation_status_loading">Loading the speech model, one moment.</string>
     <string name="voice_isolation_status_running">Running. Adds %1$d ms of delay.</string>
     <string name="voice_isolation_status_failed">%1$s The audio keeps playing without it. Switch the card off and on to try again.</string>
+    <string name="voice_isolation_status_failed_final">%1$s The audio keeps playing without it.</string>
     <string name="voice_isolation_failed_build">This build cannot run the speech model.</string>
-    <string name="voice_isolation_failed_model_missing">The speech model is missing from the app.</string>
-    <string name="voice_isolation_failed_model_damaged">The speech model in the app is damaged. Reinstalling the app should fix it.</string>
+    <string name="voice_isolation_failed_device">The voice isolation add-on only runs on ARM phones.</string>
+    <string name="voice_isolation_failed_addon_missing">The voice isolation add-on is not installed.</string>
+    <string name="voice_isolation_failed_addon_signature">The voice isolation add-on is not signed like this app, so it was not loaded.</string>
+    <string name="voice_isolation_failed_addon_too_old">The voice isolation add-on is too old for this version of the app.</string>
+    <string name="voice_isolation_failed_app_too_old">The voice isolation add-on needs a newer version of this app.</string>
+    <string name="voice_isolation_failed_model_missing">The speech model is missing from the add-on.</string>
+    <string name="voice_isolation_failed_model_damaged">The speech model in the add-on is damaged. Reinstalling the add-on should fix it.</string>
     <string name="voice_isolation_failed_runtime">The speech model could not be started (%1$s).</string>
     <string name="voice_isolation_failed_rate">Your audio plays at %1$s, which the speech model cannot be fed from.</string>
     <string name="voice_isolation_failed_stopped">The speech model stopped with an error (%1$s).</string>

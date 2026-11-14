@@ -8,8 +8,8 @@ code, so each component is listed here with its full notice, and the source
 files that hold the ported or copied code carry the upstream notice in a
 comment at the top.
 
-Unless a path starts with `app/` or `third_party/`, it is relative to
-`app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp/`.
+Unless a path starts with `app/`, `voiceaddon/` or `third_party/`, it is
+relative to `app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp/`.
 
 ## Components
 
@@ -337,7 +337,7 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   of the Loudness / PEQ fork above (GNU GPL version 3), which made it a stage
   of the rootless playback loop.
 - **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/`
-  and `app/src/rootless/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/GtcrnProcessor.kt`.
+  and `voiceaddon/src/main/java/com/alienware377/viper4android/voiceaddon/GtcrnSession.java`.
   A Kotlin port, not a copy: the streaming GTCRN wrapper with its cached state,
   the 512/256 sqrt-Hann STFT, the mixer that makes the background from dry minus
   voice, the speech detector behind auto mode, the delay estimator that lines
@@ -347,8 +347,10 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   its kernels for exact phases up front; the mix adds the dry part back from the
   full-band input at the device rate instead of from the 16 kHz copy, so nothing
   above 8 kHz is lost; the framing runs at a fixed delay for any block size; the
-  adaptive output buffer is left out.
-- **Used by:** the Voice isolation card, in the rootless build only.
+  adaptive output buffer is left out; the model session lives in the voice
+  isolation add-on and the transform around it in the app.
+- **Used by:** the Voice isolation card, in the rootless build and the voice
+  isolation add-on.
 
 ### GTCRN speech model (data)
 
@@ -357,9 +359,10 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
 - **Source:** https://github.com/Xiaobin-Rong/gtcrn, `stream/onnx_models/gtcrn.onnx`
   at commit `3862c44808dca492ea5a8a145d2dc2a1028d08c8` (352,084 bytes, SHA-256
   `f648b02f2d7ff96ebcb0eec2219688a08ed12fe7e3d50f248605a90eba8cad17`)
-- **Files:** `app/src/rootless/assets/gtcrn.onnx`, unmodified. The app checks its
-  hash before loading it.
-- **Used by:** the Voice isolation card, in the rootless build only.
+- **Files:** `voiceaddon/src/main/assets/gtcrn.onnx`, unmodified. It ships in the
+  voice isolation add-on APK, not in the app; the app checks its hash before
+  loading it.
+- **Used by:** the Voice isolation card, in the rootless build, through the add-on.
 
 ### ONNX Runtime
 
@@ -368,8 +371,9 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
 - **Upstream:** https://github.com/microsoft/onnxruntime, the
   `com.microsoft.onnxruntime:onnxruntime-android:1.20.0` package from Maven
   Central, unmodified.
-- **Used by:** the Voice isolation card, to run the GTCRN model. Only the
-  rootless build carries it, and it is loaded only when the card is switched on.
+- **Used by:** the Voice isolation card, to run the GTCRN model. Only the voice
+  isolation add-on APK carries it; the rootless app loads it from there when the
+  card is switched on.
 
 ### Also in this repository
 
