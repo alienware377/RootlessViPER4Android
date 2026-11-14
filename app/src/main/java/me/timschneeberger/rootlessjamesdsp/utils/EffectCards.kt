@@ -46,6 +46,7 @@ object EffectCards {
         Constants.PREF_BALANCE to "card_balance",
         Constants.PREF_LOUDNESS to "card_loudness",
         Constants.PREF_SMOOTH_VOLUME to "card_smooth_volume",
+        Constants.PREF_VOICEISOLATION to "card_voice_isolation",
         Constants.PREF_AGC to "card_agc",
         Constants.PREF_EQ to "card_eq",
         Constants.PREF_GEQ to "card_geq",

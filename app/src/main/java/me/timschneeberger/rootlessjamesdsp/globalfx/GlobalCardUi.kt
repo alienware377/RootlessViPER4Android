@@ -58,7 +58,9 @@ object GlobalCardUi {
                 // header's own tap and switch stop working while disabled.
                 header.isEnabled = false
                 header.summaryProvider = null
-                header.summary = ctx.getString(R.string.global_card_needs_capture)
+                header.summary = ctx.getString(
+                    if (namespace == Constants.PREF_VOICEISOLATION) R.string.voice_isolation_unavailable_global
+                    else R.string.global_card_needs_capture)
                 // Classic layout puts output control's rows beside the header,
                 // not under it, so take everything else on the screen too.
                 for (i in 1 until screen.preferenceCount) screen.getPreference(i).isEnabled = false
