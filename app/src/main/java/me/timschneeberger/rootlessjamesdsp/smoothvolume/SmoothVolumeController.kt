@@ -64,8 +64,8 @@ import timber.log.Timber
  * first, and the engine lets go of its attenuation only after a lowered index
  * has taken effect.
  *
- * Main thread only, except [engineOn] and [engineGainDb], which the engines read
- * from their sync thread.
+ * Main thread only, except [engineTarget], which the engines read from their
+ * sync thread, and [confirm], which they call from there.
  *
  * The feature follows Smooth Volume in evoeram's Loudness / PEQ fork of
  * RootlessJamesDSP (https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP,
@@ -81,10 +81,10 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     private val handler = Handler(Looper.getMainLooper())
     private val state = context.getSharedPreferences(STATE_PREFS, Context.MODE_PRIVATE)
 
-    /** What the engines should run: switched on, and at which gain. */
-    @Volatile var engineOn = false
-        private set
-    @Volatile var engineGainDb = 0f
+    /** What the engines should run: switched on, at which gain, and the serial number of that gain. */
+    data class EngineTarget(val on: Boolean, val gainDb: Float, val serial: Long)
+
+    @Volatile var engineTarget = EngineTarget(false, 0f, 0)
         private set
 
     fun interface Listener {
@@ -92,6 +92,12 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     }
 
     private val engines = mutableSetOf<Listener>()
+    /**
+     * The newest gain serial each engine has applied. Weak, because an engine
+     * can confirm just before it is attached (its first sync races the attach)
+     * or just after it is detached, and a closed engine must not be kept.
+     */
+    private val confirmed = java.util.WeakHashMap<Listener, Long>()
     private val listeners = mutableSetOf<Listener>()
 
     /** Why it is on but not working, for the card. */
@@ -124,6 +130,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     private var volumeReceiverRegistered = false
 
     private val raises = SmoothVolumeMath.RaiseQueue()
+    private val unconfirmedRaises = SmoothVolumeMath.ConfirmedRaises()
     private val raiseHold = Runnable { raiseDue() }
     private val releaseEngine = Runnable { pushEngine(false, 0f) }
     private val enginesGone = Runnable { lingering = false; refresh() }
@@ -220,7 +227,13 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     }
 
     fun detach(engine: Listener) = handler.post {
-        if (!engines.remove(engine) || engines.isNotEmpty()) return@post
+        if (!engines.remove(engine)) return@post
+        confirmed.remove(engine)
+        if (engines.isNotEmpty()) {
+            // The one that left may have been the last to catch up.
+            releaseConfirmed()
+            return@post
+        }
         // In root mode every app's playback gets its own engine, which goes
         // when that app stops. Letting go at once would move the system volume
         // back and forth between two songs; a while later is soon enough.
@@ -231,6 +244,15 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
             handler.postDelayed(enginesGone, ROOT_LINGER_MS)
         }
         else refresh()
+    }
+
+    /**
+     * An engine has applied the gain with [serial] (or a newer one). From any
+     * thread; the engines call it from their sync thread once the gain is in.
+     */
+    fun confirm(engine: Listener, serial: Long) = handler.post {
+        if ((confirmed[engine] ?: 0L) < serial) confirmed[engine] = serial
+        releaseConfirmed()
     }
 
     fun addListener(l: Listener) { listeners.add(l) }
@@ -275,6 +297,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         previousIndex = index
         muted = index == 0
         raises.clear()
+        unconfirmedRaises.clear()
         val remembered = rememberedDb(index, holdOutput)
         state.edit()
             .putInt(KEY_PREVIOUS_INDEX, index)
@@ -292,6 +315,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     private fun stopHolding() {
         active = false
         raises.clear()
+        unconfirmedRaises.clear()
         handler.removeCallbacks(raiseHold)
         registerVolumeReceiver(false)
         // Lowering the index first and the engine after it never gets louder
@@ -365,15 +389,26 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         pushEngine(true, new.gainDb.toFloat())
         if (!muted && new.holdIndex != believedIndex) {
             if (new.holdIndex > believedIndex) {
-                // Up: once the engine's extra attenuation for this level is
-                // being heard.
-                raises.add(SystemClock.uptimeMillis() + engineLagMs(), new.holdIndex)
-                scheduleRaise()
+                // Up: once every engine has the extra attenuation for this
+                // level, and then once it is being heard.
+                unconfirmedRaises.add(engineTarget.serial, new.holdIndex)
+                releaseConfirmed()
             }
             else writeSystemIndex(new.holdIndex)
         }
         if (source == Source.KEY || source == Source.SYSTEM) showHud()
         notifyListeners()
+    }
+
+    /** Starts the lag of every raise whose gain all the engines have now. */
+    private fun releaseConfirmed() {
+        if (unconfirmedRaises.isEmpty()) return
+        // With no engine there is nothing playing a louder gain; root mode's
+        // lingering hold is the only time that happens while holding.
+        val oldest = engines.minOfOrNull { confirmed[it] ?: 0L } ?: Long.MAX_VALUE
+        val index = unconfirmedRaises.takeConfirmed(oldest) ?: return
+        raises.add(SystemClock.uptimeMillis() + engineLagMs(), index)
+        scheduleRaise()
     }
 
     private fun scheduleRaise() {
@@ -416,6 +451,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         muted = index == 0
         if (muted) {
             raises.clear()
+            unconfirmedRaises.clear()
             handler.removeCallbacks(raiseHold)
         }
         apply(folded, Source.SYSTEM)
@@ -458,6 +494,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
         previousIndex = takeRaised(id)?.takeIf { it.second == index }?.first ?: index
         muted = index == 0
         raises.clear()
+        unconfirmedRaises.clear()
         handler.removeCallbacks(raiseHold)
         state.edit()
             .putInt(KEY_PREVIOUS_INDEX, previousIndex)
@@ -523,8 +560,7 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     }
 
     private fun pushEngine(on: Boolean, gainDb: Float) {
-        engineOn = on
-        engineGainDb = gainDb
+        engineTarget = EngineTarget(on, gainDb, engineTarget.serial + 1)
         engines.toList().forEach { it.onSmoothVolumeChanged() }
     }
 

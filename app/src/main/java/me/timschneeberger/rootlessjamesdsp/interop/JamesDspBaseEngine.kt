@@ -777,14 +777,20 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         }
     }
 
-    /** Call with the sync mutex held. */
+    /**
+     * Call with the sync mutex held. Once the engine has the level, the
+     * controller is told which one, since it only raises the system volume
+     * after every engine has the lower gain that goes with the raise.
+     */
     private fun sendSmoothVolume(force: Boolean): Boolean {
         val c = smoothVolume ?: return true
-        val wanted = c.engineOn to c.engineGainDb
-        if (!force && wanted == smoothVolumeSent) return true
-        // Not remembered unless it arrived, so the next sync tries again.
-        return setSmoothVolume(wanted.first, wanted.second)
-            .also { smoothVolumeSent = if (it) wanted else null }
+        val target = c.engineTarget
+        val wanted = target.on to target.gainDb
+        val ok = (!force && wanted == smoothVolumeSent) ||
+            // Not remembered unless it arrived, so the next sync tries again.
+            setSmoothVolume(wanted.first, wanted.second).also { smoothVolumeSent = if (it) wanted else null }
+        if (ok) c.confirm(smoothVolumeListener, target.serial)
+        return ok
     }
 
     /** For an engine that was recreated underneath, which has none of it. */
