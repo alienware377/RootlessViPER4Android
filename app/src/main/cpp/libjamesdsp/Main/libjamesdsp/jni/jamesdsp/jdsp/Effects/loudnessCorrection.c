@@ -36,9 +36,10 @@
  * rather than biquads. They give the same responses as the cookbook filters,
  * but their state is the level in each integrator, which still means the same
  * thing when the coefficients move, which is why the form is the usual choice
- * for a filter that has to be swept. A volume change moves every coefficient
- * in a straight line to its new value over 40 ms, so nothing steps on a held
- * note when the volume keys are pressed.
+ * for a filter that has to be swept. A volume change moves the design to its
+ * new one over 40 ms, every gain in a straight line in dB, so nothing steps on
+ * a held note when the volume keys are pressed and the level on the way stays
+ * between where it started and where it ends up.
  */
 #include <math.h>
 #include <string.h>
@@ -49,6 +50,9 @@
 #endif
 
 #define LOUD_GLIDE_MS 40.0
+// The coefficients move in a straight line between points on the way this
+// many samples apart, each one designed from the gains in between.
+#define LOUD_SEG 32
 // No section goes past this, whatever the settings: by then the music is
 // inaudible anyway, and the filters stay well conditioned.
 #define LOUD_MAX_DB 40.0
@@ -59,8 +63,8 @@
 #define LOUD_ISO_Q 2.0
 #define LOUD_FIT_PASSES 8
 // Where the highest point is looked for: every 24th of an octave from
-// 5 Hz up, plus every band centre.
-#define LOUD_PEAK_POINTS 288
+// 5 Hz to 24 kHz (as far as Nyquist), plus every band centre and Nyquist.
+#define LOUD_PEAK_POINTS 294
 
 // ISO 226:2023, Table 1: the preferred third-octave frequencies, the exponent
 // for loudness perception, the magnitude of the linear transfer function
@@ -114,48 +118,63 @@ static double loudClampDb(double g)
    input, band-pass and low-pass outputs, m0, m1 and m2. Flat is m0 = 1 and the
    other two 0, whatever g and k are; a flat section keeps the g and k it would
    have, so turning it up later only moves the mix. */
-static void loudSvf(double *c, double freq, double k, double m0, double m1, double m2, double fs)
-{
-	c[0] = tan(M_PI * freq / fs);
-	c[1] = k;
-	c[2] = m0;
-	c[3] = m1;
-	c[4] = m2;
-}
-
 static int loudIsFlat(const double *c)
 {
 	return c[2] == 1.0 && c[3] == 0.0 && c[4] == 0.0;
 }
 
 // The cookbook shelf with a slope S, as EqualizerAPO designs it, in Simper's
-// form: the same bilinear transform of the same analogue prototype.
-static void loudShelf(double *c, int high, double gainDb, double freq, double slope, double fs)
+// form: the same bilinear transform of the same analogue prototype. t is the
+// corner prewarped, tan(pi f / fs).
+static void loudShelf(double *c, int high, double gainDb, double t, double slope)
 {
 	const double A = pow(10.0, gainDb / 40.0);
 	const double k = sqrt((A + 1.0 / A) * (1.0 / slope - 1.0) + 2.0);
+	c[1] = k;
 	if (!high)
 	{
-		loudSvf(c, freq, k, 1.0, k * (A - 1.0), A * A - 1.0, fs);
-		c[0] /= sqrt(A);
+		c[0] = t / sqrt(A);
+		c[2] = 1.0;
+		c[3] = k * (A - 1.0);
+		c[4] = A * A - 1.0;
 	}
 	else
 	{
-		loudSvf(c, freq, k, A * A, k * (1.0 - A) * A, 1.0 - A * A, fs);
-		c[0] *= sqrt(A);
+		c[0] = t * sqrt(A);
+		c[2] = A * A;
+		c[3] = k * (1.0 - A) * A;
+		c[4] = 1.0 - A * A;
 	}
 }
 
-static void loudPeak(double *c, double gainDb, double freq, double q, double fs)
+static void loudPeak(double *c, double gainDb, double t, double q)
 {
 	const double A = pow(10.0, gainDb / 40.0);
 	const double k = 1.0 / (q * A);
-	loudSvf(c, freq, k, 1.0, k * (A * A - 1.0), 0.0, fs);
+	c[0] = t;
+	c[1] = k;
+	c[2] = 1.0;
+	c[3] = k * (A * A - 1.0);
+	c[4] = 0.0;
 }
 
-static void loudHighPass(double *c, double freq, double q, double fs)
+// Section s from its design p (see LoudnessCorrection for what p holds).
+static void loudSection(double *c, int s, const double *p)
 {
-	loudSvf(c, freq, 1.0 / q, 1.0, -1.0 / q, -1.0, fs);
+	if (s < LOUD_SUB_SECTIONS)
+	{
+		// The high-pass is the input less the band-pass and low-pass
+		// outputs; p[2] says how much of it is taken.
+		c[0] = p[0];
+		c[1] = p[1];
+		c[2] = 1.0;
+		c[3] = -p[1] * p[2];
+		c[4] = -p[2];
+	}
+	else if (s == LOUD_LOW_SHELF || s == LOUD_HIGH_SHELF)
+		loudShelf(c, s == LOUD_HIGH_SHELF, p[2], p[0], p[1]);
+	else
+		loudPeak(c, p[2], p[0], p[1]);
 }
 
 /* |H|^2 of a section at the angle whose cosine is cw (and cosine of twice
@@ -190,9 +209,10 @@ static double loudFirstOrderDb(double g, double freq, double fs)
 	return 10.0 * log10(t * t / (1.0 + t * t));
 }
 
-// Returns the cut in dB EqualizerAPO puts ahead of the shelves.
-static double loudDesignClassic(const LoudnessCorrection *lc, double volDiff, double att, double fs,
-	double (*d)[5])
+// Works out the two shelf gains, and returns the cut in dB EqualizerAPO puts
+// ahead of them.
+static double loudDesignClassic(const LoudnessCorrection *lc, double volDiff, double att,
+	double *lowDb, double *highDb)
 {
 	const double r = lc->lsRatio * 0.01;
 	double gLs = 0.0, gHs = 0.0, pre = 0.0;
@@ -211,8 +231,8 @@ static double loudDesignClassic(const LoudnessCorrection *lc, double volDiff, do
 	else if (hv < 0.0)
 		gHs = hv * t * 0.778 * exp(hv / 80.0) * att;
 	gHs = loudClampDb(gHs);
-	loudShelf(d[0], 0, fabs(gLs) > LOUD_ZERO_DB ? gLs : 0.0, lc->lsFreq, lc->lsSlope, fs);
-	loudShelf(d[1], 1, fabs(gHs) > LOUD_ZERO_DB ? gHs : 0.0, lc->hsFreq, lc->hsSlope, fs);
+	*lowDb = fabs(gLs) > LOUD_ZERO_DB ? gLs : 0.0;
+	*highDb = fabs(gHs) > LOUD_ZERO_DB ? gHs : 0.0;
 	return pre;
 }
 
@@ -248,8 +268,9 @@ static void loudSolve(double a[LOUD_ISO_BANDS][LOUD_ISO_BANDS], double *b)
 	}
 }
 
+// Works out the 29 band gains in dB; tw holds each centre prewarped.
 static void loudDesignIso(const LoudnessCorrection *lc, double volDiff, double att, double fs,
-	double (*d)[5])
+	const double *tw, double *gains)
 {
 	double refPhon = lc->basePhon, curPhon = lc->basePhon - volDiff;
 	// The contours are defined from 20 to 90 phon.
@@ -272,8 +293,7 @@ static void loudDesignIso(const LoudnessCorrection *lc, double volDiff, double a
 	}
 	if (!any)
 	{
-		for (int j = 0; j < LOUD_ISO_BANDS; j++)
-			loudPeak(d[j], 0.0, isoFreq[j], LOUD_ISO_Q, fs);
+		memset(gains, 0, sizeof(double) * LOUD_ISO_BANDS);
 		return;
 	}
 	// What 1 dB on each band does at every centre. A peak's shape in dB
@@ -281,9 +301,10 @@ static void loudDesignIso(const LoudnessCorrection *lc, double volDiff, double a
 	// throughout, and each pass corrects every gain by what is still missing.
 	// The usual settings are within 0.01 dB after three passes.
 	double shape[LOUD_ISO_BANDS][LOUD_ISO_BANDS], a[LOUD_ISO_BANDS][LOUD_ISO_BANDS];
+	double d[LOUD_ISO_BANDS][5];
 	for (int j = 0; j < LOUD_ISO_BANDS; j++)
 	{
-		loudPeak(d[j], 1.0, isoFreq[j], LOUD_ISO_Q, fs);
+		loudPeak(d[j], 1.0, tw[j], LOUD_ISO_Q);
 		for (int i = 0; i < LOUD_ISO_BANDS; i++)
 			shape[i][j] = 10.0 * log10(loudMag2(d[j], cw[i], c2w[i]));
 	}
@@ -296,7 +317,7 @@ static void loudDesignIso(const LoudnessCorrection *lc, double volDiff, double a
 		for (int j = 0; j < LOUD_ISO_BANDS; j++)
 		{
 			g[j] = loudClampDb(g[j]);
-			loudPeak(d[j], g[j], isoFreq[j], LOUD_ISO_Q, fs);
+			loudPeak(d[j], g[j], tw[j], LOUD_ISO_Q);
 		}
 		for (int i = 0; i < LOUD_ISO_BANDS; i++)
 		{
@@ -313,54 +334,69 @@ static void loudDesignIso(const LoudnessCorrection *lc, double volDiff, double a
 	for (int j = 0; j < LOUD_ISO_BANDS; j++)
 	{
 		g[j] = loudClampDb(g[j]);
-		loudPeak(d[j], fabs(g[j]) > LOUD_ZERO_DB ? g[j] : 0.0, isoFreq[j], LOUD_ISO_Q, fs);
+		gains[j] = fabs(g[j]) > LOUD_ZERO_DB ? g[j] : 0.0;
 	}
 }
 
-/* Works out every section and the overall gain from the kept settings and
-   volume, at fs. */
-static void loudDesign(LoudnessCorrection *lc, double fs, double (*c)[5], double fo[2], double *gain)
+/* Designs every section, p, and the first-order stage, fo, from the kept
+   settings and volume at fs, and returns the overall gain in dB. */
+static double loudDesign(const LoudnessCorrection *lc, double fs, double (*p)[3], double fo[2])
 {
 	// The subsonic filter: a one-pole for odd orders, then the second-order
 	// sections, all at its frequency and flat while it is off.
 	const int order = lc->subsonic ? lc->subOrder : 0;
-	fo[0] = tan(M_PI * lc->subFreq / fs);
+	const double ts = tan(M_PI * lc->subFreq / fs);
+	fo[0] = ts;
 	fo[1] = (order & 1) ? 1.0 : 0.0;
 	for (int k = 0; k < LOUD_SUB_SECTIONS; k++)
 	{
-		loudHighPass(c[k], lc->subFreq, lc->subQ, fs);
-		if (k >= order / 2)
-		{
-			c[k][2] = 1.0;
-			c[k][3] = c[k][4] = 0.0;
-		}
+		p[k][0] = ts;
+		p[k][1] = 1.0 / lc->subQ;
+		p[k][2] = k < order / 2 ? 1.0 : 0.0;
 	}
 	const double att = lc->strength * 0.01;
 	const double volDiff = (double)lc->refLevel - (double)lc->refOffset - (double)lc->volumeDb;
-	double (*d)[5] = c + LOUD_SUB_SECTIONS;
-	double preDb = 0.0;
+	double tw[LOUD_ISO_BANDS], gains[LOUD_ISO_BANDS];
+	for (int j = 0; j < LOUD_ISO_BANDS; j++)
+		tw[j] = tan(M_PI * isoFreq[j] / fs);
+	double lowDb = 0.0, highDb = 0.0, preDb = 0.0;
+	// The sections of the method not in use stay flat, ready for a change of
+	// method.
 	if (lc->mode == LOUDNESS_MODE_ISO)
-		loudDesignIso(lc, volDiff, att, fs, d);
+		loudDesignIso(lc, volDiff, att, fs, tw, gains);
 	else
 	{
-		preDb = loudDesignClassic(lc, volDiff, att, fs, d);
-		// Flat, with what the ISO mode would use, ready for a change of mode.
-		for (int j = 2; j < LOUD_ISO_BANDS; j++)
-			loudPeak(d[j], 0.0, isoFreq[j], LOUD_ISO_Q, fs);
+		preDb = loudDesignClassic(lc, volDiff, att, &lowDb, &highDb);
+		memset(gains, 0, sizeof(gains));
 	}
-	// The highest point of everything above, from 5 Hz to 20 kHz (or just
-	// short of Nyquist), and at every band centre.
-	double peak = 0.0;
+	p[LOUD_LOW_SHELF][0] = tan(M_PI * lc->lsFreq / fs);
+	p[LOUD_LOW_SHELF][1] = lc->lsSlope;
+	p[LOUD_LOW_SHELF][2] = lowDb;
+	p[LOUD_HIGH_SHELF][0] = tan(M_PI * lc->hsFreq / fs);
+	p[LOUD_HIGH_SHELF][1] = lc->hsSlope;
+	p[LOUD_HIGH_SHELF][2] = highDb;
+	for (int j = 0; j < LOUD_ISO_BANDS; j++)
+	{
+		p[LOUD_ISO_FIRST + j][0] = tw[j];
+		p[LOUD_ISO_FIRST + j][1] = LOUD_ISO_Q;
+		p[LOUD_ISO_FIRST + j][2] = gains[j];
+	}
+	// The highest point of everything above, from 5 Hz up, at every band
+	// centre and at Nyquist itself, where a high shelf reaches its full gain.
+	double c[LOUD_SECTIONS][5], peak = 0.0;
 	int any = fo[1] != 0.0;
 	for (int s = 0; s < LOUD_SECTIONS; s++)
+	{
+		loudSection(c[s], s, p[s]);
 		any = any || !loudIsFlat(c[s]);
+	}
 	if (any)
 	{
-		const double top = fs * 0.45 < 20000.0 ? fs * 0.45 : 20000.0;
-		for (int i = 0; i < LOUD_PEAK_POINTS + LOUD_ISO_BANDS; i++)
+		for (int i = 0; i <= LOUD_PEAK_POINTS + LOUD_ISO_BANDS; i++)
 		{
-			const double f = i < LOUD_PEAK_POINTS ? 5.0 * pow(2.0, i / 24.0) : isoFreq[i - LOUD_PEAK_POINTS];
-			if (f > top)
+			const double f = i < LOUD_PEAK_POINTS ? 5.0 * pow(2.0, i / 24.0) :
+				(i < LOUD_PEAK_POINTS + LOUD_ISO_BANDS ? isoFreq[i - LOUD_PEAK_POINTS] : 0.5 * fs);
+			if (f > 0.5 * fs)
 				continue;
 			double r = loudCascadeDb((const double (*)[5])c, LOUD_SECTIONS, f, fs);
 			if (fo[1] != 0.0)
@@ -369,9 +405,7 @@ static void loudDesign(LoudnessCorrection *lc, double fs, double (*c)[5], double
 				peak = r;
 		}
 	}
-	if (-peak < preDb)
-		preDb = -peak;
-	*gain = preDb == 0.0 ? 1.0 : pow(10.0, preDb / 20.0);
+	return -peak < preDb ? -peak : preDb;
 }
 
 // The integrator coefficients worked out from g and k.
@@ -412,6 +446,43 @@ static void loudListLive(LoudnessCorrection *lc)
 	lc->foLive = foLive;
 }
 
+// The design the glide has reached at t, from 0 (pFrom) to 1 (pTo).
+static void loudDesignAt(LoudnessCorrection *lc, double t, double (*p)[3], double fo[2], double *pre)
+{
+	const double u = 1.0 - t;
+	for (int s = 0; s < LOUD_SECTIONS; s++)
+		for (int k = 0; k < 3; k++)
+			p[s][k] = u * lc->pFrom[s][k] + t * lc->pTo[s][k];
+	fo[0] = u * lc->foFrom[0] + t * lc->foTo[0];
+	fo[1] = u * lc->foFrom[1] + t * lc->foTo[1];
+	*pre = u * lc->preFrom + t * lc->preTo;
+}
+
+/* Sets cur moving towards the next point on the way, at most LOUD_SEG
+   samples on. Moving every coefficient in a straight line all the way would
+   take the response far outside both ends: the overall gain and a shelf's mix
+   both glide, and what is heard is their product, which swells in the middle
+   (a 37 dB cut and lift undone that way went 18 dB over both ends at 40 Hz).
+   Between points this close together the product cannot stray. */
+static void loudSegment(LoudnessCorrection *lc)
+{
+	const int len = lc->glide < LOUD_SEG ? lc->glide : LOUD_SEG;
+	const double inv = 1.0 / (double)len;
+	double p[LOUD_SECTIONS][3], fo[2], pre, w[5];
+	loudDesignAt(lc, (double)(lc->glideLen - lc->glide + len) / (double)lc->glideLen, p, fo, &pre);
+	for (int k = 0; k < lc->liveCount; k++)
+	{
+		const int s = lc->live[k];
+		loudSection(w, s, p[s]);
+		for (int j = 0; j < 5; j++)
+			lc->step[s][j] = (w[j] - lc->cur[s][j]) * inv;
+	}
+	lc->foStep[0] = (fo[0] - lc->fo[0]) * inv;
+	lc->foStep[1] = (fo[1] - lc->fo[1]) * inv;
+	lc->gainStep = (pow(10.0, pre / 20.0) - lc->gain) * inv;
+	lc->segLeft = len;
+}
+
 // Under the lock. With glide set and the effect running, it moves there over
 // LOUD_GLIDE_MS; otherwise it is there at once.
 static void loudInstall(JamesDSPLib *jdsp, int glide)
@@ -419,27 +490,44 @@ static void loudInstall(JamesDSPLib *jdsp, int glide)
 	LoudnessCorrection *lc = &jdsp->loudness;
 	const double fs = jdsp->fs > 0.0f ? jdsp->fs : 48000.0;
 	lc->fs = (float)fs;
-	loudDesign(lc, fs, lc->tgt, lc->foTgt, &lc->gainTgt);
+	double p[LOUD_SECTIONS][3], fo[2];
+	const double pre = loudDesign(lc, fs, p, fo);
 	const int len = (int)(LOUD_GLIDE_MS * 0.001 * fs);
-	if (glide && jdsp->loudnessEnabled && len > 0)
+	glide = glide && jdsp->loudnessEnabled && len > 0;
+	if (glide)
 	{
-		const double inv = 1.0 / (double)len;
-		for (int s = 0; s < LOUD_SECTIONS; s++)
-			for (int k = 0; k < 5; k++)
-				lc->step[s][k] = (lc->tgt[s][k] - lc->cur[s][k]) * inv;
-		lc->foStep[0] = (lc->foTgt[0] - lc->fo[0]) * inv;
-		lc->foStep[1] = (lc->foTgt[1] - lc->fo[1]) * inv;
-		lc->gainStep = (lc->gainTgt - lc->gain) * inv;
-		lc->glide = len;
+		// From wherever the last one had got to.
+		if (lc->glide > 0)
+			loudDesignAt(lc, (double)(lc->glideLen - lc->glide) / (double)lc->glideLen,
+				lc->pFrom, lc->foFrom, &lc->preFrom);
+		else
+		{
+			memcpy(lc->pFrom, lc->pTo, sizeof(lc->pFrom));
+			memcpy(lc->foFrom, lc->foTo, sizeof(lc->foFrom));
+			lc->preFrom = lc->preTo;
+		}
+	}
+	memcpy(lc->pTo, p, sizeof(lc->pTo));
+	memcpy(lc->foTo, fo, sizeof(lc->foTo));
+	lc->preTo = pre;
+	for (int s = 0; s < LOUD_SECTIONS; s++)
+		loudSection(lc->tgt[s], s, p[s]);
+	memcpy(lc->foTgt, fo, sizeof(lc->foTgt));
+	lc->gainTgt = pre == 0.0 ? 1.0 : pow(10.0, pre / 20.0);
+	if (glide)
+	{
+		lc->glide = lc->glideLen = len;
+		loudListLive(lc);
+		loudSegment(lc);
 	}
 	else
 	{
 		memcpy(lc->cur, lc->tgt, sizeof(lc->cur));
 		memcpy(lc->fo, lc->foTgt, sizeof(lc->fo));
 		lc->gain = lc->gainTgt;
-		lc->glide = 0;
+		lc->glide = lc->segLeft = 0;
+		loudListLive(lc);
 	}
-	loudListLive(lc);
 }
 
 void LoudnessSetParam(JamesDSPLib *jdsp, int mode, float refLevelDb, float refOffsetDb,
@@ -499,19 +587,23 @@ void LoudnessRefresh(JamesDSPLib *jdsp)
 
 static void loudGlideStep(LoudnessCorrection *lc)
 {
-	if (--lc->glide > 0)
+	for (int k = 0; k < lc->liveCount; k++)
 	{
-		for (int k = 0; k < lc->liveCount; k++)
-		{
-			const int s = lc->live[k];
-			double *c = lc->cur[s];
-			const double *st = lc->step[s];
-			c[0] += st[0]; c[1] += st[1]; c[2] += st[2]; c[3] += st[3]; c[4] += st[4];
-			loudCoefs(lc, s);
-		}
-		lc->fo[0] += lc->foStep[0];
-		lc->fo[1] += lc->foStep[1];
-		lc->gain += lc->gainStep;
+		const int s = lc->live[k];
+		double *c = lc->cur[s];
+		const double *st = lc->step[s];
+		c[0] += st[0]; c[1] += st[1]; c[2] += st[2]; c[3] += st[3]; c[4] += st[4];
+		loudCoefs(lc, s);
+	}
+	lc->fo[0] += lc->foStep[0];
+	lc->fo[1] += lc->foStep[1];
+	lc->gain += lc->gainStep;
+	--lc->glide;
+	if (--lc->segLeft > 0)
+		return;
+	if (lc->glide > 0)
+	{
+		loudSegment(lc);
 		return;
 	}
 	// Exactly on target at the end, and the sections that ended flat leave

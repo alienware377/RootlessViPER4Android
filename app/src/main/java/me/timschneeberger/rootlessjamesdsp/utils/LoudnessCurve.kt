@@ -85,7 +85,7 @@ object LoudnessCurve {
     private const val ZERO_DB = 1e-4
     private const val ISO_Q = 2.0
     private const val FIT_PASSES = 8
-    private const val PEAK_POINTS = 288
+    private const val PEAK_POINTS = 294
 
     /**
      * ISO 226:2023 formula (1): the level in dB SPL of a tone at band [i] that
@@ -207,13 +207,13 @@ object LoudnessCurve {
             sections += shelf(false, if (abs(gLs) > ZERO_DB) gLs else 0.0, s.bassHz, s.bassSlope, fs)
             sections += shelf(true, if (abs(gHs) > ZERO_DB) gHs else 0.0, s.trebleHz, s.trebleSlope, fs)
         }
-        // Never a boost: the highest point comes down to 0 dB.
+        // Never a boost: the highest point, looked for up to Nyquist itself,
+        // where a high shelf reaches its full gain, comes down to 0 dB.
         var top = 0.0
         if (firstOrderG != null || sections.any { !it.flat }) {
-            val limit = minOf(fs * 0.45, 20000.0)
-            val probes = DoubleArray(PEAK_POINTS) { 5.0 * 2.0.pow(it / 24.0) } + isoFrequencies
+            val probes = DoubleArray(PEAK_POINTS) { 5.0 * 2.0.pow(it / 24.0) } + isoFrequencies + (fs * 0.5)
             for (f in probes) {
-                if (f > limit) continue
+                if (f > fs * 0.5) continue
                 top = maxOf(top, sectionsDb(sections, firstOrderG, f, fs))
             }
         }
