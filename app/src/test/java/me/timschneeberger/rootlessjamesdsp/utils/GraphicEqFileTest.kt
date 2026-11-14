@@ -40,7 +40,7 @@ class GraphicEqFileTest {
 
     @Test
     fun `an AutoEq file with other lines around the curve imports`() {
-        val text = "﻿# from AutoEq\r\nPreamp: -6.2 dB\r\nGraphicEQ: 20 -0.6; 21\t-0.6; 22 -0.5\r\n"
+        val text = "\uFEFF# from AutoEq\r\nPreamp: -6.2 dB\r\nGraphicEQ: 20 -0.6; 21\t-0.6; 22 -0.5\r\n"
         val back = ok(text)
         assertEquals(listOf(20.0 to -0.6, 21.0 to -0.6, 22.0 to -0.5), back.map { it.freq to it.gain })
     }

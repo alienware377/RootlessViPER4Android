@@ -60,7 +60,7 @@ object GraphicEqFile {
         // An EqualizerAPO config can hold other lines too (Preamp, Device,
         // comments). Only the curve means anything here, and a graphic EQ has
         // no preamp of its own to put the rest in.
-        val line = text.removePrefix("﻿").lineSequence()
+        val line = text.removePrefix("\uFEFF").lineSequence()
             .map { it.trim() }
             .firstOrNull { it.startsWith(PREFIX, ignoreCase = true) }
             ?: return Parsed.Error(Reason.NO_GRAPHIC_EQ_LINE)
