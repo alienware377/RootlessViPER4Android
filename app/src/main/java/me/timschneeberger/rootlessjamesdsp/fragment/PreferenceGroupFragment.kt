@@ -348,11 +348,12 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 }
                 findPreference<Preference>(getString(R.string.key_loudness_set_reference))?.setOnPreferenceClickListener {
                     // The volume being corrected for: the listening volume
-                    // when the media volume is not followed.
+                    // when the media volume is not followed, and smooth
+                    // volume's level while it holds the media volume.
                     val prefs = preferenceManager.sharedPreferences
                     val follow = prefs?.getBoolean(getString(R.string.key_loudness_follow_volume), true) ?: true
                     val volume = if (follow)
-                        me.timschneeberger.rootlessjamesdsp.utils.MediaVolume.currentDb(requireContext())
+                        me.timschneeberger.rootlessjamesdsp.utils.MediaVolume.listeningDb(requireContext())
                     else
                         (prefs?.getFloat(getString(R.string.key_loudness_volume), 0f) ?: 0f).toDouble()
                     val db = volume.coerceIn(-60.0, 0.0).roundToInt()

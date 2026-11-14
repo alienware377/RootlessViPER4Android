@@ -1380,7 +1380,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="loudness_graph_muted">Media volume muted</string>
     <string name="loudness_mode">Method</string>
     <string name="loudness_follow_volume">Follow the media volume</string>
-    <string name="loudness_follow_volume_summary">Reads the volume every time it changes. Turn off to set the listening volume yourself below.</string>
+    <string name="loudness_follow_volume_summary">Reads the volume every time it changes, and the level of Smooth volume while that is on. Turn off to set the listening volume yourself below.</string>
     <string name="loudness_volume">Listening volume</string>
     <string name="loudness_volume_summary">The volume to correct for while the media volume is not followed.</string>
     <string name="loudness_set_reference">Use the current volume as the reference</string>

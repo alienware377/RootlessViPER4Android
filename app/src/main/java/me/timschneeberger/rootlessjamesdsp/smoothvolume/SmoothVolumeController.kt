@@ -187,6 +187,15 @@ class SmoothVolumeController(private val context: Context) : KoinComponent {
     val effectiveDb: Double?
         get() = level?.let { SmoothVolumeMath.effectiveDb(it, curve) }
 
+    /**
+     * The level heard while holding, in dB below full system volume, for the
+     * loudness correction: the system index stays put then, so it says
+     * nothing about how loud the music is. Null while not holding, and while
+     * muted, when the index itself is right.
+     */
+    val heardDb: Double?
+        get() = if (active && !muted) effectiveDb else null
+
     /** The system index that sounds closest to the current level. */
     val nearestIndex: Int?
         get() = effectiveDb?.let { SmoothVolumeMath.nearestIndex(it, maxIndex, curve) }

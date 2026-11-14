@@ -10,6 +10,8 @@ import android.media.AudioManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import me.timschneeberger.rootlessjamesdsp.smoothvolume.SmoothVolumeController
+import org.koin.core.context.GlobalContext
 import timber.log.Timber
 
 /**
@@ -103,6 +105,18 @@ object MediaVolume {
         }
     }
 
+    /**
+     * The level the music is actually heard at, in dB, 0 at full volume. While
+     * smooth volume holds the media volume, the index stays where it was held
+     * and the level moves under it in the engine, so its level is the one
+     * that counts then.
+     */
+    fun listeningDb(context: Context): Double =
+        smoothVolume()?.heardDb ?: currentDb(context)
+
+    private fun smoothVolume(): SmoothVolumeController? =
+        try { GlobalContext.getOrNull()?.getOrNull<SmoothVolumeController>() } catch (_: Exception) { null }
+
     /** The kind of output media plays on now, as getStreamVolumeDb wants it. */
     private fun outputType(am: AudioManager): Int {
         sdkAbove(Build.VERSION_CODES.TIRAMISU) {
@@ -122,14 +136,18 @@ object MediaVolume {
     )
 
     /**
-     * Calls [onChange] with the media volume in dB whenever it changes, and on
-     * [start]. Android announces volume changes with a broadcast it does not
-     * document, which every volume tool relies on; a change of output is
-     * caught too, since the same index can mean a different level there.
+     * Calls [onChange] with the listening level in dB ([listeningDb]) whenever
+     * it changes, and on [start]. Android announces volume changes with a
+     * broadcast it does not document, which every volume tool relies on; a
+     * change of output is caught too, since the same index can mean a
+     * different level there. Smooth volume says when its level moves. Started
+     * and stopped on the main thread.
      */
     class Tracker(private val context: Context, private val onChange: (Double) -> Unit) {
         private var last = Double.NaN
         private var registered = false
+        private val smoothVolume = smoothVolume()
+        private val smoothVolumeListener = SmoothVolumeController.Listener { if (registered) report() }
 
         private val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {
@@ -142,7 +160,7 @@ object MediaVolume {
 
         /** Reads the volume again and passes it on if it moved. */
         fun report() {
-            val db = currentDb(context)
+            val db = listeningDb(context)
             if (db != last) {
                 last = db
                 onChange(db)
@@ -157,6 +175,7 @@ object MediaVolume {
                     addAction(AudioManager.ACTION_HEADSET_PLUG)
                 }
                 ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+                smoothVolume?.addListener(smoothVolumeListener)
                 registered = true
             }
             last = Double.NaN
@@ -165,6 +184,7 @@ object MediaVolume {
 
         fun stop() {
             if (!registered) return
+            smoothVolume?.removeListener(smoothVolumeListener)
             try {
                 context.unregisterReceiver(receiver)
             } catch (e: IllegalArgumentException) {
