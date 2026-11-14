@@ -170,7 +170,7 @@
     </Preference>
     <Preference
         android:title="Loundess-PEQ-RootlessJamesDSP"
-        android:summary="evoeram: the LUFS normalizer (itself after LUFSTargeting in ViPERDSP), smooth volume and the graphic to parametric EQ conversion that the ones here follow, and the way the loudness correction and voice isolation came here (GPLv3)"
+        android:summary="evoeram: the LUFS normalizer (itself after LUFSTargeting in ViPERDSP), smooth volume, the graphic to parametric EQ conversion and the sub-harmonic expander's controls that the ones here follow, and the way the loudness correction and voice isolation came here (GPLv3)"
         app:iconSpaceReserved="false">
         <intent
             android:action="android.intent.action.VIEW"

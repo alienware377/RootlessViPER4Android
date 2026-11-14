@@ -19,6 +19,7 @@ object EffectCards {
         Constants.PREF_COMPANDER to "card_compressor",
         Constants.PREF_BASS to "card_bass",
         Constants.PREF_BASSEX to "card_bassex",
+        Constants.PREF_SUBHARMONIC to "card_subharmonic",
         Constants.PREF_VDYNBASS to "card_vdynbass",
         Constants.PREF_DIFFSURROUND to "card_diffsurround",
         Constants.PREF_CLARITY to "card_clarity",

@@ -410,6 +410,24 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val leMudGain = cache.get(R.string.key_lowend_mud_gain, -2.5f)
             val leMix = cache.get(R.string.key_lowend_mix, 100f)
 
+            cache.select(Constants.PREF_SUBHARMONIC)
+            val subhEnabled = cache.get(R.string.key_subharmonic_enable, false)
+            // f/2 first; only the octave is up by default.
+            val subhAmounts = floatArrayOf(
+                cache.get(R.string.key_subharmonic_amount2, 100f),
+                cache.get(R.string.key_subharmonic_amount3, 0f),
+                cache.get(R.string.key_subharmonic_amount4, 0f),
+                cache.get(R.string.key_subharmonic_amount5, 0f),
+                cache.get(R.string.key_subharmonic_amount6, 0f),
+                cache.get(R.string.key_subharmonic_amount7, 0f),
+                cache.get(R.string.key_subharmonic_amount8, 0f),
+                cache.get(R.string.key_subharmonic_amount9, 0f),
+                cache.get(R.string.key_subharmonic_amount10, 0f),
+            )
+            val subhBand = cache.get(R.string.key_subharmonic_band, 120f)
+            val subhMix = cache.get(R.string.key_subharmonic_mix, 50f)
+            val subhOutput = cache.get(R.string.key_subharmonic_output, 0f)
+
             cache.select(Constants.PREF_TRANSIENT)
             val trEnabled = cache.get(R.string.key_transient_enable, false)
             val trFreqLow = cache.get(R.string.key_transient_freq_low, 200f)
@@ -666,6 +684,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_LOWEND -> setLowEnd(
                         leEnabled, leSubsonic, leWeightFreq, leWeightGain,
                         leMudFreq, leMudGain, leMix
+                    )
+                    Constants.PREF_SUBHARMONIC -> setSubHarmonic(
+                        subhEnabled, subhAmounts, subhBand, subhMix, subhOutput
                     )
                     Constants.PREF_TRANSIENT -> setTransient(
                         trEnabled, trFreqLow, trFreqHigh,
@@ -1125,6 +1146,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean
     abstract fun setExciter(enable: Boolean, f1: Float, f2: Float, f3: Float, a1: Float, a2: Float, a3: Float, a4: Float, character: Int, drive: Float, mix: Float): Boolean
     abstract fun setLowEnd(enable: Boolean, subsonic: Float, weightHz: Float, weightDb: Float, mudHz: Float, mudDb: Float, mix: Float): Boolean
+    /** [amounts] holds nine percentages, f/2 first, up to f/10. */
+    abstract fun setSubHarmonic(enable: Boolean, amounts: FloatArray, bandHz: Float, mix: Float, outputDb: Float): Boolean
     abstract fun setTransient(enable: Boolean, freqLow: Float, freqHigh: Float, attackLow: Float, sustainLow: Float, attackMid: Float, sustainMid: Float, attackHigh: Float, sustainHigh: Float, range: Float, mix: Float): Boolean
     abstract fun setImaging(enable: Boolean, monoBelow: Float, freqLow: Float, freqMid: Float, freqHigh: Float, widthLow: Float, widthMid: Float, widthHigh: Float, mix: Float): Boolean
     abstract fun setDynamicEq(enable: Boolean, mix: Float, msMode: Int): Boolean

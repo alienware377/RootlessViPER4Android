@@ -22,8 +22,8 @@ object EngineName {
      * differential surround (26027/26127).
      * 7: the multiband distortion (26028/26128).
      * 8: the loudness correction (26029/26129 and the volume, 26030), the LUFS
-     * normalizer (26031/26131) and smooth volume (26032/26132); 26033/26133
-     * are kept for the sub-harmonic expander.
+     * normalizer (26031/26131), smooth volume (26032/26132) and the
+     * sub-harmonic expander (26033/26133).
      */
     const val REQUIRED_VERSION = 8
 

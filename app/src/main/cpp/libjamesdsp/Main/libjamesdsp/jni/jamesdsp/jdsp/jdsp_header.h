@@ -449,6 +449,37 @@ typedef struct
 	// from: switching on starts at the level.
 	int fresh;
 } SmoothVolume;
+// f/2 up to f/10
+#define SUBH_DIVIDERS 9
+typedef struct
+{
+	float b0, b1, b2, a1, a2;
+	float x1, x2, y1, y2;
+} SubHarmonicStage;
+typedef struct
+{
+	// Settings: amounts and mix 0..1, the band edge in Hz, the trim linear.
+	float amount[SUBH_DIVIDERS];
+	float bandHz, mix, outGain;
+	// Designed from the settings and the rate.
+	SubHarmonicStage band1, band2, track, outHp, outLp;
+	float envC, confC, smoothC, fadeStep;
+	float minHalf, maxHalf, fs;
+	// Tracker: the band's level, how sure it is of the note, the time since
+	// the last crossing and the last plausible one, the smoothed half period
+	// and the last two gaps between crossings (all in samples), the hysteresis
+	// state and half cycles counted per divider.
+	float env1, env2, conf;
+	float since, sinceGood, half, lastGap, prevGap;
+	int polarity;
+	int count[SUBH_DIVIDERS];
+	// One oscillator per divider, where its cycle sits against the count, and
+	// how much of it the frequency allows.
+	float phase[SUBH_DIVIDERS], refOff[SUBH_DIVIDERS], lowWeight[SUBH_DIVIDERS];
+	// Gains walking towards the settings, and the switch fade.
+	float gain[SUBH_DIVIDERS], mixCur, outCur, fade;
+	int fadingOut, idle;
+} SubHarmonic;
 #define DYNEQ_MAX_BANDS 8
 // freq, Q, threshold dB, ratio, attack ms, release ms, range dB, mode
 #define DYNEQ_VALUES_PER_BAND 8
@@ -1247,6 +1278,7 @@ enum JdspEffectId
 	JDSP_EFX_BINAURAL,
 	JDSP_EFX_LUFSNORM,
 	JDSP_EFX_LOUDNESS,
+	JDSP_EFX_SUBHARMONIC,
 	JDSP_EFX_COUNT
 };
 typedef struct
@@ -1450,6 +1482,8 @@ typedef struct dspsys
 	BinauralUpmix binaural;
 	int loudnessEnabled;
 	LoudnessCorrection loudness;
+	int subHarmonicEnabled;
+	SubHarmonic subHarmonic;
 	Maximizer maximizer;
 	// Crossfeed
 	int crossfeedEnabled, crossfeedForceRefresh;
@@ -1754,6 +1788,15 @@ extern void MultibandDistProcess(JamesDSPLib *jdsp, size_t n);
 extern void MultibandDistEnable(JamesDSPLib *jdsp);
 extern void MultibandDistDisable(JamesDSPLib *jdsp);
 extern void MultibandDistRefresh(JamesDSPLib *jdsp);
+// Sub-harmonic expander. amountPct holds SUBH_DIVIDERS values, f/2 first.
+// Refresh follows the rule above (lock already held). Disable fades out and
+// the effect clears its own flag once the fade is done.
+extern void SubHarmonicSetParam(JamesDSPLib *jdsp, const float *amountPct,
+	float bandHz, float mixPct, float outputDb);
+extern void SubHarmonicProcess(JamesDSPLib *jdsp, size_t n);
+extern void SubHarmonicEnable(JamesDSPLib *jdsp);
+extern void SubHarmonicDisable(JamesDSPLib *jdsp);
+extern void SubHarmonicRefresh(JamesDSPLib *jdsp);
 extern void MaximizerSetParam(JamesDSPLib *jdsp,
 	int mode, float gainDb, float ceilingDb, float releaseMs,
 	float characterPct, float transientPct, int truePeak,

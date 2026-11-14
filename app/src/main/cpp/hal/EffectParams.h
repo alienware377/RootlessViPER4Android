@@ -303,6 +303,16 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
        0 .. -100 dB and keeps the level it had for a NaN. */
     case 26032: if (fn >= 1) SmoothVolumeSetParam(d, fv[0]); break;
     case 26132: if (on) SmoothVolumeEnable(d); else SmoothVolumeDisable(d); break;
+    /* Sub-harmonic expander: nine amounts in percent (f/2 to f/10), the band
+       followed in Hz, mix in percent and output level in dB. Clamped again by
+       SubHarmonicSetParam, NaN included. Switching off fades out and clears
+       the flag from the audio thread. */
+    case 26033:
+        if (fn >= SUBH_DIVIDERS + 3)
+            SubHarmonicSetParam(d, fv, fv[SUBH_DIVIDERS], fv[SUBH_DIVIDERS + 1],
+                                fv[SUBH_DIVIDERS + 2]);
+        break;
+    case 26133: if (on) SubHarmonicEnable(d); else SubHarmonicDisable(d); break;
 
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here

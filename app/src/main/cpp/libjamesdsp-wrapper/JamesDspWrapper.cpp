@@ -737,6 +737,24 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLowEnd(JNIEn
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSubHarmonic(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jfloatArray amountsObj, jfloat bandHz, jfloat mix, jfloat outputDb)
+{
+    DECLARE_DSP_B
+    // Missing amounts are 0 rather than whatever follows the array.
+    float amounts[SUBH_DIVIDERS] = { 0 };
+    if (amountsObj != nullptr)
+    {
+        jsize len = env->GetArrayLength(amountsObj);
+        if (len > SUBH_DIVIDERS) len = SUBH_DIVIDERS;
+        env->GetFloatArrayRegion(amountsObj, 0, len, amounts);
+    }
+    SubHarmonicSetParam(dsp, amounts, bandHz, mix, outputDb);
+    if (enable) SubHarmonicEnable(dsp); else SubHarmonicDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setTransient(JNIEnv *env, jobject obj, jlong self,
         jboolean enable, jfloat freqLow, jfloat freqHigh,
         jfloat attackLow, jfloat sustainLow, jfloat attackMid, jfloat sustainMid,
