@@ -35,6 +35,18 @@ jobs:
           name: RootfulViPER4Android-release
           path: app/build/outputs/apk/rootfulFdroid/release/*.apk
 
+      # Voice isolation's speech model and ONNX Runtime ship as a separate
+      # add-on APK, published next to the app, so the app itself stays small.
+      # Signed with the same key as the app, which only loads an add-on that is.
+      - name: Build voice isolation add-on APK
+        run: ./gradlew :voiceaddon:assembleRelease --no-daemon
+
+      - name: Upload voice isolation add-on APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RootlessViPER4Android-voice-isolation-addon
+          path: voiceaddon/build/outputs/apk/release/*.apk
+
       # The Magisk module carries this fork's engine as a system-wide effect,
       # so root mode runs our effects rather than the stock JamesDSP set.
       - name: Install ninja
