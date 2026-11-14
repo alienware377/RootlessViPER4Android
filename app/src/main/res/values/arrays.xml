@@ -600,6 +600,20 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string-array name="voice_isolation_presets">
+        <item>@string/voice_isolation_preset_podcast</item>
+        <item>@string/voice_isolation_preset_film</item>
+        <item>@string/voice_isolation_preset_gaming</item>
+        <item>@string/voice_isolation_preset_maximum</item>
+        <item>@string/voice_isolation_preset_custom</item>
+    </string-array>
+    <string-array name="voice_isolation_presets_values" translatable="false">
+        <item>podcast</item>
+        <item>film</item>
+        <item>gaming</item>
+        <item>maximum</item>
+        <item>custom</item>
+    </string-array>
     <string-array name="binaural_sources">
         <item>Built in: MIT KEMAR dummy head</item>
         <item>My own SOFA file</item>

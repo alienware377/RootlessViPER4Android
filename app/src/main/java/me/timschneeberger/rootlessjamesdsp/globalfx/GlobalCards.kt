@@ -51,6 +51,7 @@ object GlobalCards {
         Constants.PREF_EXCITER to Support.NONE,
         Constants.PREF_TAPE to Support.NONE,
         Constants.PREF_VINYL to Support.NONE,
+        Constants.PREF_VOICEISOLATION to Support.NONE,
         Constants.PREF_AGC to Support.NONE,
         Constants.PREF_DDC to Support.NONE,
         Constants.PREF_CONVOLVER to Support.NONE,

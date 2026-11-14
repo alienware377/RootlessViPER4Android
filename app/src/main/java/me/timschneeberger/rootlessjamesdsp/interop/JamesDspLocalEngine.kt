@@ -6,6 +6,10 @@ import me.timschneeberger.rootlessjamesdsp.interop.structure.EelVmVariable
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationLoader
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationProcessor
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationSettings
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationStatus
 import timber.log.Timber
 import java.util.Timer
 import kotlin.concurrent.schedule
@@ -30,6 +34,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun close() {
         val oldHandle = handle
         handle = 0
+        stopVoiceIsolation()
+        VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Off)
 
         // Free only once no sync is still inside the engine; a long impulse
         // response load or Liveprog compile could otherwise return into a freed
@@ -37,6 +43,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
         // handle was cleared.
         Timer().schedule(100) {
             cancelAndAwaitSyncs()
+            // A sync that was already running may have started the stage again.
+            stopVoiceIsolation()
             JamesDspWrapper.free(oldHandle)
             Timber.d("Handle $oldHandle has been freed")
         }
@@ -55,6 +63,12 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
             }
         }
         else {
+            voiceIsolation?.let { stage ->
+                val start = if (offset < 0) 0 else offset
+                val samples = if (length < 0) input.size - start else length
+                stage.processShort(input, start, samples / 2)
+                logVoiceIsolation(stage)
+            }
             JamesDspWrapper.processInt16(handle, input, output, offset, length)
         }
     }
@@ -87,6 +101,12 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
             }
         }
         else {
+            voiceIsolation?.let { stage ->
+                val start = if (offset < 0) 0 else offset
+                val samples = if (length < 0) input.size - start else length
+                stage.processFloat(input, start, samples / 2)
+                logVoiceIsolation(stage)
+            }
             JamesDspWrapper.processFloat(handle, input, output, offset, length)
             if (++processCounter % 2000L == 0L)
                 CrashBreadcrumb.mark(context, "audio alive")
@@ -94,6 +114,86 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     }
 
     private var processCounter = 0L
+
+    /**
+     * The voice isolation stage, or null when the card is off. It works on the captured block in
+     * place before the engine sees it: the model hears the original mix rather than one already
+     * coloured by reverb or crossfeed, and the engine's limiter then covers the voice boost.
+     */
+    @Volatile
+    private var voiceIsolation: VoiceIsolationProcessor? = null
+
+    /** The rate a load last failed at; not retried there until the card is switched off and on. */
+    private var voiceIsolationFailedRate = 0
+
+    override fun setVoiceIsolation(
+        enable: Boolean, reductionPct: Float, voiceReductionPct: Float, boostDb: Float, autoMode: Boolean,
+    ): Boolean {
+        if (!enable) {
+            voiceIsolationFailedRate = 0
+            stopVoiceIsolation()
+            VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Off)
+            return true
+        }
+        val settings = VoiceIsolationSettings(
+            backgroundReduction = reductionPct / 100f,
+            voiceGain = VoiceIsolationSettings.boostDbToGain(boostDb),
+            autoMode = autoMode,
+            voiceReduction = voiceReductionPct / 100f,
+        )
+        val rate = sampleRate.toInt()
+        val current = voiceIsolation
+        if (current != null && current.sampleRate == rate && current.failure == null) {
+            current.settings = settings
+            return true
+        }
+        stopVoiceIsolation()
+        if (rate <= 0) {
+            // Before the first stream; the rate change that follows brings this back.
+            VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Waiting)
+            return true
+        }
+        if (rate == voiceIsolationFailedRate) return false
+
+        VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Loading)
+        val stage = try {
+            VoiceIsolationLoader.open(context, rate)
+        } catch (e: VoiceIsolationLoader.Failure) {
+            Timber.e(e, "Voice isolation could not start at $rate Hz")
+            voiceIsolationFailedRate = rate
+            VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Failed(e.reason, e.detail))
+            return false
+        }
+        stage.settings = settings
+        stage.onFailure = { e ->
+            // On the audio thread: leave the clean-up to the next sync, just say so.
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Failed(
+                    VoiceIsolationStatus.Reason.Stopped, e.message ?: e.javaClass.simpleName))
+            }
+        }
+        voiceIsolation = stage
+        Timber.i("Voice isolation running at $rate Hz, %.1f ms of delay".format(stage.latencyMs))
+        VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Running(stage.latencyMs))
+        return true
+    }
+
+    /** Takes the stage out of the audio path first, then frees it once any block in it is done. */
+    private fun stopVoiceIsolation() {
+        val stage = voiceIsolation ?: return
+        voiceIsolation = null
+        stage.close()
+    }
+
+    private var voiceIsolationLoggedAt = 0L
+
+    /** Every ten seconds while it runs, how close the model is to its real-time budget. */
+    private fun logVoiceIsolation(stage: VoiceIsolationProcessor) {
+        val now = System.nanoTime()
+        if (now - voiceIsolationLoggedAt < 10_000_000_000L) return
+        voiceIsolationLoggedAt = now
+        Timber.d(stage.stats())
+    }
 
     // Effect config
     override fun setOutputControl(threshold: Float, release: Float, postGain: Float, limiterMode: Int): Boolean {

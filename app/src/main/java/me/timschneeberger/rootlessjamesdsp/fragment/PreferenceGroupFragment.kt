@@ -44,7 +44,10 @@ import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
+import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationPreset
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationStatus
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
@@ -59,12 +62,15 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     private var reportedProcessingSampleRate: Int? = null
     private var convolverStatusUpdater: (() -> Unit)? = null
     private var binauralStatusUpdater: (() -> Unit)? = null
+    private var voiceIsolationStatusUpdater: (() -> Unit)? = null
+    private var voiceIsolationChanged: ((String?) -> Unit)? = null
 
     private val listener =
-        SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             requireContext().sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
             convolverStatusUpdater?.invoke()
             binauralStatusUpdater?.invoke()
+            voiceIsolationChanged?.invoke(key)
         }
 
     private val listenerApp =
@@ -91,6 +97,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 }
                 Constants.ACTION_BINAURAL_SET_READY,
                 Constants.ACTION_BINAURAL_STATUS_CHANGED -> binauralStatusUpdater?.invoke()
+                Constants.ACTION_VOICE_ISOLATION_STATUS_CHANGED -> voiceIsolationStatusUpdater?.invoke()
                 Constants.ACTION_REPORT_SAMPLE_RATE -> {
                     reportedProcessingSampleRate = intent
                         .getFloatExtra(Constants.EXTRA_SAMPLE_RATE, 0f)
@@ -267,6 +274,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             addAction(Constants.ACTION_GRAPHIC_EQ_SWITCHED_ON)
             addAction(Constants.ACTION_BINAURAL_SET_READY)
             addAction(Constants.ACTION_BINAURAL_STATUS_CHANGED)
+            addAction(Constants.ACTION_VOICE_ISOLATION_STATUS_CHANGED)
         })
 
         // The ViPER4Android classic theme tints every effect icon purple.
@@ -341,6 +349,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             }
             R.xml.dsp_convolver_preferences -> setupConvolverSampleRateFiles()
             R.xml.dsp_binaural_preferences -> setupBinaural()
+            R.xml.dsp_voice_isolation_preferences -> setupVoiceIsolation()
             R.xml.dsp_compander_preferences -> {
                 findPreference<MaterialSeekbarPreference>(getString(R.string.key_compander_granularity))?.valueLabelOverride =
                     fun(it: Float): String {
@@ -764,6 +773,81 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         update()
     }
 
+    /**
+     * A preset writes the three mix sliders; moving any of them afterwards shows Custom, or the
+     * preset the sliders happen to land on. The line at the bottom says what the stage is doing.
+     */
+    private fun setupVoiceIsolation() {
+        if (!isRootless()) {
+            // The rooted engine runs inside Android's audio effect framework, which has no way to
+            // host the model. Say so on the card instead of leaving a switch that does nothing.
+            val header = preferenceScreen.getPreference(0)
+            header.isEnabled = false
+            header.summaryProvider = null
+            header.summary = getString(R.string.voice_isolation_unavailable_root)
+            return
+        }
+        val sp = preferenceManager.sharedPreferences ?: return
+        val kEnable = getString(R.string.key_voice_isolation_enable)
+        val kPreset = getString(R.string.key_voice_isolation_preset)
+        val kReduction = getString(R.string.key_voice_isolation_reduction)
+        val kVoice = getString(R.string.key_voice_isolation_voice_reduction)
+        val kBoost = getString(R.string.key_voice_isolation_boost)
+        val presetPref = findPreference<ListPreference>(kPreset)
+        var applyingPreset = false
+
+        presetPref?.setOnPreferenceChangeListener { _, newValue ->
+            val preset = VoiceIsolationPreset.fromStorageValue(newValue as? String)
+            if (preset != VoiceIsolationPreset.Custom) {
+                applyingPreset = true
+                findPreference<MaterialSeekbarPreference>(kReduction)?.setValue(preset.reductionPct)
+                findPreference<MaterialSeekbarPreference>(kVoice)?.setValue(0f)
+                findPreference<MaterialSeekbarPreference>(kBoost)?.setValue(preset.boostDb)
+                applyingPreset = false
+            }
+            true
+        }
+        voiceIsolationChanged = { key ->
+            if (!applyingPreset && (key == kReduction || key == kVoice || key == kBoost)) {
+                val matching = if (sp.getFloat(kVoice, 0f) > 0f) VoiceIsolationPreset.Custom
+                    else VoiceIsolationPreset.matching(sp.getFloat(kReduction, 65f), sp.getFloat(kBoost, 1.5f))
+                if (presetPref != null && presetPref.value != matching.storageValue)
+                    presetPref.value = matching.storageValue
+            }
+        }
+
+        val status = findPreference<Preference>("voice_isolation_status") ?: return
+        fun update() {
+            if (context == null) return
+            status.summary = when (val state = VoiceIsolationStatus.state) {
+                VoiceIsolationStatus.State.Off -> getString(
+                    if (sp.getBoolean(kEnable, false)) R.string.voice_isolation_status_off
+                    else R.string.voice_isolation_status_card_off)
+                VoiceIsolationStatus.State.Waiting -> getString(R.string.voice_isolation_status_waiting)
+                VoiceIsolationStatus.State.Loading -> getString(R.string.voice_isolation_status_loading)
+                is VoiceIsolationStatus.State.Running ->
+                    getString(R.string.voice_isolation_status_running, state.latencyMs.roundToInt())
+                is VoiceIsolationStatus.State.Failed ->
+                    getString(R.string.voice_isolation_status_failed, voiceIsolationFailureText(state))
+            }
+        }
+        voiceIsolationStatusUpdater = ::update
+        update()
+    }
+
+    private fun voiceIsolationFailureText(state: VoiceIsolationStatus.State.Failed): String {
+        // Runtime messages can run to a paragraph; the card only needs the gist.
+        val detail = (state.detail ?: "").take(120)
+        return when (state.reason) {
+            VoiceIsolationStatus.Reason.NotInThisBuild -> getString(R.string.voice_isolation_failed_build)
+            VoiceIsolationStatus.Reason.ModelMissing -> getString(R.string.voice_isolation_failed_model_missing)
+            VoiceIsolationStatus.Reason.ModelDamaged -> getString(R.string.voice_isolation_failed_model_damaged)
+            VoiceIsolationStatus.Reason.Runtime -> getString(R.string.voice_isolation_failed_runtime, detail)
+            VoiceIsolationStatus.Reason.Rate -> getString(R.string.voice_isolation_failed_rate, detail)
+            VoiceIsolationStatus.Reason.Stopped -> getString(R.string.voice_isolation_failed_stopped, detail)
+        }
+    }
+
     /** Why the effect is off at the engine's current rate, in plain words. */
     private fun rateProblemText(p: BinauralSets.RateProblem): String {
         fun khz(hz: Int) = String.format(java.util.Locale.ROOT, if (hz % 1000 == 0) "%.0f" else "%.1f", hz / 1000.0)
@@ -793,6 +877,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     override fun onDestroy() {
         convolverStatusUpdater = null
         binauralStatusUpdater = null
+        voiceIsolationStatusUpdater = null
+        voiceIsolationChanged = null
         super.onDestroy()
         requireContext().unregisterLocalReceiver(receiver)
         prefsApp.unregisterOnSharedPreferenceChangeListener(listener)
