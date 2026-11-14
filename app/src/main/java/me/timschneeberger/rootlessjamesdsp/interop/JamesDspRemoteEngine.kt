@@ -73,6 +73,7 @@ class JamesDspRemoteEngine(
         filter.addAction(Constants.ACTION_SERVICE_HARD_REBOOT_CORE)
         filter.addAction(Constants.ACTION_SERVICE_SOFT_REBOOT_CORE)
         context.registerLocalReceiver(broadcastReceiver, filter)
+        attachSmoothVolume()
     }
 
     private fun createEffect(): AudioEffectHidden {
@@ -104,11 +105,15 @@ class JamesDspRemoteEngine(
             effect?.release()
             effect = createEffect()
             forgetSmoothVolume()
+            attachSmoothVolume()
         }
         catch (ex: IllegalStateException) {
             Timber.e("Failed to re-instantiate JamesDSP effect")
             Timber.e(ex.cause)
             effect = null
+            // Nothing processes this session any more; it must not keep
+            // smooth volume holding.
+            detachSmoothVolume()
             return
         }
     }
