@@ -33,6 +33,7 @@ object V4aMode {
         Constants.PREF_COMPANDER to R.string.key_compander_enable,
         Constants.PREF_BASS to R.string.key_bass_enable,
         Constants.PREF_BASSEX to R.string.key_bassex_enable,
+        Constants.PREF_SUBHARMONIC to R.string.key_subharmonic_enable,
         Constants.PREF_PITCHSHIFT to R.string.key_pitchshift_enable,
         Constants.PREF_ECHODELAY to R.string.key_echo_enable,
         Constants.PREF_MULTIBANDDIST to R.string.key_mbd_enable,
@@ -68,7 +69,7 @@ object V4aMode {
      * it and its engine keeps running while the user believes neither.
      */
     val hiddenCardIds = intArrayOf(
-        R.id.card_compressor, R.id.card_bass, R.id.card_bassex,
+        R.id.card_compressor, R.id.card_bass, R.id.card_bassex, R.id.card_subharmonic,
         R.id.card_pitchshift, R.id.card_echo, R.id.card_mbd, R.id.card_maxr,
         R.id.card_dyneq, R.id.card_imaging, R.id.card_transient, R.id.card_lowend,
         R.id.card_exciter, R.id.card_tape,

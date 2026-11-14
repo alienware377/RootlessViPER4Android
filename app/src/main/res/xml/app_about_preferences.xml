@@ -161,6 +161,14 @@
             android:data="https://sound.media.mit.edu/resources/KEMAR.html" />
     </Preference>
     <Preference
+        android:title="Sub-Harmonic Expander"
+        android:summary="evoeram: the idea and controls of the Sub-harmonic expander card, from the Loudness-PEQ fork of RootlessJamesDSP (GPL-3.0). Its tracking and synthesis were rewritten here"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP" />
+    </Preference>
+    <Preference
         android:title="Third-party licence texts"
         android:summary="Full copyright notices and licence texts for the components above"
         app:iconSpaceReserved="false">

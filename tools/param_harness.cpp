@@ -676,6 +676,50 @@ int main()
 		check("and back", fabsf(m->chInc - inc48) < 1e-9f && fabsf(m->b0[0] - b0_48) < 1e-9f);
 	}
 
+	// ---- sub-harmonic expander ----------------------------------------------
+	printf("\nsub-harmonic expander\n");
+	{
+		SubHarmonic *s = &g_lib.subHarmonic;
+		// f/2 at 80 %, f/3 at 40 %, the rest off; band 150 Hz, mix 60 %, -3 dB.
+		const float v[12] = { 80, 40, 0, 0, 0, 0, 0, 0, 0, 150, 60, -3 };
+		sendFloats(26033, v, 12);
+		check("26033 sets the amounts", fabsf(s->amount[0] - 0.8f) < 1e-6f &&
+			  fabsf(s->amount[1] - 0.4f) < 1e-6f && s->amount[8] == 0.0f);
+		check("26033 sets band, mix and level", s->bandHz == 150.0f && fabsf(s->mix - 0.6f) < 1e-6f &&
+			  fabsf(s->outGain - powf(10.0f, -3.0f / 20.0f)) < 1e-5f);
+		const float shortv[11] = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 60, 20 };
+		sendFloats(26033, shortv, 11);
+		check("26033 with too few values changes nothing", fabsf(s->amount[0] - 0.8f) < 1e-6f &&
+			  s->bandHz == 150.0f);
+		const float junk[12] = { NAN, 1e30f, -1e30f, INFINITY, -INFINITY, NAN, NAN, 1e9f, -5,
+								 NAN, 1e30f, NAN };
+		sendFloats(26033, junk, 12);
+		bool held = true;
+		for (int k = 0; k < SUBH_DIVIDERS; k++)
+			held = held && s->amount[k] >= 0.0f && s->amount[k] <= 1.0f;
+		check("26033 holds NaN and nonsense", held && s->bandHz == 40.0f && s->mix == 1.0f &&
+			  isfinite(s->outGain) && isfinite(s->band1.b0) && isfinite(s->outLp.a1));
+		sendFloats(26033, v, 12);
+		sendEnable(26133, true);
+		check("26133 switches it on", g_lib.subHarmonicEnabled == 1 && !s->fadingOut);
+		sendEnable(26133, false);
+		check("26133 off fades out first", g_lib.subHarmonicEnabled == 1 && s->fadingOut == 1);
+		// The fade runs on the audio thread: 20 ms of it, then the flag is clear.
+		memset(g_lib.tmpBuffer[0], 0, sizeof(float) * 1024);
+		memset(g_lib.tmpBuffer[1], 0, sizeof(float) * 1024);
+		for (int b = 0; b < 4; b++)
+			SubHarmonicProcess(&g_lib, 1024);
+		check("and is off once the fade has run", g_lib.subHarmonicEnabled == 0 && !s->fadingOut);
+
+		// Every filter is redesigned for the new rate.
+		const float b48 = s->band1.b0, hp48 = s->outHp.b1;
+		JamesDSPSetSampleRate(&g_lib, 44100.0f, 0);
+		check("a rate change redesigns the sub-harmonic expander",
+			  s->fs == 44100.0f && fabsf(s->band1.b0 - b48) > 1e-9f && fabsf(s->outHp.b1 - hp48) > 1e-9f);
+		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
+		check("and back", s->fs == 48000.0f && s->band1.b0 == b48 && s->outHp.b1 == hp48);
+	}
+
 	// ---- an id with no mapping is tolerated, not refused --------------------
 	printf("\nunknown ids\n");
 	{

@@ -276,6 +276,17 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26128: if (on) MultibandDistEnable(d); else MultibandDistDisable(d); break;
 
+    /* Sub-harmonic expander: nine amounts in percent (f/2 to f/10), the band
+       followed in Hz, mix in percent and output level in dB. Clamped again by
+       SubHarmonicSetParam, NaN included. Switching off fades out and clears
+       the flag from the audio thread. */
+    case 26033:
+        if (fn >= SUBH_DIVIDERS + 3)
+            SubHarmonicSetParam(d, fv, fv[SUBH_DIVIDERS], fv[SUBH_DIVIDERS + 1],
+                                fv[SUBH_DIVIDERS + 2]);
+        break;
+    case 26133: if (on) SubHarmonicEnable(d); else SubHarmonicDisable(d); break;
+
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here
        and are rounded on arrival; only truePeak is a flag, and it arrives as
