@@ -18,6 +18,14 @@ class PresetFilesTest {
     }
 
     @Test
+    fun `the loudness, LUFS and voice isolation settings travel in presets`() {
+        for (ns in listOf(Constants.PREF_LOUDNESS, Constants.PREF_LUFS, Constants.PREF_VOICEISOLATION)) {
+            assertTrue(Preset.isSoundFile("$ns.xml"))
+            assertTrue(Preset.isKnownEntry("$ns.xml"))
+        }
+    }
+
+    @Test
     fun `smooth volume stays out of presets, profiles and resets`() {
         val file = Constants.PREF_SMOOTH_VOLUME + ".xml"
         assertFalse(Preset.isSoundFile(file))
