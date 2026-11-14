@@ -14,7 +14,8 @@ class NewCardPlacementTest {
         "card_liveprog", "card_liveprog2", "card_liveprog3", "card_liveprog4",
         "card_pitchshift", "card_echo", "card_mbd", "card_maxr", "card_dyneq",
         "card_shaper", "card_imaging", "card_transient", "card_lowend",
-        "card_exciter", "card_tape", "card_vinyl", "card_balance",
+        "card_exciter", "card_tape", "card_vinyl", "card_lufs", "card_balance",
+        "card_loudness", "card_voice_isolation", "card_smooth_volume",
         "group_v4a",
         "card_agc", "card_fetcomp", "card_ddc", "card_spectrumext", "card_eq",
         "card_convolver", "card_fieldsurround", "card_diffsurround",
@@ -53,6 +54,9 @@ class NewCardPlacementTest {
     private val savedBeforeBinaural = savedBeforeShaper.toMutableList().apply {
         add(indexOf("card_dyneq") + 1, "card_shaper")
     }
+
+    /** Cards that came after both, which every saved layout here lacks too. */
+    private val addedLater = listOf("card_lufs", "card_loudness", "card_voice_isolation", "card_smooth_volume")
 
     /** Everything that exists on screen once the user-made headings are built. */
     private val present = declared + listOf(gBass, gDyn, gEq, gStereo, gFx)
@@ -95,18 +99,26 @@ class NewCardPlacementTest {
 
     @Test
     fun `the LUFS normalizer joins vinyl and balance in the user's group`() {
-        val withLufs = declared.toMutableList().apply { add(indexOf("card_balance"), "card_lufs") }
-        val merged = NewCardPlacement.merge(savedBeforeShaper, withLufs, present + "card_lufs", headers)
+        val merged = merge(savedBeforeShaper)
         assertEquals("card_vinyl", merged[merged.indexOf("card_lufs") - 1])
         assertEquals("card_balance", merged[merged.indexOf("card_lufs") + 1])
         assertEquals(gFx, groupOf(merged, "card_lufs"))
     }
 
     @Test
-    fun `a layout saved before the upmix only gains the upmix`() {
+    fun `the cards declared after balance follow it into the user's group in their own order`() {
+        val merged = merge(savedBeforeShaper)
+        val at = merged.indexOf("card_balance")
+        assertEquals(listOf("card_balance", "card_loudness", "card_voice_isolation", "card_smooth_volume"),
+            merged.subList(at, at + 4))
+        assertEquals(gFx, groupOf(merged, "card_smooth_volume"))
+    }
+
+    @Test
+    fun `a layout saved before the upmix only gains the upmix and the later cards`() {
         val merged = merge(savedBeforeBinaural)
         assertEquals("card_stereowide", merged[merged.indexOf("card_binaural") - 1])
-        assertEquals(savedBeforeBinaural, merged - "card_binaural")
+        assertEquals(savedBeforeBinaural, merged - "card_binaural" - addedLater)
     }
 
     @Test
@@ -237,14 +249,14 @@ class NewCardPlacementTest {
 
     @Test
     fun `restoring the default order puts every built-in card back where it is declared`() {
-        val present = savedBeforeShaper + listOf("card_shaper", "card_binaural")
+        val present = savedBeforeShaper + listOf("card_shaper", "card_binaural") + addedLater
         val restored = NewCardPlacement.defaultOrder(declared, present)
         assertEquals(declared, restored.filter { it in declared })
     }
 
     @Test
     fun `restoring the default order keeps the user's own headings, after everything else`() {
-        val present = savedBeforeShaper + listOf("card_shaper", "card_binaural")
+        val present = savedBeforeShaper + listOf("card_shaper", "card_binaural") + addedLater
         val restored = NewCardPlacement.defaultOrder(declared, present)
         assertEquals(declared + listOf(gBass, gDyn, gEq, gStereo, gFx), restored)
     }
