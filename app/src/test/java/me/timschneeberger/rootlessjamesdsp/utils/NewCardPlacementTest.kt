@@ -9,7 +9,7 @@ class NewCardPlacementTest {
     // declares them, which is the default layout.
     private val declared = listOf(
         "card_output_control", "card_compressor", "card_bass", "card_bassex",
-        "card_stereowide", "card_binaural", "card_crossfeed", "card_reverb",
+        "card_subharmonic", "card_stereowide", "card_binaural", "card_crossfeed", "card_reverb",
         "card_geq", "card_peq",
         "card_liveprog", "card_liveprog2", "card_liveprog3", "card_liveprog4",
         "card_pitchshift", "card_echo", "card_mbd", "card_maxr", "card_dyneq",
@@ -56,7 +56,8 @@ class NewCardPlacementTest {
     }
 
     /** Cards that came after both, which every saved layout here lacks too. */
-    private val addedLater = listOf("card_lufs", "card_loudness", "card_voice_isolation", "card_smooth_volume")
+    private val addedLater = listOf("card_subharmonic", "card_lufs", "card_loudness", "card_voice_isolation",
+        "card_smooth_volume")
 
     /** Everything that exists on screen once the user-made headings are built. */
     private val present = declared + listOf(gBass, gDyn, gEq, gStereo, gFx)
@@ -103,6 +104,14 @@ class NewCardPlacementTest {
         assertEquals("card_vinyl", merged[merged.indexOf("card_lufs") - 1])
         assertEquals("card_balance", merged[merged.indexOf("card_lufs") + 1])
         assertEquals(gFx, groupOf(merged, "card_lufs"))
+    }
+
+    @Test
+    fun `the sub-harmonic expander joins the bass exciter in the user's bass group`() {
+        val merged = merge(savedBeforeShaper)
+        assertEquals("card_bassex", merged[merged.indexOf("card_subharmonic") - 1])
+        assertEquals("card_lowend", merged[merged.indexOf("card_subharmonic") + 1])
+        assertEquals(gBass, groupOf(merged, "card_subharmonic"))
     }
 
     @Test
