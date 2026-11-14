@@ -159,4 +159,7 @@ void BinauralUpmixProcess(void) {}
 void BinauralUpmixSetParam(void) {}
 void BinauralUpmixRefresh(void) {}
 void BinauralUpmixFree(void) {}
+void LoudnessProcess(void) {}
+void LoudnessSetParam(void) {}
+void LoudnessRefresh(void) {}
 void CompressorSetParam(void) {}
