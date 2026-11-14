@@ -31,6 +31,7 @@ import me.timschneeberger.rootlessjamesdsp.session.dump.DumpManager
 import me.timschneeberger.rootlessjamesdsp.session.root.RootSessionDatabase
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.ProfileManager
+import me.timschneeberger.rootlessjamesdsp.smoothvolume.SmoothVolumeController
 import me.timschneeberger.rootlessjamesdsp.utils.RoutingObserver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
@@ -39,6 +40,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.notifications.Notifications
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import me.timschneeberger.rootlessjamesdsp.utils.sdkAbove
 import me.timschneeberger.rootlessjamesdsp.utils.storage.Cache
+import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -208,6 +210,7 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
             single { DumpManager(androidContext()) }
             single { Preferences(androidContext()).App() }
             single { Preferences(androidContext()).Var() }
+            single { SmoothVolumeController(androidContext()) }
         }
 
         startKoin {
@@ -218,6 +221,9 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
 
         // Depends on Koin
         profileManager = ProfileManager()
+        // Made now rather than when first used: it puts back a media volume
+        // left held by a run that ended without letting go of it.
+        get<SmoothVolumeController>()
 
         if(!BuildConfig.FOSS_ONLY) {
             // Soft-disable crashlytics in debug mode by default on each launch
