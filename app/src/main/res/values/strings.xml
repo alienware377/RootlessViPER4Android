@@ -954,6 +954,29 @@
     <string name="geq_import_error_out_of_range">Outside 1 to 24000 Hz or -32 to 32 dB: \"%1$s\". Nothing was imported.</string>
     <string name="geq_export_success">Exported successfully</string>
     <string name="geq_export_error">Export failed: %1$s</string>
+    <string name="geq_to_peq">Convert to PEQ</string>
+    <string name="geq_to_peq_filter_count">Most filters to use</string>
+    <string name="geq_to_peq_running">Fitting filters</string>
+    <string name="geq_to_peq_running_count">Fitting filters: %1$d of up to %2$d placed</string>
+    <string name="geq_to_peq_title">Parametric EQ from this curve</string>
+    <string name="geq_to_peq_filters">Filters</string>
+    <string name="geq_to_peq_preamp">Preamp</string>
+    <string name="geq_to_peq_quality">Fit</string>
+    <string name="geq_to_peq_quality_excellent">Excellent</string>
+    <string name="geq_to_peq_quality_good">Good</string>
+    <string name="geq_to_peq_quality_fair">Fair</string>
+    <string name="geq_to_peq_quality_poor">Poor</string>
+    <string name="geq_to_peq_error">Largest error %1$s dB, RMS %2$s dB</string>
+    <string name="geq_to_peq_frequency">Frequency</string>
+    <string name="geq_to_peq_gain">Gain</string>
+    <string name="geq_to_peq_q">Q</string>
+    <string name="geq_to_peq_apply">Apply to Parametric EQ</string>
+    <string name="geq_to_peq_copy">Copy as Equalizer APO preset</string>
+    <string name="geq_to_peq_copied">Preset copied</string>
+    <string name="geq_to_peq_apply_title">Replace the parametric EQ?</string>
+    <string name="geq_to_peq_apply_confirm">Its bands and preamp are replaced with these %1$d filters. The parametric EQ is switched on and the graphic EQ off, as the two together would apply this curve twice.</string>
+    <string name="geq_to_peq_applied">%1$d filters applied to the parametric EQ</string>
+    <string name="geq_to_peq_flat">This curve is flat apart from its level, so it needs no filters.</string>
 
     <!-- AutoEQ GraphicEQ selector -->
     <string name="geq_api_network_error">Failed to connect to server. %1$s</string>

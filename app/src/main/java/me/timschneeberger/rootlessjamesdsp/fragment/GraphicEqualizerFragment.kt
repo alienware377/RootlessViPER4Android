@@ -2,35 +2,55 @@ package me.timschneeberger.rootlessjamesdsp.fragment
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.os.Build
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.activity.GraphicEqualizerActivity
 import me.timschneeberger.rootlessjamesdsp.activity.MatchEqActivity
 import me.timschneeberger.rootlessjamesdsp.adapter.GraphicEqNodeAdapter
 import me.timschneeberger.rootlessjamesdsp.contract.AutoEqSelectorContract
+import me.timschneeberger.rootlessjamesdsp.databinding.DialogGeqToPeqBinding
 import me.timschneeberger.rootlessjamesdsp.databinding.FragmentGraphicEqBinding
 import me.timschneeberger.rootlessjamesdsp.model.GraphicEqNode
 import me.timschneeberger.rootlessjamesdsp.model.GraphicEqNodeList
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.GraphicEqFile
+import me.timschneeberger.rootlessjamesdsp.utils.GraphicEqToPeq
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showInputAlert
+import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showSingleChoiceAlert
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.showYesNoAlert
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.toast
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
+import me.timschneeberger.rootlessjamesdsp.view.ProgressDialog
 import timber.log.Timber
 import java.util.UUID
 
@@ -56,6 +76,7 @@ class GraphicEqualizerFragment : Fragment() {
             binding.editString.isEnabled = !value
             binding.importFile.isEnabled = !value
             binding.exportFile.isEnabled = !value
+            binding.convertPeq.isEnabled = !value
         }
 
     private val autoEqSelectorLauncher =
@@ -262,6 +283,18 @@ class GraphicEqualizerFragment : Fragment() {
             exportFileLauncher.launch("graphic_eq.txt")
         }
 
+        binding.convertPeq.setOnClickListener {
+            val counts = GraphicEqToPeq.FILTER_COUNTS
+            requireContext().showSingleChoiceAlert(
+                R.string.geq_to_peq_filter_count,
+                counts.map { it.toString() as CharSequence }.toTypedArray(),
+                counts.indexOf(GraphicEqToPeq.DEFAULT_FILTER_COUNT),
+            ) { picked ->
+                picked ?: return@showSingleChoiceAlert
+                convertToPeq(counts[picked])
+            }
+        }
+
         // Load node data
         binding.nodeList.layoutManager = LinearLayoutManager(requireContext())
         loadNodes(savedInstanceState)
@@ -409,6 +442,122 @@ class GraphicEqualizerFragment : Fragment() {
         adapter.notifyDataSetChanged()
 
         updateViewState()
+    }
+
+    private var conversion: Job? = null
+
+    private fun convertToPeq(maxFilters: Int) {
+        val nodes = adapter.nodes.map { it.freq to it.gain }
+        val progress = ProgressDialog(requireContext()) { conversion?.cancel() }.apply {
+            isIndeterminate = true
+            title = getString(R.string.geq_to_peq_running)
+        }
+        conversion = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    GraphicEqToPeq.convert(
+                        nodes, maxFilters,
+                        cancelled = { !isActive },
+                        onProgress = { placed ->
+                            launch(Dispatchers.Main) {
+                                progress.title = getString(R.string.geq_to_peq_running_count, placed, maxFilters)
+                            }
+                        },
+                    )
+                }
+                if (result.bands.isEmpty())
+                    requireContext().toast(R.string.geq_to_peq_flat)
+                else
+                    showConversion(result)
+            } finally {
+                progress.dismiss()
+            }
+        }
+    }
+
+    private fun showConversion(result: GraphicEqToPeq.Result) {
+        val ctx = requireContext()
+        val view = DialogGeqToPeqBinding.inflate(layoutInflater)
+        view.filterCount.text = result.bands.size.toString()
+        view.preamp.text = String.format("%.1f dB", result.preampDb)
+        view.quality.setText(when (result.quality) {
+            GraphicEqToPeq.Quality.EXCELLENT -> R.string.geq_to_peq_quality_excellent
+            GraphicEqToPeq.Quality.GOOD -> R.string.geq_to_peq_quality_good
+            GraphicEqToPeq.Quality.FAIR -> R.string.geq_to_peq_quality_fair
+            GraphicEqToPeq.Quality.POOR -> R.string.geq_to_peq_quality_poor
+        })
+        view.error.text = getString(R.string.geq_to_peq_error,
+            String.format("%.2f", result.maxErrorDb), String.format("%.2f", result.rmsErrorDb))
+
+        val bodyStyle = TypedValue().also {
+            ctx.theme.resolveAttribute(com.google.android.material.R.attr.textAppearanceBodyMedium, it, true)
+        }.resourceId
+        fun cell(text: String, weight: Float, end: Boolean) = TextView(ctx).apply {
+            TextViewCompat.setTextAppearance(this, bodyStyle)
+            this.text = text
+            gravity = if (end) Gravity.END else Gravity.START
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, weight)
+        }
+        val rowPadding = (4 * resources.displayMetrics.density).toInt()
+        result.bands.forEachIndexed { i, band ->
+            view.filterRows.addView(LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(0, rowPadding, 0, rowPadding)
+                addView(cell("${i + 1}", 0.5f, false))
+                addView(cell(
+                    if (band.frequency < 1000.0) String.format("%.1f Hz", band.frequency)
+                    else String.format("%.2f kHz", band.frequency / 1000.0), 1f, true))
+                addView(cell(String.format("%+.1f dB", band.gain), 1f, true))
+                addView(cell(String.format("%.2f", band.q), 1f, true))
+            })
+        }
+
+        val dialog = MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.geq_to_peq_title)
+            .setView(view.root)
+            .setPositiveButton(R.string.geq_to_peq_apply) { _, _ -> confirmApply(result) }
+            .setNeutralButton(R.string.geq_to_peq_copy, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+        // Set after show, so that copying leaves the dialog open for Apply
+        dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener {
+            val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("Equalizer APO preset", result.toApoString()))
+            // Android 13 and later confirm a copy on their own
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+                ctx.toast(R.string.geq_to_peq_copied, false)
+        }
+    }
+
+    private fun confirmApply(result: GraphicEqToPeq.Result) {
+        requireContext().showYesNoAlert(
+            getString(R.string.geq_to_peq_apply_title),
+            getString(R.string.geq_to_peq_apply_confirm, result.bands.size),
+        ) { if (it) applyToPeq(result) }
+    }
+
+    /**
+     * Writes the filters where the PEQ screen keeps its bands, and moves both
+     * switches: left on together, the graphic EQ and the PEQ fitted to it
+     * would each shape the sound and apply the curve twice.
+     */
+    @SuppressLint("ApplySharedPref")
+    private fun applyToPeq(result: GraphicEqToPeq.Result) {
+        val ctx = requireContext()
+        ctx.getSharedPreferences(Constants.PREF_PEQ, Context.MODE_PRIVATE)
+            .edit()
+            .putString(getString(R.string.key_peq_bands), result.toBandList().serialize())
+            .putFloat(getString(R.string.key_peq_preamp), result.preampDb.toFloat())
+            .putBoolean(getString(R.string.key_peq_enable), true)
+            .commit()
+        ctx.getSharedPreferences(Constants.PREF_GEQ, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(getString(R.string.key_geq_enable), false)
+            .commit()
+        ctx.sendLocalBroadcast(Intent(Constants.ACTION_PARAMETRIC_EQ_CHANGED))
+        ctx.sendLocalBroadcast(Intent(Constants.ACTION_EQ_SWITCHES_CHANGED))
+        ctx.sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
+        ctx.toast(getString(R.string.geq_to_peq_applied, result.bands.size))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

@@ -88,6 +88,8 @@ object Constants {
     const val ACTION_GRAPHIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.CHANGED"
     /** The graphic EQ was switched on from outside its card (Match EQ); the card should show it. */
     const val ACTION_GRAPHIC_EQ_SWITCHED_ON = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.SWITCHED_ON"
+    /** Both EQ switches were set from outside their cards (graphic EQ to PEQ); the cards should reread them. */
+    const val ACTION_EQ_SWITCHES_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.eq.SWITCHES_CHANGED"
     const val ACTION_PARAMETRIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.parametriceq.CHANGED"
     const val ACTION_SESSION_CHANGED = BuildConfig.APPLICATION_ID + ".action.session.CHANGED"
     const val ACTION_SERVICE_STARTED = BuildConfig.APPLICATION_ID + ".action.service.STARTED"
