@@ -615,6 +615,16 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBalance(JNIE
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setLufsNormalizer(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jfloat target, jfloat maxBoost, jfloat maxCut, jint speed, jboolean peakGuard)
+{
+    DECLARE_DSP_B
+    LufsNormalizerSetParam(dsp, target, maxBoost, maxCut, speed, peakGuard ? 1 : 0);
+    if (enable) LufsNormalizerEnable(dsp); else LufsNormalizerDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSpectralShaper(JNIEnv *env, jobject obj, jlong self,
         jboolean enable, jfloat amount, jfloat sensitivity, jfloat lowHz, jfloat highHz,
         jfloat speed, jint focus, jboolean catchTones, jboolean listen, jint msMode)
