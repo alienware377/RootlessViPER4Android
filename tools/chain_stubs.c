@@ -122,3 +122,6 @@ void VReverbDisable(void) {}
 void db2magf(void) {}
 void randXorshift(void) {}
 void MultimodalEqualizerDestructor(void) {}
+void SubHarmonicProcess(void) {}
+void SubHarmonicSetParam(void) {}
+void SubHarmonicRefresh(void) {}

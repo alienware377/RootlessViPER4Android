@@ -369,6 +369,11 @@ static const int jdspDefaultChain[] =
 	JDSP_EFX_TUBE, JDSP_EFX_COMPRESSOR, JDSP_EFX_PITCHSHIFT, JDSP_EFX_FETCOMP,
 	// Attack shaping belongs with the dynamics, before anything spatial.
 	JDSP_EFX_TRANSIENT,
+	// New notes below the bass: after the dynamics, so it follows the bass
+	// they settled rather than being pumped by it, before the differential
+	// surround smears the two channels apart in time, and ahead of the bass
+	// processors and the maximiser, which then treat and catch what it adds.
+	JDSP_EFX_SUBHARMONIC,
 	JDSP_EFX_DIFFSURROUND, JDSP_EFX_BASSBOOST, JDSP_EFX_VDYNBASS,
 	JDSP_EFX_VIPERBASS, JDSP_EFX_BASSEX,
 	// Tidy the bottom after the bass processors have had their say, then add
@@ -673,6 +678,11 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 		// the settings thread.
 		jdsp_lock(jdsp);
 		if (jdsp->binauralEnabled) BinauralUpmixProcess(jdsp, n);
+		jdsp_unlock(jdsp);
+		break;
+	case JDSP_EFX_SUBHARMONIC:
+		jdsp_lock(jdsp);
+		if (jdsp->subHarmonicEnabled) SubHarmonicProcess(jdsp, n);
 		jdsp_unlock(jdsp);
 		break;
 	default:
@@ -1703,6 +1713,14 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->lowEndEnabled = 0;
 	// Rumble gone, a little body added, the thick region eased back.
 	LowEndSetParam(jdsp, 30.0f, 90.0f, 3.0f, 300.0f, -2.5f, 100.0f);
+	jdsp->subHarmonicEnabled = 0;
+	memset(&jdsp->subHarmonic, 0, sizeof(jdsp->subHarmonic));
+	{
+		// One octave down at full strength, mixed in at half, from the bass
+		// below 120 Hz: clearly there without taking the low end over.
+		const float amounts[SUBH_DIVIDERS] = { 100.0f };
+		SubHarmonicSetParam(jdsp, amounts, 120.0f, 50.0f, 0.0f);
+	}
 	TransientSetParam(jdsp, 200.0f, 3000.0f,
 		45.0f, -20.0f,
 		30.0f, -15.0f,
@@ -1872,6 +1890,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	VDynBassRefresh(jdsp);
 	DiffSurroundRefresh(jdsp);
 	MultibandDistRefresh(jdsp);
+	SubHarmonicRefresh(jdsp);
 	// The stereo widening's band split and envelope times follow the rate too.
 	// Its own Refresh takes the lock, so the design is called directly.
 	StereoEnhancementDesign(jdsp);
