@@ -955,7 +955,7 @@
     <string name="geq_import_error_out_of_range">Outside 0 to 24000 Hz or -48 to 48 dB: \"%1$s\". Nothing was imported.</string>
     <string name="geq_export_success">Exported successfully</string>
     <string name="geq_export_error">Export failed: %1$s</string>
-    <string name="geq_to_peq">Convert to PEQ</string>
+    <string name="geq_to_peq">To parametric EQ</string>
     <string name="geq_to_peq_filter_count">Most filters to use</string>
     <string name="geq_to_peq_running">Fitting filters</string>
     <string name="geq_to_peq_running_count">Fitting filters: %1$d of up to %2$d placed</string>
