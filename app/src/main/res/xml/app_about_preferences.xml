@@ -177,6 +177,14 @@
             android:data="https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP" />
     </Preference>
     <Preference
+        android:title="Equalizer APO"
+        android:summary="Alexander Walch: the loudness correction filter behind the Loudness correction card, by way of evoeram's Loudness / PEQ fork, which added its ISO 226 mode and subsonic filter (GPL 2 or later)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://sourceforge.net/projects/equalizerapo/" />
+    </Preference>
+    <Preference
         android:title="Third-party licence texts"
         android:summary="Full copyright notices and licence texts for the components above"
         app:iconSpaceReserved="false">

@@ -74,7 +74,8 @@ class ProcessingOrderDialogFragment : DialogFragment() {
         ChainEffect(38, R.string.balance_enable),
         ChainEffect(39, R.string.shaper_enable),
         ChainEffect(40, R.string.binaural_enable),
-        ChainEffect(41, R.string.lufs_enable)
+        ChainEffect(41, R.string.lufs_enable),
+        ChainEffect(42, R.string.loudness_enable)
     )
 
     /**

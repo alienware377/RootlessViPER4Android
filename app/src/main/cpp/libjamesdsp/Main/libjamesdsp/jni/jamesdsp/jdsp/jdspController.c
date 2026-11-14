@@ -401,6 +401,12 @@ static const int jdspDefaultChain[] =
 	// whose gain it never measures. Ahead of the balance too: that is a trim
 	// the listener set, and measured it would be partly undone.
 	JDSP_EFX_LUFSNORM,
+	// Makes up for how quietly the finished sound is played, so it sees the
+	// sound as everything else left it, and its bass lift is not then undone
+	// by a compressor or spread by a reverb. After the LUFS normalizer, which
+	// would otherwise measure its cut and boost the level back. Ahead of the
+	// limiter, which still catches whatever it brings up.
+	JDSP_EFX_LOUDNESS,
 	// A listening trim, so it goes after everything that shapes the sound.
 	JDSP_EFX_BALANCE,
 	JDSP_EFX_MAXIMIZER
@@ -670,6 +676,12 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 	case JDSP_EFX_LUFSNORM:
 		jdsp_lock(jdsp);
 		if (jdsp->lufsNormEnabled) LufsNormalizerProcess(jdsp, n);
+		jdsp_unlock(jdsp);
+		break;
+	case JDSP_EFX_LOUDNESS:
+		// Locked: a volume change redesigns it from the settings thread.
+		jdsp_lock(jdsp);
+		if (jdsp->loudnessEnabled) LoudnessProcess(jdsp, n);
 		jdsp_unlock(jdsp);
 		break;
 	case JDSP_EFX_SHAPER:
@@ -1689,6 +1701,12 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	// The streaming services' reference level, up to 6 dB of boost and 12 of
 	// cut, normal speed, peaks kept clear of the limiter.
 	LufsNormalizerSetParam(jdsp, -14.0f, 6.0f, 12.0f, 1, 1);
+	jdsp->loudnessEnabled = 0;
+	memset(&jdsp->loudness, 0, sizeof(jdsp->loudness));
+	// EqualizerAPO's own settings, flat at full volume, no subsonic filter.
+	// The volume stays at 0 dB until the app reports one.
+	LoudnessSetParam(jdsp, LOUDNESS_MODE_CLASSIC, 0.0f, 0.0f, 100.0f,
+		75.0f, 0.52f, 55.0f, 10000.0f, 0.9f, 22.5f, 80.0f, 0, 20.0f, 4, 0.707f);
 	jdsp->shaperEnabled = 0;
 	jdsp->shaper.mem = 0;
 	jdsp->shaper.N = 0;
@@ -1881,6 +1899,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	VinylRefresh(jdsp);
 	BalanceRefresh(jdsp);
 	LufsNormalizerRefresh(jdsp);
+	LoudnessRefresh(jdsp);
 	SpectralShaperRefresh(jdsp);
 	BinauralUpmixRefresh(jdsp);
 	PitchShiftRefresh(jdsp);

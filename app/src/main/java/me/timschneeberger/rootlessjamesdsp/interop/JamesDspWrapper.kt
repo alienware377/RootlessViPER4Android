@@ -51,6 +51,8 @@ object JamesDspWrapper {
     external fun setTape(self: JamesDspHandle, enable: Boolean, wow: Float, flutter: Float, saturation: Float, bias: Float, headBump: Float, mix: Float): Boolean
     external fun setBalance(self: JamesDspHandle, enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean
     external fun setLufsNormalizer(self: JamesDspHandle, enable: Boolean, target: Float, maxBoost: Float, maxCut: Float, speed: Int, peakGuard: Boolean): Boolean
+    external fun setLoudness(self: JamesDspHandle, enable: Boolean, mode: Int, refLevel: Float, refOffset: Float, strength: Float, bassHz: Float, bassSlope: Float, bassAmount: Float, trebleHz: Float, trebleSlope: Float, trebleAmount: Float, phon: Float, subsonic: Boolean, subsonicHz: Float, subsonicOrder: Int, subsonicQ: Float): Boolean
+    external fun setLoudnessVolume(self: JamesDspHandle, volumeDb: Float): Boolean
     external fun setSpectralShaper(self: JamesDspHandle, enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean
     external fun setBinaural(self: JamesDspHandle, enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float): Boolean
     external fun setBinauralHrir(self: JamesDspHandle, hrir: FloatArray, speakers: Int, taps: Int, fs: Int, cOff: Int): Boolean

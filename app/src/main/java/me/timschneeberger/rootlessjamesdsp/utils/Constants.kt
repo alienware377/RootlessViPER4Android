@@ -53,6 +53,7 @@ object Constants {
     const val PREF_LUFS = "dsp_lufs"
     const val PREF_SHAPER = "dsp_shaper"
     const val PREF_BINAURAL = "dsp_binaural"
+    const val PREF_LOUDNESS = "dsp_loudness"
     const val PREF_CHAIN_ORDER = "dsp_chain_order"
     const val PREF_FILELIBRARY = "dsp_filelibrary"
     // Deliberately not "dsp_": presets copy every dsp_* file wholesale, and

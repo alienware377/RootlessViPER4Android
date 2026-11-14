@@ -126,3 +126,6 @@ void LufsNormalizerProcess(void) {}
 void LufsNormalizerSetParam(void) {}
 void LufsNormalizerRefresh(void) {}
 void LufsNormalizerDisable(void) {}
+void LoudnessProcess(void) {}
+void LoudnessSetParam(void) {}
+void LoudnessRefresh(void) {}

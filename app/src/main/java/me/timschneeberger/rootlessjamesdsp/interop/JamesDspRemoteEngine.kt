@@ -197,6 +197,16 @@ class JamesDspRemoteEngine(
     override fun setLufsNormalizer(enable: Boolean, target: Float, maxBoost: Float, maxCut: Float, speed: Int, peakGuard: Boolean): Boolean =
         sendForkEffect(PARAM_LUFS, enable, floatArrayOf(target, maxBoost, maxCut, speed.toFloat(), if (peakGuard) 1f else 0f))
 
+    override fun setLoudness(enable: Boolean, mode: Int, refLevel: Float, refOffset: Float, strength: Float, bassHz: Float, bassSlope: Float, bassAmount: Float, trebleHz: Float, trebleSlope: Float, trebleAmount: Float, phon: Float, subsonic: Boolean, subsonicHz: Float, subsonicOrder: Int, subsonicQ: Float): Boolean =
+        sendForkEffect(PARAM_LOUDNESS, enable, floatArrayOf(
+            mode.toFloat(), refLevel, refOffset, strength, bassHz, bassSlope, bassAmount,
+            trebleHz, trebleSlope, trebleAmount, phon, if (subsonic) 1f else 0f, subsonicHz,
+            subsonicOrder.toFloat(), subsonicQ))
+
+    // The volume has no switch of its own; it goes as a single value.
+    override fun setLoudnessVolume(volumeDb: Float): Boolean =
+        effect.setParameterFloatArray(PARAM_LOUDNESS_VOLUME, floatArrayOf(volumeDb)) == AudioEffect.SUCCESS
+
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         sendForkEffect(PARAM_SHAPER, enable, floatArrayOf(
             amount, sensitivity, lowHz, highHz, speed, focus.toFloat(),
@@ -594,6 +604,8 @@ class JamesDspRemoteEngine(
         private const val PARAM_VDYN_BASS = PARAM_FORK_BASE + 26
         private const val PARAM_DIFF_SURROUND = PARAM_FORK_BASE + 27
         private const val PARAM_MULTIBAND_DIST = PARAM_FORK_BASE + 28
+        private const val PARAM_LOUDNESS = PARAM_FORK_BASE + 29
+        private const val PARAM_LOUDNESS_VOLUME = PARAM_FORK_BASE + 30
         private const val PARAM_LUFS = PARAM_FORK_BASE + 31
         /** The head set's payload: geometry, 4096-float parts, commit, hash. */
         private const val PARAM_HRIR_INFO = 9997

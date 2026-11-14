@@ -317,6 +317,45 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         }
 
         when(args.getInt(BUNDLE_XML_RES)) {
+            R.xml.dsp_loudness_preferences -> {
+                // Each method shows only its own settings.
+                val group = findPreference<SwitchPreferenceGroup>(getString(R.string.key_loudness_enable))
+                val modePref = findPreference<ListPreference>(getString(R.string.key_loudness_mode))
+                var iso = modePref?.value == "1"
+                group?.childVisibilityFilter = { p ->
+                    when (p.key) {
+                        "loudness_classic_header" -> !iso
+                        "loudness_iso_header" -> iso
+                        else -> true
+                    }
+                }
+                group?.refreshChildrenVisibility()
+                modePref?.setOnPreferenceChangeListener { _, newValue ->
+                    iso = newValue == "1"
+                    group?.refreshChildrenVisibility()
+                    true
+                }
+                findPreference<Preference>(getString(R.string.key_loudness_set_reference))?.setOnPreferenceClickListener {
+                    // The volume being corrected for: the listening volume
+                    // when the media volume is not followed.
+                    val prefs = preferenceManager.sharedPreferences
+                    val follow = prefs?.getBoolean(getString(R.string.key_loudness_follow_volume), true) ?: true
+                    val volume = if (follow)
+                        me.timschneeberger.rootlessjamesdsp.utils.MediaVolume.currentDb(requireContext())
+                    else
+                        (prefs?.getFloat(getString(R.string.key_loudness_volume), 0f) ?: 0f).toDouble()
+                    val db = volume.coerceIn(-60.0, 0.0).roundToInt()
+                    // The offset goes back to 0, or the sound would not be
+                    // left alone at this volume after all.
+                    findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_offset))
+                        ?.setValue(0f)
+                    findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_level))
+                        ?.setValue(db.toFloat())
+                    Toast.makeText(requireContext(), getString(R.string.loudness_set_reference_done, db.toString()),
+                        Toast.LENGTH_SHORT).show()
+                    true
+                }
+            }
             R.xml.dsp_vdynbass_preferences -> {
                 val customKeys = arrayOf(
                     R.string.key_vdynbass_x1, R.string.key_vdynbass_x2,
