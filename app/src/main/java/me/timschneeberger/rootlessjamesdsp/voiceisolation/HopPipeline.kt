@@ -15,6 +15,8 @@ import kotlin.math.ceil
  * signal to keep for each of its samples. The voice is brought back up to the device rate; the dry
  * part is read from a history of the full-band input at exactly the delay the voice took to get
  * there, so the two line up sample for sample and nothing above the model's 8 kHz is lost.
+ * Nothing is limited here: a boosted voice can go over full scale, and the engine's limiter, which
+ * runs next, deals with it, so loud masters at neutral settings come out untouched.
  *
  * The delay is the same for every block size: a block's own input is always processed before its
  * output is read, and the output is read [leadFrames] behind the input, which is just over one hop
@@ -185,7 +187,7 @@ internal class HopPipeline(
                     val source = position - delay
                     val full = if (source >= 0 && source > inputFrames - HISTORY_SIZE)
                         history[(source and HISTORY_MASK).toInt()] else 0f
-                    out = IsolationIntensityMixer.softLimit(voiceRing[(position and VOICE_MASK).toInt()] + keepDry * full)
+                    out = voiceRing[(position and VOICE_MASK).toInt()] + keepDry * full
                 } else {
                     underruns++
                 }

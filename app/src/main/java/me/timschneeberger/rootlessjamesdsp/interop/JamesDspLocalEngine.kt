@@ -6,6 +6,7 @@ import me.timschneeberger.rootlessjamesdsp.interop.structure.EelVmVariable
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.PcmConverter
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationLoader
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationProcessor
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationSettings
@@ -67,8 +68,21 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
             voiceIsolation?.let { stage ->
                 val start = if (offset < 0) 0 else offset
                 val samples = if (length < 0) input.size - start else length
-                stage.processShort(input, start, samples / 2)
+                // The block goes on to the engine as floats, so that a boosted voice above full
+                // scale reaches its limiter instead of being clipped on the way back to 16 bits.
+                var floatIn = voiceIsolationIn
+                var floatOut = voiceIsolationOut
+                if (floatIn.size < samples) {
+                    floatIn = FloatArray(samples).also { voiceIsolationIn = it }
+                    floatOut = FloatArray(samples).also { voiceIsolationOut = it }
+                }
+                val ran = stage.processShort(input, start, samples / 2, floatIn)
                 logVoiceIsolation(stage)
+                if (ran) {
+                    JamesDspWrapper.processFloat(handle, floatIn, floatOut, 0, samples)
+                    PcmConverter.toShortRounded(floatOut, output, samples)
+                    return
+                }
             }
             JamesDspWrapper.processInt16(handle, input, output, offset, length)
         }
@@ -127,6 +141,13 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     /** The rate a load last failed at; not retried there until the card is switched off and on. */
     private var voiceIsolationFailedRate = 0
 
+    /**
+     * 16-bit blocks as floats, before and after the engine, while the stage runs. Made with the
+     * stage to the largest block the settings allow, so the audio thread does not allocate them.
+     */
+    private var voiceIsolationIn = FloatArray(0)
+    private var voiceIsolationOut = FloatArray(0)
+
     override fun setVoiceIsolation(
         enable: Boolean, reductionPct: Float, voiceReductionPct: Float, boostDb: Float, autoMode: Boolean,
     ): Boolean {
@@ -181,6 +202,10 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
                     VoiceIsolationStatus.Reason.Stopped, e.message ?: e.javaClass.simpleName))
                 syncWithPreferences(arrayOf(Constants.PREF_VOICEISOLATION))
             }
+        }
+        if (voiceIsolationIn.size < VoiceIsolationProcessor.MAX_BLOCK_SAMPLES) {
+            voiceIsolationIn = FloatArray(VoiceIsolationProcessor.MAX_BLOCK_SAMPLES)
+            voiceIsolationOut = FloatArray(VoiceIsolationProcessor.MAX_BLOCK_SAMPLES)
         }
         voiceIsolation = stage
         Timber.i("Voice isolation running at $rate Hz, %.1f ms of delay".format(stage.latencyMs))

@@ -58,7 +58,6 @@ internal class VoiceIsolationProcessor(
     /** Delay the stage adds, in milliseconds. */
     val latencyMs: Float get() = channels[0].framing.latencyMs
 
-    private var scratch = FloatArray(SCRATCH_SAMPLES)
     private var outputPeak = 0f
 
     private val workerLock = Object()
@@ -136,17 +135,18 @@ internal class VoiceIsolationProcessor(
         }
     }
 
-    /** As [processFloat], for 16-bit samples. */
-    fun processShort(buffer: ShortArray, offset: Int, frames: Int) {
-        if (failure != null || frames <= 0) return
+    /**
+     * As [processFloat], for 16-bit samples: [frames] frames of [buffer] from [offset] go through
+     * the stage into [output] from its start. They stay floats so that what comes next can still
+     * catch a boosted voice above full scale. Returns false when the stage did not run, and
+     * [output] then holds nothing of use.
+     */
+    fun processShort(buffer: ShortArray, offset: Int, frames: Int, output: FloatArray): Boolean {
+        if (failure != null || frames <= 0) return false
         synchronized(this) {
-            if (failure != null) return
-            val samples = frames * 2
-            // The capture block size is set once per session, so this grows at most once.
-            if (scratch.size < samples) scratch = FloatArray(samples)
-            PcmConverter.toFloatRange(buffer, scratch, offset, samples)
-            if (runBlock(scratch, 0, frames))
-                PcmConverter.toShortRange(scratch, buffer, offset, samples)
+            if (failure != null) return false
+            PcmConverter.toFloatRange(buffer, output, offset, frames * 2)
+            return runBlock(output, 0, frames)
         }
     }
 
@@ -264,6 +264,6 @@ internal class VoiceIsolationProcessor(
 
     companion object {
         /** Two channels of the largest capture block the settings allow. */
-        private const val SCRATCH_SAMPLES = 16384
+        const val MAX_BLOCK_SAMPLES = 16384
     }
 }

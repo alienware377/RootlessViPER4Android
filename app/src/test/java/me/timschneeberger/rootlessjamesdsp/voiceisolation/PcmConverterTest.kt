@@ -82,6 +82,18 @@ class PcmConverterTest {
     }
 
     @Test
+    fun roundedConversionMatchesTheEnginesSixteenBitOutput() {
+        val output = ShortArray(9) { 7 }
+        PcmConverter.toShortRounded(
+            floatArrayOf(0.25f, -0.25f, 1.5f / 32768f, 2.5f / 32768f, -0.6f / 32768f, 1.2f, -3f, Float.NaN),
+            output, count = 8,
+        )
+
+        // nearest step, halves to even, and clamped rather than wrapped
+        assertEquals(listOf(8192, -8192, 2, 2, -1, 32767, -32768, 0, 7), output.map { it.toInt() })
+    }
+
+    @Test
     fun wholeBufferConversionWritesOnlyTheRequestedCount() {
         val shorts = shortArrayOf(100, 200, 300, 400)
         val floats = FloatArray(shorts.size) { -1f }
