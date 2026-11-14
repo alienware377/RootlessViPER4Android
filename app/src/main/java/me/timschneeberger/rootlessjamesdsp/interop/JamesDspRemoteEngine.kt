@@ -103,6 +103,7 @@ class JamesDspRemoteEngine(
         try {
             effect?.release()
             effect = createEffect()
+            forgetSmoothVolume()
         }
         catch (ex: IllegalStateException) {
             Timber.e("Failed to re-instantiate JamesDSP effect")
@@ -193,6 +194,10 @@ class JamesDspRemoteEngine(
 
     override fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean =
         sendForkEffect(PARAM_BALANCE, enable, floatArrayOf(balance, if (swap) 1f else 0f, mono))
+
+    // 26032 / 26132: the level in dB, then the switch.
+    override fun setSmoothVolume(enable: Boolean, gainDb: Float): Boolean =
+        sendForkEffect(PARAM_SMOOTH_VOLUME, enable, floatArrayOf(gainDb))
 
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         sendForkEffect(PARAM_SHAPER, enable, floatArrayOf(
@@ -591,6 +596,7 @@ class JamesDspRemoteEngine(
         private const val PARAM_VDYN_BASS = PARAM_FORK_BASE + 26
         private const val PARAM_DIFF_SURROUND = PARAM_FORK_BASE + 27
         private const val PARAM_MULTIBAND_DIST = PARAM_FORK_BASE + 28
+        private const val PARAM_SMOOTH_VOLUME = PARAM_FORK_BASE + 32
         /** The head set's payload: geometry, 4096-float parts, commit, hash. */
         private const val PARAM_HRIR_INFO = 9997
         private const val PARAM_HRIR_PART = 12002

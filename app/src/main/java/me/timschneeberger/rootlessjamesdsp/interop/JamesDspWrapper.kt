@@ -50,6 +50,7 @@ object JamesDspWrapper {
     external fun setEchoDelay(self: JamesDspHandle, enable: Boolean, input: Float, time: Float, smoothing: Float, offset: Float, keepPitch: Boolean, model: Int, stereo: Float, feedback: Float, cutoff: Float, res: Float, filter: Int, smpRate: Float, bits: Float, modRate: Float, modTime: Float, modCutoff: Float, diffusion: Float, spread: Float, distMode: Int, distLevel: Float, knee: Float, symmetry: Float, tone: Float, wet: Float, dry: Float): Boolean
     external fun setTape(self: JamesDspHandle, enable: Boolean, wow: Float, flutter: Float, saturation: Float, bias: Float, headBump: Float, mix: Float): Boolean
     external fun setBalance(self: JamesDspHandle, enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean
+    external fun setSmoothVolume(self: JamesDspHandle, enable: Boolean, gainDb: Float): Boolean
     external fun setSpectralShaper(self: JamesDspHandle, enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean
     external fun setBinaural(self: JamesDspHandle, enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float): Boolean
     external fun setBinauralHrir(self: JamesDspHandle, hrir: FloatArray, speakers: Int, taps: Int, fs: Int, cOff: Int): Boolean
