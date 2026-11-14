@@ -442,6 +442,32 @@ int main(void)
 		check("one second pause: gain after the song resumes minus before", l->gainDb - mid, -0.05, 0.05);
 	}
 
+	printf("\na song starting after silence\n");
+	{
+		// A song already at the target, starting after silence, on a cold start
+		// and after another song. The blocks that straddle the start are part
+		// silence and must not be measured, or they read low and push the gain
+		// up. The onset is put partway into a sub-block on purpose.
+		const char *names[3] = { "slow", "normal", "fast" };
+		for (int sp = 0; sp < 3; sp++)
+		{
+			Gen s = silence(), g = sine(0.1995, 997.0); // -14 LUFS
+			setup(48000.0, -14, 6, 12, sp, 1);
+			run(&s, 3.05, 1024);
+			run(&g, 22.0, 1024);
+			char what[80];
+			snprintf(what, sizeof(what), "%s: song at target after silence, highest gain", names[sp]);
+			check(what, gainMax, -0.1, 0.1);
+			snprintf(what, sizeof(what), "%s: and lowest gain", names[sp]);
+			check(what, gainMin, -0.1, 0.1);
+			run(&s, 3.03, 1024);
+			g.t = 0;
+			run(&g, 22.0, 1024);
+			snprintf(what, sizeof(what), "%s: the next song after a gap, highest gain", names[sp]);
+			check(what, gainMax, -0.1, 0.1);
+		}
+	}
+
 	printf("\nNaN and nonsense\n");
 	{
 		setup(48000.0, -14, 6, 12, 1, 1);
