@@ -357,6 +357,13 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val binEvenOut = cache.get(R.string.key_binaural_even_out, true)
             val binSpeakerOff = cache.get(R.string.key_binaural_speaker_off, true)
 
+            cache.select(Constants.PREF_VOICEISOLATION)
+            val viEnabled = cache.get(R.string.key_voice_isolation_enable, false)
+            val viReduction = cache.get(R.string.key_voice_isolation_reduction, 65f)
+            val viVoiceReduction = cache.get(R.string.key_voice_isolation_voice_reduction, 0f)
+            val viBoost = cache.get(R.string.key_voice_isolation_boost, 1.5f)
+            val viAuto = cache.get(R.string.key_voice_isolation_auto, false)
+
             cache.select(Constants.PREF_VINYL)
             val vnEnabled = cache.get(R.string.key_vinyl_enable, false)
             val vnSurface = cache.get(R.string.key_vinyl_surface, 30f)
@@ -644,6 +651,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                         binEnabled, binAmount, binWidth, binSurround, binHeight, binRoom,
                         binSource, binFile, binEvenOut, binSpeakerOff
                     )
+                    Constants.PREF_VOICEISOLATION -> setVoiceIsolation(
+                        viEnabled, viReduction, viVoiceReduction, viBoost, viAuto
+                    )
                     Constants.PREF_VINYL -> setVinyl(
                         vnEnabled, vnSurface, vnCrackle, vnCrackleSize, vnPops,
                         vnClicks, vnSizzle, vnHiss, vnPrickle, vnRumble, vnWear,
@@ -853,6 +863,16 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         enable: Boolean, amount: Float, width: Float, surround: Float, height: Float, room: Float,
         set: BinauralSets.ForRate?,
     ): Boolean
+
+    /**
+     * Voice isolation runs a speech model on the captured stream, so only the rootless engine can
+     * do it; the rooted engine's card is greyed out and this does nothing there.
+     *
+     * [reductionPct] and [voiceReductionPct] are 0 to 100, [boostDb] 0 to 6.
+     */
+    open fun setVoiceIsolation(
+        enable: Boolean, reductionPct: Float, voiceReductionPct: Float, boostDb: Float, autoMode: Boolean,
+    ): Boolean = true
 
     fun setConvolver(enable: Boolean, impulseResponsePath: String, optimizationMode: Int, waveEditStr: String): Boolean
     {

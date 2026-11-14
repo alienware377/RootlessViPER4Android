@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup
+        android:key="@string/key_voice_isolation_enable"
+        android:disableDependentsState="false"
+        android:title="@string/voice_isolation_enable"
+        android:icon="@drawable/ic_twotone_mic_24dp"
+        app:iconSpaceReserved="false">
+        <Preference android:key="section_info" android:title="@string/section_info_title"
+            android:summary="@string/voice_isolation_info" android:persistent="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <ListPreference
+            android:key="@string/key_voice_isolation_preset"
+            android:title="@string/voice_isolation_preset"
+            android:defaultValue="film"
+            android:entries="@array/voice_isolation_presets"
+            android:entryValues="@array/voice_isolation_presets_values"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_voice_isolation_reduction"
+            android:title="@string/voice_isolation_reduction"
+            android:summary="@string/voice_isolation_reduction_summary"
+            android:defaultValue="65"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_voice_isolation_voice_reduction"
+            android:title="@string/voice_isolation_voice_reduction"
+            android:summary="@string/voice_isolation_voice_reduction_summary"
+            android:defaultValue="0"
+            app:minValue="0" app:maxValue="100" app:unit="%" app:precision="0"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSeekbarPreference
+            android:key="@string/key_voice_isolation_boost"
+            android:title="@string/voice_isolation_boost"
+            android:summary="@string/voice_isolation_boost_summary"
+            android:defaultValue="1.5"
+            app:minValue="0" app:maxValue="6" app:unit="dB" app:precision="1"
+            app:allowDividerAbove="false" app:updatesContinuously="true"
+            app:showSeekBarValue="true" app:iconSpaceReserved="false"/>
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            android:key="@string/key_voice_isolation_auto"
+            android:title="@string/voice_isolation_auto"
+            android:summary="@string/voice_isolation_auto_summary"
+            android:defaultValue="false"
+            app:allowDividerAbove="false" app:iconSpaceReserved="false"/>
+        <Preference
+            android:key="voice_isolation_status"
+            android:title="@string/voice_isolation_status_title"
+            android:summary="@string/voice_isolation_status_off"
+            android:persistent="false"
+            android:selectable="false"
+            app:iconSpaceReserved="false"/>
+    </me.timschneeberger.rootlessjamesdsp.preference.SwitchPreferenceGroup>
+</PreferenceScreen>

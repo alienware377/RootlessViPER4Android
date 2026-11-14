@@ -372,6 +372,12 @@
     <string name="key_loudness_subsonic_q" translatable="false">loudness_subsonic_q</string>
     <string name="key_smooth_volume_enable" translatable="false">smooth_volume_enable</string>
     <string name="key_smooth_volume_hud" translatable="false">smooth_volume_hud</string>
+    <string name="key_voice_isolation_enable" translatable="false">voice_isolation_enable</string>
+    <string name="key_voice_isolation_preset" translatable="false">voice_isolation_preset</string>
+    <string name="key_voice_isolation_reduction" translatable="false">voice_isolation_reduction</string>
+    <string name="key_voice_isolation_voice_reduction" translatable="false">voice_isolation_voice_reduction</string>
+    <string name="key_voice_isolation_boost" translatable="false">voice_isolation_boost</string>
+    <string name="key_voice_isolation_auto" translatable="false">voice_isolation_auto</string>
     <string name="key_shaper_enable" translatable="false">shaper_enable</string>
     <string name="key_shaper_amount" translatable="false">shaper_amount</string>
     <string name="key_shaper_sensitivity" translatable="false">shaper_sensitivity</string>

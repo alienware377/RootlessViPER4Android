@@ -59,6 +59,7 @@ object GlobalCards {
         // Holds the system volume over an engine attenuation, and global mode
         // has no engine to attenuate with.
         Constants.PREF_SMOOTH_VOLUME to Support.NONE,
+        Constants.PREF_VOICEISOLATION to Support.NONE,
         Constants.PREF_AGC to Support.NONE,
         Constants.PREF_DDC to Support.NONE,
         Constants.PREF_CONVOLVER to Support.NONE,
