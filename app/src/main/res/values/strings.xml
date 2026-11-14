@@ -1193,7 +1193,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="lufs_speed_normal">Normal: listens to 10 seconds</string>
     <string name="lufs_speed_fast">Fast: listens to 4 seconds, also evens out parts of a song</string>
     <string name="lufs_peak_guard">Keep peaks clear</string>
-    <string name="lufs_peak_guard_summary">Never boosts so far that the loudest recent peak would reach the output limiter, so the limiter is not left doing its job for it.</string>
+    <string name="lufs_peak_guard_summary">Never boosts so far that the loudest recent peak would reach the output limiter, so loud moments are not squashed by the limiter.</string>
     <string name="vinyl_enable">Vintage vinyl</string>
     <string name="vinyl_info">The noises a record makes, as separate controls. Vintage tape models a machine that is working badly: drifting in pitch, running out of headroom. This models a worn disc, which fails differently: it adds things that were never in the recording. Everything here except Wear is a noise mixed alongside the music, so with every control at zero nothing is added at all.</string>
     <string name="vinyl_surface">Surface noise</string>
