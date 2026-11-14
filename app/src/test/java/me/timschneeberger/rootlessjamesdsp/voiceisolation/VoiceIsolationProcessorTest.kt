@@ -1,11 +1,14 @@
 package me.timschneeberger.rootlessjamesdsp.voiceisolation
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Random
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -99,6 +102,57 @@ class VoiceIsolationProcessorTest {
         assertEquals(2, backends.size)
         assertTrue(backends.all { it.closed && it.calls > 0 })
         assertNull(stage.failure)
+    }
+
+    /** Stands in for a slow phone: the left channel's first hop takes longer than any timeout would. */
+    private class SlowLeft : EnhancerBackend {
+        val entered = CountDownLatch(1)
+        @Volatile var inside = false
+        @Volatile var closedWhileRunning = false
+        override val modelSampleRate = GtcrnModel.SAMPLE_RATE
+        override val hopSize = GtcrnModel.HOP_SIZE
+        override fun process(input: FloatArray, output: FloatArray) {
+            inside = true
+            if (entered.count > 0) {
+                entered.countDown()
+                Thread.sleep(800)
+            }
+            output.fill(0f)
+            inside = false
+        }
+        override fun inferenceMs() = 0f
+        override fun reset() {}
+        override fun close() { if (inside) closedWhileRunning = true }
+    }
+
+    @Test
+    fun closeLetsABlockInFlightFinish() {
+        val left = SlowLeft()
+        var made = 0
+        val stage = VoiceIsolationProcessor(48_000) { if (made++ == 0) left else OneHopLate() }
+        val buffer = stereoNoise(4096)
+        var leftStillRunningOnReturn = false
+        var ran = false
+        val audio = Thread {
+            stage.processFloat(buffer, 0, 4096)
+            ran = true
+            leftStillRunningOnReturn = left.inside
+        }
+        audio.start()
+        assertTrue(left.entered.await(5, TimeUnit.SECONDS))
+        stage.close()
+        audio.join(5000)
+
+        assertTrue(ran)
+        assertFalse("the block came back while the worker still wrote into it", leftStillRunningOnReturn)
+        assertFalse("a session was closed under a run", left.closedWhileRunning)
+        assertNull(stage.failure)
+
+        // Once closed, a block goes through untouched.
+        val untouched = stereoNoise(1024, seed = 4)
+        val copy = untouched.copyOf()
+        stage.processFloat(copy, 0, 1024)
+        assertTrue(copy.contentEquals(untouched))
     }
 
     @Test

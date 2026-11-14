@@ -20,6 +20,8 @@ import kotlin.math.log10
  * The left channel runs on a worker thread while the caller does the right one: two inferences
  * one after the other per hop would double the time a block takes. The hand-over is a lock and a
  * counter rather than an executor, which would allocate a task per block on the audio thread.
+ * A block handed to the worker is always finished, even while the stage is being closed: the
+ * worker writes into the caller's buffer, and the model's session must outlive the run using it.
  */
 internal class VoiceIsolationProcessor(
     val sampleRate: Int,
@@ -63,7 +65,9 @@ internal class VoiceIsolationProcessor(
     private var blockSeq = 0L
     private var doneSeq = 0L
     private var workerFailure: Throwable? = null
+    /** No new block is handed over once this is set; one already handed over still runs. */
     private var workerClosed = false
+    private var workerExited = false
     private var taskBuffer: FloatArray? = null
     private var taskFrames = 0
     private var taskOffset = 0
@@ -81,36 +85,43 @@ internal class VoiceIsolationProcessor(
             // Not fatal: the channel still runs, just at normal priority.
         }
         var lastSeq = 0L
-        while (true) {
-            val buffer: FloatArray
-            val frames: Int
-            val offset: Int
-            val blockSettings: VoiceIsolationSettings
-            synchronized(workerLock) {
-                while (!workerClosed && blockSeq == lastSeq) {
-                    try {
-                        workerLock.wait()
-                    } catch (e: InterruptedException) {
-                        workerClosed = true
+        try {
+            while (true) {
+                val buffer: FloatArray
+                val frames: Int
+                val offset: Int
+                val blockSettings: VoiceIsolationSettings
+                synchronized(workerLock) {
+                    while (blockSeq == lastSeq) {
+                        if (workerClosed) return
+                        try {
+                            workerLock.wait()
+                        } catch (e: InterruptedException) {
+                            workerClosed = true
+                        }
                     }
+                    lastSeq = blockSeq
+                    buffer = taskBuffer ?: return
+                    frames = taskFrames
+                    offset = taskOffset
+                    blockSettings = taskSettings ?: return
                 }
-                if (workerClosed) return
-                lastSeq = blockSeq
-                buffer = taskBuffer ?: return
-                frames = taskFrames
-                offset = taskOffset
-                blockSettings = taskSettings ?: return
+                var failed: Throwable? = null
+                try {
+                    channels[0].framing.process(buffer, 0, frames, offset, blockSettings)
+                } catch (e: Throwable) {
+                    failed = e
+                }
+                // Always report done, so a failure here cannot leave the audio thread waiting.
+                synchronized(workerLock) {
+                    if (failed != null) workerFailure = failed
+                    doneSeq = lastSeq
+                    workerLock.notifyAll()
+                }
             }
-            var failed: Throwable? = null
-            try {
-                channels[0].framing.process(buffer, 0, frames, offset, blockSettings)
-            } catch (e: Throwable) {
-                failed = e
-            }
-            // Always report done, so a failure here cannot leave the audio thread waiting.
+        } finally {
             synchronized(workerLock) {
-                if (failed != null) workerFailure = failed
-                doneSeq = lastSeq
+                workerExited = true
                 workerLock.notifyAll()
             }
         }
@@ -159,28 +170,28 @@ internal class VoiceIsolationProcessor(
         }
         var interrupted = false
         synchronized(workerLock) {
-            // Wait for the left channel even if the right one failed, or the next block would
-            // overwrite the task while the worker is still inside the model.
-            while (workerFailure == null && doneSeq < seq && !workerClosed) {
+            // Wait for the left channel even if the right one failed or the stage is closing: the
+            // worker writes into the buffer the caller is about to hand on, and the next block
+            // would overwrite the task while it is still inside the model. A hop takes a bounded
+            // time, so an interrupt is only passed on once it is done.
+            while (doneSeq < seq && !workerExited) {
                 try {
                     workerLock.wait()
                 } catch (e: InterruptedException) {
-                    // The capture thread is being stopped: give up on this block.
-                    Thread.currentThread().interrupt()
                     interrupted = true
-                    break
                 }
             }
             if (failed == null) failed = workerFailure
+            if (failed == null && doneSeq < seq) failed = IllegalStateException("The left channel's worker stopped")
             workerFailure = null
             taskBuffer = null
             taskSettings = null
         }
+        if (interrupted) Thread.currentThread().interrupt()
         if (failed != null) {
             fail(failed)
             return false
         }
-        if (interrupted) return false
 
         var peak = outputPeak
         for (index in offset until offset + frames * 2) {
@@ -215,14 +226,26 @@ internal class VoiceIsolationProcessor(
         )
     }
 
+    /**
+     * Lets a block in flight finish, stops the worker and frees both sessions. The worker is never
+     * interrupted or given up on: closing a session under a run still using it would crash in
+     * native code, so a slow hop can only make this slower.
+     */
     override fun close() {
         synchronized(workerLock) {
             workerClosed = true
             workerLock.notifyAll()
         }
         synchronized(this) {
-            worker.join(WORKER_JOIN_MS)
-            if (worker.isAlive) worker.interrupt()
+            var interrupted = false
+            while (worker.isAlive) {
+                try {
+                    worker.join()
+                } catch (e: InterruptedException) {
+                    interrupted = true
+                }
+            }
+            if (interrupted) Thread.currentThread().interrupt()
             channels.forEach { it.close() }
         }
     }
@@ -242,6 +265,5 @@ internal class VoiceIsolationProcessor(
     companion object {
         /** Two channels of the largest capture block the settings allow. */
         private const val SCRATCH_SAMPLES = 16384
-        private const val WORKER_JOIN_MS = 500L
     }
 }
