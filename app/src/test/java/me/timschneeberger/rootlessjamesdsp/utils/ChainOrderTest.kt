@@ -11,12 +11,13 @@ class ChainOrderTest {
     private val oldSaved = listOf(0, 1, 2, 3, 30, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
         15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36)
 
-    private val newer = setOf(ChainOrder.SHAPER, ChainOrder.BINAURAL, ChainOrder.VINYL, ChainOrder.BALANCE)
+    private val newer = setOf(ChainOrder.SHAPER, ChainOrder.BINAURAL, ChainOrder.VINYL, ChainOrder.BALANCE,
+        ChainOrder.LUFS)
 
     @Test
     fun `a saved order without the shaper gets it right after the DDC`() {
         val out = ChainOrder.complete(oldSaved)
-        assertEquals(oldSaved.size + 4, out.size)
+        assertEquals(oldSaved.size + 5, out.size)
         assertEquals(out.indexOf(ChainOrder.DDC) + 1, out.indexOf(ChainOrder.SHAPER))
         // Everything else keeps the order the user gave it.
         assertEquals(oldSaved, out.filter { it !in newer })
@@ -30,31 +31,31 @@ class ChainOrderTest {
 
     @Test
     fun `the stereo widening is followed wherever the user moved it`() {
-        assertEquals(listOf(19, 40, 39, 12, 37, 38, 30), ChainOrder.complete(listOf(19, 39, 12, 30)))
+        assertEquals(listOf(19, 40, 39, 12, 37, 41, 38, 30), ChainOrder.complete(listOf(19, 39, 12, 30)))
     }
 
     @Test
     fun `an order saved with the shaper but before binaural keeps the shaper where it is`() {
         val withShaper = listOf(12, 0, 39, 19, 20, 30)
-        assertEquals(listOf(12, 0, 39, 19, 40, 20, 37, 38, 30), ChainOrder.complete(withShaper))
+        assertEquals(listOf(12, 0, 39, 19, 40, 20, 37, 41, 38, 30), ChainOrder.complete(withShaper))
     }
 
     @Test
     fun `the DDC is followed wherever the user moved it`() {
         val moved = listOf(12, 0, 1, 30)
         // Binaural has no widening to follow here, so it goes ahead of the maximiser.
-        assertEquals(listOf(12, 39, 0, 1, 40, 37, 38, 30), ChainOrder.complete(moved))
+        assertEquals(listOf(12, 39, 0, 1, 40, 37, 41, 38, 30), ChainOrder.complete(moved))
     }
 
     @Test
     fun `an order that already has all of them is left exactly as it is`() {
-        val mine = listOf(39, 30, 40, 12, 0, 38, 37)
+        val mine = listOf(39, 30, 40, 12, 0, 38, 41, 37)
         assertEquals(mine, ChainOrder.complete(mine))
     }
 
     @Test
     fun `without the DDC it still lands ahead of the maximiser`() {
-        assertEquals(listOf(9, 0, 39, 40, 37, 38, 30, 3), ChainOrder.complete(listOf(9, 0, 30, 3)))
+        assertEquals(listOf(9, 0, 39, 40, 37, 41, 38, 30, 3), ChainOrder.complete(listOf(9, 0, 30, 3)))
     }
 
     @Test
@@ -72,22 +73,42 @@ class ChainOrderTest {
     @Test
     fun `an order saved without vinyl and balance gets them after tape, ahead of the maximiser`() {
         val out = ChainOrder.complete(dialogSaved)
-        assertEquals(dialogSaved.size + 2, out.size)
+        assertEquals(dialogSaved.size + 3, out.size)
         assertEquals(out.indexOf(ChainOrder.TAPE) + 1, out.indexOf(ChainOrder.VINYL))
-        assertEquals(out.indexOf(ChainOrder.VINYL) + 1, out.indexOf(ChainOrder.BALANCE))
-        assertEquals(dialogSaved, out.filter { it != ChainOrder.VINYL && it != ChainOrder.BALANCE })
+        assertEquals(out.indexOf(ChainOrder.VINYL) + 2, out.indexOf(ChainOrder.BALANCE))
+        assertEquals(dialogSaved, out.filter { it != ChainOrder.VINYL && it != ChainOrder.BALANCE && it != ChainOrder.LUFS })
         assert(out.indexOf(ChainOrder.BALANCE) > out.indexOf(ChainOrder.MAXIMIZER) ||
             out.indexOf(ChainOrder.TAPE) < out.indexOf(ChainOrder.MAXIMIZER))
     }
 
     @Test
     fun `vinyl and balance follow tape wherever the user moved it`() {
-        assertEquals(listOf(36, 37, 38, 12, 39, 40, 30), ChainOrder.complete(listOf(36, 12, 39, 30)))
+        assertEquals(listOf(36, 37, 41, 38, 12, 39, 40, 30), ChainOrder.complete(listOf(36, 12, 39, 30)))
     }
 
     @Test
     fun `an order that has vinyl but not balance puts balance right after vinyl`() {
-        assertEquals(listOf(37, 38, 36, 12, 39, 40, 30), ChainOrder.complete(listOf(37, 36, 12, 39, 30)))
+        assertEquals(listOf(37, 41, 38, 36, 12, 39, 40, 30), ChainOrder.complete(listOf(37, 36, 12, 39, 30)))
+    }
+
+    // Every order saved before the LUFS normalizer existed.
+    @Test
+    fun `an order saved before the normalizer gets it between vinyl and balance`() {
+        val before = ChainOrder.DEFAULT - ChainOrder.LUFS
+        assertEquals(ChainOrder.DEFAULT, ChainOrder.complete(before))
+    }
+
+    @Test
+    fun `the normalizer follows vinyl wherever the user moved it, ahead of the maximiser`() {
+        val out = ChainOrder.complete(listOf(37, 38, 0, 12, 39, 40, 30))
+        assertEquals(listOf(37, 41, 38, 0, 12, 39, 40, 30), out)
+        assert(out.indexOf(ChainOrder.LUFS) < out.indexOf(ChainOrder.MAXIMIZER))
+    }
+
+    @Test
+    fun `an order where the user moved the normalizer keeps it there`() {
+        val mine = listOf(41, 37, 38, 12, 39, 40, 30)
+        assertEquals(mine, ChainOrder.complete(mine))
     }
 
     /** The engine's own default chain, read from the C source by enum name. */
@@ -127,6 +148,6 @@ class ChainOrderTest {
 
     @Test
     fun `duplicates from an old list are passed through for the engine to drop`() {
-        assertEquals(listOf(12, 39, 12, 40, 37, 38, 30), ChainOrder.complete(listOf(12, 12, 30)))
+        assertEquals(listOf(12, 39, 12, 40, 37, 41, 38, 30), ChainOrder.complete(listOf(12, 12, 30)))
     }
 }
