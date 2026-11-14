@@ -122,3 +122,7 @@ void VReverbDisable(void) {}
 void db2magf(void) {}
 void randXorshift(void) {}
 void MultimodalEqualizerDestructor(void) {}
+void LufsNormalizerProcess(void) {}
+void LufsNormalizerSetParam(void) {}
+void LufsNormalizerRefresh(void) {}
+void LufsNormalizerDisable(void) {}

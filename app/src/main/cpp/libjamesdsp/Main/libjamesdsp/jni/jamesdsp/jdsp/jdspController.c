@@ -396,6 +396,11 @@ static const int jdspDefaultChain[] =
 	JDSP_EFX_SPEAKEROPT, JDSP_EFX_REVERB, JDSP_EFX_VREVERB, JDSP_EFX_ECHODELAY, JDSP_EFX_MULTIBANDDIST,
 	// Colour last, but still ahead of the limiter.
 	JDSP_EFX_TAPE, JDSP_EFX_VINYL,
+	// Loudness after everything that changes it, so the gain is set for what
+	// is actually heard, and ahead of the maximiser and the output limiter,
+	// whose gain it never measures. Ahead of the balance too: that is a trim
+	// the listener set, and measured it would be partly undone.
+	JDSP_EFX_LUFSNORM,
 	// A listening trim, so it goes after everything that shapes the sound.
 	JDSP_EFX_BALANCE,
 	JDSP_EFX_MAXIMIZER
@@ -660,6 +665,11 @@ static void jdspDispatchEffect(JamesDSPLib *jdsp, int id, size_t n)
 	case JDSP_EFX_BALANCE:
 		jdsp_lock(jdsp);
 		if (jdsp->balanceEnabled) BalanceProcess(jdsp, n);
+		jdsp_unlock(jdsp);
+		break;
+	case JDSP_EFX_LUFSNORM:
+		jdsp_lock(jdsp);
+		if (jdsp->lufsNormEnabled) LufsNormalizerProcess(jdsp, n);
 		jdsp_unlock(jdsp);
 		break;
 	case JDSP_EFX_SHAPER:
@@ -1673,6 +1683,12 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->balanceEnabled = 0;
 	// Centred, unswapped, full stereo: the identity.
 	BalanceSetParam(jdsp, 0.0f, 0, 0.0f);
+	jdsp->lufsNormEnabled = 0;
+	jdsp->lufsNorm.histPow = 0;
+	jdsp->lufsNorm.histPeak = 0;
+	// The streaming services' reference level, up to 6 dB of boost and 12 of
+	// cut, normal speed, peaks kept clear of the limiter.
+	LufsNormalizerSetParam(jdsp, -14.0f, 6.0f, 12.0f, 1, 1);
 	jdsp->shaperEnabled = 0;
 	jdsp->shaper.mem = 0;
 	jdsp->shaper.N = 0;
@@ -1864,6 +1880,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	DynamicEqRefresh(jdsp);
 	VinylRefresh(jdsp);
 	BalanceRefresh(jdsp);
+	LufsNormalizerRefresh(jdsp);
 	SpectralShaperRefresh(jdsp);
 	BinauralUpmixRefresh(jdsp);
 	PitchShiftRefresh(jdsp);
@@ -1904,6 +1921,7 @@ void JamesDSPReleaseEffectBuffers(JamesDSPLib *jdsp)
 	MultibandDistDisable(jdsp);
 	MaximizerDisable(jdsp);
 	DiffSurroundDisable(jdsp);
+	LufsNormalizerDisable(jdsp);
 	VReverbDisable(jdsp);
 	PitchShiftDisable(jdsp);
 	HpSurroundDisable(jdsp);
