@@ -338,17 +338,18 @@ relative to `app/src/main/cpp/libjamesdsp/Main/libjamesdsp/jni/jamesdsp/jdsp/`.
   of the rootless playback loop.
 - **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/`
   and `voiceaddon/src/main/java/com/alienware377/viper4android/voiceaddon/GtcrnSession.java`.
-  A Kotlin port, not a copy: the streaming GTCRN wrapper with its cached state,
-  the 512/256 sqrt-Hann STFT, the mixer that makes the background from dry minus
-  voice, the speech detector behind auto mode, the delay estimator that lines
-  the dry signal up with the voice, and the presets. The resampler and the hop
-  framing come from the evoeram fork. Changed here: only the GTCRN model is
-  kept; the transform is radix-2 only with table twiddles; the resampler builds
-  its kernels for exact phases up front; the mix adds the dry part back from the
-  full-band input at the device rate instead of from the 16 kHz copy, so nothing
-  above 8 kHz is lost; the framing runs at a fixed delay for any block size; the
-  adaptive output buffer is left out; the model session lives in the voice
-  isolation add-on and the transform around it in the app.
+  A port, not a copy (Kotlin in the app, Java in the add-on): the streaming
+  GTCRN wrapper with its cached state, the 512/256 sqrt-Hann STFT, the mixer
+  that makes the background from dry minus voice, the speech detector behind
+  auto mode, the delay estimator that lines the dry signal up with the voice,
+  and the presets. The resampler and the hop framing come from the evoeram fork.
+  Changed here: only the GTCRN model is kept; the transform is radix-2 only with
+  table twiddles; the resampler builds its kernels for exact phases up front;
+  the mix adds the dry part back from the full-band input at the device rate
+  instead of from the 16 kHz copy, so nothing above 8 kHz is lost; the framing
+  runs at a fixed delay for any block size; the adaptive output buffer is left
+  out; the model session lives in the voice isolation add-on and the transform
+  around it in the app.
 - **Used by:** the Voice isolation card, in the rootless build and the voice
   isolation add-on.
 
