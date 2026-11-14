@@ -135,6 +135,8 @@ class GraphicEqualizerFragment : Fragment() {
         GraphicEqFile.Reason.TOO_LARGE -> getString(R.string.geq_import_error_too_large)
         GraphicEqFile.Reason.NO_GRAPHIC_EQ_LINE -> getString(R.string.geq_import_error_no_curve)
         GraphicEqFile.Reason.NO_NODES -> getString(R.string.geq_import_error_no_nodes)
+        GraphicEqFile.Reason.TOO_MANY_NODES ->
+            getString(R.string.geq_import_error_too_many_nodes, error.entry.orEmpty(), GraphicEqFile.MAX_NODES)
         GraphicEqFile.Reason.BAD_ENTRY -> getString(R.string.geq_import_error_bad_entry, error.entry.orEmpty())
         GraphicEqFile.Reason.OUT_OF_RANGE -> getString(R.string.geq_import_error_out_of_range, error.entry.orEmpty())
     }

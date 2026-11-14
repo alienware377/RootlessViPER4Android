@@ -89,6 +89,23 @@ class GraphicEqFileTest {
     }
 
     @Test
+    fun `a dense curve is refused before it reaches the screen`() {
+        fun curve(n: Int) = "GraphicEQ: " + (1..n).joinToString("; ") { "$it 0" }
+        assertEquals(GraphicEqFile.MAX_NODES, ok(curve(GraphicEqFile.MAX_NODES)).size)
+
+        // A measurement at 1 Hz steps: well inside the byte limit
+        val dense = curve(20000)
+        assertTrue(dense.length < GraphicEqFile.MAX_BYTES)
+        val e = refused(dense)
+        assertEquals(GraphicEqFile.Reason.TOO_MANY_NODES, e.reason)
+        assertEquals("20000", e.entry)
+
+        // The most entries the byte limit lets through
+        val tight = "GraphicEQ: " + "1 0;".repeat((GraphicEqFile.MAX_BYTES - 11) / 4)
+        assertEquals(GraphicEqFile.Reason.TOO_MANY_NODES, refused(tight).reason)
+    }
+
+    @Test
     fun `binary junk is refused, not thrown`() {
         val junk = String(ByteArray(4096) { (it * 37).toByte() }, Charsets.ISO_8859_1)
         refused(junk)
