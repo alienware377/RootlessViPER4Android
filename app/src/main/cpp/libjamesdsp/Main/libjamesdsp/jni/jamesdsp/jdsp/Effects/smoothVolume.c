@@ -15,7 +15,8 @@
  * The gain walks towards each new level a sample at a time. Volume keys arrive
  * as steps, up to eight dB apart while a key is held, and an unsmoothed step
  * on a held note is a click. Switching on starts the walk from unity, which is
- * what the signal had while this was off; switching off walks back to unity
+ * what the signal had while this was off (or at the level, in an engine that
+ * has not processed anything yet); switching off walks back to unity
  * and only then stops processing, so neither end is heard as a jump. At unity
  * with nothing left to walk the samples are not touched at all.
  */
@@ -110,8 +111,13 @@ void SmoothVolumeEnable(JamesDSPLib *jdsp)
 	SmoothVolume *s = &jdsp->smoothVolume;
 	if (!s->engaged)
 	{
-		/* Bypassed means unity, so the walk to the level starts there. */
-		s->gain = 1.0f;
+		/* Bypassed means unity, so the walk to the level starts there. An
+		   engine nothing has played through yet has no unity to fade from:
+		   in root mode every new playback gets a new engine, which is sent
+		   the level and switched on before its first block, and a fade from
+		   unity there would open each session up to the whole range louder
+		   than the level. */
+		s->gain = s->fresh ? (double)s->level : 1.0;
 		s->engaged = 1;
 	}
 	s->target = s->level;
