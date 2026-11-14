@@ -30,6 +30,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun close() {
         val oldHandle = handle
         handle = 0
+        // This close does not go through the base one.
+        stopFollowingMediaVolume()
 
         // Free only once no sync is still inside the engine; a long impulse
         // response load or Liveprog compile could otherwise return into a freed
@@ -164,6 +166,12 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
 
     override fun setLufsNormalizer(enable: Boolean, target: Float, maxBoost: Float, maxCut: Float, speed: Int, peakGuard: Boolean): Boolean =
         JamesDspWrapper.setLufsNormalizer(handle, enable, target, maxBoost, maxCut, speed, peakGuard)
+
+    override fun setLoudness(enable: Boolean, mode: Int, refLevel: Float, refOffset: Float, strength: Float, bassHz: Float, bassSlope: Float, bassAmount: Float, trebleHz: Float, trebleSlope: Float, trebleAmount: Float, phon: Float, subsonic: Boolean, subsonicHz: Float, subsonicOrder: Int, subsonicQ: Float): Boolean =
+        JamesDspWrapper.setLoudness(handle, enable, mode, refLevel, refOffset, strength, bassHz, bassSlope, bassAmount, trebleHz, trebleSlope, trebleAmount, phon, subsonic, subsonicHz, subsonicOrder, subsonicQ)
+
+    override fun setLoudnessVolume(volumeDb: Float): Boolean =
+        JamesDspWrapper.setLoudnessVolume(handle, volumeDb)
 
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         JamesDspWrapper.setSpectralShaper(handle, enable, amount, sensitivity, lowHz, highHz, speed, focus, catchTones, listen, msMode)

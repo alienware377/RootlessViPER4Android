@@ -242,6 +242,45 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   design to Martin Vicanek's matched biquads, as libebur128 formulates them.
 - **Used by:** the LUFS normalizer card.
 
+### EqualizerAPO loudness correction
+
+- **Author:** Alexander Walch, Copyright (C) 2017, as part of Equalizer APO
+- **Licence:** GNU GPL version 2 or (at your option) any later version, as the
+  header of its `LoudnessCorrectionFilter.cpp` says; used here under version 3
+- **Upstream:** https://sourceforge.net/projects/equalizerapo/, file
+  `filters/loudnessCorrection/LoudnessCorrectionFilter.cpp` (git
+  https://git.code.sf.net/p/equalizerapo/code, commit
+  `bbfcc3e5024cbb9d61ba75fc88d78605cc4c9687`)
+- **By way of:** evoeram's Loudness / PEQ fork of RootlessJamesDSP, GNU GPL
+  version 3: https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP (commit
+  `489d9331ef7b67dac304a20d3be41bd0bd82e3f1`),
+  `app/src/main/cpp/libjamesdsp-wrapper/loudness/LoudnessCorrectionProcessor.cpp`
+  and `utils/LoudnessCurveCalculator.kt`, and its engine at
+  https://github.com/evoeram/JamesDSPManager, branch `extensions` (commit
+  `a8e3d7ff7dba89c82b8ee55d4b6a90e2d2878345`), `peq_loudness.c`. The fork added
+  the ISO 226:2023 mode, the adjustable shelves and the subsonic filter.
+- **Files:** `Effects/loudnessCorrection.c`, and the matching design in
+  `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/LoudnessCurve.kt`
+  that draws the card's graph.
+- **What is ported:** the classic correction as a whole (the 75 Hz and 10 kHz
+  shelves, their slopes, how much each moves for every dB the volume is under
+  or over the reference, and the cut ahead of them), the fork's ISO mode (the
+  ISO 226:2023 contours turned into a correction relative to 1 kHz) and its
+  subsonic filter.
+- **What is different:** it is one engine effect for the app and the root
+  module, and the volume comes from the app. The filters are state-variable
+  sections that glide to each new design over 40 ms instead of being swapped.
+  The ISO bands are two thirds of an octave wide and their gains are solved so
+  the whole cascade lands on the contours, where the fork set each third-octave
+  band to its own value. The highest point of the whole response, subsonic
+  filter included, is brought to 0 dB, so no setting boosts. The odd-order
+  subsonic stage is a bilinear one-pole rather than the fork's RC difference
+  equation. The fork's microphone calibration is not included.
+- **Data:** the ISO 226:2023 Table 1 values (frequencies, exponents, transfer
+  function magnitudes and hearing thresholds) are from the standard,
+  ISO 226:2023, Acoustics: Normal equal-loudness-level contours.
+- **Used by:** the Loudness correction card.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular

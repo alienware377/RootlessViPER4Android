@@ -729,7 +729,82 @@ int main()
 			if (g_lib.chainOrder[i] == JDSP_EFX_MAXIMIZER) maxr = i;
 		}
 		check("default chain: after vinyl, ahead of balance and the maximiser",
-			  lufs == vinyl + 1 && bal == lufs + 1 && maxr > bal);
+			  lufs == vinyl + 1 && bal > lufs && maxr > bal);
+	}
+
+	// ---- loudness correction: settings, switch and the volume on its own ----
+	printf("\nloudness correction\n");
+	{
+		LoudnessCorrection *lc = &g_lib.loudness;
+		// ISO, reference -10 dB, offset 2, strength 80 %, bass 90 Hz / 0.6 /
+		// 50 %, treble 9 kHz / 0.8 / 30 %, 75 phon, subsonic on at 25 Hz,
+		// order 3, Q 0.7.
+		const float v[15] = { 1, -10, 2, 80, 90, 0.6f, 50, 9000, 0.8f, 30, 75, 1, 25, 3, 0.7f };
+		sendFloats(26029, v, 15);
+		check("26029 sets the settings", lc->mode == LOUDNESS_MODE_ISO && lc->refLevel == -10.0f &&
+			  lc->refOffset == 2.0f && lc->strength == 80.0f && lc->lsFreq == 90.0f &&
+			  lc->hsRatio == 30.0f && lc->basePhon == 75.0f && lc->subsonic == 1 &&
+			  lc->subOrder == 3 && lc->subFreq == 25.0f);
+		const float shortv[14] = { 0 };
+		sendFloats(26029, shortv, 14);
+		check("26029 with too few values changes nothing", lc->mode == LOUDNESS_MODE_ISO && lc->subOrder == 3);
+		sendEnable(26129, true);
+		check("26129 switches it on", g_lib.loudnessEnabled == 1);
+		// At the reference only the subsonic filter is left.
+		const float atRef[1] = { -12.0f };
+		sendFloats(26030, atRef, 1);
+		check("26030 sets the volume", lc->volumeDb == -12.0f);
+		const double gainAtRef = lc->gainTgt;
+		const float quiet[1] = { -42.0f };
+		sendFloats(26030, quiet, 1);
+		check("26030 at 30 dB under the reference cuts the level to make room",
+			  lc->volumeDb == -42.0f && lc->gainTgt < gainAtRef * 0.5);
+		check("and it glides there rather than jumping", lc->glide > 0);
+		const float none[1] = { NAN };
+		sendFloats(26030, none, 1);
+		check("26030 NaN leaves the volume alone", lc->volumeDb == -42.0f);
+		sendFloats(26030, nullptr, 0);
+		check("26030 with no value changes nothing", lc->volumeDb == -42.0f);
+		const float huge[1] = { 1e30f };
+		sendFloats(26030, huge, 1);
+		check("26030 holds 1e30 to full volume", lc->volumeDb == 0.0f);
+		const float junk[15] = { NAN, NAN, 1e30f, -1e30f, NAN, 1e30f, 1e30f, NAN, NAN, -1e9f,
+								 NAN, NAN, NAN, 1e9f, NAN };
+		sendFloats(26029, junk, 15);
+		bool finite = isfinite(lc->gainTgt) && lc->gainTgt > 0.0;
+		for (int s = 0; s < LOUD_SECTIONS; s++)
+			for (int k = 0; k < 5; k++)
+				finite = finite && isfinite(lc->tgt[s][k]);
+		check("26029 holds NaN and nonsense", finite && lc->mode == LOUDNESS_MODE_CLASSIC &&
+			  lc->lsRatio == 90.0f && lc->subOrder == 8 && lc->subsonic == 0 && lc->strength == 0.0f);
+		sendFloats(26029, v, 15);
+		sendFloats(26030, quiet, 1);
+
+		// Every coefficient follows a rate change, and the next block is the
+		// new design at once rather than a glide from the old rate's.
+		const double g48 = lc->tgt[LOUD_ISO_FIRST + 3][0];
+		JamesDSPSetSampleRate(&g_lib, 44100.0f, 0);
+		check("a rate change redesigns the loudness correction",
+			  fabs(lc->cur[LOUD_ISO_FIRST + 3][0] - tan(M_PI * 40.0 / 44100.0)) < 1e-12 &&
+			  fabs(g48 - tan(M_PI * 40.0 / 48000.0)) < 1e-12 && lc->glide == 0 && lc->fs == 44100.0f);
+		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
+		check("and back", fabs(lc->cur[LOUD_ISO_FIRST + 3][0] - g48) < 1e-12);
+
+		sendEnable(26129, false);
+		check("26129 switches it off", g_lib.loudnessEnabled == 0);
+
+		// In the default chain after the colour and the LUFS normalizer, and
+		// ahead of the balance.
+		JamesDSPResetChainOrder(&g_lib);
+		int at = -1, lufs = -1, balance = -1;
+		for (int i = 0; i < g_lib.chainCount; i++)
+		{
+			if (g_lib.chainOrder[i] == JDSP_EFX_LOUDNESS) at = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_LUFSNORM) lufs = i;
+			if (g_lib.chainOrder[i] == JDSP_EFX_BALANCE) balance = i;
+		}
+		check("the default chain runs it right after the LUFS normalizer, before balance",
+			  lufs >= 0 && at == lufs + 1 && balance == at + 1);
 	}
 
 	// ---- an id with no mapping is tolerated, not refused --------------------

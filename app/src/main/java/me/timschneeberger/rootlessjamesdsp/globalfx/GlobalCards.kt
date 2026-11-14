@@ -45,6 +45,9 @@ object GlobalCards {
         Constants.PREF_DYNAMICEQ to Support.NONE,
         Constants.PREF_SHAPER to Support.NONE,
         Constants.PREF_BINAURAL to Support.NONE,
+        // It follows the media volume, and global mode has nothing that can
+        // redesign an equaliser whenever that moves.
+        Constants.PREF_LOUDNESS to Support.NONE,
         Constants.PREF_IMAGING to Support.NONE,
         Constants.PREF_TRANSIENT to Support.NONE,
         Constants.PREF_LOWEND to Support.NONE,
