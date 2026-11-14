@@ -562,6 +562,16 @@
         <item>2</item>
         <item>3</item>
     </string-array>
+    <string-array name="lufs_speeds">
+        <item>@string/lufs_speed_slow</item>
+        <item>@string/lufs_speed_normal</item>
+        <item>@string/lufs_speed_fast</item>
+    </string-array>
+    <string-array name="lufs_speeds_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
     <string-array name="maxr_oversample_entries">
         <item>@string/maxr_oversample_off</item>
         <item>@string/maxr_oversample_2x</item>

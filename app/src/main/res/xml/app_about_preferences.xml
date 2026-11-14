@@ -161,6 +161,22 @@
             android:data="https://sound.media.mit.edu/resources/KEMAR.html" />
     </Preference>
     <Preference
+        android:title="libebur128"
+        android:summary="Jan Kokemüller: the K-weighting filter design the LUFS normalizer measures loudness with (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/jiixyj/libebur128" />
+    </Preference>
+    <Preference
+        android:title="Loundess-PEQ-RootlessJamesDSP"
+        android:summary="evoeram: the LUFS normalizer that the one here follows, itself after LUFSTargeting in ViPERDSP (GPLv3)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP" />
+    </Preference>
+    <Preference
         android:title="Third-party licence texts"
         android:summary="Full copyright notices and licence texts for the components above"
         app:iconSpaceReserved="false">

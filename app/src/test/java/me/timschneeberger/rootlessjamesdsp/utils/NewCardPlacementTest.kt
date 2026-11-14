@@ -94,6 +94,15 @@ class NewCardPlacementTest {
     }
 
     @Test
+    fun `the LUFS normalizer joins vinyl and balance in the user's group`() {
+        val withLufs = declared.toMutableList().apply { add(indexOf("card_balance"), "card_lufs") }
+        val merged = NewCardPlacement.merge(savedBeforeShaper, withLufs, present + "card_lufs", headers)
+        assertEquals("card_vinyl", merged[merged.indexOf("card_lufs") - 1])
+        assertEquals("card_balance", merged[merged.indexOf("card_lufs") + 1])
+        assertEquals(gFx, groupOf(merged, "card_lufs"))
+    }
+
+    @Test
     fun `a layout saved before the upmix only gains the upmix`() {
         val merged = merge(savedBeforeBinaural)
         assertEquals("card_stereowide", merged[merged.indexOf("card_binaural") - 1])
