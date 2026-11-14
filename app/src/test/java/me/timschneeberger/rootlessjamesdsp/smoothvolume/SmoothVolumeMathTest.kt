@@ -98,6 +98,62 @@ class SmoothVolumeMathTest {
     }
 
     @Test
+    fun `a raise waits for every engine to have its gain`() {
+        val c = SmoothVolumeMath.ConfirmedRaises()
+        c.add(3, 6)
+        c.add(4, 6)
+        c.add(5, 7)
+        assertEquals(null, c.takeConfirmed(2))
+        assertEquals(6, c.takeConfirmed(4))
+        assertFalse(c.isEmpty())
+        assertEquals(7, c.takeConfirmed(Long.MAX_VALUE))
+        assertTrue(c.isEmpty())
+        c.add(6, 8)
+        c.clear()
+        assertEquals(null, c.takeConfirmed(Long.MAX_VALUE))
+    }
+
+    @Test
+    fun `a sync that holds up the gain holds up the raise`() {
+        // A key held from 0 to 1500 ms, a step every 100 ms, each needing the
+        // next index up. The engine applies each gain 10 ms after it is sent,
+        // except while another sync (a model load, say) keeps it busy from
+        // 300 to 900 ms; whatever was sent meanwhile arrives at 900 ms.
+        val lag = 250L
+        fun applyTime(sentMs: Long) = if (sentMs + 10 in 300L..900L) 900L else sentMs + 10
+        val waiting = SmoothVolumeMath.ConfirmedRaises()
+        val raises = SmoothVolumeMath.RaiseQueue()
+        val appliedAt = mutableMapOf<Long, Long>()
+        val indexOf = mutableMapOf<Long, Int>()
+        var serial = 0L
+        var confirmed = 0L
+        var written = 5
+        var hold = 5
+        var t = 0L
+        while (t <= 2500) {
+            // The engine confirms the newest gain it has applied by now.
+            val newest = appliedAt.filterValues { it <= t }.keys.maxOrNull() ?: 0L
+            if (newest > confirmed) {
+                confirmed = newest
+                waiting.takeConfirmed(confirmed)?.let { raises.add(t + lag, it) }
+            }
+            raises.takeDue(t)?.let { written = maxOf(written, it) }
+            if (t <= 1500 && t % 100 == 0L) {
+                hold++
+                serial++
+                appliedAt[serial] = applyTime(t)
+                indexOf[serial] = hold
+                waiting.add(serial, hold)
+            }
+            // Never an index whose gain the engine has not had for a lag.
+            val safe = appliedAt.filterValues { it <= t - lag }.keys.maxOfOrNull { indexOf.getValue(it) } ?: 5
+            assertTrue("at $t ms wrote $written, safe was $safe", written <= safe)
+            t += 10
+        }
+        assertEquals(hold, written)
+    }
+
+    @Test
     fun `a step moves the effective level by half a dB and keeps the index`() {
         val start = Level(10, 0.0)
         val down = SmoothVolumeMath.step(start, -0.5, max, even)

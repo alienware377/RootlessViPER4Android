@@ -239,6 +239,40 @@ object SmoothVolumeMath {
         fun clear() = pending.clear()
     }
 
+    /**
+     * Raises of the held index that are waiting for the engines to have the
+     * gain that goes with them. Every gain sent to the engines carries a
+     * serial number, and an engine confirms the newest serial it has applied.
+     * Until every engine has confirmed the serial a raise came with, some
+     * engine may still be playing the louder gain from before (a sync that
+     * holds up the push, such as a model or impulse response loading), so the
+     * raise waits; only after that does its lag ([RaiseQueue]) start.
+     */
+    class ConfirmedRaises {
+        private val waiting = ArrayDeque<Pair<Long, Int>>()
+
+        /** Queues a raise to [index] that needs gain [serial]; nothing if one at least as high is waiting. */
+        fun add(serial: Long, index: Int) {
+            if ((waiting.lastOrNull()?.second ?: Int.MIN_VALUE) >= index) return
+            waiting.addLast(serial to index)
+        }
+
+        /**
+         * The highest index whose gain every engine has, [confirmed] being the
+         * oldest serial any engine has confirmed; what it returns is gone.
+         */
+        fun takeConfirmed(confirmed: Long): Int? {
+            var best: Int? = null
+            while (waiting.isNotEmpty() && waiting.first().first <= confirmed)
+                best = maxOf(best ?: Int.MIN_VALUE, waiting.removeFirst().second)
+            return best
+        }
+
+        fun isEmpty() = waiting.isEmpty()
+
+        fun clear() = waiting.clear()
+    }
+
     /** "-12.5 dB", "0 dB": one decimal only when it is not whole. */
     fun formatDb(db: Double): String {
         val r = Math.round(db * 10.0) / 10.0
