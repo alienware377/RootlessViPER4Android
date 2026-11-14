@@ -791,6 +791,7 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 	// does; it only scales what came out.
 	jdsp_lock(jdsp);
 	if (jdsp->smoothVolume.engaged) SmoothVolumeProcess(jdsp, n);
+	jdsp->smoothVolume.fresh = 0;
 	jdsp_unlock(jdsp);
 }
 void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
@@ -900,6 +901,7 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 	// does; it only scales what came out.
 	jdsp_lock(jdsp);
 	if (jdsp->smoothVolume.engaged) SmoothVolumeProcess(jdsp, n);
+	jdsp->smoothVolume.fresh = 0;
 	jdsp_unlock(jdsp);
 	if (benchmarkCompletionFlag == 1)
 	{
@@ -1688,6 +1690,7 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	jdsp->smoothVolume.engaged = 0;
 	jdsp->smoothVolume.gain = 1.0f;
 	jdsp->smoothVolume.target = 1.0f;
+	jdsp->smoothVolume.fresh = 1;
 	SmoothVolumeRefresh(jdsp);
 	SmoothVolumeSetParam(jdsp, 0.0f);
 	jdsp->shaperEnabled = 0;

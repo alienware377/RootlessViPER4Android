@@ -828,6 +828,27 @@ int main()
 		check("non-finite input leaves its gain intact", isfinite(s->gain) && s->gain == s->target &&
 			  fabsf(a[B - 1] - want20) < 1e-6f);
 
+		// A new engine, sent the level and switched on before its first
+		// block, as every new playback is in root mode: it starts at the
+		// level instead of opening at unity and fading down.
+		JamesDSPLib *f = &g_ref;
+		JamesDSPFree(f);
+		JamesDSPInit(f, 4096, 48000);
+		svFloats(f, 1500, lim, 4);
+		const float m30[1] = { -30.0f };
+		svFloats(f, 26032, m30, 1);
+		svEnable(f, 26132, true);
+		svRun(f, 0.25f, a, B);
+		const float want30 = 0.25f * powf(10.0f, -30.0f / 20.0f);
+		check("a new engine starts at the level, not at unity",
+			  fabsf(a[0] - want30) < 1e-6f && fabsf(a[B - 1] - want30) < 1e-6f);
+		// Once anything has played through it, switching on fades in again.
+		svEnable(f, 26132, false);
+		for (int blk = 0; blk < 24; blk++) svRun(f, 0.25f, a, B);
+		svEnable(f, 26132, true);
+		svRun(f, 0.25f, a, B);
+		check("after that, on fades in from unity again", fabsf(a[0] - 0.25f) < 1e-3f && a[B - 1] < a[0]);
+
 		JamesDSPFree(&g_sv);
 		JamesDSPFree(&g_ref);
 	}

@@ -365,6 +365,9 @@ typedef struct
 	float smooth, fs;
 	// Still processing: switched on, or switched off and not yet back at unity.
 	int engaged;
+	// No audio has gone through the engine yet, so there is nothing to fade
+	// from: switching on starts at the level.
+	int fresh;
 } SmoothVolume;
 #define DYNEQ_MAX_BANDS 8
 // freq, Q, threshold dB, ratio, attack ms, release ms, range dB, mode
