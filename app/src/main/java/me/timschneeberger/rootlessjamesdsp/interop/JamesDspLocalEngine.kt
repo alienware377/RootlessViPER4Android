@@ -25,11 +25,13 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     init {
         if(BenchmarkManager.hasBenchmarksCached())
             BenchmarkManager.loadBenchmarksFromCache()
+        attachSmoothVolume()
     }
 
     override fun close() {
         val oldHandle = handle
         handle = 0
+        super.close()
 
         // Free only once no sync is still inside the engine; a long impulse
         // response load or Liveprog compile could otherwise return into a freed

@@ -80,12 +80,26 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                 obs.registerOnRoutingChangeListener(routingCallback)
             }
         }
+    }
+
+    /**
+     * Counts this engine as processing for smooth volume. Each engine calls it
+     * at the end of its own init, so one whose effect cannot be made, which
+     * throws before then and is never closed, never keeps the media volume
+     * held with nothing there to apply the gain.
+     */
+    protected fun attachSmoothVolume() {
         smoothVolume?.attach(smoothVolumeListener)
+    }
+
+    /** For an engine that has stopped processing for good but is not closed yet. */
+    protected fun detachSmoothVolume() {
+        smoothVolume?.detach(smoothVolumeListener)
     }
 
     override fun close() {
         Timber.d("Closing engine")
-        smoothVolume?.detach(smoothVolumeListener)
+        detachSmoothVolume()
         routingObserver?.let { obs ->
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 obs.unregisterOnRoutingChangeListener(routingCallback)
