@@ -17,12 +17,14 @@
  *             that. Two seconds of it and the history is dropped, so the next
  *             song is measured on its own; until then a boost eases back to
  *             unity and a cut is held, so a loud song after a quiet one never
- *             arrives boosted.
+ *             arrives boosted. Only blocks made wholly of programme are
+ *             measured, so the part-silent ones at either end of a song cannot
+ *             make it read quieter than it is.
  *   Limits    Boost and cut each have their own ceiling, and the gain only
  *             ever approaches its target from one side, so it cannot
  *             overshoot either.
  *   Peaks     With the peak guard on, a boost never lifts the loudest sample
- *             of the measured history above where the output limiter starts,
+ *             of the last few seconds above where the output limiter starts,
  *             or -1 dBFS if that is lower, so the limiter is not left doing
  *             the normalizer's job.
  *
@@ -128,6 +130,7 @@ static void lufsClearRunning(LufsNormalizer *l)
 	l->subIdx = 0;
 	l->subFilled = 0;
 	l->pendingValid = 0;
+	l->loudRun = 0;
 }
 
 static void lufsClearHistory(LufsNormalizer *l)
@@ -178,9 +181,15 @@ void LufsNormalizerRefresh(JamesDSPLib *jdsp)
 }
 
 /* Where a boost has to stop so the loudest recent sample stays clear of the
-   output limiter, in dB of gain. */
+   output limiter, in dB of gain. Recent means the history and the newest
+   sub-blocks, which have not reached the history yet but have been heard. */
 static double lufsPeakRoom(JamesDSPLib *jdsp, const LufsNormalizer *l)
 {
+	float pk = 0.0f;
+	for (int i = 0; i < 4; i++)
+		if (l->subPk[i] > pk) pk = l->subPk[i];
+	double peakDb = pk > 1e-10f ? 20.0 * log10((double)pk) : -200.0;
+	if (l->peakDb > peakDb) peakDb = l->peakDb;
 	double ceiling = 0.8912509381337456; /* -1 dBFS */
 	const float th = jdsp->limiter.threshold;
 	if (jdsp->limiter.mode != 2 && th > 0.0f && th < ceiling)
@@ -188,7 +197,7 @@ static double lufsPeakRoom(JamesDSPLib *jdsp, const LufsNormalizer *l)
 	/* The post gain is applied between here and the limiter. */
 	if (jdsp->postGain > 0.0f && isfinite(jdsp->postGain))
 		ceiling /= jdsp->postGain;
-	return 20.0 * log10(ceiling) - l->peakDb;
+	return 20.0 * log10(ceiling) - peakDb;
 }
 
 /* The integrated loudness of the history, gated as BS.1770 gates it, and the
@@ -237,10 +246,13 @@ static int lufsIsQuiet(double meanSquare)
    decide where the gain is heading.
 
    Quiet is judged on the newest 100 ms alone, so the gain stops rising within
-   100 ms of the music stopping. Each block also waits one step before it
-   joins the history and is dropped if quiet follows it: the blocks that
-   straddle the end of a song are part silence, and let in they read low and
-   would nudge the gain up just as the music stops. */
+   100 ms of the music stopping. A block only joins the history if its four
+   sub-blocks, the one before them and the one after them are all programme.
+   The blocks that straddle either end of a song are part silence, and let in
+   they read up to 6 LU low: at the end they would nudge the gain up just as
+   the music stops, at the start they would push it up as the next song
+   begins. The sub-blocks either side catch a song that starts or stops
+   partway through one. */
 static void lufsSubBlockDone(JamesDSPLib *jdsp, LufsNormalizer *l)
 {
 	const double sub = l->subSum / (double)l->subLen;
@@ -252,14 +264,15 @@ static void lufsSubBlockDone(JamesDSPLib *jdsp, LufsNormalizer *l)
 	l->subSum = 0.0;
 	l->subPeak = 0.0f;
 	l->subPos = 0;
+	const int quiet = lufsIsQuiet(sub);
+	l->loudRun = quiet ? 0 : l->loudRun + 1;
 	if (l->subFilled < 4)
 		return;
-	const int quiet = lufsIsQuiet(sub);
 
 	if (!quiet)
 	{
 		l->quietBlocks = 0;
-		if (l->pendingValid && !lufsIsQuiet(l->pendingPow))
+		if (l->pendingValid)
 		{
 			l->histPow[l->histIdx] = l->pendingPow;
 			l->histPeak[l->histIdx] = l->pendingPeak;
@@ -276,7 +289,8 @@ static void lufsSubBlockDone(JamesDSPLib *jdsp, LufsNormalizer *l)
 	l->pendingPeak = l->subPk[0];
 	for (int i = 1; i < 4; i++)
 		if (l->subPk[i] > l->pendingPeak) l->pendingPeak = l->subPk[i];
-	l->pendingValid = 1;
+	/* The run includes the sub-block before this block's four. */
+	l->pendingValid = l->loudRun >= 5;
 
 	double want;
 	if (!l->valid)

@@ -370,10 +370,11 @@ typedef struct
 	int subLen, subPos, subIdx, subFilled;
 	double subSum, subPow[4];
 	float subPeak, subPk[4];
-	// The newest 400 ms block, held back one step before it joins the history.
+	// The newest 400 ms block, held back one step before it joins the history,
+	// and how many sub-blocks in a row have been above the quiet floor.
 	double pendingPow;
 	float pendingPeak;
-	int pendingValid;
+	int pendingValid, loudRun;
 	// Blocks that passed the quiet floor, newest at histIdx - 1. Allocated on
 	// enable.
 	double *histPow;
