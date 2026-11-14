@@ -21,6 +21,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.ChainOrder
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.GraphicEqCurve
+import me.timschneeberger.rootlessjamesdsp.utils.MediaVolume
 import me.timschneeberger.rootlessjamesdsp.utils.RoutingObserver
 import me.timschneeberger.rootlessjamesdsp.utils.V4aMode
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
@@ -66,6 +67,27 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         }
     }
 
+    /**
+     * Follows the media volume for the loudness correction while its card is
+     * on and set to follow it. Started and stopped on the main thread, where
+     * its broadcasts arrive; each change goes to the engine in the
+     * background, in turn with the settings.
+     */
+    private var volumeTracker: MediaVolume.Tracker? = null
+
+    private fun followMediaVolume(follow: Boolean) {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            if (follow) {
+                val tracker = volumeTracker ?: MediaVolume.Tracker(context) { db ->
+                    syncScope.launch { syncMutex.withLock { setLoudnessVolume(db.toFloat()) } }
+                }.also { volumeTracker = it }
+                tracker.start()
+            } else {
+                volumeTracker?.stop()
+            }
+        }
+    }
+
     override fun close() {
         Timber.d("Closing engine")
         routingObserver?.let { obs ->
@@ -73,6 +95,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                 obs.unregisterOnRoutingChangeListener(routingCallback)
             }
         }
+        followMediaVolume(false)
         reportSampleRate(0f)
         syncScope.cancel()
     }
@@ -233,6 +256,26 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val balBalance = cache.get(R.string.key_balance_balance, 0f)
             val balSwap = cache.get(R.string.key_balance_swap, false)
             val balMono = cache.get(R.string.key_balance_mono, 0f)
+
+            cache.select(Constants.PREF_LOUDNESS)
+            val ldEnabled = cache.get(R.string.key_loudness_enable, false)
+            val ldMode = cache.get(R.string.key_loudness_mode, "0").toInt()
+            val ldFollow = cache.get(R.string.key_loudness_follow_volume, true)
+            val ldVolume = cache.get(R.string.key_loudness_volume, 0f)
+            val ldRefLevel = cache.get(R.string.key_loudness_reference_level, 0f)
+            val ldRefOffset = cache.get(R.string.key_loudness_reference_offset, 0f)
+            val ldStrength = cache.get(R.string.key_loudness_strength, 100f)
+            val ldBassHz = cache.get(R.string.key_loudness_bass_freq, 75f)
+            val ldBassSlope = cache.get(R.string.key_loudness_bass_slope, 0.52f)
+            val ldBassAmount = cache.get(R.string.key_loudness_bass_amount, 55f)
+            val ldTrebleHz = cache.get(R.string.key_loudness_treble_freq, 10000f)
+            val ldTrebleSlope = cache.get(R.string.key_loudness_treble_slope, 0.9f)
+            val ldTrebleAmount = cache.get(R.string.key_loudness_treble_amount, 22.5f)
+            val ldPhon = cache.get(R.string.key_loudness_phon, 80f)
+            val ldSubsonic = cache.get(R.string.key_loudness_subsonic, false)
+            val ldSubsonicHz = cache.get(R.string.key_loudness_subsonic_freq, 20f)
+            val ldSubsonicOrder = cache.get(R.string.key_loudness_subsonic_order, 4f).toInt()
+            val ldSubsonicQ = cache.get(R.string.key_loudness_subsonic_q, 0.707f)
 
             cache.select(Constants.PREF_SHAPER)
             val shEnabled = cache.get(R.string.key_shaper_enable, false)
@@ -520,6 +563,19 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                     Constants.PREF_BALANCE -> setBalance(
                         balEnabled, balBalance, balSwap, balMono
                     )
+                    Constants.PREF_LOUDNESS -> {
+                        // The volume before the settings and the switch, so
+                        // switching on starts from the right correction.
+                        val follow = ldEnabled && ldFollow
+                        followMediaVolume(follow)
+                        setLoudnessVolume(if (follow) MediaVolume.currentDb(context).toFloat() else ldVolume)
+                        setLoudness(
+                            ldEnabled, ldMode, ldRefLevel, ldRefOffset, ldStrength,
+                            ldBassHz, ldBassSlope, ldBassAmount, ldTrebleHz, ldTrebleSlope,
+                            ldTrebleAmount, ldPhon, ldSubsonic, ldSubsonicHz, ldSubsonicOrder,
+                            ldSubsonicQ
+                        )
+                    }
                     Constants.PREF_SHAPER -> setSpectralShaper(
                         shEnabled, shAmount, shSensitivity, shLow, shHigh, shSpeed,
                         shFocus, shTones, shListen, shMs
@@ -961,6 +1017,9 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
     abstract fun setTape(enable: Boolean, wow: Float, flutter: Float, saturation: Float, bias: Float, headBump: Float, mix: Float): Boolean
     abstract fun setBalance(enable: Boolean, balance: Float, swap: Boolean, mono: Float): Boolean
+    abstract fun setLoudness(enable: Boolean, mode: Int, refLevel: Float, refOffset: Float, strength: Float, bassHz: Float, bassSlope: Float, bassAmount: Float, trebleHz: Float, trebleSlope: Float, trebleAmount: Float, phon: Float, subsonic: Boolean, subsonicHz: Float, subsonicOrder: Int, subsonicQ: Float): Boolean
+    /** The media volume in dB, 0 at full volume. */
+    abstract fun setLoudnessVolume(volumeDb: Float): Boolean
     abstract fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean
     abstract fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean
     abstract fun setExciter(enable: Boolean, f1: Float, f2: Float, f3: Float, a1: Float, a2: Float, a3: Float, a4: Float, character: Int, drive: Float, mix: Float): Boolean
