@@ -1366,7 +1366,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="voice_isolation_failed_runtime">The speech model could not be started (%1$s).</string>
     <string name="voice_isolation_failed_rate">Your audio plays at %1$s, which the speech model cannot be fed from.</string>
     <string name="voice_isolation_failed_stopped">The speech model stopped with an error (%1$s).</string>
-    <string name="voice_isolation_unavailable_root">Recording mode only: the system audio effect the root engine runs in cannot run the speech model.</string>
+    <string name="voice_isolation_unavailable_root">Only in RootlessViPER4Android: the system audio effect cannot run the speech model.</string>
     <string name="voice_isolation_unavailable_global">Off in global mode: Android\'s audio effect cannot run the speech model. Your settings are kept.</string>
     <string name="shaper_enable">Spectral shaper</string>
     <string name="shaper_info">Finds frequencies that suddenly stick out, like a harsh cymbal, a sharp \"s\" or a bright peak in some earphones, and turns them down only while they stick out. Everything else passes through untouched. Clean, steady notes are left alone on purpose, which also means a ring that only happens along with a held note is left alone too. Switch on Catch steady tones too if that is what bothers you. This card delays the sound by about 21 ms at 48 kHz and 23 ms at 44.1 kHz, which is fine for music and for video.</string>
