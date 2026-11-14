@@ -76,7 +76,7 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
 
                 currentPath(ctx)
                     .listFiles()
-                    ?.filter { it.name.startsWith("dsp_") || it.name == FILE_EFFECT_LAYOUT }
+                    ?.filter { isKnownEntry(it.name) }
                     ?.filter { it.extension == "xml" }
                     ?.forEach(c::add)
 
@@ -134,9 +134,20 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
         // the visual layout (card order, hidden cards, custom groups) lives in
         // its own file and must be listed explicitly.
         private const val FILE_EFFECT_LAYOUT = "effect_layout.xml"
+        private const val FILE_SMOOTH_VOLUME = Constants.PREF_SMOOTH_VOLUME + ".xml"
 
-        private fun isKnownEntry(n: String) =
-            (n.startsWith("dsp_") && n.endsWith("xml")) ||
+        /**
+         * The dsp_ files that make up a sound. Smooth volume is a volume
+         * control rather than part of one: a preset or device profile with it
+         * off, or a reset of the effects, would let go of the held volume and
+         * could make playback much louder. Presets, device profiles and the
+         * reset leave it as it is; backups still carry it.
+         */
+        fun isSoundFile(name: String) =
+            name.startsWith("dsp_") && name.endsWith("xml") && name != FILE_SMOOTH_VOLUME
+
+        internal fun isKnownEntry(n: String) =
+            isSoundFile(n) ||
                     n == FILE_EFFECT_LAYOUT ||
                     n == FILE_LIVEPROG
 
