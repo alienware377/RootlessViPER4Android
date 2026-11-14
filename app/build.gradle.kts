@@ -145,6 +145,11 @@ android {
         getByName("debug").res.srcDirs("src/debug/res")
     }
 
+    androidResources {
+        // Voice isolation's model is read whole from assets; storing it as is saves inflating it.
+        noCompress += "onnx"
+    }
+
     // Export multiple CPU architecture split apks
     splits {
         abi {
@@ -284,6 +289,10 @@ dependencies {
 
     // Root APIs
     "rootfulImplementation"("com.github.topjohnwu.libsu:core:5.0.4")
+
+    // Voice isolation's speech model. Only the rootless build can run it, so only it pays for
+    // the runtime's native libraries.
+    "rootlessImplementation"("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
 
     // Hidden APIs
     implementation("dev.rikka.tools.refine:runtime:${AndroidConfig.rikkaRefineVersion}")

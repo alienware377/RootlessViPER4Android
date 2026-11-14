@@ -52,6 +52,7 @@ object Constants {
     const val PREF_BALANCE = "dsp_balance"
     const val PREF_SHAPER = "dsp_shaper"
     const val PREF_BINAURAL = "dsp_binaural"
+    const val PREF_VOICEISOLATION = "dsp_voice_isolation"
     const val PREF_CHAIN_ORDER = "dsp_chain_order"
     const val PREF_FILELIBRARY = "dsp_filelibrary"
     // Deliberately not "dsp_": presets copy every dsp_* file wholesale, and
@@ -84,6 +85,8 @@ object Constants {
      * card listens; the engines do not resync on it.
      */
     const val ACTION_BINAURAL_STATUS_CHANGED = BuildConfig.APPLICATION_ID + ".action.binaural.STATUS_CHANGED"
+    /** Voice isolation started, stopped or failed; only its card listens. */
+    const val ACTION_VOICE_ISOLATION_STATUS_CHANGED = BuildConfig.APPLICATION_ID + ".action.voice_isolation.STATUS_CHANGED"
     const val ACTION_PRESET_LOADED = BuildConfig.APPLICATION_ID + ".action.preset.LOADED"
     const val ACTION_GRAPHIC_EQ_CHANGED = BuildConfig.APPLICATION_ID + ".action.preferences.graphiceq.CHANGED"
     /** The graphic EQ was switched on from outside its card (Match EQ); the card should show it. */

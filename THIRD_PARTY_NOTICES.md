@@ -197,6 +197,49 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   to the app as a separate file. Debian ships the same data in its main archive
   under the same text.
 
+### android-realtime-voice-isolation
+
+- **Author:** André Naumann
+- **Licence:** MIT, see [the android-realtime-voice-isolation notice](#mit-licence-android-realtime-voice-isolation)
+- **Upstream:** https://github.com/sk2andy/android-realtime-voice-isolation, by way
+  of the evoeram fork of RootlessJamesDSP,
+  https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP (GNU GPL version 3),
+  which made it a stage of the rootless playback loop.
+- **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/`
+  and `app/src/rootless/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/GtcrnProcessor.kt`.
+  A Kotlin port, not a copy: the streaming GTCRN wrapper with its cached state,
+  the 512/256 sqrt-Hann STFT, the mixer that makes the background from dry minus
+  voice, the speech detector behind auto mode, the delay estimator that lines
+  the dry signal up with the voice, and the presets. The resampler and the hop
+  framing come from the evoeram fork. Changed here: only the GTCRN model is
+  kept; the transform is radix-2 only with table twiddles; the resampler builds
+  its kernels for exact phases up front; the mix adds the dry part back from the
+  full-band input at the device rate instead of from the 16 kHz copy, so nothing
+  above 8 kHz is lost; the framing runs at a fixed delay for any block size; the
+  adaptive output buffer is left out.
+- **Used by:** the Voice isolation card, in the rootless build only.
+
+### GTCRN speech model (data)
+
+- **Author:** Rong Xiaobin
+- **Licence:** MIT, see [the GTCRN notice](#mit-licence-gtcrn)
+- **Source:** https://github.com/Xiaobin-Rong/gtcrn, `stream/onnx_models/gtcrn.onnx`
+  at commit `3862c44808dca492ea5a8a145d2dc2a1028d08c8` (352,084 bytes, SHA-256
+  `f648b02f2d7ff96ebcb0eec2219688a08ed12fe7e3d50f248605a90eba8cad17`)
+- **Files:** `app/src/rootless/assets/gtcrn.onnx`, unmodified. The app checks its
+  hash before loading it.
+- **Used by:** the Voice isolation card, in the rootless build only.
+
+### ONNX Runtime
+
+- **Author:** Microsoft Corporation
+- **Licence:** MIT, see [the ONNX Runtime notice](#mit-licence-onnx-runtime)
+- **Upstream:** https://github.com/microsoft/onnxruntime, the
+  `com.microsoft.onnxruntime:onnxruntime-android:1.20.0` package from Maven
+  Central, unmodified.
+- **Used by:** the Voice isolation card, to run the GTCRN model. Only the
+  rootless build carries it, and it is loaded only when the card is switched on.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular
@@ -396,6 +439,84 @@ The `License` attribute inside the SOFA file:
 This HRTF data is provided without any usage restrictions. It is requested
 that you cite Gardner and Martin (1995) when using this data for research or
 commercial applications.
+```
+
+### MIT licence (android-realtime-voice-isolation)
+
+```text
+MIT License
+
+Copyright (c) 2026 André Naumann
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### MIT licence (GTCRN)
+
+```text
+MIT License
+
+Copyright (c) 2024 Rong Xiaobin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### MIT licence (ONNX Runtime)
+
+```text
+MIT License
+
+Copyright (c) Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ### MIT licence (AutoEq)
