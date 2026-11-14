@@ -69,14 +69,23 @@ class GraphicEqFileTest {
     }
 
     @Test
-    fun `values the editor cannot show are refused`() {
-        for (bad in listOf("0 1", "-20 1", "30000 1", "1000 40", "1000 -33")) {
+    fun `values no curve in the app can hold are refused`() {
+        for (bad in listOf("-20 1", "-0.5 0", "24000.5 1", "30000 1", "1000 48.1", "1000 -60")) {
             val e = refused("GraphicEQ: 100 0; $bad")
             assertEquals(bad, GraphicEqFile.Reason.OUT_OF_RANGE, e.reason)
             assertEquals(bad, e.entry)
         }
         // The edges themselves are fine
-        ok("GraphicEQ: 1 -32; 24000 32")
+        ok("GraphicEQ: 0 -48; 24000 48")
+    }
+
+    @Test
+    fun `a Match EQ curve and a 0 Hz node survive export and import`() {
+        // Match EQ at its widest limits: 30 dB cut, then lowered by a 12 dB
+        // boost plus headroom. The node editor also takes 0 Hz.
+        val list = nodes(0.0 to -3.0, 20.0 to -42.2, 1000.0 to -12.2, 8000.0 to -0.2, 24000.0 to -30.0)
+        val back = ok(GraphicEqFile.format(list))
+        assertEquals(list.map { it.freq to it.gain }, back.map { it.freq to it.gain })
     }
 
     @Test
