@@ -31,7 +31,11 @@ class VoiceAddonTest {
     private fun addon(signers: Set<String> = ours, api: Int = VoiceAddon.API_VERSION, version: String = "4.6.0") =
         VoiceAddon.Installed(version, api, signers)
 
-    private fun check(packages: VoiceAddon.Packages, abi: String? = "arm64-v8a") = VoiceAddon.check(packages, abi)
+    private fun check(
+        packages: VoiceAddon.Packages,
+        abi: String? = "arm64-v8a",
+        device64: List<String> = listOf("arm64-v8a"),
+    ) = VoiceAddon.check(packages, abi, device64)
 
     @Test
     fun notInstalled() {
@@ -75,7 +79,20 @@ class VoiceAddonTest {
     @Test
     fun ready() {
         assertEquals(VoiceAddon.Check.Ready("4.6.0"), check(FakePackages(ours, addon())))
-        assertEquals(VoiceAddon.Check.Ready("4.6.0"), check(FakePackages(ours, addon()), abi = "armeabi-v7a"))
+        // A phone with no 64-bit ABI unpacks the add-on's 32-bit libraries.
+        assertEquals(VoiceAddon.Check.Ready("4.6.0"),
+            check(FakePackages(ours, addon()), abi = "armeabi-v7a", device64 = emptyList()))
+    }
+
+    @Test
+    fun theThirtyTwoBitAppOnASixtyFourBitPhoneIsToldWhatToInstall() {
+        // The add-on is unpacked as arm64 there, which a 32-bit process cannot load.
+        val packages = FakePackages(ours, addon())
+        assertSame(VoiceAddon.Check.Needs64BitApp,
+            check(packages, abi = "armeabi-v7a", device64 = listOf("arm64-v8a")))
+        assertEquals(0, packages.addonAsked)
+        // The 64-bit app on the same phone is fine.
+        assertEquals(VoiceAddon.Check.Ready("4.6.0"), check(packages, abi = "arm64-v8a"))
     }
 
     @Test
@@ -97,6 +114,7 @@ class VoiceAddonTest {
         }
         assertEquals(null, reason(VoiceAddon.Check.Ready("1")))
         assertEquals(Reason.Device, reason(VoiceAddon.Check.Unsupported))
+        assertEquals(Reason.App32Bit, reason(VoiceAddon.Check.Needs64BitApp))
         assertEquals(Reason.AddonMissing, reason(VoiceAddon.Check.NotInstalled))
         assertEquals(Reason.AddonSignature, reason(VoiceAddon.Check.WrongSignature))
         assertEquals(Reason.AddonTooOld, reason(VoiceAddon.Check.AddonTooOld("1")))

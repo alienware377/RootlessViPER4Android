@@ -1488,6 +1488,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="voice_isolation_addon_signature">The installed add-on is not signed with this app\'s key, so it is never loaded. Uninstall it, then tap here to get the one that comes with this app.</string>
     <string name="voice_isolation_addon_too_old">The installed add-on (version %1$s) is too old for this version of the app. Tap to get the latest one.</string>
     <string name="voice_isolation_addon_app_too_old">The installed add-on (version %1$s) needs a newer version of this app. Tap to get the latest release, and update the app.</string>
+    <string name="voice_isolation_addon_app_32bit">This is the 32-bit (armeabi-v7a) build of the app, and this phone runs the add-on as 64-bit, so the two cannot work together. Tap to open the latest release, then install the arm64-v8a or universal APK of the app over this one. Your settings stay.</string>
     <string name="voice_isolation_addon_device">The add-on only runs on ARM phones, so voice isolation is not available on this one.</string>
     <string name="voice_isolation_addon_no_browser">No app here can open %1$s</string>
     <string name="voice_isolation_status_title">Status</string>
@@ -1505,6 +1506,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="voice_isolation_failed_addon_signature">The voice isolation add-on is not signed like this app, so it was not loaded.</string>
     <string name="voice_isolation_failed_addon_too_old">The voice isolation add-on is too old for this version of the app.</string>
     <string name="voice_isolation_failed_app_too_old">The voice isolation add-on needs a newer version of this app.</string>
+    <string name="voice_isolation_failed_app_32bit">This is the 32-bit build of the app, and the add-on runs 64-bit on this phone. The arm64-v8a or universal APK of the app fixes it.</string>
     <string name="voice_isolation_failed_model_missing">The speech model is missing from the add-on.</string>
     <string name="voice_isolation_failed_model_damaged">The speech model in the add-on is damaged. Reinstalling the add-on should fix it.</string>
     <string name="voice_isolation_failed_runtime">The speech model could not be started (%1$s).</string>

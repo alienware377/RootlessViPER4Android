@@ -902,8 +902,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                         VoiceIsolationStatus.Reason.AppTooOld,
                         VoiceIsolationStatus.Reason.ModelMissing,
                         VoiceIsolationStatus.Reason.ModelDamaged -> R.string.voice_isolation_status_failed_addon
-                        // Nothing to try again: this phone cannot run it.
-                        VoiceIsolationStatus.Reason.Device -> R.string.voice_isolation_status_failed_final
+                        // Nothing to try again: this phone, or this build of the app, cannot run it.
+                        VoiceIsolationStatus.Reason.Device,
+                        VoiceIsolationStatus.Reason.App32Bit -> R.string.voice_isolation_status_failed_final
                         else -> R.string.voice_isolation_status_failed
                     },
                     voiceIsolationFailureText(state))
@@ -924,6 +925,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             val check = VoiceAddon.check(context)
             row.summary = when (check) {
                 VoiceAddon.Check.Unsupported -> getString(R.string.voice_isolation_addon_device)
+                VoiceAddon.Check.Needs64BitApp -> getString(R.string.voice_isolation_addon_app_32bit)
                 VoiceAddon.Check.NotInstalled -> getString(R.string.voice_isolation_addon_missing)
                 VoiceAddon.Check.WrongSignature -> getString(R.string.voice_isolation_addon_signature)
                 is VoiceAddon.Check.AddonTooOld ->
@@ -958,6 +960,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         return when (state.reason) {
             VoiceIsolationStatus.Reason.NotInThisBuild -> getString(R.string.voice_isolation_failed_build)
             VoiceIsolationStatus.Reason.Device -> getString(R.string.voice_isolation_failed_device)
+            VoiceIsolationStatus.Reason.App32Bit -> getString(R.string.voice_isolation_failed_app_32bit)
             VoiceIsolationStatus.Reason.AddonMissing -> getString(R.string.voice_isolation_failed_addon_missing)
             VoiceIsolationStatus.Reason.AddonSignature -> getString(R.string.voice_isolation_failed_addon_signature)
             VoiceIsolationStatus.Reason.AddonTooOld -> getString(R.string.voice_isolation_failed_addon_too_old)
