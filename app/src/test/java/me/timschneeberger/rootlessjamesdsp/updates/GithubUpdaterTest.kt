@@ -20,6 +20,7 @@ class GithubUpdaterTest {
       {"tag_name":"v4.5.0","draft":false,"prerelease":false,"body":"## New\n- thing",
        "html_url":"https://example.invalid/v4.5.0","assets":[
          ${asset("RootfulViPER4Android-engine-module-v4.5.0.zip")},
+         ${asset("RootlessViPER4Android-voice-isolation-addon-v4.5.0-release.apk")},
          ${asset("ViPER4Android-v4.5.0-rootful-fdroid-universal-release.apk")},
          ${asset("ViPER4Android-v4.5.0-rootless-fdroid-arm64-v8a-release.apk")},
          ${asset("ViPER4Android-v4.5.0-rootless-fdroid-universal-release.apk")}]},
@@ -56,6 +57,20 @@ class GithubUpdaterTest {
         val expected = if (isRoot()) "ViPER4Android-v4.5.0-rootful-fdroid-universal-release.apk"
             else "ViPER4Android-v4.5.0-rootless-fdroid-universal-release.apk"
         assertEquals(expected, apk)
+    }
+
+    @Test
+    fun theVoiceIsolationAddonIsNeverOfferedAsTheApp() {
+        // A release with no universal file falls back to the first APK for this build; the
+        // add-on sits next to the app in every release and must not be that one.
+        val splitsOnly = """[{"tag_name":"v4.6.0","draft":false,"prerelease":false,"body":"","assets":[
+          ${asset("RootlessViPER4Android-voice-isolation-addon-v4.6.0-release.apk")},
+          ${asset("ViPER4Android-v4.6.0-rootful-fdroid-arm64-v8a-release.apk")},
+          ${asset("ViPER4Android-v4.6.0-rootless-fdroid-arm64-v8a-release.apk")}]}]"""
+        val r = GithubUpdater.parseReleases(splitsOnly, intArrayOf(4, 5, 0))[0]
+        val expected = if (isRoot()) "ViPER4Android-v4.6.0-rootful-fdroid-arm64-v8a-release.apk"
+            else "ViPER4Android-v4.6.0-rootless-fdroid-arm64-v8a-release.apk"
+        assertEquals(expected, GithubUpdater.apkFor(r)!!.first)
     }
 
     @Test

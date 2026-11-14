@@ -152,6 +152,8 @@ Installs **alongside** the original RootlessJamesDSP as a separate app. Keep bot
 >
 > **Back up first.** In the old app: *Settings → Backup & restore → Create backup*. Install v3.35.0, then restore that file in the new app. Your presets, card layout and every effect setting come across intact. Once you are happy, uninstall the old one.
 
+Want **Voice isolation**? It also needs the small **voice isolation add-on** (`RootlessViPER4Android-voice-isolation-addon-*.apk`) from the same release. It carries the speech model and the engine that runs it, so the app stays small for everyone who never switches that card on, and the card links to it when it is missing.
+
 Rooted? Grab **RootfulViPER4Android** and the Magisk module from the same release. It is a separate app again, so it sits happily beside the rootless build.
 
 ## Limitations
