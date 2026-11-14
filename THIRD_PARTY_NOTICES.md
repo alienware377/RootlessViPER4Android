@@ -180,7 +180,18 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   filter is fitted on its own before the joint pass; fitting stops once the
   error is under 0.5 dB; and filters that end up doing nothing are dropped and
   their spot skipped.
-- **Used by:** Convert to PEQ, on the Graphic EQ screen.
+
+  The To parametric EQ flow in
+  `app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/GraphicEqualizerFragment.kt`
+  and its result dialog `app/src/main/res/layout/dialog_geq_to_peq.xml` are
+  modelled on upstream's `showConversionResultDialog` and `applyToPeq` in the
+  same fragment and on `app/src/main/res/layout/dialog_geq_to_peq_result.xml`:
+  the filter count choice, the summary of filters, preamp, fit grade, largest
+  and RMS error, the table of filters, and the apply and copy buttons. Written
+  anew here rather than copied. Changed here: applying asks first, switches
+  the graphic EQ off and the parametric EQ on so the curve is not applied
+  twice, and the fit shows its progress and can be cancelled.
+- **Used by:** To parametric EQ, on the Graphic EQ screen.
 
 ### libmysofa
 
