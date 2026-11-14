@@ -59,4 +59,19 @@ class MediaVolumeTest {
         assertNull(MediaVolume.usablePlatformDb(Float.NaN, 7, 15))
         assertNull(MediaVolume.usablePlatformDb(Float.POSITIVE_INFINITY, 7, 15))
     }
+
+    @Test
+    fun `before Android 9 the methods it added are never called`() {
+        // Calling either on Android 8 is a NoSuchMethodError.
+        val missing = { throw NoSuchMethodError("not on this version") }
+        for (sdk in listOf(26, 27))
+            assertEquals(MediaVolume.indexToDb(7, 0, 15), MediaVolume.levelDb(sdk, 7, 15, missing, missing), 0.0)
+    }
+
+    @Test
+    fun `from Android 9 the platform's answer comes first`() {
+        assertEquals(-21.5, MediaVolume.levelDb(28, 7, 15, { 0 }, { -21.5f }), 1e-6)
+        // Absolute volume: the curve, from the stream's own minimum.
+        assertEquals(MediaVolume.indexToDb(7, 1, 15), MediaVolume.levelDb(34, 7, 15, { 1 }, { 0f }), 0.0)
+    }
 }

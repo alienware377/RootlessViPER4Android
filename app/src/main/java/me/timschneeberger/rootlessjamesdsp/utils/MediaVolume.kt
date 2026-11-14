@@ -72,17 +72,32 @@ object MediaVolume {
         return reported.toDouble().coerceIn(MUTED_DB, 0.0)
     }
 
+    /**
+     * [index] of [max] in dB on Android [sdk]. getStreamMinVolume and
+     * getStreamVolumeDb ([min] and [platformDb]) only exist from Android 9;
+     * before that they are never called and the default curve is all there is.
+     */
+    fun levelDb(sdk: Int, index: Int, max: Int, min: () -> Int, platformDb: () -> Float): Double {
+        if (sdk < Build.VERSION_CODES.P)
+            return indexToDb(index, 0, max)
+        return usablePlatformDb(platformDb(), index, max) ?: indexToDb(index, min(), max)
+    }
+
     /** The current media volume in dB, 0 when it cannot be read. */
     fun currentDb(context: Context): Double {
         val am = context.getSystemService<AudioManager>() ?: return 0.0
+        val stream = AudioManager.STREAM_MUSIC
         return try {
-            val stream = AudioManager.STREAM_MUSIC
             val index = am.getStreamVolume(stream)
-            val max = am.getStreamMaxVolume(stream)
-            val min = am.getStreamMinVolume(stream)
-            usablePlatformDb(am.getStreamVolumeDb(stream, index, outputType(am)), index, max)
-                ?: indexToDb(index, min, max)
+            levelDb(Build.VERSION.SDK_INT, index, am.getStreamMaxVolume(stream),
+                { am.getStreamMinVolume(stream) },
+                { am.getStreamVolumeDb(stream, index, outputType(am)) })
         } catch (e: Exception) {
+            Timber.w(e, "currentDb: could not read the media volume")
+            0.0
+        } catch (e: LinkageError) {
+            // A system missing a method it should have; better the volume
+            // untracked than the app gone.
             Timber.w(e, "currentDb: could not read the media volume")
             0.0
         }
