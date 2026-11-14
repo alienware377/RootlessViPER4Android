@@ -1252,9 +1252,9 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="subharmonic_band">Follow the bass below</string>
     <string name="subharmonic_band_summary">Only the bass under this is followed. Lower sticks to the deepest notes; higher also follows bass lines that sit further up.</string>
     <string name="subharmonic_mix">Mix</string>
-    <string name="subharmonic_mix_summary">How much of the new notes is added. At 0%% nothing is changed at all.</string>
+    <string name="subharmonic_mix_summary">How much of the new notes is added. At 0%% nothing is added, and with the output level at 0 dB the sound goes through untouched.</string>
     <string name="subharmonic_output">Output level</string>
-    <string name="subharmonic_output_summary">Turns everything down to make room for what was added, so the limiter does not have to.</string>
+    <string name="subharmonic_output_summary">The level of everything once the new notes are in. Turn it down to make room for them, so the limiter does not have to.</string>
     <string name="transient_enable">Impact (attack &amp; sustain)</string>
     <string name="transient_info">Shapes how a note starts and how long it takes to die, rather than how loud it is. Two envelope followers chase the signal at different speeds, and the gap between them says which part of a note you are in, so a held tone comes through completely untouched while a drum hit can be sharpened or softened. Use it to put the snap back into over-compressed music, or to take the room off a boomy recording.</string>
     <string name="transient_low_header">Low</string>
