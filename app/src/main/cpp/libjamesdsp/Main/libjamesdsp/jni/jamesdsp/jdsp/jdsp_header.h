@@ -354,6 +354,18 @@ typedef struct
 	float smooth, fs;
 	int transparent;
 } Balance;
+typedef struct
+{
+	// The level last sent (dB and linear), the level being walked towards
+	// (unity while switched off) and the gain applied now. The gain is a
+	// double: in float the walk stalls short of the level, once each sample's
+	// step is under half the spacing of floats near it.
+	float targetDb, level, target;
+	double gain;
+	float smooth, fs;
+	// Still processing: switched on, or switched off and not yet back at unity.
+	int engaged;
+} SmoothVolume;
 #define DYNEQ_MAX_BANDS 8
 // freq, Q, threshold dB, ratio, attack ms, release ms, range dB, mode
 #define DYNEQ_VALUES_PER_BAND 8
@@ -1342,6 +1354,9 @@ typedef struct dspsys
 	Vinyl vinyl;
 	int balanceEnabled;
 	Balance balance;
+	// Smooth volume runs after the output limiter, outside the chain.
+	int smoothVolumeEnabled;
+	SmoothVolume smoothVolume;
 	int shaperEnabled;
 	SpectralShaper shaper;
 	int binauralEnabled;
@@ -1584,6 +1599,13 @@ extern void BalanceProcess(JamesDSPLib *jdsp, size_t n);
 extern void BalanceEnable(JamesDSPLib *jdsp);
 extern void BalanceDisable(JamesDSPLib *jdsp);
 extern void BalanceRefresh(JamesDSPLib *jdsp);
+// Smooth volume, the attenuation after the output limiter. Refresh follows the
+// rule above (lock already held); Process is called with the lock held.
+extern void SmoothVolumeSetParam(JamesDSPLib *jdsp, float gainDb);
+extern void SmoothVolumeProcess(JamesDSPLib *jdsp, size_t n);
+extern void SmoothVolumeEnable(JamesDSPLib *jdsp);
+extern void SmoothVolumeDisable(JamesDSPLib *jdsp);
+extern void SmoothVolumeRefresh(JamesDSPLib *jdsp);
 // Spectral shaper. Refresh follows the rule above (lock already held); Free is
 // for engine teardown only. Latency is in samples, 0 while switched off.
 extern void SpectralShaperSetParam(JamesDSPLib *jdsp, float amountDb, float sensitivityPct,

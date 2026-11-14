@@ -160,3 +160,6 @@ void BinauralUpmixSetParam(void) {}
 void BinauralUpmixRefresh(void) {}
 void BinauralUpmixFree(void) {}
 void CompressorSetParam(void) {}
+void SmoothVolumeProcess(void) {}
+void SmoothVolumeSetParam(void) {}
+void SmoothVolumeRefresh(void) {}
