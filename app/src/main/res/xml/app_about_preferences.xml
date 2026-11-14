@@ -161,6 +161,30 @@
             android:data="https://sound.media.mit.edu/resources/KEMAR.html" />
     </Preference>
     <Preference
+        android:title="android-realtime-voice-isolation"
+        android:summary="André Naumann: the voice isolation stage, ported to this app by way of the evoeram fork of RootlessJamesDSP (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/sk2andy/android-realtime-voice-isolation" />
+    </Preference>
+    <Preference
+        android:title="GTCRN"
+        android:summary="Rong Xiaobin: the speech model behind voice isolation (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/Xiaobin-Rong/gtcrn" />
+    </Preference>
+    <Preference
+        android:title="ONNX Runtime"
+        android:summary="Microsoft: runs the voice isolation model on the phone (MIT)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/microsoft/onnxruntime" />
+    </Preference>
+    <Preference
         android:title="Third-party licence texts"
         android:summary="Full copyright notices and licence texts for the components above"
         app:iconSpaceReserved="false">
