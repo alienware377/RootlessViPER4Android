@@ -56,6 +56,9 @@ object GlobalCards {
         Constants.PREF_VINYL to Support.NONE,
         // DynamicsProcessing has no loudness meter to drive a gain from.
         Constants.PREF_LUFS to Support.NONE,
+        // Holds the system volume over an engine attenuation, and global mode
+        // has no engine to attenuate with.
+        Constants.PREF_SMOOTH_VOLUME to Support.NONE,
         Constants.PREF_AGC to Support.NONE,
         Constants.PREF_DDC to Support.NONE,
         Constants.PREF_CONVOLVER to Support.NONE,

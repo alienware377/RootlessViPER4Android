@@ -16,6 +16,7 @@ import me.timschneeberger.rootlessjamesdsp.model.ParametricEqChannel
 import me.timschneeberger.rootlessjamesdsp.model.ParametricEqBandList
 import me.timschneeberger.rootlessjamesdsp.model.ProcessorMessage
 import me.timschneeberger.rootlessjamesdsp.preference.FileLibraryPreference
+import me.timschneeberger.rootlessjamesdsp.smoothvolume.SmoothVolumeController
 import me.timschneeberger.rootlessjamesdsp.utils.BiquadUtils
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.ChainOrder
@@ -59,6 +60,21 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     private val routingObserver: RoutingObserver? =
         try { org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<RoutingObserver>() } catch (_: Exception) { null }
 
+    /**
+     * Smooth volume is not a setting but a level that moves with every press
+     * of a volume key, so it does not go through the preference sync, which
+     * reads every card. The controller says when it moved and the latest level
+     * is sent on the sync thread. Pushes can overtake each other on the way
+     * there; each sends whatever is latest, so the last one is always right.
+     */
+    private val smoothVolume: SmoothVolumeController? =
+        try { org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<SmoothVolumeController>() } catch (_: Exception) { null }
+    private val smoothVolumeListener = SmoothVolumeController.Listener {
+        syncScope.launch { syncMutex.withLock { sendSmoothVolume(false) } }
+    }
+    /** What the engine was last sent, so an unchanged level is not sent again. */
+    private var smoothVolumeSent: Pair<Boolean, Float>? = null
+
     init {
         routingObserver?.let { obs ->
             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -99,8 +115,24 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         followMediaVolume(false)
     }
 
+    /**
+     * Counts this engine as processing for smooth volume. Each engine calls it
+     * at the end of its own init, so one whose effect cannot be made, which
+     * throws before then and is never closed, never keeps the media volume
+     * held with nothing there to apply the gain.
+     */
+    protected fun attachSmoothVolume() {
+        smoothVolume?.attach(smoothVolumeListener)
+    }
+
+    /** For an engine that has stopped processing for good but is not closed yet. */
+    protected fun detachSmoothVolume() {
+        smoothVolume?.detach(smoothVolumeListener)
+    }
+
     override fun close() {
         Timber.d("Closing engine")
+        detachSmoothVolume()
         routingObserver?.let { obs ->
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 obs.unregisterOnRoutingChangeListener(routingCallback)
@@ -295,6 +327,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
             val ldSubsonicHz = cache.get(R.string.key_loudness_subsonic_freq, 20f)
             val ldSubsonicOrder = cache.get(R.string.key_loudness_subsonic_order, 4f).toInt()
             val ldSubsonicQ = cache.get(R.string.key_loudness_subsonic_q, 0.707f)
+
+            // Only so a change of the card's switch is noticed here; whether
+            // the engine runs it, and at what level, is the controller's call.
+            cache.select(Constants.PREF_SMOOTH_VOLUME)
+            cache.get(R.string.key_smooth_volume_enable, false)
 
             cache.select(Constants.PREF_SHAPER)
             val shEnabled = cache.get(R.string.key_shaper_enable, false)
@@ -598,6 +635,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                             ldSubsonicQ
                         )
                     }
+                    Constants.PREF_SMOOTH_VOLUME -> sendSmoothVolume(true)
                     Constants.PREF_SHAPER -> setSpectralShaper(
                         shEnabled, shAmount, shSensitivity, shLow, shHigh, shSpeed,
                         shFocus, shTones, shListen, shMs
@@ -699,9 +737,28 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                 }
             }
 
+            // A new engine, or one whose settings were all sent again, gets
+            // the level too, without waiting for the next key press.
+            sendSmoothVolume(false)
+
             cache.markChangesAsCommitted()
             Timber.i("Preferences synchronized")
         }
+    }
+
+    /** Call with the sync mutex held. */
+    private fun sendSmoothVolume(force: Boolean): Boolean {
+        val c = smoothVolume ?: return true
+        val wanted = c.engineOn to c.engineGainDb
+        if (!force && wanted == smoothVolumeSent) return true
+        // Not remembered unless it arrived, so the next sync tries again.
+        return setSmoothVolume(wanted.first, wanted.second)
+            .also { smoothVolumeSent = if (it) wanted else null }
+    }
+
+    /** For an engine that was recreated underneath, which has none of it. */
+    protected fun forgetSmoothVolume() {
+        smoothVolumeSent = null
     }
 
     fun setMultiEqualizer(enable: Boolean, filterType: Int, interpolationMode: Int, bands: String): Boolean
@@ -1043,6 +1100,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     abstract fun setLoudness(enable: Boolean, mode: Int, refLevel: Float, refOffset: Float, strength: Float, bassHz: Float, bassSlope: Float, bassAmount: Float, trebleHz: Float, trebleSlope: Float, trebleAmount: Float, phon: Float, subsonic: Boolean, subsonicHz: Float, subsonicOrder: Int, subsonicQ: Float): Boolean
     /** The media volume in dB, 0 at full volume. */
     abstract fun setLoudnessVolume(volumeDb: Float): Boolean
+    abstract fun setSmoothVolume(enable: Boolean, gainDb: Float): Boolean
     abstract fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean
     abstract fun setVinyl(enable: Boolean, surface: Float, crackle: Float, crackleSize: Float, pops: Float, clicks: Float, sizzle: Float, hiss: Float, prickle: Float, rumble: Float, wear: Float, follow: Float, mix: Float): Boolean
     abstract fun setExciter(enable: Boolean, f1: Float, f2: Float, f3: Float, a1: Float, a2: Float, a3: Float, a4: Float, character: Int, drive: Float, mix: Float): Boolean

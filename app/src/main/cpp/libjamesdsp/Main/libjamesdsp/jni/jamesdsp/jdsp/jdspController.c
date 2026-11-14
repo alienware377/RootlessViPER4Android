@@ -809,6 +809,12 @@ void JamesDSPProcess(JamesDSPLib *jdsp, size_t n)
 				jdsp->limiter.envOverThreshold = jdsp->limiter.threshold * 64.0f;
 		}
 	}
+	// Smooth volume, after the limiter so it never changes what the limiter
+	// does; it only scales what came out.
+	jdsp_lock(jdsp);
+	if (jdsp->smoothVolume.engaged) SmoothVolumeProcess(jdsp, n);
+	jdsp->smoothVolume.fresh = 0;
+	jdsp_unlock(jdsp);
 }
 void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 {
@@ -913,6 +919,12 @@ void JamesDSPProcessCheckBenchmarkReady(JamesDSPLib *jdsp, size_t n)
 				jdsp->limiter.envOverThreshold = jdsp->limiter.threshold * 64.0f;
 		}
 	}
+	// Smooth volume, after the limiter so it never changes what the limiter
+	// does; it only scales what came out.
+	jdsp_lock(jdsp);
+	if (jdsp->smoothVolume.engaged) SmoothVolumeProcess(jdsp, n);
+	jdsp->smoothVolume.fresh = 0;
+	jdsp_unlock(jdsp);
 	if (benchmarkCompletionFlag == 1)
 	{
 #ifdef DEBUG
@@ -1707,6 +1719,14 @@ void JamesDSPInit(JamesDSPLib *jdsp, int n, float sample_rate)
 	// The volume stays at 0 dB until the app reports one.
 	LoudnessSetParam(jdsp, LOUDNESS_MODE_CLASSIC, 0.0f, 0.0f, 100.0f,
 		75.0f, 0.52f, 55.0f, 10000.0f, 0.9f, 22.5f, 80.0f, 0, 20.0f, 4, 0.707f);
+	// Off, and at 0 dB for when it is switched on without a level.
+	jdsp->smoothVolumeEnabled = 0;
+	jdsp->smoothVolume.engaged = 0;
+	jdsp->smoothVolume.gain = 1.0f;
+	jdsp->smoothVolume.target = 1.0f;
+	jdsp->smoothVolume.fresh = 1;
+	SmoothVolumeRefresh(jdsp);
+	SmoothVolumeSetParam(jdsp, 0.0f);
 	jdsp->shaperEnabled = 0;
 	jdsp->shaper.mem = 0;
 	jdsp->shaper.N = 0;
@@ -1900,6 +1920,7 @@ void JamesDSPSetSampleRate(JamesDSPLib *jdsp, float new_sample_rate, int forceRe
 	BalanceRefresh(jdsp);
 	LufsNormalizerRefresh(jdsp);
 	LoudnessRefresh(jdsp);
+	SmoothVolumeRefresh(jdsp);
 	SpectralShaperRefresh(jdsp);
 	BinauralUpmixRefresh(jdsp);
 	PitchShiftRefresh(jdsp);

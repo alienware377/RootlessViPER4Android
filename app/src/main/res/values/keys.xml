@@ -370,6 +370,8 @@
     <string name="key_loudness_subsonic_freq" translatable="false">loudness_subsonic_freq</string>
     <string name="key_loudness_subsonic_order" translatable="false">loudness_subsonic_order</string>
     <string name="key_loudness_subsonic_q" translatable="false">loudness_subsonic_q</string>
+    <string name="key_smooth_volume_enable" translatable="false">smooth_volume_enable</string>
+    <string name="key_smooth_volume_hud" translatable="false">smooth_volume_hud</string>
     <string name="key_shaper_enable" translatable="false">shaper_enable</string>
     <string name="key_shaper_amount" translatable="false">shaper_amount</string>
     <string name="key_shaper_sensitivity" translatable="false">shaper_sensitivity</string>

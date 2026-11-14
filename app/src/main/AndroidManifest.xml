@@ -320,6 +320,33 @@
                 android:value="true" />
         </service>
 
+        <!-- Smooth volume: the volume keys while it is working, and its tile. -->
+        <service
+            android:name=".smoothvolume.VolumeKeyService"
+            android:label="@string/smooth_volume_service_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/smooth_volume_key_service" />
+        </service>
+
+        <service
+            android:name=".smoothvolume.SmoothVolumeTileService"
+            android:label="@string/smooth_volume_tile"
+            android:icon="@drawable/ic_twotone_volume_up_24dp"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
         <service
             android:name=".backup.BackupRestoreService"
             android:foregroundServiceType="dataSync"

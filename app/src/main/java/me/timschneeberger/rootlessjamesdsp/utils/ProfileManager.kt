@@ -193,7 +193,7 @@ class ProfileManager : BroadcastReceiver(), RoutingObserver.RoutingChangedCallba
 
         // Clear old current files
         getPrefsDirectory().listFiles()
-            ?.filter { it.name.startsWith("dsp_") }
+            ?.filter { Preset.isSoundFile(it.name) }
             ?.filter { it.extension == "xml" }
             ?.forEach { it.delete() }
     }
