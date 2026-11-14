@@ -161,6 +161,38 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   downloaded at runtime from the AutoEq repository, one file at a time, only
   when the user picks them, and stay in the app's own storage.
 
+### Loudness / PEQ fork of RootlessJamesDSP
+
+- **Author:** evoeram
+- **Licence:** GNU GPL version 3, the same as this app, so there is no
+  separate licence text below
+- **Upstream:** https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, as of
+  commit `489d9331ef7b67dac304a20d3be41bd0bd82e3f1`
+- **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GraphicEqToPeq.kt`,
+  ported from `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GraphEqToPeqConverter.kt`.
+  A port, not a copy. From upstream: the log-frequency interpolation of the
+  nodes, the greedy placement of peaking filters at the largest error, the
+  Nelder-Mead refinement of all filters after each one, the quadratic penalty
+  on Q above 4, the preamp against clipping, and the 8/12/16/20 filter choice
+  and quality grades of the result dialog. Changed here: the responses come
+  from this app's `BiquadUtils`, so they are the curve the engine applies; the
+  curve's overall level goes into the preamp instead of the filters; each new
+  filter is fitted on its own before the joint pass; fitting stops once the
+  error is under 0.5 dB; and filters that end up doing nothing are dropped and
+  their spot skipped.
+
+  The To parametric EQ flow in
+  `app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/GraphicEqualizerFragment.kt`
+  and its result dialog `app/src/main/res/layout/dialog_geq_to_peq.xml` are
+  modelled on upstream's `showConversionResultDialog` and `applyToPeq` in the
+  same fragment and on `app/src/main/res/layout/dialog_geq_to_peq_result.xml`:
+  the filter count choice, the summary of filters, preamp, fit grade, largest
+  and RMS error, the table of filters, and the apply and copy buttons. Written
+  anew here rather than copied. Changed here: applying asks first, switches
+  the graphic EQ off and the parametric EQ on so the curve is not applied
+  twice, and the fit shows its progress and can be cancelled.
+- **Used by:** To parametric EQ, on the Graphic EQ screen.
+
 ### libmysofa
 
 - **Author:** Christian Hoene, Symonics GmbH
