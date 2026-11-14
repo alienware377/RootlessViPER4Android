@@ -6,8 +6,6 @@
  */
 package me.timschneeberger.rootlessjamesdsp.voiceisolation
 
-import kotlin.math.abs
-import kotlin.math.tanh
 
 /**
  * Works out, per hop, how much of the voice estimate and how much of the dry signal to play.
@@ -158,23 +156,8 @@ internal class IsolationIntensityMixer(
         private const val CALIBRATION_START_HOPS = 8L
         private const val CALIBRATION_INTERVAL_HOPS = 4L
         private const val CALIBRATION_CONFIRMATIONS = 3
-        private const val MAX_PEAK = 0.9999695f
-        private const val SOFT_LIMIT_START = 0.9f
-        private const val SOFT_LIMIT_RANGE = MAX_PEAK - SOFT_LIMIT_START
         private const val AUTO_BACKGROUND_REDUCTION = 0.2f
         private const val AUTO_ATTACK_MS = 40f
         private const val AUTO_RELEASE_MS = 250f
-
-        /**
-         * Leaves everything up to 0.9 alone and bends what is above it into the last tenth below
-         * full scale, so a boosted voice does not clip on its way to a 16-bit track.
-         */
-        fun softLimit(sample: Float): Float {
-            val magnitude = abs(sample)
-            if (magnitude <= SOFT_LIMIT_START) return sample
-            val limited = SOFT_LIMIT_START + SOFT_LIMIT_RANGE *
-                tanh(((magnitude - SOFT_LIMIT_START) / SOFT_LIMIT_RANGE).toDouble()).toFloat()
-            return if (sample < 0f) -limited else limited
-        }
     }
 }

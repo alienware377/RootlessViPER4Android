@@ -139,6 +139,32 @@ class HopPipelineTest {
         assertEquals(rms(input, 20_000, 40_000), rms(output, 20_000, 40_000), 1e-4)
     }
 
+    /** A modern master peaks just under full scale; at neutral it must not be bent at all. */
+    @Test
+    fun loudInputComesBackUntouchedAtNeutral() {
+        for (rate in listOf(48_000, 44_100)) {
+            val random = Random(17)
+            val input = FloatArray(rate) {
+                (0.95 * sin(2.0 * PI * 997.0 * it / rate)).toFloat() + (random.nextFloat() - 0.5f) * 0.098f
+            }
+            assertTrue(input.maxOf { abs(it) } > 0.99f)
+            val pipeline = withMixer(rate)
+            val output = run(pipeline, input, intArrayOf(1024), VoiceIsolationSettings(0f, 1f))
+            val delay = pipeline.latencyFrames.toInt()
+            for (index in delay until rate) assertEquals("$rate Hz, frame $index", input[index - delay], output[index], 0f)
+        }
+    }
+
+    /** The boost is left above full scale for the engine's limiter rather than clipped here. */
+    @Test
+    fun aBoostedVoiceIsNotLimitedHere() {
+        val rate = 48_000
+        val input = FloatArray(rate) { (0.8 * sin(2.0 * PI * 1000.0 * it / rate)).toFloat() }
+        val output = run(withMixer(rate), input, intArrayOf(1024), VoiceIsolationSettings(1f, 2f))
+        val peak = (rate / 2 until rate).maxOf { abs(output[it]) }
+        assertEquals(1.6f, peak, 0.02f)
+    }
+
     /**
      * With a model that keeps everything, half background reduction must give the input back at
      * full level: the voice path and the full-band dry path then carry the same signal, and only

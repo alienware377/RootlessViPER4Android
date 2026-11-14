@@ -7,9 +7,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.sin
-import kotlin.math.tanh
 
 /**
  * The mixer hands back the scaled voice and the share of dry signal to keep. Added together they
@@ -124,20 +122,6 @@ class IsolationIntensityMixerTest {
 
         assertEquals(2, mixed.mixer.detectedDelayHops)
         assertArrayEquals(dry[17], output, 1e-6f)
-    }
-
-    @Test
-    fun theSoftLimitBendsPeaksInsteadOfClippingThem() {
-        assertEquals(0.5f, IsolationIntensityMixer.softLimit(0.5f), 0f)
-        assertEquals(-0.9f, IsolationIntensityMixer.softLimit(-0.9f), 0f)
-        val range = 0.0999695f
-        val expected = 0.9f + range * tanh(((1.0 - 0.9) / range)).toFloat()
-        assertEquals(expected, IsolationIntensityMixer.softLimit(1f), 1e-5f)
-        assertEquals(-expected, IsolationIntensityMixer.softLimit(-1f), 1e-5f)
-        for (sample in listOf(1.2f, 2f, 10f, 1e6f)) {
-            val limited = IsolationIntensityMixer.softLimit(sample)
-            assertTrue("$sample came out as $limited", abs(limited) <= 0.99997f && limited > 0.9f)
-        }
     }
 
     @Test

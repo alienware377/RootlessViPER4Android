@@ -61,11 +61,19 @@ class VoiceIsolationProcessorTest {
         val stage = VoiceIsolationProcessor(44_100) { OneHopLate() }
         stage.settings = VoiceIsolationSettings(0f, 1f)
         val random = Random(1)
-        val input = ShortArray(44_100 * 2) { (random.nextInt(40_000) - 20_000).toShort() }
-        val output = input.copyOf()
+        val input = ShortArray(44_100 * 2) { (random.nextInt(65_536) - 32_768).toShort() }
+        val output = ShortArray(input.size)
         val block = 1024
-        for (start in 0 until 44_100 step block) stage.processShort(output, start * 2, minOf(block, 44_100 - start))
+        val floats = FloatArray(block * 2)
+        for (start in 0 until 44_100 step block) {
+            val frames = minOf(block, 44_100 - start)
+            assertTrue(stage.processShort(input, start * 2, frames, floats))
+            val shorts = ShortArray(frames * 2)
+            PcmConverter.toShortRounded(floats, shorts, frames * 2)
+            shorts.copyInto(output, start * 2)
+        }
 
+        // Full-scale samples included: nothing on the way bends them.
         val delay = 708 + 793
         for (frame in delay until 44_100) {
             assertEquals(input[2 * (frame - delay)], output[2 * frame])
@@ -153,6 +161,8 @@ class VoiceIsolationProcessorTest {
         val copy = untouched.copyOf()
         stage.processFloat(copy, 0, 1024)
         assertTrue(copy.contentEquals(untouched))
+        val shorts = ShortArray(2048) { it.toShort() }
+        assertFalse(stage.processShort(shorts, 0, 1024, FloatArray(2048)))
     }
 
     @Test
