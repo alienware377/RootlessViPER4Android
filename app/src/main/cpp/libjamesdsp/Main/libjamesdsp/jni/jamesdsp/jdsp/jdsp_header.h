@@ -383,10 +383,10 @@ typedef struct
 	int valid;
 	double measured, peakDb;
 	// Gain in dB walks towards wantDb; the linear gain is ramped between
-	// control points.
-	double gainDb, wantDb, upCoef, downCoef;
+	// control points. In a gap a boost is let go at gapCoef instead.
+	double gainDb, wantDb, upCoef, downCoef, gapCoef;
 	float gainLin, gainNext, gainStep;
-	int ctlPos;
+	int ctlPos, inGap;
 } LufsNormalizer;
 #define DYNEQ_MAX_BANDS 8
 // freq, Q, threshold dB, ratio, attack ms, release ms, range dB, mode

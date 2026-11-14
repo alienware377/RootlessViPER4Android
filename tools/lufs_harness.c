@@ -430,19 +430,19 @@ int main(void)
 		check("cut, then hiss: highest gain minus gain before", gainMax - cut2, -1.0, 0.002);
 		check("cut, then hiss: history dropped", l->histCount, 0, 0);
 
-		// A one second pause inside a song changes nothing.
+		// A stop shorter than a gap inside a song changes nothing.
 		setup(48000.0, -14, 6, 12, 1, 1);
 		g = sine(0.1, 997.0);
 		run(&g, 12.0, 1024);
 		const double mid = l->gainDb;
-		run(&s, 1.0, 1024);
+		run(&s, 0.35, 1024);
 		const double paused = gainMax;
 		run(&g, 2.0, 1024);
-		check("one second pause: highest gain during it minus before", paused - mid, -0.01, 0.002);
-		check("one second pause: gain after the song resumes minus before", l->gainDb - mid, -0.05, 0.05);
+		check("350 ms stop: highest gain during it minus before", paused - mid, -0.01, 0.002);
+		check("350 ms stop: gain after the song resumes minus before", l->gainDb - mid, -0.05, 0.05);
 	}
 
-	printf("\na song starting after silence\n");
+	printf("\ngaps between songs\n");
 	{
 		// A song already at the target, starting after silence, on a cold start
 		// and after another song. The blocks that straddle the start are part
@@ -466,6 +466,36 @@ int main(void)
 			snprintf(what, sizeof(what), "%s: the next song after a gap, highest gain", names[sp]);
 			check(what, gainMax, -0.1, 0.1);
 		}
+
+		// A quiet song boosted 6 dB, a short gap, then a loud song. The boost
+		// has to be gone by the time the loud song starts, and must not come
+		// back from the quiet song's history once it has.
+		const double a22 = pinkAmpFor(-22.0), a10 = pinkAmpFor(-10.0);
+		const double gaps[3] = { 0.7, 1.0, 1.9 };
+		for (int sp = 0; sp < 3; sp++)
+			for (int gi = 0; gi < 3; gi++)
+				for (int guard = 0; guard < 2; guard++)
+				{
+					Gen q = pinkAt(a22, 11u + gi), s = silence(), loud = pinkAt(a10, 21u + gi);
+					setup(48000.0, -14, 6, 12, sp, guard);
+					run(&q, 16.0, 1024);
+					const double boosted = l->gainDb;
+					run(&s, gaps[gi], 1024);
+					const double atStart = l->gainDb;
+					run(&loud, 5.0, 1024);
+					char what[96];
+					if (gi == 0 && guard == 0)
+					{
+						snprintf(what, sizeof(what), "%s: quiet song boosted to (dB)", names[sp]);
+						check(what, boosted, 5.5, 6.0);
+					}
+					snprintf(what, sizeof(what), "%s, %.1f s gap, guard %s: gain as the loud song starts",
+						names[sp], gaps[gi], guard ? "on" : "off");
+					check(what, atStart, 0.0, gi == 0 ? 1.0 : 0.05);
+					snprintf(what, sizeof(what), "%s, %.1f s gap, guard %s: highest gain in it",
+						names[sp], gaps[gi], guard ? "on" : "off");
+					check(what, gainMax, -12.0, gi == 0 ? 1.0 : 0.05);
+				}
 	}
 
 	printf("\nNaN and nonsense\n");

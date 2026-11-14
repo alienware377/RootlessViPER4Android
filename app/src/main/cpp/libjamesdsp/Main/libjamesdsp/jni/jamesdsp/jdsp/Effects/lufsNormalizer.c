@@ -14,12 +14,13 @@
  *   Quiet     It never raises the gain while the last 100 ms are under
  *             -50 LUFS: a pause, the tail of a fade, hiss or room tone between
  *             tracks. Real programme, even quiet classical, sits well above
- *             that. Two seconds of it and the history is dropped, so the next
- *             song is measured on its own; until then a boost eases back to
- *             unity and a cut is held, so a loud song after a quiet one never
- *             arrives boosted. Only blocks made wholly of programme are
- *             measured, so the part-silent ones at either end of a song cannot
- *             make it read quieter than it is.
+ *             that. 400 ms of it counts as a gap between songs: the history
+ *             is dropped, so the next song is measured on its own, a boost is
+ *             let go within a few tenths of a second (nothing is playing to
+ *             hear it go) and a cut is held. A loud song after a quiet one
+ *             then never starts boosted. Only blocks made wholly of programme
+ *             are measured, so the part-silent ones at either end of a song
+ *             cannot make it read quieter than it is.
  *   Limits    Boost and cut each have their own ceiling, and the gain only
  *             ever approaches its target from one side, so it cannot
  *             overshoot either.
@@ -65,8 +66,13 @@
    gate is -70 LUFS, meant for a whole programme; for a running measurement
    that would let hiss between tracks set the gain. */
 #define LUFS_QUIET_FLOOR (-50.0)
-/* Blocks of quiet, at one per 100 ms, after which the history is dropped. */
-#define LUFS_QUIET_RESET 20
+/* Blocks of quiet, at one per 100 ms, after which it is a gap: the history is
+   dropped and a boost let go. Gaps between album tracks are mostly half a
+   second or more; a shorter stop inside a song changes nothing. */
+#define LUFS_QUIET_RESET 4
+/* Time constant (seconds) for letting a boost go in a gap. Fast, since all it
+   scales is silence or near silence. */
+#define LUFS_GAP_SEC 0.08
 /* Gain control rate: the gain is recomputed every this many samples and
    ramped in between. */
 #define LUFS_CTL 16
@@ -117,6 +123,7 @@ static void lufsDesign(LufsNormalizer *l, double fs)
 		l->histLen = LUFS_HISTORY_MAX;
 	l->upCoef = 1.0 - exp(-(double)LUFS_CTL / (lufsUpSec[l->speed] * fs));
 	l->downCoef = 1.0 - exp(-(double)LUFS_CTL / (lufsDownSec[l->speed] * fs));
+	l->gapCoef = 1.0 - exp(-(double)LUFS_CTL / (LUFS_GAP_SEC * fs));
 }
 
 /* The filters and the block being gathered. The history is kept: loudness
@@ -284,6 +291,7 @@ static void lufsSubBlockDone(JamesDSPLib *jdsp, LufsNormalizer *l)
 	}
 	else if (++l->quietBlocks >= LUFS_QUIET_RESET && l->histCount > 0)
 		lufsClearHistory(l);
+	l->inGap = quiet && l->quietBlocks >= LUFS_QUIET_RESET;
 
 	l->pendingPow = 0.25 * (l->subPow[0] + l->subPow[1] + l->subPow[2] + l->subPow[3]);
 	l->pendingPeak = l->subPk[0];
@@ -295,7 +303,8 @@ static void lufsSubBlockDone(JamesDSPLib *jdsp, LufsNormalizer *l)
 	double want;
 	if (!l->valid)
 	{
-		/* Nothing measured: let a boost go back to unity, hold a cut. */
+		/* Nothing measured, or a gap: let a boost go back to unity, hold a
+		   cut. */
 		want = l->gainDb < 0.0 ? l->gainDb : 0.0;
 	}
 	else
@@ -354,7 +363,8 @@ void LufsNormalizerProcess(JamesDSPLib *jdsp, size_t n)
 		if (++l->ctlPos >= LUFS_CTL)
 		{
 			l->ctlPos = 0;
-			const double c = l->wantDb > l->gainDb ? l->upCoef : l->downCoef;
+			const double c = l->wantDb > l->gainDb ? l->upCoef
+				: l->inGap ? l->gapCoef : l->downCoef;
 			l->gainDb += c * (l->wantDb - l->gainDb);
 			l->gainLin = l->gainNext;
 			l->gainNext = (float)pow(10.0, l->gainDb / 20.0);
@@ -399,6 +409,7 @@ void LufsNormalizerEnable(JamesDSPLib *jdsp)
 		lufsClearRunning(l);
 		lufsClearHistory(l);
 		l->quietBlocks = 0;
+		l->inGap = 0;
 		/* Starts at unity: nothing is known about the music yet. */
 		l->gainDb = 0.0;
 		l->wantDb = 0.0;
