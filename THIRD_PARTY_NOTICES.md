@@ -163,12 +163,16 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
 
 ### Loudness / PEQ fork of RootlessJamesDSP
 
-- **Author:** evoeram
+- **Author:** evoeram and contributors. The upstream files carry no per-file
+  copyright line.
 - **Licence:** GNU GPL version 3, the same as this app, so there is no
   separate licence text below
 - **Upstream:** https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, as of
-  commit `489d9331ef7b67dac304a20d3be41bd0bd82e3f1`
-- **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GraphicEqToPeq.kt`,
+  commit `489d9331ef7b67dac304a20d3be41bd0bd82e3f1`, and its engine,
+  https://github.com/evoeram/JamesDSPManager, branch `extensions` (commit
+  `a8e3d7ff7dba89c82b8ee55d4b6a90e2d2878345`)
+- **Graphic EQ to parametric EQ:**
+  `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GraphicEqToPeq.kt`,
   ported from `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GraphEqToPeqConverter.kt`.
   A port, not a copy. From upstream: the log-frequency interpolation of the
   nodes, the greedy placement of peaking filters at the largest error, the
@@ -191,7 +195,40 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   anew here rather than copied. Changed here: applying asks first, switches
   the graphic EQ off and the parametric EQ on so the curve is not applied
   twice, and the fit shows its progress and can be cancelled.
-- **Used by:** To parametric EQ, on the Graphic EQ screen.
+- **LUFS normalizer:** `Effects/lufsNormalizer.c`. Its behaviour follows
+  `lufs_normalizer.c` in the engine. That in turn follows
+  `viper/effects/LUFSTargeting.cpp` in ViPERDSP
+  (https://github.com/likelikeslike/ViPERDSP), built on the reverse engineering
+  of ViPER4Android by Martmists, Iscle and likelikeslike
+  (https://github.com/AndroidAudioMods/ViPERFX_RE). The original ViPER4Android
+  is the work of Zhuhang and ViPER520. Rewritten for this engine rather than
+  copied. Changed here: an exact 400 ms window from 100 ms blocks, a history
+  as long as the speed asks for, separate boost and cut limits, rising slower
+  than falling, a quiet floor that keeps the ends of songs and hiss out of the
+  measurement, a boost let go across a gap between songs, and a peak guard
+  that keeps a boost clear of the output limiter.
+- **Smooth volume:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/smoothvolume/`
+  and `app/src/main/res/xml/smooth_volume_key_service.xml`, after upstream's
+  `smoothvolume/`, `service/VolumeKeyAccessibilityService.kt`,
+  `service/SmoothVolumeHudService.kt`, `service/SmoothVolumeTileService.kt`,
+  `fragment/SmoothVolumeCardFragment.kt` and
+  `res/xml/accessibility_smooth_volume.xml`. Taken as behaviour and written
+  anew: the volume keys taken by an accessibility service that only filters
+  keys, half dB steps, the speed-up while a key is held (0.5 dB every 300 ms,
+  1 dB every 200 ms, 2 dB every 150 ms, 4 dB every 120 ms, 8 dB every 100 ms
+  after 5 s), a floating level readout and a quick settings tile. Changed
+  here: upstream multiplied the gain in before the output limiter, unsmoothed;
+  here it is an engine stage after the limiter (`Effects/smoothVolume.c`),
+  smoothed per sample. The system media volume is held and put back, outside
+  volume changes are folded into the level, steps follow the phone's own
+  volume curve, the held index goes up when a step needs more than the gain
+  can give, and the key service can be switched on through Shizuku.
+  Upstream's mute state, readout styling and readout settings are not
+  carried over.
+- **Also by way of this fork:** the loudness correction and voice isolation,
+  each listed below with its own origin.
+- **Used by:** To parametric EQ on the Graphic EQ screen, the LUFS normalizer
+  card and the Smooth volume card.
 
 ### libmysofa
 
@@ -238,8 +275,9 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   the high shelf and high pass parameters of `ebur128_init_filter` in
   `ebur128/ebur128.c` and the way they are turned into coefficients for a
   given sample rate, which reproduces the 48 kHz coefficients published in
-  ITU-R BS.1770. The LUFS normalizer this one follows (see below) credits the
-  design to Martin Vicanek's matched biquads, as libebur128 formulates them.
+  ITU-R BS.1770. The LUFS normalizer this one follows (see the Loudness / PEQ
+  fork above) credits the design to Martin Vicanek's matched biquads, as
+  libebur128 formulates them.
 - **Used by:** the LUFS normalizer card.
 
 ### EqualizerAPO loudness correction
@@ -251,14 +289,11 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   `filters/loudnessCorrection/LoudnessCorrectionFilter.cpp` (git
   https://git.code.sf.net/p/equalizerapo/code, commit
   `bbfcc3e5024cbb9d61ba75fc88d78605cc4c9687`)
-- **By way of:** evoeram's Loudness / PEQ fork of RootlessJamesDSP, GNU GPL
-  version 3: https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP (commit
-  `489d9331ef7b67dac304a20d3be41bd0bd82e3f1`),
+- **By way of:** the Loudness / PEQ fork above, GNU GPL version 3: its
   `app/src/main/cpp/libjamesdsp-wrapper/loudness/LoudnessCorrectionProcessor.cpp`
-  and `utils/LoudnessCurveCalculator.kt`, and its engine at
-  https://github.com/evoeram/JamesDSPManager, branch `extensions` (commit
-  `a8e3d7ff7dba89c82b8ee55d4b6a90e2d2878345`), `peq_loudness.c`. The fork added
-  the ISO 226:2023 mode, the adjustable shelves and the subsonic filter.
+  and `utils/LoudnessCurveCalculator.kt`, and `peq_loudness.c` in its engine.
+  The fork added the ISO 226:2023 mode, the adjustable shelves and the
+  subsonic filter.
 - **Files:** `Effects/loudnessCorrection.c`, and the matching design in
   `app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/LoudnessCurve.kt`
   that draws the card's graph.
@@ -286,9 +321,8 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
 - **Author:** André Naumann
 - **Licence:** MIT, see [the android-realtime-voice-isolation notice](#mit-licence-android-realtime-voice-isolation)
 - **Upstream:** https://github.com/sk2andy/android-realtime-voice-isolation, by way
-  of the evoeram fork of RootlessJamesDSP,
-  https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP (GNU GPL version 3),
-  which made it a stage of the rootless playback loop.
+  of the Loudness / PEQ fork above (GNU GPL version 3), which made it a stage
+  of the rootless playback loop.
 - **Files:** `app/src/main/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/`
   and `app/src/rootless/java/me/timschneeberger/rootlessjamesdsp/voiceisolation/GtcrnProcessor.kt`.
   A Kotlin port, not a copy: the streaming GTCRN wrapper with its cached state,
@@ -330,16 +364,6 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   Programs Ltd, GNU GPL version 2 or later. It is vendored unmodified with its
   own `COPYING`, and its bundled KISS FFT and Speex resampler keep their own
   `COPYING` files under `third_party/rubberband/src/ext/`.
-- **LUFS normalizer**, `Effects/lufsNormalizer.c`: its behaviour follows
-  `lufs_normalizer.c` from evoeram's Loundess-PEQ-RootlessJamesDSP
-  (https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, engine in
-  https://github.com/evoeram/JamesDSPManager, branch `extensions`), GNU GPL
-  version 3. That in turn follows `viper/effects/LUFSTargeting.cpp` in ViPERDSP
-  (https://github.com/likelikeslike/ViPERDSP), built on the reverse engineering
-  of ViPER4Android by Martmists, Iscle and likelikeslike
-  (https://github.com/AndroidAudioMods/ViPERFX_RE). The original ViPER4Android
-  is the work of Zhuhang and ViPER520. Rewritten for this engine rather than
-  copied.
 
 ## Licence texts
 
@@ -537,6 +561,8 @@ commercial applications.
 
 ### MIT licence (android-realtime-voice-isolation)
 
+The copyright line as the Loudness / PEQ fork's `NOTICE` carries it:
+
 ```text
 MIT License
 
@@ -563,6 +589,8 @@ SOFTWARE.
 
 ### MIT licence (GTCRN)
 
+The copyright line as the Loudness / PEQ fork's `NOTICE` carries it:
+
 ```text
 MIT License
 
@@ -588,6 +616,8 @@ SOFTWARE.
 ```
 
 ### MIT licence (ONNX Runtime)
+
+From ONNX Runtime `LICENSE`:
 
 ```text
 MIT License
