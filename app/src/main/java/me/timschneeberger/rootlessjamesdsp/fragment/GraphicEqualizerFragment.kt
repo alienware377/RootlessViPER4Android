@@ -187,6 +187,16 @@ class GraphicEqualizerFragment : Fragment() {
         super.onDestroy()
     }
 
+    override fun onDestroyView() {
+        // The fit is cancelled with the view, but its coroutine only gets to
+        // dismiss the progress dialog once the fit has stopped, which can be
+        // after the activity's window is gone (rotation, a preset reload).
+        // Dismissed here it never outlives the window it was shown on.
+        conversionProgress?.let { runCatching { it.dismiss() } }
+        conversionProgress = null
+        super.onDestroyView()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -445,6 +455,7 @@ class GraphicEqualizerFragment : Fragment() {
     }
 
     private var conversion: Job? = null
+    private var conversionProgress: ProgressDialog? = null
 
     private fun convertToPeq(maxFilters: Int) {
         val nodes = adapter.nodes.map { it.freq to it.gain }
@@ -452,6 +463,7 @@ class GraphicEqualizerFragment : Fragment() {
             isIndeterminate = true
             title = getString(R.string.geq_to_peq_running)
         }
+        conversionProgress = progress
         conversion = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.Default) {
@@ -470,7 +482,9 @@ class GraphicEqualizerFragment : Fragment() {
                 else
                     showConversion(result)
             } finally {
-                progress.dismiss()
+                // Already gone if the view went first, see onDestroyView
+                runCatching { progress.dismiss() }
+                if (conversionProgress === progress) conversionProgress = null
             }
         }
     }
