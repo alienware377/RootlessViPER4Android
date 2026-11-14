@@ -19,9 +19,10 @@ import kotlin.math.abs
  * Streaming GTCRN: an STFT frame in, the enhanced voice spectrum out, with the model's
  * convolution, attention and recurrent caches carried from one frame to the next.
  *
- * The input and cache tensors wrap direct buffers made once, so a hop allocates nothing but what
- * ONNX Runtime returns. The model gives the voice only; [IsolationIntensityMixer] makes the
- * background from it.
+ * Every tensor, inputs and outputs alike, wraps a direct buffer made once, and the outputs are
+ * handed to ONNX Runtime pinned, so a hop costs no native tensor and no copy of the caches. There
+ * are two sets of caches used in turn: a hop reads one and the model writes the next state into
+ * the other. The model gives the voice only; [IsolationIntensityMixer] makes the background from it.
  */
 internal class GtcrnProcessor(model: ByteArray) : EnhancerBackend {
     private val environment = OrtEnvironment.getEnvironment()
@@ -29,15 +30,15 @@ internal class GtcrnProcessor(model: ByteArray) : EnhancerBackend {
     private val stft = StftProcessor(GtcrnModel.FFT_SIZE, GtcrnModel.HOP_SIZE)
 
     private val mixBuffer = directFloatBuffer(GtcrnModel.SPECTRUM_SIZE)
-    private val convolutionCache = directFloatBuffer(CONVOLUTION_CACHE_SIZE)
-    private val attentionCache = directFloatBuffer(ATTENTION_CACHE_SIZE)
-    private val recurrentCache = directFloatBuffer(RECURRENT_CACHE_SIZE)
+    private val enhancedBuffer = directFloatBuffer(GtcrnModel.SPECTRUM_SIZE)
+    private val cacheBuffers = Array(2) { CACHE_SHAPES.map { directFloatBuffer(it.fold(1L, Long::times).toInt()) } }
 
-    private val mixTensor: OnnxTensor
-    private val convolutionTensor: OnnxTensor
-    private val attentionTensor: OnnxTensor
-    private val recurrentTensor: OnnxTensor
-    private val inputs: Map<String, OnnxTensor>
+    private val tensors = ArrayList<OnnxTensor>()
+
+    /** Inputs and pinned outputs for a hop that reads cache set 0 and for one that reads set 1. */
+    private val inputs: Array<Map<String, OnnxTensor>>
+    private val outputs: Array<Map<String, OnnxTensor>>
+    private var cacheSet = 0
 
     private val inputSpectrum = FloatArray(GtcrnModel.SPECTRUM_SIZE)
     private val enhancedSpectrum = FloatArray(GtcrnModel.SPECTRUM_SIZE)
@@ -56,20 +57,19 @@ internal class GtcrnProcessor(model: ByteArray) : EnhancerBackend {
         }
         session = options.use { environment.createSession(model, it) }
         try {
-            mixTensor = OnnxTensor.createTensor(environment, mixBuffer, MIX_SHAPE)
-            convolutionTensor = OnnxTensor.createTensor(environment, convolutionCache, CONVOLUTION_SHAPE)
-            attentionTensor = OnnxTensor.createTensor(environment, attentionCache, ATTENTION_SHAPE)
-            recurrentTensor = OnnxTensor.createTensor(environment, recurrentCache, RECURRENT_SHAPE)
+            val mix = tensor(mixBuffer, MIX_SHAPE)
+            val enhanced = tensor(enhancedBuffer, MIX_SHAPE)
+            val caches = Array(2) { set -> CACHE_SHAPES.mapIndexed { index, shape -> tensor(cacheBuffers[set][index], shape) } }
+            inputs = Array(2) { set ->
+                mapOf("mix" to mix) + CACHE_NAMES.indices.associate { CACHE_NAMES[it] to caches[set][it] }
+            }
+            outputs = Array(2) { set ->
+                mapOf("enh" to enhanced) + CACHE_NAMES.indices.associate { CACHE_NAMES[it] + "_out" to caches[1 - set][it] }
+            }
         } catch (e: Throwable) {
-            session.close()
+            close()
             throw e
         }
-        inputs = mapOf(
-            "mix" to mixTensor,
-            "conv_cache" to convolutionTensor,
-            "tra_cache" to attentionTensor,
-            "inter_cache" to recurrentTensor,
-        )
     }
 
     override fun process(input: FloatArray, output: FloatArray) {
@@ -84,14 +84,14 @@ internal class GtcrnProcessor(model: ByteArray) : EnhancerBackend {
         mixBuffer.rewind()
 
         val startedAt = System.nanoTime()
-        session.run(inputs).use { result ->
-            copyTensor(result, "enh", interleavedSpectrum)
-            copyTensor(result, "conv_cache_out", convolutionCache)
-            copyTensor(result, "tra_cache_out", attentionCache)
-            copyTensor(result, "inter_cache_out", recurrentCache)
-        }
+        // The result only lists the pinned tensors, so closing it frees nothing of ours.
+        session.run(inputs[cacheSet], outputs[cacheSet]).close()
+        cacheSet = 1 - cacheSet
         trackInferenceTime(startedAt)
 
+        enhancedBuffer.rewind()
+        enhancedBuffer.get(interleavedSpectrum)
+        enhancedBuffer.rewind()
         for (bin in 0 until GtcrnModel.BIN_COUNT) {
             enhancedSpectrum[bin] = interleavedSpectrum[bin * 2]
             enhancedSpectrum[bin + GtcrnModel.BIN_COUNT] = interleavedSpectrum[bin * 2 + 1]
@@ -103,40 +103,25 @@ internal class GtcrnProcessor(model: ByteArray) : EnhancerBackend {
     override fun inferenceMs(): Float = smoothedInferenceMs
 
     override fun reset() {
-        clearBuffer(convolutionCache)
-        clearBuffer(attentionCache)
-        clearBuffer(recurrentCache)
+        cacheBuffers.forEach { set -> set.forEach(::clearBuffer) }
+        cacheSet = 0
         stft.reset()
         smoothedInferenceMs = 0f
     }
 
     override fun close() {
-        mixTensor.close()
-        convolutionTensor.close()
-        attentionTensor.close()
-        recurrentTensor.close()
+        tensors.forEach { it.close() }
+        tensors.clear()
         session.close()
     }
+
+    private fun tensor(buffer: FloatBuffer, shape: LongArray): OnnxTensor =
+        OnnxTensor.createTensor(environment, buffer, shape).also { tensors += it }
 
     private fun trackInferenceTime(startedAtNanos: Long) {
         val inferenceMs = (System.nanoTime() - startedAtNanos) / 1_000_000f
         smoothedInferenceMs = if (smoothedInferenceMs == 0f) inferenceMs
             else smoothedInferenceMs * 0.9f + inferenceMs * 0.1f
-    }
-
-    private fun output(result: OrtSession.Result, name: String): FloatBuffer {
-        val tensor = result.get(name).orElseThrow { IllegalStateException("The model has no output $name") }
-        return (tensor as OnnxTensor).floatBuffer.also { it.rewind() }
-    }
-
-    private fun copyTensor(result: OrtSession.Result, name: String, destination: FloatArray) {
-        output(result, name).get(destination)
-    }
-
-    private fun copyTensor(result: OrtSession.Result, name: String, destination: FloatBuffer) {
-        destination.clear()
-        destination.put(output(result, name))
-        destination.rewind()
     }
 
     /** The model can overshoot on a sudden onset; keep its voice under full scale. */
@@ -159,13 +144,14 @@ internal class GtcrnProcessor(model: ByteArray) : EnhancerBackend {
     }
 
     companion object {
-        private const val CONVOLUTION_CACHE_SIZE = 2 * 1 * 16 * 16 * 33
-        private const val ATTENTION_CACHE_SIZE = 2 * 3 * 1 * 1 * 16
-        private const val RECURRENT_CACHE_SIZE = 2 * 1 * 33 * 16
-
         private val MIX_SHAPE = longArrayOf(1, GtcrnModel.BIN_COUNT.toLong(), 1, 2)
-        private val CONVOLUTION_SHAPE = longArrayOf(2, 1, 16, 16, 33)
-        private val ATTENTION_SHAPE = longArrayOf(2, 3, 1, 1, 16)
-        private val RECURRENT_SHAPE = longArrayOf(2, 1, 33, 16)
+
+        /** The model's caches; each has an input of this name and an output named with "_out". */
+        private val CACHE_NAMES = arrayOf("conv_cache", "tra_cache", "inter_cache")
+        private val CACHE_SHAPES = listOf(
+            longArrayOf(2, 1, 16, 16, 33),
+            longArrayOf(2, 3, 1, 1, 16),
+            longArrayOf(2, 1, 33, 16),
+        )
     }
 }
