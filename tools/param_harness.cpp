@@ -38,6 +38,37 @@ static void sendEnable(int32_t id, bool on)
 	applyParam(&g_lib, id, on ? 1 : 0, on, nullptr, 0);
 }
 
+// The output stage is where smooth volume sits, so its checks run audio
+// through a second engine of their own, where nothing else is switched on.
+extern "C" void JamesDSPProcess(JamesDSPLib *jdsp, size_t n);
+static JamesDSPLib g_sv, g_ref;
+static void svFloats(JamesDSPLib *d, int32_t id, const float *v, uint32_t n)
+{
+	applyParam(d, id, 0, false, v, n);
+}
+static void svEnable(JamesDSPLib *d, int32_t id, bool on)
+{
+	applyParam(d, id, on ? 1 : 0, on, nullptr, 0);
+}
+// One block of a constant, or of a fixed noise when level < 0; out gets the
+// left channel as it leaves the engine.
+static void svRun(JamesDSPLib *d, float level, float *out, size_t n, unsigned *seed = nullptr)
+{
+	for (size_t i = 0; i < n; i++)
+	{
+		float x = level;
+		if (seed)
+		{
+			*seed = *seed * 1664525u + 1013904223u;
+			x = ((float)(*seed >> 8) / 16777216.0f - 0.5f) * 1.6f;
+		}
+		d->tmpBuffer[0][i] = x;
+		d->tmpBuffer[1][i] = -x;
+	}
+	JamesDSPProcess(d, n);
+	if (out) memcpy(out, d->tmpBuffer[0], n * sizeof(float));
+}
+
 int main()
 {
 	printf("== root parameter dispatch ==\n\n");
@@ -674,6 +705,131 @@ int main()
 			  m->numBands == 4);
 		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
 		check("and back", fabsf(m->chInc - inc48) < 1e-9f && fabsf(m->b0[0] - b0_48) < 1e-9f);
+	}
+
+	// ---- smooth volume, after the output limiter ----------------------------
+	printf("\nsmooth volume\n");
+	{
+		JamesDSPInit(&g_sv, 4096, 48000);
+		JamesDSPInit(&g_ref, 4096, 48000);
+		SmoothVolume *s = &g_sv.smoothVolume;
+		const size_t B = 1024;
+		static float a[1024], b[1024], in[1024];
+
+		const float m12[1] = { -12.0f };
+		svFloats(&g_sv, 26032, m12, 1);
+		check("26032 sets the level", s->targetDb == -12.0f &&
+			  fabsf(s->level - powf(10.0f, -12.0f / 20.0f)) < 1e-6f);
+		const float hi[1] = { 20.0f }, lo[1] = { -500.0f };
+		svFloats(&g_sv, 26032, hi, 1);
+		bool clamped = s->targetDb == 0.0f && s->level == 1.0f;
+		svFloats(&g_sv, 26032, lo, 1);
+		clamped = clamped && s->targetDb == -100.0f;
+		const float pinf[1] = { INFINITY }, ninf[1] = { -INFINITY };
+		svFloats(&g_sv, 26032, pinf, 1);
+		clamped = clamped && s->targetDb == 0.0f;
+		svFloats(&g_sv, 26032, ninf, 1);
+		clamped = clamped && s->targetDb == -100.0f && isfinite(s->level) && s->level > 0.0f;
+		check("26032 clamps to 0 .. -100 dB, infinities included", clamped);
+		svFloats(&g_sv, 26032, m12, 1);
+		const float nan1[1] = { NAN };
+		svFloats(&g_sv, 26032, nan1, 1);
+		check("26032 holds the level it had for a NaN", s->targetDb == -12.0f && isfinite(s->level));
+		svFloats(&g_sv, 26032, nullptr, 0);
+		check("26032 with no value changes nothing", s->targetDb == -12.0f);
+
+		// Limiter off and no post gain: the output stage passes samples as
+		// they are, so anything smooth volume does shows bit for bit.
+		const float lim[4] = { -0.1f, 60.0f, 0.0f, 2.0f };
+		svFloats(&g_sv, 1500, lim, 4);
+		svFloats(&g_ref, 1500, lim, 4);
+		unsigned seed = 7;
+		svRun(&g_sv, -1.0f, a, B, &seed);
+		seed = 7; svRun(&g_ref, -1.0f, b, B, &seed);
+		check("switched off it is bit-exact passthrough", !g_sv.smoothVolumeEnabled && !s->engaged &&
+			  memcmp(a, b, sizeof(a)) == 0);
+
+		const float zero[1] = { 0.0f };
+		svFloats(&g_sv, 26032, zero, 1);
+		svEnable(&g_sv, 26132, true);
+		seed = 9; svRun(&g_sv, -1.0f, a, B, &seed);
+		seed = 9; svRun(&g_ref, -1.0f, b, B, &seed);
+		check("26132 switches it on; at 0 dB still bit-exact", g_sv.smoothVolumeEnabled == 1 &&
+			  memcmp(a, b, sizeof(a)) == 0);
+
+		// A step: from unity to -20 dB on a held 0.25. Nothing jumps; every
+		// sample moves a small part of the way, and it lands exactly.
+		const float m20[1] = { -20.0f };
+		svFloats(&g_sv, 26032, m20, 1);
+		const float want20 = 0.25f * powf(10.0f, -1.0f);
+		float prev = 0.25f, worst = 0.0f;
+		for (int blk = 0; blk < 24; blk++)
+		{
+			svRun(&g_sv, 0.25f, a, B);
+			for (size_t i = 0; i < B; i++)
+			{
+				worst = fmaxf(worst, fabsf(a[i] - prev));
+				prev = a[i];
+			}
+		}
+		check("a level change is smoothed, not stepped", worst < (0.25f - want20) / 200.0f);
+		check("and settles on the level exactly", fabsf(prev - want20) < 1e-6f && s->gain == s->target);
+
+		// After the limiter, not before it. A threshold of -6 dB and a full
+		// scale input: the limiter brings it to 0.5 and smooth volume takes
+		// that down by 12 dB. Ahead of the limiter the -12 dB would have put
+		// the input under the threshold and left it at 0.25.
+		const float lim6[4] = { -6.0f, 60.0f, 0.0f, 0.0f };
+		svFloats(&g_sv, 1500, lim6, 4);
+		svFloats(&g_ref, 1500, lim6, 4);
+		svFloats(&g_sv, 26032, m12, 1);
+		for (int blk = 0; blk < 48; blk++)
+		{
+			svRun(&g_sv, 1.0f, a, B);
+			svRun(&g_ref, 1.0f, b, B);
+		}
+		const float th = powf(10.0f, -6.0f / 20.0f), g12 = powf(10.0f, -12.0f / 20.0f);
+		check("the gain lands after the limiter", fabsf(a[B - 1] - th * g12) < 1e-4f &&
+			  fabsf(b[B - 1] - th) < 1e-4f);
+		check("and leaves the limiter exactly as it was",
+			  g_sv.limiter.envOverThreshold == g_ref.limiter.envOverThreshold);
+
+		// The coefficient follows the rate; the level stays.
+		const float c48 = s->smooth;
+		JamesDSPSetSampleRate(&g_sv, 44100.0f, 0);
+		check("a rate change redesigns the smoothing and keeps the level",
+			  fabsf(s->smooth - expf(-1.0f / (0.025f * 44100.0f))) < 1e-7f && s->smooth != c48 &&
+			  s->targetDb == -12.0f && s->target == s->level);
+		JamesDSPSetSampleRate(&g_sv, 48000.0f, 0);
+		check("and back", s->smooth == c48);
+
+		// Off walks back to unity before it steps aside, then is bit-exact.
+		svFloats(&g_sv, 1500, lim, 4);
+		svFloats(&g_ref, 1500, lim, 4);
+		svEnable(&g_sv, 26132, false);
+		svRun(&g_sv, 0.25f, a, B);
+		check("26132 off walks back rather than jumping",
+			  s->engaged && a[0] < 0.25f * g12 * 1.01f && a[B - 1] > a[0]);
+		for (int blk = 0; blk < 24; blk++) svRun(&g_sv, 0.25f, a, B);
+		seed = 11; svRun(&g_sv, -1.0f, a, B, &seed);
+		seed = 11; svRun(&g_ref, -1.0f, b, B, &seed);
+		check("then steps aside, bit-exact again", !s->engaged && memcmp(a, b, sizeof(a)) == 0);
+
+		// On again from unity, not from where it last was.
+		svFloats(&g_sv, 26032, m20, 1);
+		svEnable(&g_sv, 26132, true);
+		svRun(&g_sv, 0.25f, a, B);
+		check("26132 on fades in from unity", fabsf(a[0] - 0.25f) < 1e-3f && a[B - 1] < a[0]);
+
+		// A NaN or infinite sample in front of it stays out of its state.
+		for (int blk = 0; blk < 24; blk++) svRun(&g_sv, 0.25f, a, B);
+		svRun(&g_sv, NAN, a, 16);
+		svRun(&g_sv, 0.25f, a, B);
+		check("non-finite input leaves its gain intact", isfinite(s->gain) && s->gain == s->target &&
+			  fabsf(a[B - 1] - want20) < 1e-6f);
+
+		JamesDSPFree(&g_sv);
+		JamesDSPFree(&g_ref);
 	}
 
 	// ---- an id with no mapping is tolerated, not refused --------------------
