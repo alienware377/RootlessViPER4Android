@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.TwoStatePreference
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,7 +31,9 @@ class SmoothVolumeCardUi(private val fragment: PreferenceFragmentCompat) {
     private val status = fragment.findPreference<Preference>(KEY_STATUS)
     private val slider = fragment.findPreference<MaterialSeekbarPreference>(KEY_LEVEL)
     private val keys = fragment.findPreference<Preference>(KEY_KEYS)
-    private val hud = fragment.findPreference<Preference>(fragment.getString(R.string.key_smooth_volume_hud))
+    private val hud = fragment.findPreference<TwoStatePreference>(fragment.getString(R.string.key_smooth_volume_hud))
+    /** Switched on before the permission was there; finished once it is. */
+    private var hudWaitingForPermission = false
 
     private val listener = SmoothVolumeController.Listener { update() }
     private val shizukuResult = Shizuku.OnRequestPermissionResultListener { code, result ->
@@ -55,12 +58,16 @@ class SmoothVolumeCardUi(private val fragment: PreferenceFragmentCompat) {
         hud?.setOnPreferenceChangeListener { p, value ->
             if (value == true && !Settings.canDrawOverlays(p.context)) {
                 // Asked for here and only here: nothing else in the app draws
-                // over other apps, so nobody who leaves this off is asked.
+                // over other apps, so nobody who leaves this off is asked. The
+                // switch stays off until the permission is there, and goes on
+                // by itself on the way back if it was granted.
                 Toast.makeText(p.context, R.string.smooth_volume_hud_permission, Toast.LENGTH_LONG).show()
                 try {
                     p.context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + p.context.packageName)))
+                    hudWaitingForPermission = true
                 } catch (_: Exception) {}
+                return@setOnPreferenceChangeListener false
             }
             true
         }
@@ -100,8 +107,11 @@ class SmoothVolumeCardUi(private val fragment: PreferenceFragmentCompat) {
         keys?.summary = ctx.getString(
             if (VolumeKeyAccess.isEnabled(ctx)) R.string.smooth_volume_keys_on
             else R.string.smooth_volume_keys_off)
+        val overlay = Settings.canDrawOverlays(ctx)
+        if (hudWaitingForPermission && overlay) hud?.isChecked = true
+        hudWaitingForPermission = false
         hud?.summary = ctx.getString(
-            if (Settings.canDrawOverlays(ctx)) R.string.smooth_volume_hud_summary
+            if (overlay) R.string.smooth_volume_hud_summary
             else R.string.smooth_volume_hud_summary_no_permission)
     }
 
