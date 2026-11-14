@@ -1,7 +1,10 @@
 package me.timschneeberger.rootlessjamesdsp.utils
 
+import me.timschneeberger.rootlessjamesdsp.view.SubHarmonicSurface
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -81,5 +84,19 @@ class SubHarmonicCardTest {
             assertNotNull("no default read for ${s.key}", m)
             assertEquals("${s.key} default", s.default, m!!.groupValues[1].toFloat(), 1e-4f)
         }
+    }
+
+    @Test
+    fun `the preview greys out exactly the dividers the engine cannot play`() {
+        fun define(name: String) =
+            Regex("""#define $name ([0-9.]+)f""").find(engine)!!.groupValues[1].toFloat()
+        assertEquals(define("SUBH_HIGHEST_HZ"), SubHarmonicSurface.HIGHEST_HZ, 0f)
+        assertEquals(define("SUBH_FADE_LO_HZ"), SubHarmonicSurface.SILENT_BELOW_HZ, 0f)
+        assertTrue(engine.contains("float top = ${SubHarmonicSurface.FOLLOW_ABOVE_BAND}f * s->bandHz;"))
+        // At the default band every divider can still be heard; at the lowest,
+        // f/4 and the deeper ones cannot.
+        assertTrue((2..10).all { SubHarmonicSurface.audible(120f, it) })
+        assertTrue(SubHarmonicSurface.audible(40f, 3))
+        assertFalse(SubHarmonicSurface.audible(40f, 4))
     }
 }
