@@ -6,7 +6,9 @@ import me.timschneeberger.rootlessjamesdsp.interop.structure.EelVmVariable
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
+import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.PcmConverter
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceAddonWatcher
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationLoader
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationProcessor
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationSettings
@@ -36,6 +38,7 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun close() {
         val oldHandle = handle
         handle = 0
+        voiceAddonWatcher?.stop()
         stopVoiceIsolation()
         VoiceIsolationStatus.update(context, VoiceIsolationStatus.State.Off)
         super.close()
@@ -140,8 +143,26 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     @Volatile
     private var voiceIsolation: VoiceIsolationProcessor? = null
 
-    /** The rate a load last failed at; not retried there until the card is switched off and on. */
+    /**
+     * The rate a load last failed at; not retried there until the card is switched off and on, or
+     * the add-on changes.
+     */
     private var voiceIsolationFailedRate = 0
+
+    /** Counts changes to the voice isolation add-on, so a failed load can tell it is out of date. */
+    @Volatile
+    private var voiceAddonChanges = 0
+    private var voiceIsolationFailedAddonChanges = 0
+
+    /**
+     * Installing the add-on while the card is on, or updating one the card refused, starts the
+     * stage without a trip to the card. Replacing or removing an add-on the stage has loaded
+     * needs nothing here: Android stops the app's process for that.
+     */
+    private val voiceAddonWatcher = if (!isRootless()) null else VoiceAddonWatcher(context) {
+        voiceAddonChanges++
+        if (handle != 0L) syncWithPreferences(arrayOf(Constants.PREF_VOICEISOLATION))
+    }.apply { start() }
 
     /**
      * 16-bit blocks as floats, before and after the engine, while the stage runs. Made with the
@@ -175,6 +196,7 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
             // It stopped on a block that failed. Free it, and treat it like a failed load: the card
             // keeps saying why, and only switching it off and on tries again at this rate.
             voiceIsolationFailedRate = rate
+            voiceIsolationFailedAddonChanges = voiceAddonChanges
             stopVoiceIsolation()
             return false
         }
@@ -184,14 +206,17 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
             publishVoiceIsolation(VoiceIsolationStatus.State.Waiting)
             return true
         }
-        if (rate == voiceIsolationFailedRate) return false
+        if (rate == voiceIsolationFailedRate && voiceAddonChanges == voiceIsolationFailedAddonChanges) return false
 
+        // Taken before loading, so an add-on that changes during the load still gets another go.
+        val addonChanges = voiceAddonChanges
         publishVoiceIsolation(VoiceIsolationStatus.State.Loading)
         val stage = try {
             VoiceIsolationLoader.open(context, rate)
         } catch (e: VoiceIsolationLoader.Failure) {
             Timber.e(e, "Voice isolation could not start at $rate Hz")
             voiceIsolationFailedRate = rate
+            voiceIsolationFailedAddonChanges = addonChanges
             publishVoiceIsolation(VoiceIsolationStatus.State.Failed(e.reason, e.detail))
             return false
         }

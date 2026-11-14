@@ -1,10 +1,12 @@
 package me.timschneeberger.rootlessjamesdsp.fragment
 
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -47,6 +49,8 @@ import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.se
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.unregisterLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceAddon
+import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceAddonWatcher
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationPreset
 import me.timschneeberger.rootlessjamesdsp.voiceisolation.VoiceIsolationStatus
 import org.koin.core.component.KoinComponent
@@ -66,6 +70,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     private var smoothVolumeUi: SmoothVolumeCardUi? = null
     private var voiceIsolationStatusUpdater: (() -> Unit)? = null
     private var voiceIsolationChanged: ((String?) -> Unit)? = null
+    private var voiceAddonUpdater: (() -> Unit)? = null
+    private var voiceAddonWatcher: VoiceAddonWatcher? = null
 
     private val listener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -141,6 +147,8 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     override fun onResume() {
         super.onResume()
         smoothVolumeUi?.update()
+        // Back from the browser or the installer: the add-on may have arrived meanwhile.
+        voiceAddonUpdater?.invoke()
         if (arguments?.getInt(BUNDLE_XML_RES) != R.xml.dsp_output_control_preferences) return
         if (!me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) return
         val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity ?: return
@@ -843,6 +851,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             return
         }
         val sp = preferenceManager.sharedPreferences ?: return
+        setupVoiceAddon()
         val kEnable = getString(R.string.key_voice_isolation_enable)
         val kPreset = getString(R.string.key_voice_isolation_preset)
         val kReduction = getString(R.string.key_voice_isolation_reduction)
@@ -886,6 +895,13 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     getString(R.string.voice_isolation_status_running, state.latencyMs.roundToInt())
                 is VoiceIsolationStatus.State.Failed -> getString(
                     when (state.reason) {
+                        // The engine tries again by itself when the add-on changes.
+                        VoiceIsolationStatus.Reason.AddonMissing,
+                        VoiceIsolationStatus.Reason.AddonSignature,
+                        VoiceIsolationStatus.Reason.AddonTooOld,
+                        VoiceIsolationStatus.Reason.AppTooOld,
+                        VoiceIsolationStatus.Reason.ModelMissing,
+                        VoiceIsolationStatus.Reason.ModelDamaged -> R.string.voice_isolation_status_failed_addon
                         // Nothing to try again: this phone cannot run it.
                         VoiceIsolationStatus.Reason.Device -> R.string.voice_isolation_status_failed_final
                         else -> R.string.voice_isolation_status_failed
@@ -894,6 +910,45 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             }
         }
         voiceIsolationStatusUpdater = ::update
+        update()
+    }
+
+    /**
+     * The add-on row: whether the voice isolation add-on is there and usable, and the way to get
+     * it when it is not. Checked again on resume and whenever the package changes.
+     */
+    private fun setupVoiceAddon() {
+        val row = findPreference<Preference>("voice_isolation_addon") ?: return
+        fun update() {
+            val context = context ?: return
+            val check = VoiceAddon.check(context)
+            row.summary = when (check) {
+                VoiceAddon.Check.Unsupported -> getString(R.string.voice_isolation_addon_device)
+                VoiceAddon.Check.NotInstalled -> getString(R.string.voice_isolation_addon_missing)
+                VoiceAddon.Check.WrongSignature -> getString(R.string.voice_isolation_addon_signature)
+                is VoiceAddon.Check.AddonTooOld ->
+                    getString(R.string.voice_isolation_addon_too_old, check.versionName.orEmpty())
+                is VoiceAddon.Check.AppTooOld ->
+                    getString(R.string.voice_isolation_addon_app_too_old, check.versionName.orEmpty())
+                is VoiceAddon.Check.Ready ->
+                    getString(R.string.voice_isolation_addon_ready, check.versionName.orEmpty())
+            }
+            // A tap leads to the release page wherever getting a file from it is the fix.
+            val offer = check != VoiceAddon.Check.Unsupported && check !is VoiceAddon.Check.Ready
+            row.isSelectable = offer
+            row.onPreferenceClickListener = if (!offer) null else Preference.OnPreferenceClickListener {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(VoiceAddon.DOWNLOAD_PAGE)))
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(requireContext(),
+                        getString(R.string.voice_isolation_addon_no_browser, VoiceAddon.DOWNLOAD_PAGE),
+                        Toast.LENGTH_LONG).show()
+                }
+                true
+            }
+        }
+        voiceAddonUpdater = ::update
+        voiceAddonWatcher = VoiceAddonWatcher(requireContext().applicationContext) { update() }.apply { start() }
         update()
     }
 
@@ -948,6 +1003,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         smoothVolumeUi = null
         voiceIsolationStatusUpdater = null
         voiceIsolationChanged = null
+        voiceAddonWatcher?.stop()
+        voiceAddonWatcher = null
+        voiceAddonUpdater = null
         super.onDestroy()
         requireContext().unregisterLocalReceiver(receiver)
         prefsApp.unregisterOnSharedPreferenceChangeListener(listener)
