@@ -150,6 +150,14 @@ android {
         noCompress += "onnx"
     }
 
+    packaging {
+        jniLibs {
+            // ONNX Runtime for x86 would put 40 MB into the universal APK for emulators and a
+            // handful of x86 tablets. Voice isolation says it cannot run there instead.
+            excludes += listOf("**/x86/libonnxruntime*.so", "**/x86_64/libonnxruntime*.so")
+        }
+    }
+
     // Export multiple CPU architecture split apks
     splits {
         abi {
