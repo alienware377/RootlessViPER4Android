@@ -690,6 +690,17 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setBinauralHrir
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setSmoothVolume(JNIEnv *env, jobject obj, jlong self,
+        jboolean enable, jfloat gainDb)
+{
+    DECLARE_DSP_B
+    // Level first, so switching on walks straight to it.
+    SmoothVolumeSetParam(dsp, gainDb);
+    if (enable) SmoothVolumeEnable(dsp); else SmoothVolumeDisable(dsp);
+    return true;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_setVinyl(JNIEnv *env, jobject obj, jlong self,
         jboolean enable, jfloat surface, jfloat crackle, jfloat crackleSize,
         jfloat pops, jfloat clicks, jfloat sizzle, jfloat hiss, jfloat prickle,

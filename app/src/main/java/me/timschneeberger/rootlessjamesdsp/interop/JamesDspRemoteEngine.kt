@@ -73,6 +73,7 @@ class JamesDspRemoteEngine(
         filter.addAction(Constants.ACTION_SERVICE_HARD_REBOOT_CORE)
         filter.addAction(Constants.ACTION_SERVICE_SOFT_REBOOT_CORE)
         context.registerLocalReceiver(broadcastReceiver, filter)
+        attachSmoothVolume()
     }
 
     private fun createEffect(): AudioEffectHidden {
@@ -103,11 +104,16 @@ class JamesDspRemoteEngine(
         try {
             effect?.release()
             effect = createEffect()
+            forgetSmoothVolume()
+            attachSmoothVolume()
         }
         catch (ex: IllegalStateException) {
             Timber.e("Failed to re-instantiate JamesDSP effect")
             Timber.e(ex.cause)
             effect = null
+            // Nothing processes this session any more; it must not keep
+            // smooth volume holding.
+            detachSmoothVolume()
             return
         }
     }
@@ -206,6 +212,10 @@ class JamesDspRemoteEngine(
     // The volume has no switch of its own; it goes as a single value.
     override fun setLoudnessVolume(volumeDb: Float): Boolean =
         effect.setParameterFloatArray(PARAM_LOUDNESS_VOLUME, floatArrayOf(volumeDb)) == AudioEffect.SUCCESS
+
+    // 26032 / 26132: the level in dB, then the switch.
+    override fun setSmoothVolume(enable: Boolean, gainDb: Float): Boolean =
+        sendForkEffect(PARAM_SMOOTH_VOLUME, enable, floatArrayOf(gainDb))
 
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         sendForkEffect(PARAM_SHAPER, enable, floatArrayOf(
@@ -607,6 +617,7 @@ class JamesDspRemoteEngine(
         private const val PARAM_LOUDNESS = PARAM_FORK_BASE + 29
         private const val PARAM_LOUDNESS_VOLUME = PARAM_FORK_BASE + 30
         private const val PARAM_LUFS = PARAM_FORK_BASE + 31
+        private const val PARAM_SMOOTH_VOLUME = PARAM_FORK_BASE + 32
         /** The head set's payload: geometry, 4096-float parts, commit, hash. */
         private const val PARAM_HRIR_INFO = 9997
         private const val PARAM_HRIR_PART = 12002

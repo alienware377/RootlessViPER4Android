@@ -51,6 +51,7 @@ object Constants {
     const val PREF_VINYL = "dsp_vinyl"
     const val PREF_BALANCE = "dsp_balance"
     const val PREF_LUFS = "dsp_lufs"
+    const val PREF_SMOOTH_VOLUME = "dsp_smooth_volume"
     const val PREF_SHAPER = "dsp_shaper"
     const val PREF_BINAURAL = "dsp_binaural"
     const val PREF_LOUDNESS = "dsp_loudness"

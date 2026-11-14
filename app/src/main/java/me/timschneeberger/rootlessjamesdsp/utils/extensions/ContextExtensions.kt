@@ -468,7 +468,8 @@ object ContextExtensions {
         Timber.d("Reverting dsp preferences")
         File(applicationInfo.dataDir + "/shared_prefs")
             .listFiles()?.forEach next@ { f ->
-                if(!f.name.startsWith("dsp_") || f.extension != "xml" || f.isDirectory)
+                if(!me.timschneeberger.rootlessjamesdsp.model.preset.Preset.isSoundFile(f.name) ||
+                    f.extension != "xml" || f.isDirectory)
                     return@next
                 f.delete()
             }

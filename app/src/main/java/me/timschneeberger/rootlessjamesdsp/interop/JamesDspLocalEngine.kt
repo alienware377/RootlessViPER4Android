@@ -25,13 +25,13 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     init {
         if(BenchmarkManager.hasBenchmarksCached())
             BenchmarkManager.loadBenchmarksFromCache()
+        attachSmoothVolume()
     }
 
     override fun close() {
         val oldHandle = handle
         handle = 0
-        // This close does not go through the base one.
-        stopFollowingMediaVolume()
+        super.close()
 
         // Free only once no sync is still inside the engine; a long impulse
         // response load or Liveprog compile could otherwise return into a freed
@@ -172,6 +172,9 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
 
     override fun setLoudnessVolume(volumeDb: Float): Boolean =
         JamesDspWrapper.setLoudnessVolume(handle, volumeDb)
+
+    override fun setSmoothVolume(enable: Boolean, gainDb: Float): Boolean =
+        JamesDspWrapper.setSmoothVolume(handle, enable, gainDb)
 
     override fun setSpectralShaper(enable: Boolean, amount: Float, sensitivity: Float, lowHz: Float, highHz: Float, speed: Float, focus: Int, catchTones: Boolean, listen: Boolean, msMode: Int): Boolean =
         JamesDspWrapper.setSpectralShaper(handle, enable, amount, sensitivity, lowHz, highHz, speed, focus, catchTones, listen, msMode)

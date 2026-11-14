@@ -129,3 +129,6 @@ void LufsNormalizerDisable(void) {}
 void LoudnessProcess(void) {}
 void LoudnessSetParam(void) {}
 void LoudnessRefresh(void) {}
+void SmoothVolumeProcess(void) {}
+void SmoothVolumeSetParam(void) {}
+void SmoothVolumeRefresh(void) {}
