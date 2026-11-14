@@ -23,6 +23,7 @@ object ChainOrder {
     const val BALANCE = 38
     const val SHAPER = 39
     const val BINAURAL = 40
+    const val LUFS = 41
 
     /**
      * The engine's default chain (jdspDefaultChain in jdspController.c), as
@@ -42,7 +43,7 @@ object ChainOrder {
         32, STEREOWIDE, BINAURAL,
         20, 21, 22, 23, 24,  // field surround, headphone surround, spectrum ext, clarity, AGC
         25, 26, 27, 28, 29,  // speaker opt, reverb, ViPER reverb, echo, multiband distortion
-        TAPE, VINYL, BALANCE,
+        TAPE, VINYL, LUFS, BALANCE,
         MAXIMIZER,
     )
 
@@ -57,6 +58,10 @@ object ChainOrder {
         // balance can follow it.
         VINYL to TAPE,
         BALANCE to VINYL,
+        // Also after vinyl, so it lands between vinyl and balance: it sets its
+        // gain for everything that shapes the sound except the listener's own
+        // trim, and stays ahead of the maximiser.
+        LUFS to VINYL,
     )
 
     /**

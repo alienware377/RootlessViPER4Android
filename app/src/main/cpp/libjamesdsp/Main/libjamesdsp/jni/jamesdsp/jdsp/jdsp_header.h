@@ -354,6 +354,40 @@ typedef struct
 	float smooth, fs;
 	int transparent;
 } Balance;
+// 400 ms loudness blocks, one per 100 ms: 20 s at the slowest speed.
+#define LUFS_HISTORY_MAX 200
+typedef struct
+{
+	// Settings as given: target LUFS, boost and cut limits in dB, speed
+	// (0 slow, 1 normal, 2 fast), peak guard on or off.
+	float target, maxBoost, maxCut;
+	int speed, peakGuard;
+	// K-weighting per stage (shelf, high pass), state per channel and stage.
+	double kb[2][3], ka[2][2];
+	double kz[2][2][2];
+	float fs;
+	// The 100 ms sub-block being gathered and the last four finished ones.
+	int subLen, subPos, subIdx, subFilled;
+	double subSum, subPow[4];
+	float subPeak, subPk[4];
+	// The newest 400 ms block, held back one step before it joins the history,
+	// and how many sub-blocks in a row have been above the quiet floor.
+	double pendingPow;
+	float pendingPeak;
+	int pendingValid, loudRun;
+	// Blocks that passed the quiet floor, newest at histIdx - 1. Allocated on
+	// enable.
+	double *histPow;
+	float *histPeak;
+	int histLen, histIdx, histCount, quietBlocks;
+	int valid;
+	double measured, peakDb;
+	// Gain in dB walks towards wantDb; the linear gain is ramped between
+	// control points. In a gap a boost is let go at gapCoef instead.
+	double gainDb, wantDb, upCoef, downCoef, gapCoef;
+	float gainLin, gainNext, gainStep;
+	int ctlPos, inGap;
+} LufsNormalizer;
 #define DYNEQ_MAX_BANDS 8
 // freq, Q, threshold dB, ratio, attack ms, release ms, range dB, mode
 #define DYNEQ_VALUES_PER_BAND 8
@@ -1150,6 +1184,7 @@ enum JdspEffectId
 	JDSP_EFX_BALANCE,
 	JDSP_EFX_SHAPER,
 	JDSP_EFX_BINAURAL,
+	JDSP_EFX_LUFSNORM,
 	JDSP_EFX_COUNT
 };
 typedef struct
@@ -1342,6 +1377,8 @@ typedef struct dspsys
 	Vinyl vinyl;
 	int balanceEnabled;
 	Balance balance;
+	int lufsNormEnabled;
+	LufsNormalizer lufsNorm;
 	int shaperEnabled;
 	SpectralShaper shaper;
 	int binauralEnabled;
@@ -1584,6 +1621,13 @@ extern void BalanceProcess(JamesDSPLib *jdsp, size_t n);
 extern void BalanceEnable(JamesDSPLib *jdsp);
 extern void BalanceDisable(JamesDSPLib *jdsp);
 extern void BalanceRefresh(JamesDSPLib *jdsp);
+// LUFS normalizer. Refresh is for a rate change, with the lock already held.
+extern void LufsNormalizerSetParam(JamesDSPLib *jdsp, float targetLufs, float maxBoostDb,
+	float maxCutDb, int speed, int peakGuard);
+extern void LufsNormalizerProcess(JamesDSPLib *jdsp, size_t n);
+extern void LufsNormalizerEnable(JamesDSPLib *jdsp);
+extern void LufsNormalizerDisable(JamesDSPLib *jdsp);
+extern void LufsNormalizerRefresh(JamesDSPLib *jdsp);
 // Spectral shaper. Refresh follows the rule above (lock already held); Free is
 // for engine teardown only. Latency is in samples, 0 while switched off.
 extern void SpectralShaperSetParam(JamesDSPLib *jdsp, float amountDb, float sensitivityPct,

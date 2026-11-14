@@ -229,12 +229,35 @@ Unless a path starts with `app/` or `third_party/`, it is relative to
   to the app as a separate file. Debian ships the same data in its main archive
   under the same text.
 
+### libebur128
+
+- **Author:** Jan Kokemüller
+- **Licence:** MIT, see [the libebur128 notice](#mit-licence-libebur128)
+- **Upstream:** https://github.com/jiixyj/libebur128
+- **Files:** `Effects/lufsNormalizer.c`. Only the K-weighting design is taken:
+  the high shelf and high pass parameters of `ebur128_init_filter` in
+  `ebur128/ebur128.c` and the way they are turned into coefficients for a
+  given sample rate, which reproduces the 48 kHz coefficients published in
+  ITU-R BS.1770. The LUFS normalizer this one follows (see below) credits the
+  design to Martin Vicanek's matched biquads, as libebur128 formulates them.
+- **Used by:** the LUFS normalizer card.
+
 ### Also in this repository
 
 - **Rubber Band Library**, `third_party/rubberband/`: Chris Cannam, Particular
   Programs Ltd, GNU GPL version 2 or later. It is vendored unmodified with its
   own `COPYING`, and its bundled KISS FFT and Speex resampler keep their own
   `COPYING` files under `third_party/rubberband/src/ext/`.
+- **LUFS normalizer**, `Effects/lufsNormalizer.c`: its behaviour follows
+  `lufs_normalizer.c` from evoeram's Loundess-PEQ-RootlessJamesDSP
+  (https://github.com/evoeram/Loundess-PEQ-RootlessJamesDSP, engine in
+  https://github.com/evoeram/JamesDSPManager, branch `extensions`), GNU GPL
+  version 3. That in turn follows `viper/effects/LUFSTargeting.cpp` in ViPERDSP
+  (https://github.com/likelikeslike/ViPERDSP), built on the reverse engineering
+  of ViPER4Android by Martmists, Iscle and likelikeslike
+  (https://github.com/AndroidAudioMods/ViPERFX_RE). The original ViPER4Android
+  is the work of Zhuhang and ViPER520. Rewritten for this engine rather than
+  copied.
 
 ## Licence texts
 
@@ -456,6 +479,32 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+### MIT licence (libebur128)
+
+From libebur128 `COPYING`:
+
+```text
+Copyright (c) 2011 Jan Kokemüller
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 ```
 
 ### Boost Software License 1.0 (Boost.Math interpolators)

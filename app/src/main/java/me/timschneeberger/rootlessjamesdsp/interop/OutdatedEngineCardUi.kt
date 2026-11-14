@@ -19,6 +19,7 @@ object OutdatedEngineCardUi {
         Constants.PREF_VDYNBASS to 6,
         Constants.PREF_DIFFSURROUND to 6,
         Constants.PREF_MULTIBANDDIST to 7,
+        Constants.PREF_LUFS to 8,
     )
 
     fun apply(fragment: PreferenceFragmentCompat, namespace: String?) {

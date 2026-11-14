@@ -276,6 +276,16 @@ static inline void applyParam(JamesDSPLib *d, int32_t id, int16_t sv, bool on,
         break;
     case 26128: if (on) MultibandDistEnable(d); else MultibandDistDisable(d); break;
 
+    /* LUFS normalizer: target LUFS, most boost dB, most cut dB, speed (0 slow,
+       1 normal, 2 fast), peak guard (1 or 0). Clamped again by the setter,
+       NaN included. */
+    case 26031:
+        if (fn >= 5)
+            LufsNormalizerSetParam(d, fv[0], fv[1], fv[2], pRound(fv[3]),
+                                   fv[4] > 0.5f ? 1 : 0);
+        break;
+    case 26131: if (on) LufsNormalizerEnable(d); else LufsNormalizerDisable(d); break;
+
     /* The maximiser. Ten values in the order MaximizerSetParam takes them.
        The three integer ones travel as floats like every other payload here
        and are rounded on arrival; only truePeak is a flag, and it arrives as
