@@ -726,13 +726,13 @@ int main()
 
 		// Every coefficient follows a rate change, and the next block is the
 		// new design at once rather than a glide from the old rate's.
-		const double g48 = lc->tgt[LOUD_SUB_SECTIONS + 3][0];
+		const double g48 = lc->tgt[LOUD_ISO_FIRST + 3][0];
 		JamesDSPSetSampleRate(&g_lib, 44100.0f, 0);
 		check("a rate change redesigns the loudness correction",
-			  fabs(lc->cur[LOUD_SUB_SECTIONS + 3][0] - tan(M_PI * 40.0 / 44100.0)) < 1e-12 &&
+			  fabs(lc->cur[LOUD_ISO_FIRST + 3][0] - tan(M_PI * 40.0 / 44100.0)) < 1e-12 &&
 			  fabs(g48 - tan(M_PI * 40.0 / 48000.0)) < 1e-12 && lc->glide == 0 && lc->fs == 44100.0f);
 		JamesDSPSetSampleRate(&g_lib, 48000.0f, 0);
-		check("and back", fabs(lc->cur[LOUD_SUB_SECTIONS + 3][0] - g48) < 1e-12);
+		check("and back", fabs(lc->cur[LOUD_ISO_FIRST + 3][0] - g48) < 1e-12);
 
 		sendEnable(26129, false);
 		check("26129 switches it off", g_lib.loudnessEnabled == 0);

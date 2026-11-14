@@ -378,6 +378,88 @@ int main(void)
 		free(y);
 	}
 
+	printf("\na big change stays between where it started and where it ends\n");
+	{
+		// Each is a design change the card can make at once: the button that
+		// makes the volume now the reference, a jump in volume from a change
+		// of output, both ways, and a change of method. The level of a
+		// steady tone while it glides must not go above the louder end. A
+		// filter that moves in 40 ms rings a little at 40 Hz, whose period is
+		// 25 ms, so up to a decibel is allowed there; glided over 400 ms the
+		// same changes come out at 0.00 dB over. Moving the coefficients
+		// themselves in a straight line went 18 dB over at 40 Hz.
+		const struct { int mode0, mode1; float ref0, vol0, ref1, vol1; const char *what; } cases[] = {
+			{ 0, 0, 0.0f, -30.0f, -30.0f, -30.0f, "classic, reference 0 to -30 at -30" },
+			{ 0, 0, 0.0f, -40.0f, 0.0f, -10.0f, "classic, volume -40 to -10" },
+			{ 0, 0, 0.0f, -10.0f, 0.0f, -40.0f, "classic, volume -10 to -40" },
+			{ 0, 0, 0.0f, -30.0f, 0.0f, -20.0f, "classic, volume -30 to -20" },
+			{ 1, 1, 0.0f, -30.0f, 0.0f, 0.0f, "ISO, volume -30 to 0" },
+			{ 1, 1, 0.0f, 0.0f, 0.0f, -40.0f, "ISO, volume 0 to -40" },
+			{ 0, 1, 0.0f, -30.0f, 0.0f, -30.0f, "classic to ISO at -30" },
+			{ 1, 0, 0.0f, -30.0f, 0.0f, -30.0f, "ISO to classic at -30" },
+		};
+		const double freqs[] = { 40.0, 120.0, 1000.0, 12000.0 };
+		const double fs = 48000.0;
+		const int n = (int)(1.6 * fs), at = (int)(1.0 * fs), tail = (int)(0.3 * fs);
+		float *x = malloc(sizeof(float) * n), *y = malloc(sizeof(float) * n);
+		for (int c = 0; c < (int)(sizeof(cases) / sizeof(cases[0])); c++)
+		{
+			double caseOver = -1e9;
+			for (int fi = 0; fi < 4; fi++)
+			{
+				for (int i = 0; i < n; i++)
+					x[i] = (float)(0.1 * sin(2.0 * M_PI * freqs[fi] * i / fs));
+				prepare((float)fs);
+				LoudnessSetParam(&g_lib, cases[c].mode0, cases[c].ref0, 0.0f, 100.0f, 75.0f, 0.52f, 55.0f,
+					10000.0f, 0.9f, 22.5f, 80.0f, 0, 20.0f, 4, 0.707f);
+				LoudnessSetVolume(&g_lib, cases[c].vol0);
+				LoudnessEnable(&g_lib);
+				run(x, y, at);
+				LoudnessSetParam(&g_lib, cases[c].mode1, cases[c].ref1, 0.0f, 100.0f, 75.0f, 0.52f, 55.0f,
+					10000.0f, 0.9f, 22.5f, 80.0f, 0, 20.0f, 4, 0.707f);
+				LoudnessSetVolume(&g_lib, cases[c].vol1);
+				run(x + at, y + at, n - at);
+				double before = 0.0, during = 0.0, after = 0.0;
+				for (int i = at - tail; i < at; i++) before = fmax(before, fabs(y[i]));
+				for (int i = at; i < at + (int)(0.1 * fs); i++) during = fmax(during, fabs(y[i]));
+				for (int i = n - tail; i < n; i++) after = fmax(after, fabs(y[i]));
+				const double over = 20.0 * log10(during / fmax(before, after));
+				printf("    %-36s %6.0f Hz  %7.2f -> %7.2f dB, on the way %+6.2f dB over\n",
+					cases[c].what, freqs[fi], 20.0 * log10(before / 0.1), 20.0 * log10(after / 0.1), over);
+				caseOver = fmax(caseOver, over);
+			}
+			char what[96];
+			snprintf(what, sizeof(what), "%s: most over the louder end, dB", cases[c].what);
+			check(what, caseOver, -100.0, 1.0);
+		}
+		free(x);
+		free(y);
+	}
+
+	printf("\nnothing is lifted above 20 kHz either\n");
+	{
+		// A high shelf only reaches its full gain at Nyquist, so treble lift
+		// with no bass lift to cut against shows above 20 kHz first.
+		const float rates[] = { 44100.0f, 48000.0f };
+		for (int r = 0; r < 2; r++)
+		{
+			prepare(rates[r]);
+			LoudnessSetParam(&g_lib, LOUDNESS_MODE_CLASSIC, 0.0f, 0.0f, 100.0f, 75.0f, 0.52f, 0.0f,
+				16000.0f, 1.0f, 100.0f, 80.0f, 0, 20.0f, 4, 0.707f);
+			LoudnessSetVolume(&g_lib, -30.0f);
+			LoudnessEnable(&g_lib);
+			const double probes[] = { 16000, 20000, 21000, 21500, 22000, 23000, 23900 };
+			double top = -1e9;
+			for (int i = 0; i < 7; i++)
+				if (probes[i] < 0.5 * rates[r] - 50.0)
+					top = fmax(top, measure(probes[i]));
+			char what[96];
+			snprintf(what, sizeof(what), "treble 100 %% at 16 kHz, -30 dB, %.1f kHz: highest, dB",
+				rates[r] * 0.001);
+			check(what, top, -100.0, 0.01);
+		}
+	}
+
 	printf("\nnonsense is held\n");
 	{
 		prepare(48000.0f);
@@ -438,10 +520,10 @@ int main(void)
 		setDefaults(LOUDNESS_MODE_ISO);
 		LoudnessSetVolume(&g_lib, -30.0f);
 		LoudnessEnable(&g_lib);
-		const double b0at48 = g_lib.loudness.cur[LOUD_SUB_SECTIONS][0];
+		const double b0at48 = g_lib.loudness.cur[LOUD_ISO_FIRST][0];
 		g_lib.fs = 44100.0f;
 		LoudnessRefresh(&g_lib);
-		check("coefficients changed", fabs(g_lib.loudness.cur[LOUD_SUB_SECTIONS][0] - b0at48), 1e-9, 1.0);
+		check("coefficients changed", fabs(g_lib.loudness.cur[LOUD_ISO_FIRST][0] - b0at48), 1e-9, 1.0);
 		const double at1k = measure(1000.0);
 		double worst = 0.0;
 		for (int i = 0; i < 29; i += 4)

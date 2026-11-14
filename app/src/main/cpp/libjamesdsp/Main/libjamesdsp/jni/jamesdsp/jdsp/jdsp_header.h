@@ -361,7 +361,12 @@ typedef struct
 // The subsonic filter's second-order sections; a first-order one comes first
 // for odd orders
 #define LOUD_SUB_SECTIONS 4
-#define LOUD_SECTIONS (LOUD_SUB_SECTIONS + LOUD_ISO_BANDS)
+// Then the classic mode's two shelves and the ISO bands, each in sections of
+// their own, so a change of mode glides like any other change
+#define LOUD_LOW_SHELF LOUD_SUB_SECTIONS
+#define LOUD_HIGH_SHELF (LOUD_SUB_SECTIONS + 1)
+#define LOUD_ISO_FIRST (LOUD_SUB_SECTIONS + 2)
+#define LOUD_SECTIONS (LOUD_ISO_FIRST + LOUD_ISO_BANDS)
 typedef struct
 {
 	// The settings and the volume as last given, so a rate change can design
@@ -370,10 +375,18 @@ typedef struct
 	float refLevel, refOffset, strength;
 	float lsFreq, lsSlope, lsRatio, hsFreq, hsSlope, hsRatio, basePhon;
 	float subFreq, subQ, volumeDb;
+	// Each section as designed: for the subsonic ones g, k and how much of
+	// the high-pass is taken; for the shelves and bands the prewarped corner,
+	// the slope or Q and the gain in dB. A glide moves from pFrom to pTo in
+	// these terms, so the response at every point on the way lies between the
+	// two ends; pre is the overall gain in dB.
+	double pFrom[LOUD_SECTIONS][3], pTo[LOUD_SECTIONS][3];
+	double foFrom[2], foTo[2], preFrom, preTo;
 	// State-variable sections in the order they run, the subsonic filter's
-	// first: g, k, m0, m1, m2. cur is what runs and tgt the latest design; for
-	// glide more samples cur moves towards tgt by step. a holds the integrator
-	// coefficients worked out from cur.
+	// first: g, k, m0, m1, m2. cur is what runs and tgt the latest design;
+	// during a glide cur moves by step towards a point on the way every
+	// LOUD_SEG samples. a holds the integrator coefficients worked out from
+	// cur.
 	double cur[LOUD_SECTIONS][5], tgt[LOUD_SECTIONS][5], step[LOUD_SECTIONS][5];
 	double a[LOUD_SECTIONS][3];
 	double z[2][LOUD_SECTIONS][2];
@@ -382,7 +395,9 @@ typedef struct
 	double gain, gainTgt, gainStep;
 	// Only sections that are not flat are run.
 	int live[LOUD_SECTIONS], isLive[LOUD_SECTIONS], liveCount, foLive;
-	int glide;
+	// Samples left of the glide, its whole length, and samples left to the
+	// next point on the way.
+	int glide, glideLen, segLeft;
 	float fs;
 } LoudnessCorrection;
 #define DYNEQ_MAX_BANDS 8

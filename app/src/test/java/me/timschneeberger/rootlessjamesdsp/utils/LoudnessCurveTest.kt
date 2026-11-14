@@ -170,6 +170,18 @@ class LoudnessCurveTest {
     }
 
     @Test
+    fun `nothing is lifted above 20 kHz either`() {
+        // A high shelf only reaches its full gain at Nyquist.
+        val s = LoudnessCurve.Settings(bassAmount = 0.0, trebleHz = 16000.0, trebleSlope = 1.0, trebleAmount = 100.0)
+        for (fs in listOf(44100.0, 48000.0)) {
+            val top = LoudnessCurve.logSpaced(16000.0, fs * 0.5, 100)
+            LoudnessCurve.responseDb(s, -30.0, top, fs).forEach {
+                assertTrue("$fs Hz: $it", it < 1e-9)
+            }
+        }
+    }
+
+    @Test
     fun `the subsonic filter is two Butterworth halves at order 4`() {
         val s = LoudnessCurve.Settings(subsonic = true, subsonicHz = 20.0, subsonicOrder = 4, subsonicQ = 0.7071)
         val r = LoudnessCurve.responseDb(s, 0.0, doubleArrayOf(20.0, 200.0))
