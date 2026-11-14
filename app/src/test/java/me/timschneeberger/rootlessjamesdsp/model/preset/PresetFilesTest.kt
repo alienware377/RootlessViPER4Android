@@ -18,8 +18,9 @@ class PresetFilesTest {
     }
 
     @Test
-    fun `the loudness, LUFS and voice isolation settings travel in presets`() {
-        for (ns in listOf(Constants.PREF_LOUDNESS, Constants.PREF_LUFS, Constants.PREF_VOICEISOLATION)) {
+    fun `the loudness, LUFS, voice isolation and sub-harmonic settings travel in presets`() {
+        for (ns in listOf(Constants.PREF_LOUDNESS, Constants.PREF_LUFS, Constants.PREF_VOICEISOLATION,
+                Constants.PREF_SUBHARMONIC)) {
             assertTrue(Preset.isSoundFile("$ns.xml"))
             assertTrue(Preset.isKnownEntry("$ns.xml"))
         }
