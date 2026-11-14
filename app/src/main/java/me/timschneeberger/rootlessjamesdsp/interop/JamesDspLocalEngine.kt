@@ -30,6 +30,8 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override fun close() {
         val oldHandle = handle
         handle = 0
+        // This close does not go through the base one.
+        stopFollowingMediaVolume()
 
         // Free only once no sync is still inside the engine; a long impulse
         // response load or Liveprog compile could otherwise return into a freed

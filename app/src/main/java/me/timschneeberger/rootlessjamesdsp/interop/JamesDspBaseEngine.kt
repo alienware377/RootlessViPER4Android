@@ -74,10 +74,15 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
      * background, in turn with the settings.
      */
     private var volumeTracker: MediaVolume.Tracker? = null
+    // Set when the engine closes. Checked on the main thread, where the
+    // tracker starts, so a sync still running then cannot start it again
+    // after it has been stopped for good.
+    @Volatile
+    private var volumeTrackerClosed = false
 
     private fun followMediaVolume(follow: Boolean) {
         android.os.Handler(android.os.Looper.getMainLooper()).post {
-            if (follow) {
+            if (follow && !volumeTrackerClosed) {
                 val tracker = volumeTracker ?: MediaVolume.Tracker(context) { db ->
                     syncScope.launch { syncMutex.withLock { setLoudnessVolume(db.toFloat()) } }
                 }.also { volumeTracker = it }
@@ -88,6 +93,12 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         }
     }
 
+    /** Stops following the media volume for good. Every engine's close() must call this. */
+    protected fun stopFollowingMediaVolume() {
+        volumeTrackerClosed = true
+        followMediaVolume(false)
+    }
+
     override fun close() {
         Timber.d("Closing engine")
         routingObserver?.let { obs ->
@@ -95,7 +106,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
                 obs.unregisterOnRoutingChangeListener(routingCallback)
             }
         }
-        followMediaVolume(false)
+        stopFollowingMediaVolume()
         reportSampleRate(0f)
         syncScope.cancel()
     }
