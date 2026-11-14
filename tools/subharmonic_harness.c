@@ -466,6 +466,29 @@ int main(void)
 		for (int i = 0; i < S; i++) { bufL[i] = (float)(0.5 * rnd()); bufR[i] = (float)(0.5 * rnd()); }
 		run(0, S, BLOCK);
 		checkTrue("mix at 0: output is the input", memcmp(bufL, inL, sizeof(float) * S) == 0 && memcmp(bufR, inR, sizeof(float) * S) == 0);
+		/* The output level still applies at mix 0, as the card says: nothing
+		   is added, but everything is turned down. */
+		prepare(48000.0f);
+		setOnly(2, 100.0f, 120.0f, 0.0f, -6.0f);
+		SubHarmonicEnable(&g_lib);
+		sine(0, S, 80.0, 0.25, fs);
+		run(0, S, BLOCK);
+		const float g6 = powf(10.0f, -6.0f / 20.0f);
+		double off = 0;
+		for (int i = S / 2; i < S; i++)
+		{
+			const double e = fabs((double)bufL[i] - (double)inL[i] * g6) + fabs((double)bufR[i] - (double)inR[i] * g6);
+			if (e > off) off = e;
+		}
+		check("mix at 0, level -6 dB: largest difference from input 6 dB down", off, 0.0, 1e-7);
+		/* And with the level brought back to 0 dB it gets all the way there:
+		   bit for bit again once it has settled. */
+		SubHarmonicSetParam(&g_lib, NULL, 120.0f, 0.0f, 0.0f);
+		for (int i = S; i < 2 * S; i++) { bufL[i] = (float)(0.5 * rnd()); bufR[i] = (float)(0.5 * rnd()); }
+		run(S, 2 * S, BLOCK);
+		checkTrue("level back at 0 dB: output is the input again",
+				  memcmp(bufL + S + S / 2, inL + S + S / 2, sizeof(float) * (S / 2)) == 0 &&
+				  memcmp(bufR + S + S / 2, inR + S + S / 2, sizeof(float) * (S / 2)) == 0);
 	}
 
 	printf("\nswitching on and off\n");

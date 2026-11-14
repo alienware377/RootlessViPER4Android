@@ -201,10 +201,14 @@ static int subhIdle(const SubHarmonic *s)
 	return 1;
 }
 
+/* Near 1 a float step smaller than half its spacing rounds to nothing, which
+   at these rates leaves a walk stuck about 1.4e-5 short: the output level
+   would never get back to exactly 1 and the bit exact idle never return. A
+   walk that has stopped moving is taken as there. */
 static inline float subhWalk(float cur, float target, float c)
 {
-	cur += c * (target - cur);
-	return fabsf(target - cur) < 1e-6f ? target : cur;
+	const float next = cur + c * (target - cur);
+	return (fabsf(target - next) < 1e-6f || next == cur) ? target : next;
 }
 
 static inline float subhFlush(float x)
