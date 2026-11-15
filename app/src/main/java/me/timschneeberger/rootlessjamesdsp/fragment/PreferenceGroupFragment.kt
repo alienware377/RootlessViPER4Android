@@ -375,7 +375,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     // alone at this volume.
                     val db = LoudnessReference.listeningDb(requireContext()).coerceIn(-60.0, 0.0).toFloat()
                     // The offset goes back to 0, or the sound would not be
-                    // left alone at this volume after all.
+                    // left alone at this volume after all. Stored directly:
+                    // a slider does not write a value it already shows, and
+                    // at 0 dB nothing would be stored to say a reference
+                    // was set.
+                    LoudnessReference.store(requireContext(), db)
                     offsetPref?.setValue(0f)
                     levelPref?.setValue(db)
                     Toast.makeText(requireContext(), getString(R.string.loudness_set_reference_done, db.roundToInt().toString()),

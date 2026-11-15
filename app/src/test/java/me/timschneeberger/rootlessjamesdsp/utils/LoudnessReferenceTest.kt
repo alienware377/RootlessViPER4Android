@@ -87,6 +87,26 @@ class LoudnessReferenceTest {
     }
 
     @Test
+    fun `the button sets a reference even at 0 dB`() {
+        // At full volume both values equal the sliders' defaults, which a
+        // slider would not write.
+        LoudnessReference.store(prefs, keys, 0f)
+        assertEquals(0f, level())
+        assertEquals(0f, offset())
+        assertTrue(LoudnessReference.isSet(prefs, keys))
+        assertNull(switchOn(-20.0))
+        assertEquals(0f, level())
+    }
+
+    @Test
+    fun `the button replaces a reference and clears the offset`() {
+        prefs.edit().putFloat(keys.level, -17f).putFloat(keys.offset, 3f).commit()
+        LoudnessReference.store(prefs, keys, -23.4f)
+        assertEquals(-23.4f, level())
+        assertEquals(0f, offset())
+    }
+
+    @Test
     fun `the listening volume set on the card counts when the media volume is not followed`() {
         assertEquals(-25.0, LoudnessReference.listeningDb(false, -25.0, -31.5, noMedia), 0.0)
 

@@ -86,6 +86,19 @@ object LoudnessReference {
         )
 
     /**
+     * Stores [level] as the reference with no offset. Written as such even
+     * when they equal the sliders' defaults, which a slider would not persist,
+     * so a reference of 0 dB counts as set too.
+     */
+    fun store(prefs: SharedPreferences, keys: Keys, level: Float) {
+        // commit, not apply: the sync that follows reads it next
+        prefs.edit()
+            .putFloat(keys.level, level.coerceIn(MIN_DB.toFloat(), MAX_DB.toFloat()))
+            .putFloat(keys.offset, 0f)
+            .commit()
+    }
+
+    /**
      * Makes the level being listened at the reference, with no offset, unless
      * one is stored already. Called before the card's switch is written, so
      * the engine never has the card on with the old reference. Returns the
@@ -94,11 +107,7 @@ object LoudnessReference {
     fun captureOnSwitchOn(prefs: SharedPreferences, keys: Keys, smoothDb: Double?, mediaDb: () -> Double): Float? {
         if (isSet(prefs, keys)) return null
         val level = onSwitchOn(false, listeningDb(prefs, keys, smoothDb, mediaDb)) ?: return null
-        // commit, not apply: the sync that follows reads it next
-        prefs.edit()
-            .putFloat(keys.level, level)
-            .putFloat(keys.offset, 0f)
-            .commit()
+        store(prefs, keys, level)
         Timber.d("captureOnSwitchOn: reference set to $level dB")
         return level
     }
@@ -116,6 +125,8 @@ object LoudnessReference {
         listeningDb(prefs(context), Keys.of(context), MediaVolume.smoothVolumeDb()) {
             MediaVolume.currentDb(context)
         }
+
+    fun store(context: Context, level: Float) = store(prefs(context), Keys.of(context), level)
 
     fun captureOnSwitchOn(context: Context): Float? =
         captureOnSwitchOn(prefs(context), Keys.of(context), MediaVolume.smoothVolumeDb()) {
