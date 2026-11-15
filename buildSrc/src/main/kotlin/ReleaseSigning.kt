@@ -12,7 +12,8 @@ import java.util.Properties
  *
  * Both modules read the same key, so a release app and a release add-on always match. That
  * matters because the app runs the add-on's code in its own process once the signatures agree,
- * and keystore/debug.keystore is in this repository: while releases are signed with it, anyone
+ * and the key releases are signed with today (keystore/debug.keystore, kept out of the
+ * repository now) was committed here for a while: while releases keep it, anyone who copied it
  * can build an add-on the app accepts. Without a private key, releases keep the debug key, since
  * a phone only updates an app signed with the key it was installed with; moving to a new one
  * means uninstalling first, so it is a choice made once, not a default.

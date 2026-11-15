@@ -88,3 +88,4 @@ tools/host_build_san/
 # A private release key and its passwords (buildSrc ReleaseSigning.kt)
 keystore/release.properties
 keystore/*.jks
+keystore/debug.keystore
