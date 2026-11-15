@@ -51,10 +51,17 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            storeFile = rootProject.file("keystore/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            // The key the published builds are signed with is kept out of the
+            // repository. Where it is present the build signs with it, so an
+            // update installs over a release; anywhere else Android's own debug
+            // key is used, and such a build cannot replace an installed release.
+            val projectKey = rootProject.file("keystore/debug.keystore")
+            if (projectKey.isFile) {
+                storeFile = projectKey
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
