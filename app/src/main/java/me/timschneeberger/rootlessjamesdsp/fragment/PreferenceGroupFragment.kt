@@ -43,6 +43,7 @@ import me.timschneeberger.rootlessjamesdsp.smoothvolume.SmoothVolumeCardUi
 import me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetector
 import me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFiles
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
+import me.timschneeberger.rootlessjamesdsp.utils.LoudnessReference
 import me.timschneeberger.rootlessjamesdsp.utils.RubberBandInstaller
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.registerLocalReceiver
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.sendLocalBroadcast
@@ -142,6 +143,10 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(it)
         }
         phaseSyncListener = null
+        referenceListener?.let {
+            preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(it)
+        }
+        referenceListener = null
     }
 
     override fun onResume() {
@@ -168,6 +173,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     }
 
     private var phaseSyncListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private var referenceListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     /**
      * The optional Rubber Band download: one row that offers it, shows progress
@@ -354,24 +360,41 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     group?.refreshChildrenVisibility()
                     true
                 }
+                val levelPref = findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_level))
+                val offsetPref = findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_offset))
+                // Until a reference is picked, switching on starts flat at the
+                // volume being listened at. Stored before the switch, so the
+                // engine never has the card on with the old reference.
+                group?.onUserToggle = { on ->
+                    if (on) LoudnessReference.captureOnSwitchOn(requireContext())?.let { level ->
+                        offsetPref?.setValue(0f)
+                        levelPref?.setValue(level)
+                    }
+                    group?.setValue(on)
+                }
+                // Moving the reference or the offset by hand, by dragging or
+                // typing a value, makes it the user's.
+                val levelKey = getString(R.string.key_loudness_reference_level)
+                val offsetKey = getString(R.string.key_loudness_reference_offset)
+                referenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
+                    val ctx = context ?: return@OnSharedPreferenceChangeListener
+                    if (key == levelKey || key == offsetKey) LoudnessReference.onReferenceChanged(ctx, sp)
+                }
+                preferenceManager.sharedPreferences
+                    ?.registerOnSharedPreferenceChangeListener(referenceListener)
                 findPreference<Preference>(getString(R.string.key_loudness_set_reference))?.setOnPreferenceClickListener {
                     // The volume being corrected for: the listening volume
                     // when the media volume is not followed, and smooth
-                    // volume's level while it holds the media volume.
-                    val prefs = preferenceManager.sharedPreferences
-                    val follow = prefs?.getBoolean(getString(R.string.key_loudness_follow_volume), true) ?: true
-                    val volume = if (follow)
-                        me.timschneeberger.rootlessjamesdsp.utils.MediaVolume.listeningDb(requireContext())
-                    else
-                        (prefs?.getFloat(getString(R.string.key_loudness_volume), 0f) ?: 0f).toDouble()
-                    val db = volume.coerceIn(-60.0, 0.0).roundToInt()
+                    // volume's level while it holds the media volume. Kept
+                    // as it is, not rounded, so the sound is left exactly
+                    // alone at this volume.
+                    val db = LoudnessReference.listeningDb(requireContext()).coerceIn(-60.0, 0.0).toFloat()
+                    LoudnessReference.markChosen(requireContext())
                     // The offset goes back to 0, or the sound would not be
                     // left alone at this volume after all.
-                    findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_offset))
-                        ?.setValue(0f)
-                    findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_level))
-                        ?.setValue(db.toFloat())
-                    Toast.makeText(requireContext(), getString(R.string.loudness_set_reference_done, db.toString()),
+                    offsetPref?.setValue(0f)
+                    levelPref?.setValue(db)
+                    Toast.makeText(requireContext(), getString(R.string.loudness_set_reference_done, db.roundToInt().toString()),
                         Toast.LENGTH_SHORT).show()
                     true
                 }

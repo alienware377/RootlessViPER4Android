@@ -112,7 +112,10 @@ object MediaVolume {
      * that counts then.
      */
     fun listeningDb(context: Context): Double =
-        smoothVolume()?.heardDb ?: currentDb(context)
+        smoothVolumeDb() ?: currentDb(context)
+
+    /** Smooth volume's level while it holds the media volume, otherwise null. */
+    fun smoothVolumeDb(): Double? = smoothVolume()?.heardDb
 
     private fun smoothVolume(): SmoothVolumeController? =
         try { GlobalContext.getOrNull()?.getOrNull<SmoothVolumeController>() } catch (_: Exception) { null }

@@ -358,6 +358,7 @@
     <string name="key_loudness_set_reference" translatable="false">loudness_set_reference</string>
     <string name="key_loudness_reference_level" translatable="false">loudness_reference_level</string>
     <string name="key_loudness_reference_offset" translatable="false">loudness_reference_offset</string>
+    <string name="key_loudness_reference_auto" translatable="false">loudness_reference_auto</string>
     <string name="key_loudness_strength" translatable="false">loudness_strength</string>
     <string name="key_loudness_bass_freq" translatable="false">loudness_bass_freq</string>
     <string name="key_loudness_bass_slope" translatable="false">loudness_bass_slope</string>

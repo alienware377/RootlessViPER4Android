@@ -1393,7 +1393,7 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="dyneq3_mode">Band 3 acts on</string>
     <string name="dyneq_ms_mode">Works on</string>
     <string name="loudness_enable">Loudness correction</string>
-    <string name="loudness_info">As the volume goes down, your ears lose the bass first and some of the treble with it, so quiet music sounds thin. This puts them back by as much as the volume went down, following the phone\'s media volume as you change it. At the reference volume it does nothing at all. It never boosts, so it brings the bass and treble forward by turning the rest down, and that is a lot quieter: 30 dB under the reference, the middle loses about 35 dB more with the Classic method and about 16 dB with ISO. Set the reference first, by playing something at the volume you usually listen at and tapping the button below, then turn the phone up to make up the level.</string>
+    <string name="loudness_info">As the volume goes down, your ears lose the bass first and some of the treble with it, so quiet music sounds thin. This card puts them back as you turn the media volume down. It starts flat: switching it on changes nothing at the volume you have now, and from there it adds bass and treble the further you turn down. It never boosts, so it does that by turning the middle down, which makes quiet listening quieter still: 30 dB lower, the middle loses about 35 dB more with the Classic method and about 16 dB with ISO. Turning up past that point takes a little bass and treble away instead. To start again from the volume you have now, tap the button below. Once you set the reference yourself, with the button or the sliders, the card keeps it.</string>
     <string name="loudness_graph_summary">Now, at %1$s dB volume</string>
     <string name="loudness_graph_muted">Media volume muted</string>
     <string name="loudness_mode">Method</string>
@@ -1402,10 +1402,10 @@ Please press \'Continue\' below to re-do the setup wizard.</string>
     <string name="loudness_volume">Listening volume</string>
     <string name="loudness_volume_summary">The volume to correct for while the media volume is not followed.</string>
     <string name="loudness_set_reference">Use the current volume as the reference</string>
-    <string name="loudness_set_reference_summary">Play something you know at the volume where it sounds right, then tap this.</string>
+    <string name="loudness_set_reference_summary">Makes the volume you have now the point where the sound is left alone. Best done with something you know playing where it sounds right.</string>
     <string name="loudness_set_reference_done">Reference set to %1$s dB</string>
     <string name="loudness_reference_level">Reference volume</string>
-    <string name="loudness_reference_level_summary">The media volume where the music already sounds full. 0 dB is the phone at full volume.</string>
+    <string name="loudness_reference_level_summary">The volume where the sound is left alone. Taken from the volume you have when you first switch the card on. 0 dB is the phone at full volume.</string>
     <string name="loudness_reference_offset">Reference offset</string>
     <string name="loudness_reference_offset_summary">Moves the reference for headphones that are louder or quieter than usual at the same volume.</string>
     <string name="loudness_strength">Strength</string>

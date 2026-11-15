@@ -483,6 +483,10 @@ object ContextExtensions {
         // Every wholesale load ends here, so V4A-only mode is re-applied here,
         // before the engine syncs what was loaded.
         me.timschneeberger.rootlessjamesdsp.utils.V4aMode.parkNonV4aEffectsAfterLoad(this)
+        // A loudness card loaded on, with a reference it took itself or none
+        // at all, starts flat at the volume being listened at, as it does
+        // when switched on by hand.
+        me.timschneeberger.rootlessjamesdsp.utils.LoudnessReference.captureAfterLoad(this)
         sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
         sendLocalBroadcast(Intent(Constants.ACTION_PRESET_LOADED))
     }
