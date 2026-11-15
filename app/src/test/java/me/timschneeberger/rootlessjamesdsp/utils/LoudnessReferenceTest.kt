@@ -132,6 +132,26 @@ class LoudnessReferenceTest {
     }
 
     @Test
+    fun `a load that switches the card on takes the reference when it carries none`() {
+        // Off: nothing is switched on, so nothing is taken.
+        prefs.edit().putBoolean(keys.enable, false).commit()
+        assertNull(LoudnessReference.captureAfterLoad(prefs, keys, null) { -17.0 })
+        assertNull(level())
+
+        // On with no reference, as a 4.6.0 preset at the old default loads.
+        prefs.edit().putBoolean(keys.enable, true).commit()
+        assertEquals(-17f, LoudnessReference.captureAfterLoad(prefs, keys, null) { -17.0 })
+        assertEquals(-17f, level())
+    }
+
+    @Test
+    fun `a load keeps the reference it carries`() {
+        prefs.edit().putBoolean(keys.enable, true).putFloat(keys.level, -17f).putFloat(keys.offset, 0f).commit()
+        assertNull(LoudnessReference.captureAfterLoad(prefs, keys, null) { -35.0 })
+        assertEquals(-17f, level())
+    }
+
+    @Test
     fun `the reference is held to the card's range`() {
         assertEquals(-60f, LoudnessReference.onSwitchOn(false, -72.0))
         assertEquals(0f, LoudnessReference.onSwitchOn(false, 0.0))

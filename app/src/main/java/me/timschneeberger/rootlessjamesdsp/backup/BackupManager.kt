@@ -159,9 +159,10 @@ class BackupManager(private val context: Context): KoinComponent {
                 }
             }
 
+            val loudnessLoaded = File(targetFolder, "shared_prefs/${Constants.PREF_LOUDNESS}.xml").isFile
             targetFolder.deleteRecursively()
 
-            context.broadcastPresetLoadEvent()
+            context.broadcastPresetLoadEvent(loudnessLoaded)
             context.sendLocalBroadcast(Intent(Constants.ACTION_BACKUP_RESTORED))
 
             if(enableDeviceProfiles)

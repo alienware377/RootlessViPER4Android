@@ -479,13 +479,19 @@ object ContextExtensions {
         }
     }
 
-    fun Context.broadcastPresetLoadEvent() {
+    /**
+     * @param loudnessLoaded whether the load replaced the loudness card's
+     *        settings. Only then can it have switched the card on; any other
+     *        load leaves a card that is already on as it is.
+     */
+    fun Context.broadcastPresetLoadEvent(loudnessLoaded: Boolean = false) {
         // Every wholesale load ends here, so V4A-only mode is re-applied here,
         // before the engine syncs what was loaded.
         me.timschneeberger.rootlessjamesdsp.utils.V4aMode.parkNonV4aEffectsAfterLoad(this)
         // A loudness card loaded on with no reference starts flat at the
         // volume being listened at, as it does when switched on by hand.
-        me.timschneeberger.rootlessjamesdsp.utils.LoudnessReference.captureAfterLoad(this)
+        if (loudnessLoaded)
+            me.timschneeberger.rootlessjamesdsp.utils.LoudnessReference.captureAfterLoad(this)
         sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
         sendLocalBroadcast(Intent(Constants.ACTION_PRESET_LOADED))
     }

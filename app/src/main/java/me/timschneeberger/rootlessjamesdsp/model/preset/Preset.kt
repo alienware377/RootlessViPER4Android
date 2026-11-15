@@ -253,7 +253,8 @@ class Preset(val name: String, externalPath: File? = null): KoinComponent {
             // clean up
             targetFolder.deleteRecursively()
 
-            ctx.broadcastPresetLoadEvent()
+            ctx.broadcastPresetLoadEvent(
+                loudnessLoaded = files.any { it.name == "${Constants.PREF_LOUDNESS}.xml" })
 
             return metadata.toMutableMap()
         }
