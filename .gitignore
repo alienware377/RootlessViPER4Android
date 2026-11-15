@@ -80,3 +80,4 @@ tools/*_x86
 
 # Kotlin daemon scratch and crash logs
 .kotlin/
+keystore/debug.keystore
