@@ -143,10 +143,6 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
             preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(it)
         }
         phaseSyncListener = null
-        referenceListener?.let {
-            preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(it)
-        }
-        referenceListener = null
     }
 
     override fun onResume() {
@@ -173,7 +169,6 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
     }
 
     private var phaseSyncListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
-    private var referenceListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     /**
      * The optional Rubber Band download: one row that offers it, shows progress
@@ -362,9 +357,9 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 }
                 val levelPref = findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_level))
                 val offsetPref = findPreference<MaterialSeekbarPreference>(getString(R.string.key_loudness_reference_offset))
-                // Until a reference is picked, switching on starts flat at the
-                // volume being listened at. Stored before the switch, so the
-                // engine never has the card on with the old reference.
+                // The first switch-on starts flat at the volume being listened
+                // at. Stored before the switch, so the engine never has the
+                // card on with the old reference.
                 group?.onUserToggle = { on ->
                     if (on) LoudnessReference.captureOnSwitchOn(requireContext())?.let { level ->
                         offsetPref?.setValue(0f)
@@ -372,16 +367,6 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     }
                     group?.setValue(on)
                 }
-                // Moving the reference or the offset by hand, by dragging or
-                // typing a value, makes it the user's.
-                val levelKey = getString(R.string.key_loudness_reference_level)
-                val offsetKey = getString(R.string.key_loudness_reference_offset)
-                referenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
-                    val ctx = context ?: return@OnSharedPreferenceChangeListener
-                    if (key == levelKey || key == offsetKey) LoudnessReference.onReferenceChanged(ctx, sp)
-                }
-                preferenceManager.sharedPreferences
-                    ?.registerOnSharedPreferenceChangeListener(referenceListener)
                 findPreference<Preference>(getString(R.string.key_loudness_set_reference))?.setOnPreferenceClickListener {
                     // The volume being corrected for: the listening volume
                     // when the media volume is not followed, and smooth
@@ -389,7 +374,6 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                     // as it is, not rounded, so the sound is left exactly
                     // alone at this volume.
                     val db = LoudnessReference.listeningDb(requireContext()).coerceIn(-60.0, 0.0).toFloat()
-                    LoudnessReference.markChosen(requireContext())
                     // The offset goes back to 0, or the sound would not be
                     // left alone at this volume after all.
                     offsetPref?.setValue(0f)

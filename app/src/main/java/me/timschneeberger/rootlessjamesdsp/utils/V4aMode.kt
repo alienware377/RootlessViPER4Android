@@ -194,8 +194,9 @@ object V4aMode {
         var restored = 0
         nonV4a(ctx).forEach { (namespace, keyRes) ->
             if (!wasOn.contains(namespace)) return@forEach
-            // Coming back on is switching on: a loudness reference nobody
-            // picked starts from the volume being listened at, as from its card.
+            // Coming back on is switching on: a loudness card with no
+            // reference yet starts from the volume being listened at, as from
+            // its own switch.
             if (namespace == Constants.PREF_LOUDNESS)
                 LoudnessReference.captureOnSwitchOn(ctx)
             ctx.getSharedPreferences(namespace, Context.MODE_MULTI_PROCESS)
