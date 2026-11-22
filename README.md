@@ -19,6 +19,7 @@
 </p>
 
 <p align="center">
+  <a href="#comparison">Comparison</a> •
   <a href="#features">Features</a> •
   <a href="#download--install">Download</a> •
   <a href="#limitations">Limitations</a> •
@@ -43,6 +44,110 @@ Prefer the original experience? **ViPER4Android-only mode** narrows the app to t
 | ViPER effects & FIR EQ | Output control & Bass exciter | Surround, Dynamic system & Clarity |
 |:---:|:---:|:---:|
 | ![ViPER effects and FIR equalizer](img/screenshots/viper_effects_eq.jpg) | ![Output control and dual-band bass exciter](img/screenshots/output_bass_exciter.jpg) | ![Surround, dynamic system and clarity sections](img/screenshots/viper_sections.jpg) |
+
+## Comparison
+
+How RV4A lines up against JamesDSP and the original ViPER4Android. ⚠️ means partly; the notes under each table say how.
+
+### Basics
+
+| Feature | RV4A | JamesDSP | ViPER4Android |
+|---|:---:|:---:|:---:|
+| Works without root | ✅ | ✅ | ❌ |
+| Rooted version | ✅ | ✅ | ✅ |
+| Open source | ✅ | ✅ | ⚠️<sup>1</sup> |
+| Still maintained | ✅ | ⚠️<sup>2</sup> | ❌<sup>3</sup> |
+| Android 14 to 16 | ✅<sup>4</sup> | ⚠️<sup>5</sup> | ⚠️<sup>6</sup> |
+| Rooted on the new AIDL effect HAL (Android 15+) | ⚠️<sup>7</sup> | ⚠️<sup>8</sup> | ❌<sup>3</sup> |
+| Apps that block capture (Spotify), rooted | ✅ | ✅ | ✅ |
+| Apps that block capture (Spotify), without root | ⚠️<sup>9</sup> | ❌ | ❌ |
+| Per-app exclude list | ✅<sup>10</sup> | ✅ | ❌ |
+| Separate settings for headphones, speaker, Bluetooth and USB | ✅ | ✅ | ✅ |
+| Settings backup and restore | ✅ | ✅ | ⚠️<sup>11</sup> |
+| Rearrange, hide and group effect cards | ✅ | ❌ | ⚠️<sup>12</sup> |
+| Reorderable effect chain | ✅ | ❌ | ❌ |
+
+1. The 2.3.4.0 app source is public without a licence, and its driver was closed. The 2.6 app was published under Apache-2.0 as smali. The 2.7 and RE apps are closed; the reverse-engineered RE driver source is public.
+2. The last GitHub release is 1.6.13 (December 2024). 1.6.14 came out in April 2025 as the root APK and in May 2025 on F-Droid. The main branch has unreleased changes up to July 2026.
+3. No release since RE 0.6.2 (December 2023). Unreleased AIDL work on the ViPERFX_RE `aidl2` branch was last changed in May 2025.
+4. The rootless app. The rooted module uses the older effect HAL, so phones on the new AIDL effect HAL need the test module in the next row.
+5. The last release (1.6.14, April 2025) came before Android 16. Users report it runs there with some bugs.
+6. RE 0.6.2 fixed Android 14. On Android 15 some phones report "driver not found", and Android 16 has a single user report.
+7. A separate test module ([#12](https://github.com/alienware377/RootlessViPER4Android/issues/12)), confirmed on two Android 16 phones (effect HAL V2 and V3). It needs root that starts at boot, and it is built on 4.5.4, so the 4.6.0 effects are missing.
+8. There is no official AIDL build of the engine. The 1.6.14 root app was changed to work with community AIDL builds of it.
+9. Only through the experimental global mode, which carries fewer effects, adds about 40 ms of delay and depends on the phone.
+10. The list can also be flipped to process only the apps on it.
+11. There is no full settings backup. Presets are plain files, and RE 0.5.0 can import presets, impulse responses and VDC files.
+12. Three fixed UI levels show more or fewer effects. Single cards cannot be moved, hidden or grouped.
+
+### ViPER effects
+
+| Feature | RV4A | JamesDSP | ViPER4Android |
+|---|:---:|:---:|:---:|
+| ViPER-DDC headphone profiles | ✅ | ✅ | ✅ |
+| Convolver (impulse responses) | ✅ | ✅ | ⚠️<sup>13</sup> |
+| FET compressor | ✅ | ❌ | ⚠️<sup>14</sup> |
+| Playback gain control (AGC) | ✅ | ❌ | ⚠️<sup>13</sup> |
+| Spectrum extension | ✅ | ❌ | ✅ |
+| Field surround | ✅ | ⚠️<sup>15</sup> | ✅ |
+| Differential surround | ✅ | ⚠️<sup>16</sup> | ✅ |
+| Headphone surround+ | ✅ | ⚠️<sup>17</sup> | ⚠️<sup>13</sup> |
+| Reverberation | ✅ | ✅ | ⚠️<sup>13</sup> |
+| ViPER bass | ✅ | ❌ | ✅ |
+| ViPER clarity | ✅ | ❌ | ✅ |
+| Dynamic system | ✅ | ⚠️<sup>18</sup> | ✅ |
+| Tube simulator | ✅ | ⚠️<sup>19</sup> | ✅ |
+| Auditory protection (Cure+) | ✅ | ⚠️<sup>20</sup> | ✅ |
+| AnalogX | ❌ | ❌ | ✅ |
+| Speaker optimization | ✅ | ❌ | ✅ |
+
+13. Works in FX 2.x. Greyed out in the RE app, which has not reverse engineered it yet.
+14. Works in FX 2.x. Greyed out in the RE app, and the RE driver's FET code does no processing.
+15. Only the depth part, as a bundled Liveprog script (Depth surround) ported from ViPER.
+16. Bundled Liveprog scripts can delay one channel (Fractional delay line, Time adjustment), which is what differential surround does.
+17. A different headphone virtualizer: HRTF crossfeed presets and bundled HRTF impulse responses.
+18. Only as two bundled Liveprog scripts based on ViPER's Dynamic System, one with manual ranges and one with 19 headphone and earphone presets.
+19. In RootlessJamesDSP the drive reaches the engine divided by 100, so it is barely audible.
+20. Its BS2B crossfeed is the crossfeed Cure+ is built on, without the Cure+ name or its extra filter.
+
+### JamesDSP effects
+
+| Feature | RV4A | JamesDSP | ViPER4Android |
+|---|:---:|:---:|:---:|
+| Liveprog (EEL2 scripts) | ✅ | ✅ | ❌ |
+| Arbitrary-response graphic EQ | ✅ | ✅ | ❌ |
+| AutoEQ import | ✅ | ✅ | ⚠️<sup>21</sup> |
+| Multiband EQ with FIR / IIR modes | ✅ | ✅ | ⚠️<sup>22</sup> |
+| Dynamic range compander | ✅ | ✅ | ❌ |
+| Crossfeed (BS2B) | ✅ | ✅ | ✅<sup>23</sup> |
+| Output limiter | ✅ | ✅ | ✅ |
+
+21. There is no AutoEQ in the app, but AutoEq's WAV impulse responses can be loaded into the FX 2.x convolver.
+22. One 10-band equalizer with no mode choice. The app calls it FIR, but the 2.5 driver builds it from minimum-phase IIR filters.
+23. Through Cure+, which uses bs2b's three standard levels. Cutoff and feed cannot be set by hand.
+
+### Extras
+
+| Feature | RV4A | JamesDSP | ViPER4Android |
+|---|:---:|:---:|:---:|
+| Parametric EQ | ✅ | ⚠️<sup>24</sup> | ❌ |
+| Match EQ (headphones to a chosen target) | ✅ | ⚠️<sup>25</sup> | ⚠️<sup>26</sup> |
+| Dynamic EQ | ✅ | ❌ | ❌ |
+| Echo / delay | ✅ | ⚠️<sup>27</sup> | ❌ |
+| Binaural upmix | ✅ | ❌ | ❌ |
+| Loudness correction | ✅ | ❌ | ❌ |
+| LUFS normalizer | ✅ | ❌ | ❌ |
+| Voice isolation | ⚠️<sup>28</sup> | ❌ | ❌ |
+
+24. On the main branch since April 2026, not in a release yet.
+25. AutoEQ correction profiles, which tune toward the target the AutoEq project used for that model (mostly Harman). There is no choice of target and no loading your own measurement.
+26. Headphone correction comes from ViPER-DDC files rather than from matching in the app.
+27. Bundled Liveprog delay scripts only. There is no built-in effect.
+28. Rootless only. It needs the separate voice isolation add-on (ARM phones) and adds about 34 ms of delay.
+
+The rest of what RV4A adds, such as the maximizer, exciter, vintage tape, spectral shaper and multiband stereo imaging, is listed under [Features](#features) and the [Roadmap](#roadmap).
+
+**RV4A** is RootlessViPER4Android and RootfulViPER4Android 4.6.0. **JamesDSP** is RootlessJamesDSP 1.6.14 and JamesDSPManager with its Magisk module. **ViPER4Android** is the official ViPER4Android FX 2.5 to 2.7 and ViPER4Android RE up to 0.6.2; unofficial forks are not counted. Correct as of November 2026; if something here is out of date, please open an issue.
 
 ## Features
 
