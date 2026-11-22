@@ -52,6 +52,7 @@ Prefer the original experience? **ViPER4Android-only mode** narrows the app to t
 | **Basics** | | | |
 | Works without root | ✅ | ✅ | ❌ |
 | Rooted version | ✅ | ✅ | ✅ |
+| Rooted on the new AIDL effect HAL (Android 15+) | ⚠️<sup>1</sup> | ⚠️<sup>2</sup> | ❌ |
 | Still maintained | ✅ | ✅ | ❌ |
 | Spotify and other apps that block recording, rooted | ✅ | ✅ | ✅ |
 | Spotify and other apps that block recording, without root | ✅ | ❌ | ❌ |
@@ -110,6 +111,9 @@ Prefer the original experience? **ViPER4Android-only mode** narrows the app to t
 | Pitch shifter | ✅ | ❌ | ❌ |
 | Speaker optimization | ✅ | ❌ | ✅ |
 | Voice isolation (rootless) | ✅ | ❌ | ❌ |
+
+1. A separate test module ([#12](https://github.com/alienware377/RootlessViPER4Android/issues/12)), confirmed on two Android 16 phones (effect HAL V2 and V3). It needs root that starts at boot, and it is built on 4.5.4, so the 4.6.0 effects are missing.
+2. There is no official AIDL build of the engine. The 1.6.14 root app was changed to work with community AIDL builds of it.
 
 JamesDSP is RootlessJamesDSP and JamesDSPManager; ViPER4Android is the official FX and RE apps. Correct as of November 2026; if something here is out of date, please open an issue.
 
