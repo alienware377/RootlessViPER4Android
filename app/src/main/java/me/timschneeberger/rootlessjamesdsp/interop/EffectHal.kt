@@ -22,6 +22,7 @@ object EffectHal {
     private val EFFECT = Regex("""<name>\s*android\.hardware\.audio\.effect\s*</name>""")
     private val CORE = Regex("""<name>\s*android\.hardware\.audio\.core\s*</name>""")
     private val AIDL = Regex("""format\s*=\s*"aidl"""")
+    private val KNOWN_APEXES = listOf("com.android.hardware.audio")
 
     /**
      * The kind these manifest texts declare. The framework only takes the AIDL
@@ -59,7 +60,9 @@ object EffectHal {
             File(d, "manifest").listFiles()?.filterTo(files) { it.isFile && it.name.endsWith(".xml") }
         }
         listOf("vendor/manifest.xml", "odm/manifest.xml").map { File(root, it) }.filterTo(files) { it.isFile }
-        File(root, "apex").listFiles()?.forEach { apex ->
+        // An app may not list /apex, but it can walk into a folder it can name.
+        val apexes = File(root, "apex").listFiles().orEmpty().toList() + KNOWN_APEXES.map { File(root, "apex/$it") }
+        apexes.distinct().forEach { apex ->
             File(apex, "etc/vintf").listFiles()?.filterTo(files) { it.isFile && it.name.endsWith(".xml") }
         }
         return files
@@ -71,6 +74,13 @@ object EffectHal {
         Kind.UNKNOWN
     }
 
+    /**
+     * A loaded "engine vN AIDL" settles it, even when the phone declares its
+     * HAL in an APEX this app cannot read.
+     */
+    fun withEngine(engineName: String?, declared: Kind): Kind =
+        if (engineName?.endsWith(" AIDL") == true) Kind.AIDL else declared
+
     /** The running phone's kind, read once. */
     val current: Kind by lazy { detect() }
 
@@ -78,6 +88,5 @@ object EffectHal {
     fun needsAidlModule(state: JamesDspRemoteEngine.PluginState, kind: Kind): Boolean =
         state == JamesDspRemoteEngine.PluginState.Unavailable && kind == Kind.AIDL
 
-    const val AIDL_ISSUE_URL =
-        "https://github.com/alienware377/RootlessJamesDSP-ViPER4Android-Edition/issues/12"
+    const val AIDL_MODULE_URL = "https://github.com/alienware377/RootlessViPER4Android/releases/latest"
 }

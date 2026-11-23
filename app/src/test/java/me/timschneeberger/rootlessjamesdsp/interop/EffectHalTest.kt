@@ -94,4 +94,20 @@ class EffectHalTest {
         assertFalse(EffectHal.needsAidlModule(PluginState.Available, Kind.AIDL))
         assertFalse(EffectHal.needsAidlModule(PluginState.Outdated, Kind.AIDL))
     }
+
+    @Test
+    fun `a loaded AIDL engine settles it when the declaration cannot be read`() {
+        assertEquals(Kind.AIDL, EffectHal.withEngine("RootfulViPER4Android engine v8 AIDL", Kind.UNKNOWN))
+        assertEquals(Kind.UNKNOWN, EffectHal.withEngine("RootfulViPER4Android engine v8", Kind.UNKNOWN))
+        assertEquals(Kind.HIDL, EffectHal.withEngine(null, Kind.HIDL))
+    }
+
+    @Test
+    fun `a known APEX is read even when the apex folder cannot be listed`() {
+        val root = tmp.newFolder()
+        val f = File(root, "apex/com.android.hardware.audio/etc/vintf/audio.xml")
+        f.parentFile!!.mkdirs()
+        f.writeText(manifest(hal("aidl", "android.hardware.audio.effect", "2")))
+        assertTrue(EffectHal.manifestFiles(root).contains(f))
+    }
 }

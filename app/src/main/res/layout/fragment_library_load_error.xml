@@ -50,14 +50,14 @@
                 app:cardMargin="8dp"/>
 
             <me.timschneeberger.rootlessjamesdsp.view.Card
-                android:id="@+id/aidlIssueNotice"
+                android:id="@+id/aidlModuleNotice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clickable="true"
                 android:focusable="true"
                 android:visibility="gone"
-                app:titleText="@string/load_fail_aidl_issue_card_title"
-                app:bodyText="@string/load_fail_aidl_issue_card"
+                app:titleText="@string/load_fail_aidl_module_card_title"
+                app:bodyText="@string/load_fail_aidl_module_card"
                 app:cardMargin="8dp" />
 
             <me.timschneeberger.rootlessjamesdsp.view.Card

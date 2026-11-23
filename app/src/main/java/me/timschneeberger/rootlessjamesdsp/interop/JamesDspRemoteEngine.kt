@@ -642,6 +642,14 @@ class JamesDspRemoteEngine(
         private val EFFECT_TYPE_CUSTOM = UUID.fromString("f98765f4-c321-5de6-9a45-123459495ab2")
         private val EFFECT_JAMESDSP = UUID.fromString("f27317f4-c984-4de6-9a90-545759495bf2")
 
+        /** The name the installed engine reports, null when there is none. */
+        fun installedEngineName(): String? = try {
+            AudioEffect.queryEffects().orEmpty().firstOrNull { it.uuid == EFFECT_JAMESDSP }?.name
+        } catch (e: Exception) {
+            Timber.w(e, "installedEngineName: could not query effects")
+            null
+        }
+
         /** The version in the installed engine's name, 0 when there is none or it is not ours. */
         fun installedEngineVersion(): Int = try {
             AudioEffect.queryEffects().orEmpty()

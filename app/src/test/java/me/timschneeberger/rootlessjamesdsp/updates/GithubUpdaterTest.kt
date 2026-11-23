@@ -1,6 +1,7 @@
 package me.timschneeberger.rootlessjamesdsp.updates
 
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
+import me.timschneeberger.rootlessjamesdsp.interop.EffectHal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -77,5 +78,18 @@ class GithubUpdaterTest {
     fun downloadedFileNamedForAnOlderVersionIsNotOffered() {
         assertFalse(UpdateInstaller.isNewer("ViPER4Android-v0.0.1-rootless-fdroid-universal-release.apk"))
         assertTrue(UpdateInstaller.isNewer("ViPER4Android-v99.0.0-rootless-fdroid-universal-release.apk"))
+    }
+
+    @Test
+    fun `each kind of phone is offered its own root module`() {
+        val normal = "RootfulViPER4Android-engine-module-v4.7.0.zip" to "normal"
+        val aidl = "RootfulViPER4Android-AIDL-module-v4.7.0.zip" to "aidl"
+        val both = GithubUpdater.Release(intArrayOf(4, 7, 0), "v4.7.0", "", "", listOf(aidl, normal))
+        val noAidl = GithubUpdater.Release(intArrayOf(4, 7, 0), "v4.7.0", "", "", listOf(normal))
+
+        org.junit.Assert.assertEquals(normal, GithubUpdater.moduleFor(both, EffectHal.Kind.HIDL))
+        org.junit.Assert.assertEquals(normal, GithubUpdater.moduleFor(both, EffectHal.Kind.UNKNOWN))
+        org.junit.Assert.assertEquals(aidl, GithubUpdater.moduleFor(both, EffectHal.Kind.AIDL))
+        org.junit.Assert.assertNull(GithubUpdater.moduleFor(noAidl, EffectHal.Kind.AIDL))
     }
 }

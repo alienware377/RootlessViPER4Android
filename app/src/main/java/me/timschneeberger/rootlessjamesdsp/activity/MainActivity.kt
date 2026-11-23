@@ -504,7 +504,10 @@ class MainActivity : BaseActivity() {
                     prefsApp.set(R.string.key_powered_on, false)
                     showYesNoAlert(
                         getString(R.string.foreign_engine_root),
-                        getString(R.string.foreign_engine_root_description)
+                        getString(
+                            if (EffectHal.current == EffectHal.Kind.AIDL) R.string.foreign_engine_root_description_aidl
+                            else R.string.foreign_engine_root_description
+                        )
                     ) {
                         if(it) {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(

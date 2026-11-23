@@ -25,6 +25,8 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.timschneeberger.rootlessjamesdsp.BuildConfig
 import me.timschneeberger.rootlessjamesdsp.R
+import me.timschneeberger.rootlessjamesdsp.interop.EffectHal
+import me.timschneeberger.rootlessjamesdsp.interop.JamesDspRemoteEngine
 import me.timschneeberger.rootlessjamesdsp.utils.Constants
 import me.timschneeberger.rootlessjamesdsp.utils.isPlugin
 import me.timschneeberger.rootlessjamesdsp.utils.isRoot
@@ -183,7 +185,15 @@ object GithubUpdater {
         return apks.firstOrNull { it.first.contains("universal") } ?: apks.firstOrNull()
     }
 
-    private fun moduleFor(r: Release) = r.assets.firstOrNull { it.first.contains("engine-module") && it.first.endsWith(".zip") }
+    /** The root module for this phone. An AIDL phone cannot load the normal one. */
+    internal fun moduleFor(r: Release, kind: EffectHal.Kind): Pair<String, String>? {
+        val zips = r.assets.filter { it.first.endsWith(".zip") }
+        return if (kind == EffectHal.Kind.AIDL) {
+            zips.firstOrNull { it.first.contains("AIDL-module") }
+        } else {
+            zips.firstOrNull { it.first.contains("engine-module") && !it.first.contains("aidl", ignoreCase = true) }
+        }
+    }
 
     private fun showWhenReady(newer: List<Release>, manual: Activity?, tries: Int) {
         // Asked for in About: show right there. Otherwise wait for a moment when one of the app's
@@ -235,7 +245,9 @@ object GithubUpdater {
         body.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         // Rooted: the engine is a separate module that has to match the app.
-        val module = if (isRoot()) moduleFor(latest) else null
+        val module = if (isRoot()) {
+            moduleFor(latest, EffectHal.withEngine(JamesDspRemoteEngine.installedEngineName(), EffectHal.current))
+        } else null
         if (module != null) {
             body.addView(TextView(act).apply {
                 text = act.getString(R.string.update_module_note)

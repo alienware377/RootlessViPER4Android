@@ -564,6 +564,7 @@
     <string name="pitchshift_mix">Mix</string>
     <string name="foreign_engine_root">A different engine is installed</string>
     <string name="foreign_engine_root_description">A JamesDSP engine is installed, but it is not this app\'s own. The original ViPER4Android effects will work; everything this fork adds will do nothing at all, with no error either way. Installing the RootfulViPER4Android engine module fixes it. Open the downloads page?</string>
+    <string name="foreign_engine_root_description_aidl">A JamesDSP engine is installed, but it is not this app\'s own, so everything this fork adds will do nothing. This phone uses the AIDL effect HAL: remove that JamesDSP module, reboot, then install RootfulViPER4Android-AIDL-module. Open the downloads page?</string>
     <string name="foreign_engine_root_toast">A different JamesDSP engine is installed. This fork\'s effects will not work.</string>
     <string name="pitchshift_rubberband">Rubber Band add-on</string>
     <string name="pitchshift_rubberband_offer">Not installed. Tap to download, about %1$d KB.</string>
@@ -1049,9 +1050,11 @@
     <string name="load_fail_arch_card_title">Module already installed?</string>
     <string name="load_fail_header_aidl">Root engine not loaded</string>
     <string name="load_fail_aidl_card_title">This phone uses the newer audio effect system</string>
-    <string name="load_fail_aidl_card">Its audio effects run behind the AIDL effect HAL, which does not load the normal RV4A engine module, so flashing that module will not help here. An experimental engine module for these phones is being tested. Until it is ready, rootless mode works on this phone.</string>
-    <string name="load_fail_aidl_issue_card_title">Want to help test it?</string>
-    <string name="load_fail_aidl_issue_card">The test build, how to install and remove it, and what to send back are on GitHub. Tap here to open the issue.</string>
+    <string name="load_fail_aidl_card">Its audio effects run through the AIDL effect HAL, which cannot load the normal engine module, so flashing that one will not help here. This phone needs the AIDL engine module instead. It is still experimental, and rootless mode works on this phone too.</string>
+    <string name="load_fail_aidl_module_card_title">Get the AIDL engine module</string>
+    <string name="load_fail_aidl_module_card">Tap here for the releases page. Remove the normal engine module, reboot, then install RootfulViPER4Android-AIDL-module and reboot again. It needs root that starts at boot, so KernelSU late-load will not work. If it is already installed, your root manager\'s module list shows its status.</string>
+    <string name="load_fail_aidl_maybe_card_title">Is this a newer phone?</string>
+    <string name="load_fail_aidl_maybe_card">Many phones on Android 15 and newer use the AIDL effect HAL, which cannot load the normal engine module. If boot.log says yours does, it needs the AIDL engine module instead. Tap here for the releases page.</string>
     <string name="load_fail_aidl_toast">The root engine is not loaded. This phone needs the AIDL engine module, not the normal one.</string>
     <string name="load_fail_arch_card">The module keeps two logs in /data/adb/modules/rv4a_engine: install.log, and boot.log, which says whether the engine was mounted and whether the audio system loaded it. Please attach both when you report an issue.</string>
 
