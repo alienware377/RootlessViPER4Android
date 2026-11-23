@@ -1,98 +1,278 @@
 #!/system/bin/sh
-# Installs the AIDL effect HAL service.
+# Installs the rooted engine as an AIDL effect plugin. EXPERIMENTAL.
 #
-# Refuses to install where it cannot work, rather than leaving a device with a
-# replaced audio service and nothing to show for it.
+# On phones whose audio effects run behind the AIDL effect HAL, the vendor's
+# effect factory reads audio_effects_config.xml and loads every library
+# listed in it. This module adds one library, and two lines to copies of the
+# config files the factory may read. It does not replace or restart any
+# service, add SELinux policy or patch any system library.
+#
+# It refuses to install whenever anything does not match what it was built
+# and tested for, because the library is loaded inside the audio HAL itself:
+# a library built for a different effect HAL version would write a wrongly
+# laid out structure into the HAL's memory.
 
 SKIPUNZIP=0
 
-# --- not ready ------------------------------------------------------------
-# The stock effect service hardcodes its instance name and takes no argument
-# for it (AOSP EffectMain.cpp), so starting it under a second name to delegate
-# to is impossible: both services would claim the same name and the loser
-# aborts. Installing this would risk an audio HAL crash loop, which is worse
-# than not installing at all.
-ui_print "! This module is not ready to install."
-ui_print "  The stock effect service cannot be run under a"
-ui_print "  second name, so taking over its name would leave"
-ui_print "  the device with no working effect HAL."
-ui_print "  Use rootless mode on this device."
-abort "! Aborting deliberately"
+. "$MODPATH/common/aidl_common.sh"
 
-API=$(getprop ro.build.version.sdk)
+refuse() {
+  rm -rf "$MODPATH/system" "$MODPATH/configs" "$MODPATH/install.prop"
+  ui_print " "
+  for l in "$@"; do ui_print "! $l"; done
+  ui_print " "
+  ui_print "  To see what this phone has, run rv4a-aidl-diag.sh from"
+  ui_print "  this zip in a root shell and send the file it writes."
+  abort "! Nothing was installed."
+}
 
-case "$ARCH" in
-  arm64) ABI_DIR="arm64-v8a" ;;
-  arm)   ABI_DIR="armeabi-v7a" ;;
-  x64)   ABI_DIR="x86_64" ;;
-  x86)   ABI_DIR="x86" ;;
-  *)     abort "! Unsupported architecture: $ARCH" ;;
+API=$(rv4a_getprop ro.build.version.sdk)
+case "$API" in ''|*[!0-9]*) API=0 ;; esac
+ROOT_IMPL="$(rv4a_root_impl)"
+case "$ROOT_IMPL" in
+  KernelSU) ROOT_VER="${KSU_VER:-$(ksud -V 2>/dev/null)}" ;;
+  APatch)   ROOT_VER="${APATCH_VER:-}" ;;
+  *)        ROOT_VER="${MAGISK_VER:-}" ;;
 esac
 
-ui_print "- Architecture: $ARCH, Android API $API"
+ui_print "- RootfulViPER4Android AIDL engine (experimental test build)"
+ui_print "- $(rv4a_getprop ro.product.model), Android $(rv4a_getprop ro.build.version.release) (API $API)"
+ui_print "- Root: $ROOT_IMPL $ROOT_VER"
 
-# The AIDL effect HAL exists from 14 onward. Below that the legacy module is
-# the right one, and this would register a service nothing looks up.
-if [ "$API" -lt 34 ]; then
-  ui_print "! This device predates the AIDL effect HAL."
-  abort "! Install the standard module instead"
+case "$ARCH" in
+  arm64) ABI=arm64-v8a ;;
+  x64)   ABI=x86_64 ;;
+  *) refuse "This build is for 64-bit phones only (this one is $ARCH)." ;;
+esac
+
+# --- 0. root that can show the HAL a file before it starts ------------------
+if rv4a_late_load; then
+  refuse "Your root is loaded after the phone has booted (late-load" \
+    "or a temporary root). The audio system reads its effect list" \
+    "during boot, before this module could add to it, so this" \
+    "test build cannot work with it yet."
+fi
+if [ "$ROOT_IMPL" = KernelSU ] && ! rv4a_metamodule; then
+  if [ "$(rv4a_ksu_major)" -ge 3 ]; then
+    refuse "KernelSU 3 and later only mount module files through a" \
+      "metamodule, and none is installed. Install meta-overlayfs" \
+      "(or another metamodule), reboot, then install this again."
+  fi
+  ui_print "- Note: no KernelSU metamodule found. If your KernelSU is"
+  ui_print "  version 3 or later, this module stays inactive until one"
+  ui_print "  (such as meta-overlayfs) is installed. It will say so."
 fi
 
-# There must be a stock factory to hide behind. Without one, taking the default
-# instance name would leave the device with our effect and nothing else.
-if ! (service list 2>/dev/null | grep -q "android.hardware.audio.effect.IFactory"); then
-  ui_print "! No audio effect factory found on this device."
-  ui_print "  Nothing to delegate to, so this would remove"
-  ui_print "  effects rather than add one."
-  abort "! Aborting"
+[ "$API" -ge 34 ] || refuse "This phone does not use the AIDL effect HAL." \
+  "Install the normal RV4A engine module instead."
+
+# --- 1. which effect HAL? ---------------------------------------------------
+KIND="$(rv4a_hal_kind)"
+case "$KIND" in
+  aidl) ui_print "- Effect HAL: AIDL" ;;
+  hidl) refuse "This phone runs the older (HIDL) audio effect HAL." \
+          "The normal RV4A engine module is the one for it." ;;
+  *)    refuse "No audio effect HAL is registered on this phone." ;;
+esac
+
+FPID="$(rv4a_factory_pid)"
+FEXE=""; FAPEX=""; FNDK=""
+if [ -n "$FPID" ]; then
+  FEXE="$(rv4a_factory_exe "$FPID")"
+  FAPEX="$(rv4a_factory_apex "$FPID")"
+  FNDK="$(rv4a_factory_ndk_versions "$FPID")"
+  ui_print "- Effect factory: pid $FPID, $FEXE"
+else
+  ui_print "- Could not find the effect factory's process"
 fi
-ui_print "- Stock effect factory found"
 
-# --- back up what we displace -------------------------------------------
-#
-# Nothing of the stock HAL is deleted or overwritten: its binary stays where it
-# is, and Magisk overlays rather than modifies. What we do displace is the init
-# entry that starts it under the default instance name, since two services
-# cannot hold one name. That file is backed up before anything is overlaid, to
-# a location outside the module so it survives the module being removed.
-BACKUP="/data/adb/rv4a-aidl-backup"
-mkdir -p "$BACKUP"
+# --- 2. which version? ------------------------------------------------------
+BV="$(rv4a_binder_version)"
+VV="$(rv4a_vintf_effect_version)"
+ui_print "- Version reported by the factory: ${BV:-no answer}"
+ui_print "  interface library it has loaded: ${FNDK:-none (linked in)}"
+ui_print "  declared in the manifests: ${VV:-none or several}"
+CHOICE="$(rv4a_choose_version "$BV" "$FNDK" "$VV")"
+case "$CHOICE" in
+  none) refuse "Could not tell which effect HAL version this phone runs." ;;
+  conflict*) refuse "The phone disagrees with itself about its effect HAL:" \
+               "${CHOICE#conflict }." "Not installing a library that could be the wrong one." ;;
+esac
+VER="${CHOICE%% *}"
+VSRC="${CHOICE#* }"
+[ -n "$VV" ] && [ "$VV" != "$VER" ] &&
+  ui_print "  (the manifest says V$VV; going by what the factory runs)"
 
-STOCK_RC=""
-for d in /vendor/etc/init /system/etc/init /odm/etc/init; do
-  [ -d "$d" ] || continue
-  f=$(grep -rl "audio.effect" "$d" 2>/dev/null | head -1)
-  [ -n "$f" ] && { STOCK_RC="$f"; break; }
+case " $RV4A_SUPPORTED_VERSIONS " in
+  *" $VER "*) ui_print "- Using effect HAL V$VER" ;;
+  *) if [ "$VER" -lt 2 ]; then
+       refuse "Effect HAL V$VER belongs to Android 14 vendors. Their" \
+         "factory only accepts effects Android already knows by" \
+         "name, so a new engine cannot be added through its config."
+     else
+       refuse "Effect HAL V$VER is newer than this build knows (V2 to V4)." \
+         "Check for a newer test build."
+     fi ;;
+esac
+LIB="librv4a_aidl_v$VER.so"
+[ -f "$MODPATH/libs/$ABI/$LIB" ] || refuse "This package has no $ABI build for V$VER."
+
+# --- 3. anything that would fight us? -------------------------------------
+CONFLICTS="$(rv4a_conflicting_modules | tr '\n' ' ')"
+if [ -n "$CONFLICTS" ]; then
+  refuse "Remove these modules first: $CONFLICTS" \
+    "They use the same effect, or replace the effect factory," \
+    "so only one of them can work. Uninstall, reboot, then try again."
+fi
+if rv4a_aml_present; then
+  refuse "Audio Modification Library is installed." \
+    "This test build does not work through AML yet. Disable AML," \
+    "reboot, then install this again."
+fi
+ui_print "- No conflicting modules"
+
+# --- 4. the configs the factory reads --------------------------------------
+NAMES="$(rv4a_config_names "$FPID" | tr '\n' ' ')"
+[ "$(rv4a_getprop vendor.audio.hal.stubmode)" = true ] &&
+  ui_print "- The audio HAL is in stub mode; its stub config is included"
+PRIMARY="$(rv4a_primary_config "$FAPEX")"
+CANDIDATES="$(rv4a_candidate_configs "$FAPEX" "$NAMES")"
+CREATE=0
+if [ -z "$CANDIDATES" ]; then
+  BUILTIN="$(rv4a_builtin_config_path "$FPID")"
+  if [ -n "$BUILTIN" ] && [ ! -e "$BUILTIN" ]; then
+    if [ -f "$RV4A_ROOT$RV4A_CREATE_FLAG" ]; then
+      CREATE=1; CANDIDATES="$BUILTIN"; PRIMARY="$BUILTIN"
+      ui_print "- This phone ships no effects config; its factory looks"
+      ui_print "  for $BUILTIN. Creating one (Pixel test)."
+    else
+      refuse "This phone ships no audio effects config. Its factory" \
+        "looks for $BUILTIN, which does not exist (the Pixel layout)." \
+        "Creating it is a separate test that may hide the phone's own" \
+        "effects until the module is removed. To try it anyway, run" \
+        "  su -c touch $RV4A_CREATE_FLAG" \
+        "and install again."
+    fi
+  else
+    refuse "Could not find the audio effects config this phone uses."
+  fi
+fi
+[ -n "$PRIMARY" ] || PRIMARY="$(echo "$CANDIDATES" | head -n 1)"
+ui_print "- The factory reads $PRIMARY"
+
+# Something already mounted over these files would be what we read, and
+# would be hidden by our copy, or hide it.
+for c in $CANDIDATES; do
+  [ "$CREATE" = 1 ] && break
+  OWNERS="$(rv4a_modules_with_file "$c" | tr '\n' ' ')"
+  [ -n "$OWNERS" ] && refuse "Another module also replaces $c: $OWNERS" \
+    "Only one of them can. Remove it, reboot, then install this again."
+  FM="$(rv4a_foreign_mount "$c")"
+  [ -n "$FM" ] && refuse "$c is already replaced by a mount from $FM." \
+    "Only one copy can be in place. Find what put it there, remove" \
+    "it, reboot, then install this again."
+  NEAR="$(rv4a_modules_in_dir "$c" | tr '\n' ' ')"
+  [ -n "$NEAR" ] && [ "$ROOT_IMPL" = Magisk ] &&
+    ui_print "  Note: $NEAR adds files next to $c; on Magisk that can hide our copy. The status will say so."
 done
 
-if [ -n "$STOCK_RC" ]; then
-  cp "$STOCK_RC" "$BACKUP/$(basename "$STOCK_RC").orig"
-  echo "$STOCK_RC" > "$BACKUP/stock_rc_path"
-  ui_print "- Backed up $(basename "$STOCK_RC")"
-else
-  # Without it we cannot free the default name, and our service would lose the
-  # race to register. Better to stop than to install something that cannot work.
-  ui_print "! Could not find the stock effect service init entry."
-  ui_print "  Without it the default instance name cannot be freed."
-  abort "! Aborting"
-fi
+# --- 5. patch every copy ----------------------------------------------------
+rm -rf "$MODPATH/configs" "$MODPATH/configs.rejected" "$MODPATH/configs.disabled" \
+       "$MODPATH/created_config.rejected" "$MODPATH/created_config.disabled"
+PROPS="$TMPDIR/configs.prop"
+: > "$PROPS"
+N=0
+for c in $CANDIDATES; do
+  if [ "$CREATE" = 1 ]; then
+    OUT="$MODPATH/system$c"
+    mkdir -p "$(dirname "$OUT")"
+    rv4a_minimal_config "$LIB" > "$OUT"
+    N=$((N + 1))
+    { echo "config_$N=$c"; echo "sig_$N=none"; echo "label_$N=u:object_r:vendor_configs_file:s0"; } >> "$PROPS"
+    ui_print "  created $c"
+    continue
+  fi
+  SRC="$TMPDIR/source_$N.xml"
+  # When an older copy of this module is mounted over the file, that copy is
+  # what we read, so our lines are stripped before anything else looks at it.
+  rv4a_strip "$RV4A_ROOT$c" > "$SRC" || refuse "Could not read $c."
+  if grep -q "$RV4A_UUID" "$SRC"; then
+    refuse "$c already lists this effect for another library." \
+      "Another JamesDSP-based mod, or the ROM itself, provides it." \
+      "Only one can be installed."
+  fi
+  OUT="$MODPATH/configs$c"
+  mkdir -p "$(dirname "$OUT")"
+  if ! rv4a_patch "$SRC" "$OUT" "$LIB"; then
+    rm -f "$OUT"
+    [ "$c" = "$PRIMARY" ] && refuse "$c is laid out in a way this build does not patch" \
+      "(the closing tags are not on lines of their own)."
+    ui_print "  skipped $c (a layout this build does not patch)"
+    continue
+  fi
+  if ! WHY="$(rv4a_validate "$SRC" "$OUT" "$LIB")"; then
+    refuse "The patched copy of $c failed its own check: $WHY"
+  fi
+  N=$((N + 1))
+  {
+    echo "config_$N=$c"
+    echo "sig_$N=$(rv4a_config_sig "$SRC")"
+    echo "label_$N=$(rv4a_label_of "$c")"
+  } >> "$PROPS"
+  CRS="$(grep -c "$(printf '\r')" "$SRC")"
+  ui_print "  patched a copy of $c ($(wc -l < "$OUT") lines${CRS:+, $CRS with CRLF})"
+done
+[ "$N" -ge 1 ] || refuse "No config could be patched."
 
-# Record the pre-install state, so a later comparison has something to compare to
-service list 2>/dev/null | grep -i "audio.effect" > "$BACKUP/services_before" 2>/dev/null
-getprop | grep -i "audio" > "$BACKUP/props_before" 2>/dev/null
-
-BIN="$MODPATH/libs/$ABI_DIR/rv4a-effect-service"
-[ -f "$BIN" ] || abort "! No service build for $ABI_DIR"
-
-mkdir -p "$MODPATH/system/bin" "$MODPATH/system/etc/init"
-mv "$BIN" "$MODPATH/system/bin/rv4a-effect-service"
-set_perm "$MODPATH/system/bin/rv4a-effect-service" 0 0 0755
-mv "$MODPATH/rv4a-effect.rc" "$MODPATH/system/etc/init/rv4a-effect.rc"
-set_perm "$MODPATH/system/etc/init/rv4a-effect.rc" 0 0 0644
+# --- 6. files and labels ----------------------------------------------------
+LIBDIR="$MODPATH/system/vendor/lib64/soundfx"
+mkdir -p "$LIBDIR"
+cp "$MODPATH/libs/$ABI/$LIB" "$LIBDIR/$LIB"
 rm -rf "$MODPATH/libs"
+set_perm_recursive "$MODPATH/system" 0 0 0755 0644
+# The factory runs in a vendor domain. The library carries the label the
+# soundfx folder's own libraries have; each config copy carries its
+# original's (recorded in install.prop and set again at every boot).
+set_perm "$LIBDIR/$LIB" 0 0 0644 u:object_r:vendor_file:s0
+if [ "$CREATE" = 1 ]; then
+  set_perm "$MODPATH/system$PRIMARY" 0 0 0644 u:object_r:vendor_configs_file:s0
+else
+  i=1
+  for c in $CANDIDATES; do
+    [ -f "$MODPATH/configs$c" ] || continue
+    set_perm "$MODPATH/configs$c" 0 0 0644 "$(rv4a_prop "label_$i" "$PROPS")"
+    i=$((i + 1))
+  done
+fi
+ui_print "- Installed $LIB"
 
-ui_print "- Installed. Reboot to load."
+{
+  echo "hal_version=$VER"
+  echo "version_source=$VSRC"
+  echo "vintf_version=$VV"
+  echo "lib=$LIB"
+  echo "primary=$PRIMARY"
+  echo "configs=$N"
+  echo "create=$CREATE"
+  cat "$PROPS"
+  echo "vendor_fingerprint=$(rv4a_getprop ro.vendor.build.fingerprint)"
+  echo "factory_exe=$FEXE"
+  echo "factory_ndk=$FNDK"
+  echo "root=$ROOT_IMPL $ROOT_VER"
+  echo "installed=$(date 2>/dev/null)"
+} > "$MODPATH/install.prop"
+
+# A self-disable from an earlier test build would otherwise survive the
+# upgrade and leave this one switched off.
+rm -f "$RV4A_ROOT/data/adb/modules/$RV4A_MODID/disable"
+
 ui_print " "
-ui_print "  This module replaces the audio effect service."
-ui_print "  If audio misbehaves, disable it in your root"
-ui_print "  manager and reboot; the stock service returns."
+ui_print "- Done. Reboot, then open RootfulViPER4Android."
+ui_print " "
+ui_print "  The module switches itself off if the audio system"
+ui_print "  restarts three times within three minutes, or after two"
+ui_print "  boots that do not complete. To switch it off yourself:"
+ui_print "    su -c sh /data/adb/modules/$RV4A_MODID/action.sh"
+ui_print "  (or the Action button in the manager), then reboot."
+ui_print "  To remove it: tap Remove in the manager and reboot."
+ui_print "  Status and logs: /data/adb/modules/$RV4A_MODID/"

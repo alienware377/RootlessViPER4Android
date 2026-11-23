@@ -1047,6 +1047,12 @@
     <string name="load_fail_rootless_card_title">Looking for a rootless alternative?</string>
     <string name="load_fail_rootless_card">This flavor of JamesDSP was designed to be used with a rooted/modified device. A non-root alternative with some limitations is also available. Tap here for details.</string>
     <string name="load_fail_arch_card_title">Module already installed?</string>
+    <string name="load_fail_header_aidl">Root engine not loaded</string>
+    <string name="load_fail_aidl_card_title">This phone uses the newer audio effect system</string>
+    <string name="load_fail_aidl_card">Its audio effects run behind the AIDL effect HAL, which does not load the normal RV4A engine module, so flashing that module will not help here. An experimental engine module for these phones is being tested. Until it is ready, rootless mode works on this phone.</string>
+    <string name="load_fail_aidl_issue_card_title">Want to help test it?</string>
+    <string name="load_fail_aidl_issue_card">The test build, how to install and remove it, and what to send back are on GitHub. Tap here to open the issue.</string>
+    <string name="load_fail_aidl_toast">The root engine is not loaded. This phone needs the AIDL engine module, not the normal one.</string>
     <string name="load_fail_arch_card">The module keeps two logs in /data/adb/modules/rv4a_engine: install.log, and boot.log, which says whether the engine was mounted and whether the audio system loaded it. Please attach both when you report an issue.</string>
 
     <!-- Enhanced processing -->

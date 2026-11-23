@@ -45,6 +45,7 @@ import me.timschneeberger.rootlessjamesdsp.updates.GithubUpdater
 import me.timschneeberger.rootlessjamesdsp.fragment.DspFragment
 import me.timschneeberger.rootlessjamesdsp.fragment.FileLibraryDialogFragment
 import me.timschneeberger.rootlessjamesdsp.fragment.LibraryLoadErrorFragment
+import me.timschneeberger.rootlessjamesdsp.interop.EffectHal
 import me.timschneeberger.rootlessjamesdsp.interop.JamesDspRemoteEngine
 import me.timschneeberger.rootlessjamesdsp.interop.JamesDspWrapper
 import me.timschneeberger.rootlessjamesdsp.model.ProcessorMessage
@@ -448,7 +449,12 @@ class MainActivity : BaseActivity() {
                             toast(getString(R.string.version_mismatch_root_toast))
                         }
                         JamesDspRemoteEngine.PluginState.Unavailable -> {
-                            toast(getString(R.string.load_fail_header))
+                            toast(getString(
+                                if (EffectHal.needsAidlModule(JamesDspRemoteEngine.PluginState.Unavailable, EffectHal.current))
+                                    R.string.load_fail_aidl_toast
+                                else
+                                    R.string.load_fail_header
+                            ))
                         }
                         JamesDspRemoteEngine.PluginState.Foreign -> {
                             toast(getString(R.string.foreign_engine_root_toast))

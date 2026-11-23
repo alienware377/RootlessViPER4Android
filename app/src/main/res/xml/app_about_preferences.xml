@@ -137,6 +137,22 @@
             android:data="https://github.com/mackron/dr_libs" />
     </Preference>
     <Preference
+        android:title="Android Open Source Project"
+        android:summary="The AIDL audio effect interfaces, effect base classes, libfmq and binder headers behind the experimental AIDL root mode module (Apache 2.0)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://android.googlesource.com/platform/hardware/interfaces/+/refs/tags/android-17.0.0_r1/audio/aidl/" />
+    </Preference>
+    <Preference
+        android:title="JamesDSP AIDL wrapper"
+        android:summary="anonymix007: the design the experimental AIDL root mode module follows to run the engine inside the AIDL effect HAL (Apache 2.0)"
+        app:iconSpaceReserved="false">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://github.com/james34602/JamesDSPManager/pull/68" />
+    </Preference>
+    <Preference
         android:title="AutoEq"
         android:summary="Jaakko Pasanen: the method and defaults behind Match EQ, ported to Kotlin (MIT). The measurements and target curves Match EQ downloads when you pick them come from the AutoEq repository and belong to the people who made them"
         app:iconSpaceReserved="false">

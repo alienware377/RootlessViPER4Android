@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioPortDeviceExt;
-import android.media.audio.common.AudioPortMixExt;
-
-/**
- * Extra parameters of an AudioPort/AudioPortConfig that depend on
- * the actual port role.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 union AudioPortExt {
-    /** Represents an empty union. Value is ignored. */
-    boolean unspecified;
-    /** Information specific to device ports. */
-    AudioPortDeviceExt device;
-    /** Information specific to mix ports. */
-    AudioPortMixExt mix;
-    /**
-     * NOT USED. Framework audio session identifier.
-     * Use android.media.AudioPortExtSys.session on the system side.
-     */
-    int session;
+  boolean unspecified;
+  android.media.audio.common.AudioPortDeviceExt device;
+  android.media.audio.common.AudioPortMixExt mix;
+  int session;
 }

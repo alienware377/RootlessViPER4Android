@@ -13,33 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioAttributes;
-import android.media.audio.common.AudioStreamType;
-
-/**
- * AudioHalAttributesGroup associates an AudioHalVolumeGroup with an
- * AudioStreamType and a collection of AudioAttributes. This is used in the
- * context of AudioHalProductStrategy.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioHalAttributesGroup {
-    /**
-     * StreamType may only be set to AudioStreamType.INVALID when using the
-     * Configurable Audio Policy (CAP) engine. An AudioHalAttributesGroup with
-     * AudioStreamType.INVALID is used when the volume group and attributes are
-     * not associated to any AudioStreamType.
-     */
-    AudioStreamType streamType = AudioStreamType.INVALID;
-    /**
-     * Used to map the AudioHalAttributesGroup to an AudioHalVolumeGroup with
-     * the same name
-     */
-    @utf8InCpp String volumeGroupName;
-    AudioAttributes[] attributes;
+  android.media.audio.common.AudioStreamType streamType = android.media.audio.common.AudioStreamType.INVALID;
+  @utf8InCpp String volumeGroupName;
+  android.media.audio.common.AudioAttributes[] attributes;
 }

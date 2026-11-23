@@ -13,44 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
+
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.media.audio.common;
-
-import android.media.audio.common.AudioConfigBase;
-import android.media.audio.common.AudioEncapsulationMode;
-import android.media.audio.common.AudioStreamType;
-import android.media.audio.common.AudioUsage;
-
-/**
- * Additional information about the stream passed to hardware decoders.
- *
- * {@hide}
- */
-@JavaDerive(equals=true, toString=true)
-@VintfStability
+/* @hide */
+@JavaDerive(equals=true, toString=true) @VintfStability
 parcelable AudioOffloadInfo {
-    /** Base audio configuration. */
-    AudioConfigBase base;
-    /** Stream type. Intended for use by the system only. */
-    AudioStreamType streamType = AudioStreamType.INVALID;
-    /** Bit rate in bits per second. */
-    int bitRatePerSecond;
-    /** Duration in microseconds, -1 if unknown. */
-    long durationUs;
-    /** True if the stream is tied to a video stream. */
-    boolean hasVideo;
-    /** True if streaming, false if local playback. */
-    boolean isStreaming;
-    /** Sample bit width. */
-    int bitWidth = 16;
-    /** Offload fragment size. */
-    int offloadBufferSize;
-    /** See the documentation of AudioUsage. */
-    AudioUsage usage = AudioUsage.INVALID;
-    /** See the documentation of AudioEncapsulationMode. */
-    AudioEncapsulationMode encapsulationMode = AudioEncapsulationMode.INVALID;
-    /** Content id from tuner HAL (0 if none). */
-    int contentId;
-    /** Sync id from tuner HAL (0 if none). */
-    int syncId;
+  android.media.audio.common.AudioConfigBase base;
+  android.media.audio.common.AudioStreamType streamType = android.media.audio.common.AudioStreamType.INVALID;
+  int bitRatePerSecond;
+  long durationUs;
+  boolean hasVideo;
+  boolean isStreaming;
+  int bitWidth = 16;
+  int offloadBufferSize;
+  android.media.audio.common.AudioUsage usage = android.media.audio.common.AudioUsage.INVALID;
+  android.media.audio.common.AudioEncapsulationMode encapsulationMode = android.media.audio.common.AudioEncapsulationMode.INVALID;
+  int contentId;
+  int syncId;
 }
