@@ -459,9 +459,15 @@ rv4a_foreign_mount() {
 # ---------------------------------------------------------------------------
 # The root manager
 # ---------------------------------------------------------------------------
+# The variables KernelSU and APatch set come first, because a folder can be
+# left behind by a manager that was replaced. Magisk sets no variable in boot
+# scripts, so its own folder has to speak for it before the other two count.
 rv4a_root_impl() {
-  if [ -n "$KSU" ] || [ -d "$RV4A_ROOT/data/adb/ksu" ]; then echo KernelSU
-  elif [ -n "$APATCH" ] || [ -d "$RV4A_ROOT/data/adb/ap" ]; then echo APatch
+  if [ -n "$KSU" ] && [ "$KSU" != false ]; then echo KernelSU
+  elif [ -n "$APATCH" ] && [ "$APATCH" != false ]; then echo APatch
+  elif [ -n "$MAGISK_VER_CODE" ] || [ -d "$RV4A_ROOT/data/adb/magisk" ]; then echo Magisk
+  elif [ -d "$RV4A_ROOT/data/adb/ksu" ]; then echo KernelSU
+  elif [ -d "$RV4A_ROOT/data/adb/ap" ]; then echo APatch
   else echo Magisk; fi
 }
 
@@ -576,7 +582,7 @@ rv4a_lib_visible() {
 # ---------------------------------------------------------------------------
 # Status, quarantine and notices
 # ---------------------------------------------------------------------------
-RV4A_DESC="Experimental: the RootfulViPER4Android engine for phones with the AIDL audio effect HAL. Test build."
+RV4A_DESC="Experimental: the RootfulViPER4Android engine for phones with the AIDL audio effect HAL."
 
 # Shown in the root manager's module list, so whoever installed it can see
 # what the module last decided without reading any log.
@@ -603,6 +609,9 @@ rv4a_quarantine() {
   if [ -f "$1/system/vendor/etc/audio_effects_config.xml" ]; then
     mv -f "$1/system/vendor/etc/audio_effects_config.xml" "$1/created_config.rejected" &&
       echo "set the created config aside: $2"
+    # A metamodule mounts its own copy of this file, so the rename above does
+    # not reach it. skip_mount does, from the next boot; a reinstall clears it.
+    touch "$1/skip_mount"
   fi
   rv4a_set_status "$1" "switched off ($2). Reinstall to try again."
 }
@@ -796,7 +805,7 @@ rv4a_give_up() {
   rv4a_quarantine "$MODDIR" "$2" >> "$MODDIR/boot.log" 2>&1
   rv4a_unmount_configs "$MODDIR" >> "$MODDIR/boot.log" 2>&1
   rv4a_save_logcat "$MODDIR" "after giving up: $1" giveup
-  rv4a_notify "The AIDL engine test build switched itself off: $2. Sound should come back by itself; reboot if it does not. Then run rv4a-aidl-diag.sh from the module folder and send the file it writes." >> "$MODDIR/boot.log" 2>&1
+  rv4a_notify "The AIDL engine switched itself off: $2. Sound should come back by itself; reboot if it does not. Then run rv4a-aidl-diag.sh from the module folder and send the file it writes." >> "$MODDIR/boot.log" 2>&1
 }
 
 rv4a_pid_of_exe() { [ -n "$1" ] && pidof "$(basename "$1")" 2>/dev/null | awk '{ print $1 }'; }

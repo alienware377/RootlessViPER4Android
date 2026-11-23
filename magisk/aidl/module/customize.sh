@@ -35,7 +35,7 @@ case "$ROOT_IMPL" in
   *)        ROOT_VER="${MAGISK_VER:-}" ;;
 esac
 
-ui_print "- RootfulViPER4Android AIDL engine (experimental test build)"
+ui_print "- RootfulViPER4Android AIDL engine (experimental)"
 ui_print "- $(rv4a_getprop ro.product.model), Android $(rv4a_getprop ro.build.version.release) (API $API)"
 ui_print "- Root: $ROOT_IMPL $ROOT_VER"
 
@@ -50,7 +50,7 @@ if rv4a_late_load; then
   refuse "Your root is loaded after the phone has booted (late-load" \
     "or a temporary root). The audio system reads its effect list" \
     "during boot, before this module could add to it, so this" \
-    "test build cannot work with it yet."
+    "module cannot work with it yet."
 fi
 if [ "$ROOT_IMPL" = KernelSU ] && ! rv4a_metamodule; then
   if [ "$(rv4a_ksu_major)" -ge 3 ]; then
@@ -111,7 +111,7 @@ case " $RV4A_SUPPORTED_VERSIONS " in
          "name, so a new engine cannot be added through its config."
      else
        refuse "Effect HAL V$VER is newer than this build knows (V2 to V4)." \
-         "Check for a newer test build."
+         "Check for a newer release."
      fi ;;
 esac
 LIB="librv4a_aidl_v$VER.so"
@@ -126,7 +126,7 @@ if [ -n "$CONFLICTS" ]; then
 fi
 if rv4a_aml_present; then
   refuse "Audio Modification Library is installed." \
-    "This test build does not work through AML yet. Disable AML," \
+    "This module does not work through AML yet. Disable AML," \
     "reboot, then install this again."
 fi
 ui_print "- No conflicting modules"
@@ -138,6 +138,16 @@ NAMES="$(rv4a_config_names "$FPID" | tr '\n' ' ')"
 PRIMARY="$(rv4a_primary_config "$FAPEX")"
 CANDIDATES="$(rv4a_candidate_configs "$FAPEX" "$NAMES")"
 CREATE=0
+# Flashing over a config this module created: the file is visible because it
+# is our own mount. Patching it as a stock file would drop it at the next boot.
+OLD_PROP="$RV4A_ROOT/data/adb/modules/$RV4A_MODID/install.prop"
+if [ -f "$OLD_PROP" ] && [ "$(rv4a_prop create "$OLD_PROP")" = 1 ]; then
+  OLD_PRIMARY="$(rv4a_prop primary "$OLD_PROP")"
+  if [ -n "$OLD_PRIMARY" ] && grep -q "$RV4A_UUID" "$RV4A_ROOT$OLD_PRIMARY" 2>/dev/null; then
+    CREATE=1; CANDIDATES="$OLD_PRIMARY"; PRIMARY="$OLD_PRIMARY"
+    ui_print "- Keeping the config this module created at $OLD_PRIMARY"
+  fi
+fi
 if [ -z "$CANDIDATES" ]; then
   BUILTIN="$(rv4a_builtin_config_path "$FPID")"
   if [ -n "$BUILTIN" ] && [ ! -e "$BUILTIN" ]; then

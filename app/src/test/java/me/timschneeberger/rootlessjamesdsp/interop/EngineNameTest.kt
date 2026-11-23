@@ -59,7 +59,7 @@ class EngineNameTest {
             .map(::File).first { it.isFile }.readText()
         assertTrue(src.contains("""desc.common.name = std::string(rv4a_legacy_name()) + " AIDL";"""))
         assertFalse(Regex("""common\.name = """").containsMatchIn(src))
-        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v7 AIDL"))
-        assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v6 AIDL"))
+        assertEquals(PluginState.Available, EngineName.state("RootfulViPER4Android engine v${EngineName.REQUIRED_VERSION} AIDL"))
+        assertEquals(PluginState.Outdated, EngineName.state("RootfulViPER4Android engine v${EngineName.REQUIRED_VERSION - 1} AIDL"))
     }
 }

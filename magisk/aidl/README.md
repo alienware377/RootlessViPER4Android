@@ -1,7 +1,9 @@
 # Root mode on AIDL effect HAL phones
 
-EXPERIMENTAL. Nothing here is part of the normal `rv4a_engine` module or of a
-release.
+EXPERIMENTAL. This is a separate module from the normal `rv4a_engine` one,
+published with each release as `RootfulViPER4Android-AIDL-module-<version>.zip`.
+The name must not contain `engine-module`: apps up to 4.6.0 offer the first zip
+with that in its name as the update for every rooted phone.
 
 ## What it is
 
@@ -59,7 +61,7 @@ fmq/, compat/            libfmq and the platform headers the NDK lacks
   and `IEffect` gained `reopen()` in V2. V2 is Android 15, V3 is 16, V4 is 17.
   A phone runs its vendor's version, which can be older than its Android.
 - **The same name.** The descriptor's name is the legacy effect's own
-  (`RootfulViPER4Android engine v7`) with ` AIDL` after it, read from the
+  (`RootfulViPER4Android engine v8` today) with ` AIDL` after it, read from the
   legacy descriptor at run time, so the app's engine version check treats
   both paths alike and they cannot drift apart.
 - **Linking.** Only `createEffect`, `queryEffect` and `destroyEffect` are
@@ -170,19 +172,22 @@ createEffect in process) and audioserver (every call over a binder proxy, the
 audio queues and event flag) around the real library, and compares the output
 bit for bit with the legacy effect.
 
+## What has been verified on hardware
+
+Test builds ran on a OnePlus 15 (Android 16, effect HAL V3) and a Realme GT8
+(Android 16, effect HAL V2), both on KernelSU
+([#26](https://github.com/alienware377/RootlessViPER4Android/issues/26)). The
+vendor factory read the patched configs and loaded the library with no SELinux
+denials reported, and Clarity, Liveprog, Dynamic system and the convolver
+worked on the GT8.
+
 ## What has not been verified
 
-Everything above runs without an AIDL rooted phone. Not yet known: that a real
-vendor factory reads the configs we patch and accepts our library in its
-linker namespace and SELinux domain; that audioserver may map the queue
-memory the plugin creates (ashmem or memfd, chosen and opened as
-libcutils does); that `service call` reaches the factory from a root shell; whether
+Effect HAL V4 on a real phone; the engine v8 build on any real phone; whether
 post-mount runs before the audio HAL on every KernelSU version; whether
 Pixel's factory adds a created config to its built-in effects or replaces
-them; audio and parameters through the real framework, including large
-payloads (convolver, DDC, Liveprog) inside audioserver's time limit; offload
-and Bluetooth paths; CPU use in the HAL process; and the watchdog on a real
-broken install.
+them; offload and Bluetooth paths; CPU use in the HAL process; and the
+watchdog on a real broken install.
 
 ## History
 

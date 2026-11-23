@@ -106,6 +106,10 @@ R="$T/v3"; mkvintf "$R/vendor/etc/vintf/manifest.xml" 2; mkvintf "$R/odm/etc/vin
 expect "two manifests disagreeing gives no answer" "$(RV4A_ROOT=$R run rv4a_vintf_effect_version)" ""
 R="$T/v4"; mkvintf "$R/apex/com.vendor.audio/etc/vintf/audio.xml" 4
 expect "a declaration in an APEX fragment counts" "$(RV4A_ROOT=$R run rv4a_vintf_effect_version)" 4
+L="$T/leftover"; mkdir -p "$L/data/adb/ksu" "$L/data/adb/magisk"
+expect "Magisk with a leftover KernelSU folder is Magisk" "$(KSU= RV4A_ROOT=$L run rv4a_root_impl)" Magisk
+expect "KSU=false does not count" "$(KSU=false RV4A_ROOT=$L run rv4a_root_impl)" Magisk
+expect "KernelSU's variable beats a leftover Magisk folder" "$(KSU=true RV4A_ROOT=$L run rv4a_root_impl)" KernelSU
 R="$T/v5"; mkvintf "$R/vendor/etc/vintf/manifest.xml" 2 hidl
 expect "only an HIDL declaration gives no answer" "$(RV4A_ROOT=$R run rv4a_vintf_effect_version)" ""
 expect "binder answer wins over the manifest" "$(run 'rv4a_choose_version 2 2 4')" "2 binder"
@@ -257,7 +261,7 @@ refused "stock JamesDSP installed is refused" jdsp "$R" "$T/d1.props" "ainur_jam
 rm -rf "$R/data/adb/modules/ainur_jamesdsp"; mkdir -p "$R/data/adb/modules/rv4a_engine"; touch "$R/data/adb/modules/rv4a_engine/remove"
 install_case removed "$R" "$T/d1.props"; ok "a conflicting module already marked for removal does not block" $?
 mkdir -p "$R/data/adb/modules/aml"
-refused "AML installed is refused (not supported in this test build)" aml "$R" "$T/d1.props" "Audio Modification Library"
+refused "AML installed is refused (not supported yet)" aml "$R" "$T/d1.props" "Audio Modification Library"
 rm -rf "$R/data/adb/modules"
 mkdir -p "$R/data/adb/modules/dolby/system/vendor/etc"; cp "$R/vendor/etc/audio_effects_config.xml" "$R/data/adb/modules/dolby/system/vendor/etc/"
 refused "another module shipping the same config is refused, by name" other "$R" "$T/d1.props" "Another module also replaces /vendor/etc/audio_effects_config.xml: dolby"
@@ -362,7 +366,16 @@ cp "$PB/system/vendor/etc/audio_effects_config.xml" "$PX/vendor/etc/"; rm -f "$P
 grep -q "^ok: V3" "$PB/boot.log"; ok "Pixel: already mounted by the manager (it carries our uuid): still fine" $?
 mkcfg "$PX/vendor/etc/audio_effects_config.xml"; rm -f "$PB/.boot_incomplete"; pxboot
 [ -f "$PB/created_config.rejected" ] && grep -q "now has its own" "$PB/status"; ok "Pixel: the phone gained its own config: ours set aside" $?
+[ -f "$PB/skip_mount" ]; ok "Pixel: and a metamodule's copy stops being mounted too" $?
 rm -f "$PX/vendor/etc/audio_effects_config.xml"
+# Flashing over a created config, while it is mounted.
+OLDM="$PX/data/adb/modules/rv4a_engine_aidl"; mkdir -p "$OLDM"
+printf 'create=1\nprimary=/vendor/etc/audio_effects_config.xml\n' > "$OLDM/install.prop"
+cp "$PB/created_config.rejected" "$PX/vendor/etc/audio_effects_config.xml"
+install_case pxupdate "$PX" "$T/d1.props"; rc=$?
+[ $rc = 0 ] && grep -q '^create=1' "$MP/install.prop" && [ -f "$MP/system/vendor/etc/audio_effects_config.xml" ] && [ ! -d "$MP/configs" ]
+ok "Pixel: an update over our own created config stays a created config" $?
+rm -rf "$OLDM" "$PX/vendor/etc/audio_effects_config.xml"
 
 echo; echo "[6] the watch from late_start on (service.sh)"
 svc_case() {  # svc_case <factory pids> <audioserver pids>: service check on a fresh install

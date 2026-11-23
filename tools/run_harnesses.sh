@@ -117,7 +117,9 @@ run_args() {
 }
 # Need the app itself on a device, so there is nothing to run here.
 #   convadv: dlopens the app's libjamesdsp.so through JNI.
-DEVICE_ONLY=" convadv "
+#   aidl_plugin: needs Android's binder and the generated AIDL code
+#   (tools/run_aidl_harness.sh).
+DEVICE_ONLY=" convadv aidl_plugin "
 
 pass=(); fail=(); nobuild=(); noline=(); skipped=(); known=()
 verdict() {

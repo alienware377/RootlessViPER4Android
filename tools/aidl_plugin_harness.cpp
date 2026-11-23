@@ -326,6 +326,17 @@ static bool applySettings(Side& s) {
     // fork effects: clarity, then field surround
     ok &= s.setFloats(26000, {1.0f, 3.0f}) & s.setShort(26100, 1);
     ok &= s.setFloats(26001, {0.5f, 0.5f}) & s.setShort(26101, 1);
+    // engine v8: LUFS normalizer, loudness correction and its volume, smooth
+    // volume, sub-harmonic expander (nine amounts, band, mix, output)
+    ok &= s.setFloats(26031, {-14.0f, 6.0f, 6.0f, 1.0f, 1.0f}) & s.setShort(26131, 1);
+    ok &= s.setFloats(26029, {0.0f, 75.0f, 0.0f, 100.0f, 100.0f, 6.0f, 6.0f, 10000.0f, 6.0f, 3.0f,
+                              75.0f, 1.0f, 25.0f, 2.0f, 0.7f}) &
+          s.setShort(26129, 1);
+    ok &= s.setFloats(26030, {-20.0f});
+    ok &= s.setFloats(26032, {-3.0f}) & s.setShort(26132, 1);
+    ok &= s.setFloats(26033, {50.0f, 25.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                              120.0f, 50.0f, 0.0f}) &
+          s.setShort(26133, 1);
     // buffered payloads, each followed by the hash the app stores
     const char* geq = "GraphicEQ: 20 0; 100 6; 1000 -6; 4000 6; 16000 0";
     ok &= s.charBuffer(12001, 10006, geq) & s.setInt(25000, 777) & s.setShort(1210, 1);
@@ -413,8 +424,8 @@ int main(int argc, char** argv) {
     check("type and implementation uuids", desc.common.id.type == kType && desc.common.id.uuid == kImpl,
           desc.common.id.toString());
     snprintf(d, sizeof d, "'%s' by %s", desc.common.name.c_str(), desc.common.implementor.c_str());
-    check("name says RootlessViPER4Android and never v3",
-          desc.common.name.find("RootlessViPER4Android") != std::string::npos &&
+    check("name says RootfulViPER4Android engine v8 AIDL and never v3",
+          desc.common.name.find("RootfulViPER4Android engine v8 AIDL") != std::string::npos &&
                   desc.common.name.find("v3") == std::string::npos,
           d);
     check("insert, first in the chain, no volume control",
