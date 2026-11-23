@@ -10,6 +10,8 @@ service() {
     list) [ -n "${AIDL:-}" ] &&
             printf '12\tandroid.hardware.audio.effect.IFactory/default: [android.hardware.audio.effect.IFactory]\n'
           return 0 ;;
+    check) if [ -n "${AIDL:-}" ]; then echo "Service $2: found"; else echo "Service $2: not found"; fi
+          return 0 ;;
   esac
 }
 

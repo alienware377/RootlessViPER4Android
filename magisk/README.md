@@ -63,8 +63,9 @@ Android used up to and including 14.
 AIDL path never read those files, so the engine cannot be found there no matter
 where it is installed: the app reports no driver. This is the same wall every
 legacy audio mod hit, and it is why ViPER4Android now ships separate non-AIDL
-and AIDL modules. There is **no AIDL build of this module yet**; supporting it
-means implementing the AIDL effect HAL, not relocating a file.
+and AIDL modules. Those phones need the separate experimental module in
+`aidl/`, published with each release as
+`RootfulViPER4Android-AIDL-module-<version>.zip`.
 
 The installer checks for a legacy config and refuses to install rather than
 leaving something inert on the device.

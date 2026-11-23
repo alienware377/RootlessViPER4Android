@@ -15,6 +15,14 @@ UUID="f27317f4-c984-4de6-9a90-545759495bf2"
 
 log() { echo "$(date 2>/dev/null): $*" >> "$MODDIR/boot.log" 2>/dev/null; }
 
+# The audio server takes the AIDL path when both the effect factory and the
+# core HAL are AIDL. A factory alone counts unless a HIDL one is running too.
+aidl_effect_hal() {
+  service check android.hardware.audio.effect.IFactory/default 2>/dev/null | grep -q ": found" || return 1
+  service check android.hardware.audio.core.IModule/default 2>/dev/null | grep -q ": found" && return 0
+  ! lshal 2>/dev/null | grep -q IEffectsFactory
+}
+
 # What the audio HAL can see of this module, now that every mount is done.
 # An install that succeeded but was never mounted (KernelSU 3 or APatch
 # without a working metamodule, for one) looks exactly like a missing module
@@ -61,6 +69,17 @@ report() {
     while read -r l; do log "logcat: $l"; done
   dmesg 2>/dev/null | grep -E 'avc: +denied.*(jamesdsp|soundfx|audio_effects)' | tail -n 10 |
     while read -r l; do log "dmesg: $l"; done
+  # Last, so a stuck binder call cannot cost the lines above. Everything else
+  # can look perfect on these phones: the file is mounted and lists the
+  # engine, but nothing reads it.
+  if [ -z "$p" ] && aidl_effect_hal; then
+    log "this phone uses the AIDL effect HAL, which cannot load this module."
+    if [ -f "$MODDIR/.late_load" ]; then
+      log "the AIDL module needs root that starts at boot, so with late-load only rootless mode works here."
+    else
+      log "remove it, reboot, and install the AIDL module: https://github.com/alienware377/RootlessViPER4Android/releases/latest"
+    fi
+  fi
 }
 
 # The audio process that has loaded the effect library list, and so the one

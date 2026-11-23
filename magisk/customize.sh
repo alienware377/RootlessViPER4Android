@@ -21,6 +21,17 @@ ROOT_IMPL="$(root_impl)"
 say "- Phone: $(getprop ro.product.model), Android $(getprop ro.build.version.release) (API $API)"
 say "- Root: $ROOT_IMPL $(root_version "$ROOT_IMPL")"
 
+# The AIDL module claims the same effect, and refuses to update next to this
+# one. Apps up to 4.6.0 offer this zip to every rooted phone.
+AIDL_MOD="$RV4A_ROOT/data/adb/modules/rv4a_engine_aidl"
+if [ -d "$AIDL_MOD" ] && [ ! -f "$AIDL_MOD/remove" ]; then
+  say " "
+  say "! The AIDL engine module is already installed, and only one"
+  say "  engine module can be. Update that one instead, with"
+  say "  RootfulViPER4Android-AIDL-module from the releases page."
+  abort "! Aborting so the two are not installed together"
+fi
+
 # A module that disabled itself after two bad boots keeps that flag across an
 # upgrade, so clear it here or the new build installs switched off.
 OLD="$RV4A_ROOT/data/adb/modules/rv4a_engine"
@@ -104,6 +115,15 @@ esac
 #
 # Detect the HAL from the running services rather than from file paths: AIDL
 # devices may still carry an unused config that nothing reads.
+aidl_advice() {
+  if late_load; then
+    say "  The AIDL module needs root that starts at boot, so with"
+    say "  late-load only rootless mode works on this phone."
+  else
+    say "  Use the AIDL module from the releases page instead."
+  fi
+}
+
 HAS_AIDL=0
 if command -v service >/dev/null 2>&1; then
   service list 2>/dev/null | grep -q "android.hardware.audio.effect.IFactory" && HAS_AIDL=1
@@ -143,6 +163,7 @@ if [ -z "$CONFIGS" ]; then
     say "  libraries like this one. Android 15 moved effects to"
     say "  AIDL and this engine implements the older interface,"
     say "  so it cannot be found here."
+    aidl_advice
     say "  Rootless mode still works and is unaffected."
   else
     say " "
@@ -157,6 +178,7 @@ if [ "$HAS_AIDL" = 1 ]; then
   say "- Note: this device has BOTH the AIDL HAL and a legacy"
   say "  config. Installing against the legacy path; if the"
   say "  effect does not appear, the AIDL HAL is the one in use."
+  aidl_advice
 fi
 
 N=0

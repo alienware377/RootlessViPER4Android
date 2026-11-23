@@ -445,6 +445,14 @@ refused "no config at all" none "$R" "$T/plain.props" "There is nowhere to regis
 AIDL=1 refused "AIDL HAL and no legacy config" aidl "$R" "$T/plain.props" "runs the AIDL audio effects HAL"
 R="$T/aosp"; AIDL=1 installs "AIDL HAL with a legacy config installs" aidl2 "$R" "$T/plain.props"
 grep -q "^- Effect HAL: AIDL" "$LOGF" && grep -q "BOTH the AIDL HAL" "$LOGF"; ok "  with a note" $?
+grep -q "Use the AIDL module" "$LOGF"; ok "  which says which module it needs" $?
+KSU=true KSU_VER=1.0.5 KSU_VER_CODE=11872 KSU_LATE_LOAD=1 AIDL=1 installs "AIDL HAL on late-load root" aidl3 "$R" "$T/plain.props"
+grep -q "only rootless mode" "$LOGF" && ! grep -q "Use the AIDL module" "$LOGF"; ok "  is not sent to a module that refuses it" $?
+mkdir -p "$R/data/adb/modules/rv4a_engine_aidl"
+refused "the AIDL module already installed is refused" aidlm "$R" "$T/plain.props" "AIDL engine module is already installed"
+touch "$R/data/adb/modules/rv4a_engine_aidl/remove"
+installs "the AIDL module marked for removal is not in the way" aidlm2 "$R" "$T/plain.props"
+rm -rf "$R/data/adb/modules/rv4a_engine_aidl"
 R="$T/mini"; rm -rf "$R"; loader "$R" /vendor/lib64 "$AOSP_CFG"; mkdir -p "$R/vendor/etc"
 printf '<audio_effects_conf><libraries><library name="a" path="a.so"/></libraries><effects></effects></audio_effects_conf>\n' > "$R/vendor/etc/audio_effects.xml"
 refused "a one-line list is not patched" mini "$R" "$T/plain.props" "an unusual layout"
@@ -722,7 +730,7 @@ echo; echo "[8] service.sh: what the audio HAL can see"
 svc() {  # svc <audioserver pids, one per call>
   printf '%s\n' $1 > "$T/as"
   cp "$T/samsung.props" "$T/svc.props"; echo "sys.boot_completed=1" >> "$T/svc.props"
-  ( export RV4A_ROOT="$R" PROPS="$T/svc.props" AS_SEQ="$T/as" LOGCAT="$T/logcat"
+  ( export RV4A_ROOT="$R" PROPS="$T/svc.props" AS_SEQ="$T/as" LOGCAT="$T/logcat" AIDL="${SVC_AIDL:-}"
     $SH -c ". '$STUB'; . \"\$0\"" "$B/service.sh" ) >/dev/null 2>&1
 }
 printf '%s\n' "01-01 00:00:00.000 1234 1234 E EffectsFactoryConfigLoader: Could not find library in effect path" > "$T/logcat"
@@ -733,6 +741,14 @@ grep -q "engine NOT visible at /vendor/lib64/soundfx" "$B/boot.log" &&
 ok "nothing mounted: all three said plainly" $?
 grep -q "logcat: .*EffectsFactoryConfigLoader" "$B/boot.log"; ok "the loader's own lines are kept" $?
 [ ! -f "$B/.boot_incomplete" ]; ok "audioserver steady: marker cleared" $?
+! grep -q "uses the AIDL effect HAL" "$B/boot.log"; ok "not loaded, no AIDL HAL: no AIDL advice" $?
+fresh; pfd; SVC_AIDL=1; svc "900"; SVC_AIDL=
+grep -q "uses the AIDL effect HAL" "$B/boot.log" && grep -q "install the AIDL module: https://" "$B/boot.log"
+ok "not loaded on an AIDL phone: the log says which module it needs" $?
+fresh; pfd; touch "$B/.late_load"; SVC_AIDL=1; svc "900"; SVC_AIDL=
+grep -q "only rootless mode" "$B/boot.log" && ! grep -q "install the AIDL module" "$B/boot.log"
+ok "not loaded on an AIDL phone with late-load: not sent to a module that refuses it" $?
+fresh; pfd; svc "900"
 mkdir -p "$R/vendor/lib64/soundfx"; cp "$B/system/vendor/lib64/soundfx/libjamesdsp.so" "$R/vendor/lib64/soundfx/"
 cp "$C" "$R/vendor/etc/audio_effects_sec.xml"
 echo "7e00000000-7e00010000 r-xp 00000000 fd:05 99    /vendor/lib64/soundfx/libjamesdsp.so" >> "$R/proc/1234/maps"
@@ -741,6 +757,8 @@ grep -q "engine visible at /vendor/lib64/soundfx" "$B/boot.log" &&
   grep -q "/vendor/etc/audio_effects_sec.xml lists the engine" "$B/boot.log" &&
   grep -q "engine loaded by pid 1234 (/vendor/bin/hw/android.hardware.audio.service)" "$B/boot.log"
 ok "mounted and loaded: all three said" $?
+SVC_AIDL=1; svc "900"; SVC_AIDL=
+! grep -q "uses the AIDL effect HAL" "$B/boot.log"; ok "loaded on a phone with an AIDL factory: no advice" $?
 # One pid for the wait, one for each of the two samples.
 fresh; pfd; svc "900 900 901"
 [ -f "$B/.boot_incomplete" ] && grep -q "audioserver restarted" "$B/boot.log" && grep -q "engine NOT visible" "$B/boot.log"
