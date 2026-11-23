@@ -19,6 +19,9 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 cp -r "$HERE/module/." "$STAGE/"
+# Magisk 27 and forks built on it (Kitsune) read these two before anything
+# else, and report "Unzip error" for a zip without them.
+cp -r "$HERE/../META-INF" "$STAGE/"
 for abi in $ABIS; do
   for v in $VERSIONS; do
     f="$LIBS/$abi/librv4a_aidl_v$v.so"
@@ -31,12 +34,13 @@ done
 # A carriage return in any of these is not cosmetic: in post-fs-data.sh it
 # would create a file named "disable<CR>", which no root manager recognises,
 # so the boot watchdog would be dead while the module stayed active.
-for f in "$STAGE"/*.sh "$STAGE"/common/*.sh "$STAGE/module.prop"; do
+for f in "$STAGE"/*.sh "$STAGE"/common/*.sh "$STAGE/module.prop" \
+         "$STAGE/META-INF/com/google/android/update-binary" "$STAGE/META-INF/com/google/android/updater-script"; do
   if grep -q "$(printf '\r')" "$f"; then
     echo "REFUSING TO PACKAGE: carriage returns in $(basename "$f")" >&2
     exit 1
   fi
-  case "$f" in *.sh) sh -n "$f" || { echo "REFUSING TO PACKAGE: $(basename "$f") is not valid shell" >&2; exit 1; } ;; esac
+  case "$f" in *.sh|*/update-binary) sh -n "$f" || { echo "REFUSING TO PACKAGE: $(basename "$f") is not valid shell" >&2; exit 1; } ;; esac
 done
 
 rm -f "$ZIP"

@@ -43,6 +43,9 @@ done
 cp magisk/module.prop magisk/customize.sh magisk/service.sh \
    magisk/post-fs-data.sh magisk/late-load.sh magisk/README.md "$OUT/"
 mkdir -p "$OUT/common"; cp -r magisk/common/. "$OUT/common/"
+# Magisk 27 and forks built on it (Kitsune) read these two before anything
+# else, and report "Unzip error" for a zip without them.
+cp -r magisk/META-INF "$OUT/"
 
 # A single carriage return in any of these is not cosmetic. post-fs-data.sh
 # would create a file named "disable" with a CR on the end, which Magisk does
@@ -50,14 +53,15 @@ mkdir -p "$OUT/common"; cp -r magisk/common/. "$OUT/common/"
 # active: the most dangerous state this package has. One in module.prop lands
 # inside the module id itself. Windows checkouts produce exactly this, so the
 # check runs over what is about to be packaged rather than over the repo.
-for f in "$OUT"/*.sh "$OUT"/common/*.sh "$OUT/module.prop"; do
+for f in "$OUT"/*.sh "$OUT"/common/*.sh "$OUT/module.prop" \
+         "$OUT/META-INF/com/google/android/update-binary" "$OUT/META-INF/com/google/android/updater-script"; do
   [ -f "$f" ] || continue
   if grep -q "$(printf '\r')" "$f"; then
     echo "REFUSING TO PACKAGE: carriage returns in $(basename "$f")" >&2
     exit 1
   fi
   case "$f" in
-    *.sh) sh -n "$f" || { echo "REFUSING TO PACKAGE: $(basename "$f") is not valid shell" >&2; exit 1; } ;;
+    *.sh|*/update-binary) sh -n "$f" || { echo "REFUSING TO PACKAGE: $(basename "$f") is not valid shell" >&2; exit 1; } ;;
   esac
 done
 echo "scripts verified: unix line endings, valid shell"
