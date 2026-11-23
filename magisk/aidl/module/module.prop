@@ -1,6 +1,6 @@
 id=rv4a_engine_aidl
 name=RootfulViPER4Android engine (AIDL, experimental)
-version=v4.6.0-aidl
-versionCode=5
+version=v4.6.1-aidl
+versionCode=6
 author=alienware377
 description=Experimental: the RootfulViPER4Android engine for phones with the AIDL audio effect HAL.
