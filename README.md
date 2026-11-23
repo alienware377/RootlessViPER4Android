@@ -112,7 +112,7 @@ Prefer the original experience? **ViPER4Android-only mode** narrows the app to t
 | Speaker optimization | ✅ | ❌ | ✅ |
 | Voice isolation (rootless) | ✅ | ❌ | ❌ |
 
-1. A separate test module ([#12](https://github.com/alienware377/RootlessViPER4Android/issues/12)), confirmed on two Android 16 phones (effect HAL V2 and V3). It needs root that starts at boot, and it is built on 4.5.4, so the 4.6.0 effects are missing.
+1. A separate experimental module, `RootfulViPER4Android-AIDL-module`, in the [releases](https://github.com/alienware377/RootlessViPER4Android/releases/latest). Its test builds were confirmed on two Android 16 phones (effect HAL V2 and V3). It needs root that starts at boot.
 2. There is no official AIDL build of the engine. The 1.6.14 root app was changed to work with community AIDL builds of it.
 
 JamesDSP is RootlessJamesDSP and JamesDSPManager; ViPER4Android is the official FX and RE apps. Correct as of November 2026; if something here is out of date, please open an issue.
@@ -211,10 +211,10 @@ Output limiter (with selectable peak / soft-saturation modes), auto-loudness com
 - ~~**Smooth volume**~~ *(v4.6.0)*: half dB volume steps, about two hundred from full to silence instead of Android's fifteen or so. The volume keys, the card and a quick settings tile move a fine level while the system volume is held, with an optional on-screen level, and switching off puts the system volume back
 - ~~**Voice isolation**~~ *(rootless, v4.6.0)*: a small speech model (GTCRN) on the phone finds the voice in whatever is playing, so the rest can be turned down for clearer dialogue, or the voice itself for karaoke. Needs the separate voice isolation add-on (ARM phones), and adds about 34 ms of delay
 - ~~**Sub-harmonic expander**~~ *(v4.6.0)*: adds notes an octave and more below the bass, locked to the bass line at half, a third and a quarter of its pitch, the way a subwoofer that is not there would. Nothing lands below about 20 Hz
+- ~~**AIDL effect HAL**~~ *(v4.6.0, experimental)*: a separate root module for phones whose audio effects run through the newer AIDL system, which cannot load the normal module. It carries the same engine and effects. Test builds were confirmed on a OnePlus 15 and a Realme GT8 ([#26](https://github.com/alienware377/RootlessViPER4Android/issues/26)), and it needs root that starts at boot
 
 ### Planned
 
-- **AIDL effect HAL**: a second module for Android 15 and newer, where the effect framework moved from the legacy plugin interface to a binder service. Not a port of the existing one: the engine has to be exposed behind a new interface and driven from fast message queues rather than a process callback
 - **Turntable music player (separate paid app)**: a music player whose now-playing screen is a vintage turntable, with independent tempo and pitch control as well as combined speed, and period defects such as wow, flutter and surface noise as adjustable colour. It will be its own paid app with effects written fresh, so it shares no code with this one, and it plays nicely alongside it. This app stays free and open source.
 - **Effect suite for PCs (VST3)**: a separate paid plugin that brings this app's effect cards to music software on Windows, with the same card screen: groups, hiding, collapsing, search and a reorderable processing order. Its effects are written fresh rather than copied from this app, so some will sound a little different, and a few that depend on other people's code or data (such as DDC profiles and Rubber Band) will not be included. This app stays free and open source.
 - **Windows app** *(after the VST3 suite)*: a separate paid desktop app using the same effects and card screen as the VST3 suite, plus more of this app's features, such as device profiles, a file library for impulse responses and scripts, and backup and restore. System-wide processing will start with a simple routing setup, with deeper Windows integration looked at later.
@@ -233,7 +233,7 @@ Installs **alongside** the original RootlessJamesDSP as a separate app. Keep bot
 
 Want **Voice isolation**? It also needs the small **voice isolation add-on** (`RootlessViPER4Android-voice-isolation-addon-*.apk`) from the same release. It carries the speech model and the engine that runs it, so the app stays small for everyone who never switches that card on, and the card links to it when it is missing.
 
-Rooted? Grab **RootfulViPER4Android** and the Magisk module from the same release. It is a separate app again, so it sits happily beside the rootless build.
+Rooted? Grab **RootfulViPER4Android** and the Magisk module from the same release. It is a separate app again, so it sits happily beside the rootless build. Many phones on Android 15 and newer use the AIDL audio effect system and need `RootfulViPER4Android-AIDL-module-*.zip` instead of the normal module. Install one or the other, never both. The AIDL module is experimental and needs root that starts at boot.
 
 ## Limitations
 Rootless audio capture on Android has inherent restrictions (inherited from upstream RootlessJamesDSP):
