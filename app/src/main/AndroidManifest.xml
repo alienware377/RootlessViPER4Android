@@ -23,8 +23,18 @@
 
     <uses-feature android:name="android.hardware.audio.output" />
 
+    <!-- Shizuku managers. Android 11+ hides packages we do not name here, which
+         would make every check against them report "not installed". The stock
+         package also covers forks that ship a stub under it. -->
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="af.shizuku.plus.api" />
+        <package android:name="com.hamondev.shevery" />
+        <package android:name="com.churan.shizako" />
+        <package android:name="roro.stellar.manager" />
+        <package android:name="eu.darken.porter" />
+        <package android:name="xeonleon.xhizuku" />
+        <package android:name="kerneldroid.nightzuku" />
     </queries>
 
     <application

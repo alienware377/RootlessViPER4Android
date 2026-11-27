@@ -659,13 +659,13 @@
     <string name="onboarding_adb_caption">This app requires special permissions for dumping your device\'s audio policy. Please follow the instructions below.</string>
     <string name="onboarding_adb_shizuku_install_button">Install Shizuku</string>
     <string name="onboarding_adb_shizuku_install_button_done">Already installed</string>
-    <string name="onboarding_adb_shizuku_install_instruction">Install \'Shizuku\' from Google Play.</string>
+    <string name="onboarding_adb_shizuku_install_instruction">Install \'Shizuku\' from Google Play, or any Shizuku-compatible build such as Shizuku+. They all work here.</string>
     <string name="onboarding_adb_shizuku_open_instruction">Launch \'Shizuku\' and look for \'<b>Start via Wireless Debugging</b>\'. Tap the \'Pairing\' button and follow the in-app instructions. After pairing Shizuku with your device, start the Shizuku server by pressing the \'Start\' button in their app. If you run into problems while setting up Shizuku, please refer to their setup tutorial linked in their app.</string>
     <string name="onboarding_adb_shizuku_open_button">Launch Shizuku</string>
     <string name="onboarding_adb_shizuku_open_button_done">Already active</string>
     <string name="onboarding_adb_shizuku_grant_instruction">Tap the button and grant this app access to Shizuku.</string>
     <string name="onboarding_adb_shizuku_grant_button">Grant access</string>
-    <string name="onboarding_adb_shizuku_not_installed">Shizuku is not yet installed. Please download and install it from Google Play first.</string>
+    <string name="onboarding_adb_shizuku_not_installed">No Shizuku service was found. Install \'Shizuku\' from Google Play, or use a Shizuku-compatible build (Shizuku+, shevery, Xhizuku, …) — this app detects any of them.</string>
     <string name="onboarding_adb_shizuku_not_installed_title">Shizuku is not yet installed</string>
     <string name="onboarding_adb_shizuku_grant_fail_server_dead">Please start the Shizuku server before requesting permission. Go back to instruction step 2.</string>
     <string name="onboarding_adb_shizuku_grant_fail_server_dead_title">Shizuku server not running</string>
