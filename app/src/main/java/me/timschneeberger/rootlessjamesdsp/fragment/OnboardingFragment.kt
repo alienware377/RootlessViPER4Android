@@ -30,7 +30,7 @@ import me.timschneeberger.rootlessjamesdsp.databinding.OnboardingFragmentBinding
 import me.timschneeberger.rootlessjamesdsp.flavor.RootShellImpl
 import me.timschneeberger.rootlessjamesdsp.service.RootAudioProcessorService
 import me.timschneeberger.rootlessjamesdsp.utils.SdkCheck
-import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.isPackageInstalled
+import me.timschneeberger.rootlessjamesdsp.utils.ShizukuCompat
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.launchApp
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.openPlayStoreApp
 import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.resolveColorAttribute
@@ -220,14 +220,22 @@ class OnboardingFragment : Fragment() {
             }
         }
         adbPage.step2.setOnButtonClickListener {
-            // Launch Shizuku
-            if(!requireContext().launchApp(SHIZUKU_PKG))
+            // Launch whichever Shizuku manager is installed. A fork that only
+            // installed its headless compat stub has nothing to open, so only
+            // claim Shizuku is missing when it is not running either.
+            val manager = ShizukuCompat.managerToLaunch(requireContext())
+            if(manager == null || !requireContext().launchApp(manager))
             {
-                requestShizukuInstallation()
+                if(shizukuAlive)
+                    updateSetupInstructions()
+                else
+                    requestShizukuInstallation()
             }
         }
         adbPage.step3.setOnButtonClickListener {
-            if(!requireContext().isPackageInstalled(SHIZUKU_PKG))
+            // A live binder means Shizuku is running even when its manager is a
+            // build we cannot name, so never send that user off to install it.
+            if(!ShizukuCompat.isAvailable(requireContext()))
             {
                 requestShizukuInstallation()
                 return@setOnButtonClickListener
@@ -323,7 +331,7 @@ class OnboardingFragment : Fragment() {
     }
 
     private fun viewShizukuInMarket(){
-        requireContext().openPlayStoreApp(SHIZUKU_PKG)
+        requireContext().openPlayStoreApp(ShizukuCompat.STOCK_MANAGER_PACKAGE)
     }
 
     private inner class OnRequestPermissionResult : Shizuku.OnRequestPermissionResultListener
@@ -600,7 +608,7 @@ class OnboardingFragment : Fragment() {
         page.step5cOptional.isVisible = selectedSetupMethod == SetupMethods.Adb && isRootless()
 
         if(selectedSetupMethod == SetupMethods.Shizuku) {
-            val installed = requireContext().isPackageInstalled(SHIZUKU_PKG)
+            val installed = ShizukuCompat.isAvailable(requireContext())
             page.step1.buttonEnabled = !installed
             if(installed) {
                 page.step1.buttonText = getString(R.string.onboarding_adb_shizuku_install_button_done)
@@ -667,8 +675,6 @@ class OnboardingFragment : Fragment() {
     companion object
     {
         fun newInstance() = OnboardingFragment()
-
-        const val SHIZUKU_PKG = "moe.shizuku.privileged.api"
 
         const val REQUEST_CODE_SHIZUKU_GRANT = 1
 
